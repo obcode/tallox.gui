@@ -54,10 +54,18 @@ export type Role =
  */
 export type ScopeArea =
   /**
-   * User and role administration. Also `@interactiveOnly`, for the same reason.
+   * Running the installation: user and role administration, and the module import. Also
+   * `@interactiveOnly`, for the same reason.
+   *
+   * The import is here rather than under `PLANNING` because what these fields expose is the
+   * operation — did the nightly job run, what did it change, run it now — and not the catalogue
+   * it produces. When the modules themselves become readable they will be planning data and will
+   * say so. An area of its own was considered and rejected: every field it could hold is
+   * unreachable through a token anyway, so it would be a promise in an enum that colleagues can
+   * read via introspection and never use.
    *
    * Fields: `people`, `person`, `roleGrants`, `diagnoseAccess`, `createPerson`, `renamePerson`,
-   * `setPersonRoles`, `setPersonActive`.
+   * `setPersonRoles`, `setPersonActive`, `zpaSyncRuns`, `zpaSyncRun`, `zpaChanges`, `syncZpaNow`.
    */
   | 'ADMIN'
   /**
@@ -81,6 +89,10 @@ export type ScopeArea =
    * What answers without an identity. Useful for checking that a route and a credential work
    * when everything else is refused: if this answers and nothing else does, the problem is the
    * token and not the connection.
+   *
+   * **A scope list cannot take this away.** What is behind it answers without any credential, so
+   * a token scoped away from it would reach less than an anonymous caller — and would lose the
+   * one field that tells a broken credential from a broken route. Listing it is never necessary.
    *
    * Fields: `buildInfo`.
    */
@@ -110,6 +122,63 @@ export type ScopeVerb =
    * something and not look at it is not a capability anybody wants.
    */
   | 'WRITE';
+
+/** What happened to one object in one run. */
+export type ZpaChangeType =
+  /** Seen for the first time. */
+  | 'APPEARED'
+  /** Already held, and its content differs. */
+  | 'CHANGED'
+  /**
+   * A successful fetch no longer mentions it.
+   *
+   * Only ever recorded after a fetch that succeeded and returned something, so that one bad night
+   * cannot retire a whole catalogue.
+   */
+  | 'DISAPPEARED'
+  /** It had disappeared and is back. The same record, with the day it was first seen intact. */
+  | 'REAPPEARED';
+
+/** What kind of object the examination office's interface published. */
+export type ZpaObjectKind =
+  /**
+   * A catalogue slot inside one version of a programme's examination regulations — compulsory or
+   * elective, and possibly belonging to a specialisation.
+   */
+  | 'BASKET'
+  /** A module in the catalogue, with its home programme, course type and credits. */
+  | 'MODULE'
+  /**
+   * The association between a module, a set of examination regulations and a basket. The module
+   * code and the earliest programme semester live here rather than on the module, because both
+   * differ between the programmes a module appears in.
+   */
+  | 'MSBA'
+  /** One version of one programme's examination regulations. */
+  | 'SPO';
+
+/** How an import run ended. */
+export type ZpaSyncStatus =
+  /** Nothing was applied. */
+  | 'FAILED'
+  /**
+   * Some endpoints were applied and others failed.
+   *
+   * Not a failure: the ones that arrived are correctly up to date, and nothing belonging to an
+   * endpoint that failed was retired.
+   */
+  | 'PARTIAL'
+  /** Still going, or the process that started it did not finish. */
+  | 'RUNNING'
+  /** Every endpoint was fetched and applied. */
+  | 'SUCCEEDED';
+
+/** What started an import run. */
+export type ZpaSyncTrigger =
+  /** Somebody asked for it. */
+  | 'MANUAL'
+  /** The nightly job. */
+  | 'SCHEDULE';
 
 export type BuildInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -209,6 +278,23 @@ export type SetPersonActiveMutationVariables = Exact<{
 
 export type SetPersonActiveMutation = { setPersonActive: { id: string } };
 
+export type ZpaSyncRunsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ZpaSyncRunsQuery = { zpaSyncRuns: Array<{ id: string, trigger: ZpaSyncTrigger, startedBy: string | null, startedAt: string, finishedAt: string | null, status: ZpaSyncStatus, fetched: number, appeared: number, changed: number, disappeared: number, error: string | null, kinds: Array<{ kind: ZpaObjectKind, status: ZpaSyncStatus, fetched: number, error: string | null }> }> };
+
+export type ZpaChangesQueryVariables = Exact<{
+  runId: string | number;
+}>;
+
+
+export type ZpaChangesQuery = { zpaChanges: Array<{ id: string, kind: ZpaObjectKind, zpaId: string, label: string | null, change: ZpaChangeType, changedKeys: Array<string>, detectedAt: string }> };
+
+export type SyncZpaNowMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SyncZpaNowMutation = { syncZpaNow: { id: string, status: ZpaSyncStatus } };
+
 
 export const BuildInfoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"BuildInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"buildInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"commit"}},{"kind":"Field","name":{"kind":"Name","value":"builtAt"}}]}}]}}]} as unknown as DocumentNode<BuildInfoQuery, BuildInfoQueryVariables>;
 export const SessionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Session"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"session"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"narrowed"}},{"kind":"Field","name":{"kind":"Name","value":"interactive"}},{"kind":"Field","name":{"kind":"Name","value":"effectiveRoles"}},{"kind":"Field","name":{"kind":"Name","value":"grantedRoles"}},{"kind":"Field","name":{"kind":"Name","value":"person"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mail"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<SessionQuery, SessionQueryVariables>;
@@ -224,3 +310,6 @@ export const PeopleDocument = {"kind":"Document","definitions":[{"kind":"Operati
 export const CreatePersonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreatePerson"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mail"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createPerson"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"mail"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mail"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mail"}}]}}]}}]} as unknown as DocumentNode<CreatePersonMutation, CreatePersonMutationVariables>;
 export const SetPersonRolesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetPersonRoles"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"roles"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Role"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"expiresAt"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Time"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setPersonRoles"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"roles"},"value":{"kind":"Variable","name":{"kind":"Name","value":"roles"}}},{"kind":"Argument","name":{"kind":"Name","value":"expiresAt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"expiresAt"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}}]}}]}}]} as unknown as DocumentNode<SetPersonRolesMutation, SetPersonRolesMutationVariables>;
 export const SetPersonActiveDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetPersonActive"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"active"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setPersonActive"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"active"},"value":{"kind":"Variable","name":{"kind":"Name","value":"active"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<SetPersonActiveMutation, SetPersonActiveMutationVariables>;
+export const ZpaSyncRunsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ZpaSyncRuns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"zpaSyncRuns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"20"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"trigger"}},{"kind":"Field","name":{"kind":"Name","value":"startedBy"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"finishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"fetched"}},{"kind":"Field","name":{"kind":"Name","value":"appeared"}},{"kind":"Field","name":{"kind":"Name","value":"changed"}},{"kind":"Field","name":{"kind":"Name","value":"disappeared"}},{"kind":"Field","name":{"kind":"Name","value":"error"}},{"kind":"Field","name":{"kind":"Name","value":"kinds"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"fetched"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]}}]} as unknown as DocumentNode<ZpaSyncRunsQuery, ZpaSyncRunsQueryVariables>;
+export const ZpaChangesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ZpaChanges"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"zpaChanges"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"zpaId"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"change"}},{"kind":"Field","name":{"kind":"Name","value":"changedKeys"}},{"kind":"Field","name":{"kind":"Name","value":"detectedAt"}}]}}]}}]} as unknown as DocumentNode<ZpaChangesQuery, ZpaChangesQueryVariables>;
+export const SyncZpaNowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncZpaNow"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncZpaNow"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<SyncZpaNowMutation, SyncZpaNowMutationVariables>;
