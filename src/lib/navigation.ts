@@ -93,6 +93,13 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		roles: ['ADMIN']
 	},
 	{
+		emoji: '📥',
+		label: 'ZPA-Import',
+		href: '/verwaltung/zpa',
+		hint: 'Wann kamen die Modul-Stammdaten zuletzt, und was hat sich geändert',
+		roles: ['ADMIN', 'DEANS_OFFICE']
+	},
+	{
 		emoji: '🔍',
 		label: 'Diagnose',
 		href: '/verwaltung/diagnose',

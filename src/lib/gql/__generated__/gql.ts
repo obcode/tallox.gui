@@ -28,6 +28,9 @@ type Documents = {
     "\n\tmutation CreatePerson($mail: String!, $name: String) {\n\t\tcreatePerson(mail: $mail, name: $name) {\n\t\t\tid\n\t\t\tmail\n\t\t}\n\t}\n": typeof types.CreatePersonDocument,
     "\n\tmutation SetPersonRoles($id: ID!, $roles: [Role!]!, $expiresAt: Time) {\n\t\tsetPersonRoles(id: $id, roles: $roles, expiresAt: $expiresAt) {\n\t\t\tid\n\t\t\troles\n\t\t}\n\t}\n": typeof types.SetPersonRolesDocument,
     "\n\tmutation SetPersonActive($id: ID!, $active: Boolean!) {\n\t\tsetPersonActive(id: $id, active: $active) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.SetPersonActiveDocument,
+    "\n\tquery ZpaSyncRuns {\n\t\tzpaSyncRuns(limit: 20) {\n\t\t\tid\n\t\t\ttrigger\n\t\t\tstartedBy\n\t\t\tstartedAt\n\t\t\tfinishedAt\n\t\t\tstatus\n\t\t\tfetched\n\t\t\tappeared\n\t\t\tchanged\n\t\t\tdisappeared\n\t\t\terror\n\t\t\tkinds {\n\t\t\t\tkind\n\t\t\t\tstatus\n\t\t\t\tfetched\n\t\t\t\terror\n\t\t\t}\n\t\t}\n\t}\n": typeof types.ZpaSyncRunsDocument,
+    "\n\tquery ZpaChanges($runId: ID!) {\n\t\tzpaChanges(runId: $runId) {\n\t\t\tid\n\t\t\tkind\n\t\t\tzpaId\n\t\t\tlabel\n\t\t\tchange\n\t\t\tchangedKeys\n\t\t\tdetectedAt\n\t\t}\n\t}\n": typeof types.ZpaChangesDocument,
+    "\n\tmutation SyncZpaNow {\n\t\tsyncZpaNow {\n\t\t\tid\n\t\t\tstatus\n\t\t}\n\t}\n": typeof types.SyncZpaNowDocument,
 };
 const documents: Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": types.BuildInfoDocument,
@@ -44,6 +47,9 @@ const documents: Documents = {
     "\n\tmutation CreatePerson($mail: String!, $name: String) {\n\t\tcreatePerson(mail: $mail, name: $name) {\n\t\t\tid\n\t\t\tmail\n\t\t}\n\t}\n": types.CreatePersonDocument,
     "\n\tmutation SetPersonRoles($id: ID!, $roles: [Role!]!, $expiresAt: Time) {\n\t\tsetPersonRoles(id: $id, roles: $roles, expiresAt: $expiresAt) {\n\t\t\tid\n\t\t\troles\n\t\t}\n\t}\n": types.SetPersonRolesDocument,
     "\n\tmutation SetPersonActive($id: ID!, $active: Boolean!) {\n\t\tsetPersonActive(id: $id, active: $active) {\n\t\t\tid\n\t\t}\n\t}\n": types.SetPersonActiveDocument,
+    "\n\tquery ZpaSyncRuns {\n\t\tzpaSyncRuns(limit: 20) {\n\t\t\tid\n\t\t\ttrigger\n\t\t\tstartedBy\n\t\t\tstartedAt\n\t\t\tfinishedAt\n\t\t\tstatus\n\t\t\tfetched\n\t\t\tappeared\n\t\t\tchanged\n\t\t\tdisappeared\n\t\t\terror\n\t\t\tkinds {\n\t\t\t\tkind\n\t\t\t\tstatus\n\t\t\t\tfetched\n\t\t\t\terror\n\t\t\t}\n\t\t}\n\t}\n": types.ZpaSyncRunsDocument,
+    "\n\tquery ZpaChanges($runId: ID!) {\n\t\tzpaChanges(runId: $runId) {\n\t\t\tid\n\t\t\tkind\n\t\t\tzpaId\n\t\t\tlabel\n\t\t\tchange\n\t\t\tchangedKeys\n\t\t\tdetectedAt\n\t\t}\n\t}\n": types.ZpaChangesDocument,
+    "\n\tmutation SyncZpaNow {\n\t\tsyncZpaNow {\n\t\t\tid\n\t\t\tstatus\n\t\t}\n\t}\n": types.SyncZpaNowDocument,
 };
 
 /**
@@ -116,6 +122,18 @@ export function graphql(source: "\n\tmutation SetPersonRoles($id: ID!, $roles: [
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tmutation SetPersonActive($id: ID!, $active: Boolean!) {\n\t\tsetPersonActive(id: $id, active: $active) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation SetPersonActive($id: ID!, $active: Boolean!) {\n\t\tsetPersonActive(id: $id, active: $active) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery ZpaSyncRuns {\n\t\tzpaSyncRuns(limit: 20) {\n\t\t\tid\n\t\t\ttrigger\n\t\t\tstartedBy\n\t\t\tstartedAt\n\t\t\tfinishedAt\n\t\t\tstatus\n\t\t\tfetched\n\t\t\tappeared\n\t\t\tchanged\n\t\t\tdisappeared\n\t\t\terror\n\t\t\tkinds {\n\t\t\t\tkind\n\t\t\t\tstatus\n\t\t\t\tfetched\n\t\t\t\terror\n\t\t\t}\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery ZpaSyncRuns {\n\t\tzpaSyncRuns(limit: 20) {\n\t\t\tid\n\t\t\ttrigger\n\t\t\tstartedBy\n\t\t\tstartedAt\n\t\t\tfinishedAt\n\t\t\tstatus\n\t\t\tfetched\n\t\t\tappeared\n\t\t\tchanged\n\t\t\tdisappeared\n\t\t\terror\n\t\t\tkinds {\n\t\t\t\tkind\n\t\t\t\tstatus\n\t\t\t\tfetched\n\t\t\t\terror\n\t\t\t}\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery ZpaChanges($runId: ID!) {\n\t\tzpaChanges(runId: $runId) {\n\t\t\tid\n\t\t\tkind\n\t\t\tzpaId\n\t\t\tlabel\n\t\t\tchange\n\t\t\tchangedKeys\n\t\t\tdetectedAt\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery ZpaChanges($runId: ID!) {\n\t\tzpaChanges(runId: $runId) {\n\t\t\tid\n\t\t\tkind\n\t\t\tzpaId\n\t\t\tlabel\n\t\t\tchange\n\t\t\tchangedKeys\n\t\t\tdetectedAt\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation SyncZpaNow {\n\t\tsyncZpaNow {\n\t\t\tid\n\t\t\tstatus\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation SyncZpaNow {\n\t\tsyncZpaNow {\n\t\t\tid\n\t\t\tstatus\n\t\t}\n\t}\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
