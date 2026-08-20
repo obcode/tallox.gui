@@ -1,7 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { test, expect, gotoRendered, openDropdown } from './fixtures';
+import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
 import { THEME_COOKIE, THEMES } from '../src/lib/themes';
+import { CATALOGUE } from './seed';
 
 async function expectNoContrastViolations(page: Page, theme: string): Promise<void> {
 	const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
@@ -150,6 +151,41 @@ test.describe('contrast with menus open, across all themes', () => {
 				await contrastRatio(page, '.dropdown-content button.menu-active'),
 				`${theme.value}: the chosen theme in the design picker`
 			).toBeGreaterThanOrEqual(4.5);
+		});
+	}
+});
+
+/**
+ * The module catalogue, across all the themes.
+ *
+ * A page of its own in this list because it is the first in the application that is a **wide
+ * table with badges in it** — six columns, a badge per row for compulsory-or-elective, another
+ * for a missing split. Every one of those is a pair (component, theme) that the start page does
+ * not contain, and the first version of this table got exactly the documented thing wrong: the
+ * link to a module with no split was `link-warning`, which is 1.35:1 on `base-100` and
+ * unreadable on all seven light themes.
+ *
+ * It runs signed in, because the catalogue needs an identity, and filtered to a programme so
+ * that the columns that only appear with one — the duty badge above all — are on the page.
+ */
+test.describe('the module catalogue across all themes', () => {
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ browser, context }) => {
+			await context.addCookies([
+				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
+			]);
+
+			const signedIn = await browser.newContext({
+				extraHTTPHeaders: { 'X-Remote-User': PERSONAS.vier.mail },
+				storageState: { cookies: await context.cookies(), origins: [] }
+			});
+			const page = await signedIn.newPage();
+
+			await gotoRendered(page, `/module?studiengang=${CATALOGUE.programme}`);
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			await expectNoContrastViolations(page, theme.value);
+			await signedIn.close();
 		});
 	}
 });

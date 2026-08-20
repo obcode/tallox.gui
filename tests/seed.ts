@@ -55,7 +55,105 @@ export function seedStatementsFor(personas: readonly Persona[]): string[] {
 	return statements;
 }
 
+/**
+ * A small catalogue, so the module pages have something to show.
+ *
+ * Its own programme with a code no real one uses, because a run happens against whatever
+ * database is there — a developer's, with the whole imported catalogue in it, or a fresh one in
+ * CI with none. Asserting against real modules would make the tests pass on one machine and
+ * fail on the other, and asserting against counts would make them fail the week somebody
+ * imports.
+ *
+ * The three modules are the three states the page has to distinguish, and every one of them is
+ * a case that exists in the real catalogue in numbers:
+ *
+ *   · in the catalogue and split      — the ordinary row
+ *   · in the catalogue and not split  — the work list; a module no instance can be made from
+ *   · at home and in no regulations   — 26 active real modules, ten in the largest programme,
+ *                                       invisible unless the list is a union
+ *
+ * Fixed ids rather than generated ones: a test that wants the third module has to be able to
+ * name it, and a name is not unique enough to key on in a database that may also hold the real
+ * catalogue.
+ */
+export const CATALOGUE = {
+	programme: 'E2E',
+	spo: '0e2e0000-0000-4000-8000-000000000001',
+	split: '0e2e0000-0000-4000-8000-000000000011',
+	unsplit: '0e2e0000-0000-4000-8000-000000000012',
+	onlyAtHome: '0e2e0000-0000-4000-8000-000000000013',
+	/**
+	 * The module the write test states a split on.
+	 *
+	 * Its own row, and not `unsplit`, because a test that writes to a fixture two other tests
+	 * read as "has no split" passes alone and fails in a full run — which is the worst way for a
+	 * suite to fail, since the order that produced it is not in the report.
+	 */
+	writable: '0e2e0000-0000-4000-8000-000000000014'
+} as const;
+
+const PROGRAMME_ID = '0e2e0000-0000-4000-8000-000000000000';
+
+export function catalogueStatements(): string[] {
+	const p = quote(CATALOGUE.programme);
+
+	return [
+		`INSERT INTO programme (id, code, title) VALUES ('${PROGRAMME_ID}', ${p}, 'Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+
+		`INSERT INTO spo (id, programme_id, version, valid_from, primuss_id)
+		 SELECT '${CATALOGUE.spo}', id, 2025, '2025-10-01', '07-E2E-2025' FROM programme WHERE code = ${p}
+		 ON CONFLICT (programme_id, version) DO NOTHING;`,
+
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.split}', id, 'E2E Modul mit Aufteilung', 'SU_WITH_LAB',
+		        'EVERY_WINTER_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.unsplit}', id, 'E2E Modul ohne Aufteilung', 'SU_WITH_EXERCISE',
+		        'EVERY_SUMMER_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.onlyAtHome}', id, 'E2E Modul nur zu Hause', 'SEMINAR',
+		        'ON_ANNOUNCEMENT', 2, 3 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.writable}', id, 'E2E Modul zum Beschreiben', 'SU_WITH_EXERCISE',
+		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		// The split the write test leaves behind is cleared at the start of every run, so the
+		// second run asserts the same thing the first one did.
+		`DELETE FROM module_component WHERE module_id = '${CATALOGUE.writable}';`,
+
+		// Two of the four count in the regulations; the others deliberately do not, which is
+		// what makes the list a union rather than a lookup.
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows)
+		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1),
+		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1)
+		 ON CONFLICT (module_id, spo_id) DO NOTHING;`,
+
+		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
+		 VALUES ('${CATALOGUE.split}', 'LECTURE', 2, 0), ('${CATALOGUE.split}', 'LAB', 2, 1)
+		 ON CONFLICT (module_id, position) DO NOTHING;`,
+
+		// Vier leads it. Without this she holds PROGRAMME_LEAD and may plan nothing — which is
+		// the correct behaviour and would make every write test assert the wrong refusal.
+		`INSERT INTO person_programme_scope (person_id, role, programme_id)
+		 SELECT p.id, 'PROGRAMME_LEAD', pr.id FROM person p, programme pr
+		  WHERE p.mail = 'prof.vier@example.org' AND pr.code = ${p}
+		 ON CONFLICT DO NOTHING;`
+	];
+}
+
 /** The complete script, exactly as it goes to psql. */
 export function seedSql(): string {
-	return seedStatementsFor(Object.values(PERSONAS)).join('\n');
+	return [...seedStatementsFor(Object.values(PERSONAS)), ...catalogueStatements()].join('\n');
 }

@@ -55,7 +55,21 @@ const PASS_THROUGH = new Set([
 	'SEMESTER_NOT_FOUND',
 	'PHASE_NOT_ADJACENT',
 	'PHASE_MOVED_ON',
-	'PHASE_UNKNOWN'
+	'PHASE_UNKNOWN',
+	// The module catalogue. Published by the examination office and not confidential, so the
+	// sentences give nothing away — and two of them are the whole point of having distinct
+	// codes at all.
+	//
+	// PROGRAMME_SCOPE_MISSING says "nobody has assigned you a study programme", where the
+	// generic refusal would send a study programme lead to ask for a role they already hold.
+	// NOT_A_PROGRAMME_LEAD says "grant the role first", which is the administrator's next step.
+	'MODULE_NOT_FOUND',
+	'NOT_YOUR_PROGRAMME',
+	'PROGRAMME_SCOPE_MISSING',
+	'COMPONENTS_INVALID',
+	'UNKNOWN_PROGRAMME',
+	'NOT_A_PROGRAMME_LEAD',
+	'SPO_ID_INVALID'
 ]);
 
 /** What is shown when the error is none of the known ones. */
