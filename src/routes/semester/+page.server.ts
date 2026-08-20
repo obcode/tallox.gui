@@ -8,7 +8,6 @@ import type { Actions, PageServerLoad } from './$types';
 const SemestersDocument = graphql(`
 	query Semesters {
 		semesters {
-			id
 			code
 			phase
 			reachablePhases
@@ -17,28 +16,19 @@ const SemestersDocument = graphql(`
 	}
 `);
 
-const CreateSemesterDocument = graphql(`
-	mutation CreateSemester($code: String!) {
-		createSemester(code: $code) {
-			id
-			code
-		}
-	}
-`);
-
 const AdvancePhaseDocument = graphql(`
-	mutation AdvanceSemesterPhase($id: ID!, $to: Phase!) {
-		advanceSemesterPhase(id: $id, to: $to) {
-			id
+	mutation AdvanceSemesterPhase($code: String!, $to: Phase!) {
+		advanceSemesterPhase(code: $code, to: $to) {
+			code
 			phase
 		}
 	}
 `);
 
 const PublishWishesDocument = graphql(`
-	mutation PublishWishes($id: ID!) {
-		publishWishes(id: $id) {
-			id
+	mutation PublishWishes($code: String!) {
+		publishWishes(code: $code) {
+			code
 			wishesPublishedAt
 		}
 	}
@@ -46,6 +36,10 @@ const PublishWishesDocument = graphql(`
 
 /**
  * The list of semesters, and where each one stands.
+ *
+ * Nothing has to be set up for this to answer: the backend lists the semesters around now
+ * plus everything anybody has decided something about, so a fresh installation shows the
+ * process rather than an empty page with a form on it.
  *
  * `semesters` requires a signed-in identity but no particular role — the phase is the answer to
  * "may I enter my wishes yet", and every lecturer needs it. A refusal here therefore means the
@@ -69,53 +63,34 @@ export const load: PageServerLoad = async () => {
  * property: switching a phase during a meeting should not depend on a bundle having loaded.
  */
 export const actions: Actions = {
-	create: async ({ request }) => {
-		const form = await request.formData();
-		const code = String(form.get('code') ?? '').trim();
-
-		// The real validation is in the backend and applies to both doors — see
-		// domain.ErrSemesterCodeInvalid. Only the case a round trip would be a waste on is
-		// handled here.
-		if (code === '') {
-			return fail(400, { code: 'SEMESTER_CODE_INVALID', message: 'Bitte ein Semester angeben.' });
-		}
-
-		try {
-			await backendRequest(CreateSemesterDocument, { code });
-		} catch (err) {
-			return fail(400, toRefusal(err));
-		}
-		return { created: code };
-	},
-
 	advance: async ({ request }) => {
 		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
+		const code = String(form.get('code') ?? '');
 		const to = String(form.get('to') ?? '') as Phase;
 
 		try {
-			await backendRequest(AdvancePhaseDocument, { id, to });
+			await backendRequest(AdvancePhaseDocument, { code, to });
 		} catch (err) {
 			// PHASE_MOVED_ON arrives here: somebody else switched the semester between this page
 			// rendering and the click. Its sentence asks for a reload, which is the useful
 			// instruction — the page in front of the user is simply out of date.
 			return fail(400, toRefusal(err));
 		}
-		return { advanced: id };
+		return { advanced: code };
 	},
 
 	publish: async ({ request }) => {
 		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
+		const code = String(form.get('code') ?? '');
 
 		// No second confirmation here. The one in the page is a dialogue for the person; a check
 		// in this handler would be a rule, and the rule about who may publish lives in the
 		// backend, where the token door meets it too.
 		try {
-			await backendRequest(PublishWishesDocument, { id });
+			await backendRequest(PublishWishesDocument, { code });
 		} catch (err) {
 			return fail(400, toRefusal(err));
 		}
-		return { published: id };
+		return { published: code };
 	}
 };
