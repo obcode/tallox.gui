@@ -1,0 +1,237 @@
+<script lang="ts">
+	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+	import {
+		ALL_PART_KINDS,
+		COURSE_TYPE_LABELS,
+		FREQUENCY_LABELS,
+		PART_KIND_LABELS,
+		componentMismatch,
+		formatHours,
+		moduleName,
+		proposedComponents,
+		spoLabel
+	} from '$lib/catalogue';
+	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+	import type { ActionData, PageData } from './$types';
+
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	type Row = { kind: InstancePartKind; hours: string };
+
+	// The rows of the split editor. Seeded from what is stored, and from the proposal derived
+	// from the course type when nothing is — a form somebody has to fill from an empty state is
+	// how a bounded task turns into a chore.
+	let rows = $state<Row[]>(initialRows());
+
+	function initialRows(): Row[] {
+		if (data.module.components.length > 0) {
+			return data.module.components.map((c) => ({
+				kind: c.kind,
+				hours: formatHours(c.teachingHours)
+			}));
+		}
+		return proposedComponents(data.module.courseType, data.module.contactHoursPerWeek).map((c) => ({
+			kind: c.kind,
+			hours: formatHours(c.teachingHours)
+		}));
+	}
+
+	const proposed = $derived(data.module.components.length === 0 && rows.length > 0);
+
+	const enteredHours = $derived(
+		rows.reduce((sum, r) => {
+			const value = Number(r.hours.replace(',', '.'));
+			return Number.isFinite(value) ? sum + value : sum;
+		}, 0)
+	);
+
+	const mismatch = $derived(
+		componentMismatch(
+			rows.some((r) => r.hours.trim() !== '') ? enteredHours : null,
+			data.module.contactHoursPerWeek
+		)
+	);
+
+	// Grouped by programme, because "where does this count" is a question about programmes and
+	// the versions are the detail underneath.
+	//
+	// The programmes come out of a Set and the rows are filtered per programme, rather than a Map
+	// being filled: a mutable Map inside a derivation is the thing `svelte/prefer-svelte-reactivity`
+	// warns about, and reaching for SvelteMap here would add reactivity to a value that is built
+	// and read in the same expression.
+	const byProgramme = $derived(
+		[...new Set(data.module.offerings.map((o) => o.spo.programme.code))]
+			.sort((a, b) => a.localeCompare(b))
+			.map(
+				(code) =>
+					[code, data.module.offerings.filter((o) => o.spo.programme.code === code)] as const
+			)
+	);
+</script>
+
+<div class="flex flex-col gap-4">
+	<div>
+		<a class="link text-base-content/80 text-sm" href={resolve('/module')}>← Modulkatalog</a>
+		<h1 class="text-2xl font-semibold">{moduleName(data.module)}</h1>
+		<p class="text-base-content/80 text-sm">
+			Heimatstudiengang {data.module.homeProgramme.code}
+			· {COURSE_TYPE_LABELS[data.module.courseType]}
+			· {FREQUENCY_LABELS[data.module.frequency]}
+			{#if data.module.contactHoursPerWeek != null}
+				· {data.module.contactHoursPerWeek} SWS laut Modulkatalog
+			{/if}
+			{#if data.module.credits != null}
+				· {data.module.credits} ECTS
+			{/if}
+		</p>
+	</div>
+
+	{#if form && 'message' in form && form.message}
+		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+			<p class="text-base-content/90 text-sm">
+				<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
+				{form.message}
+			</p>
+		</div>
+	{/if}
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">🧮</span> SWS-Aufteilung
+		</h2>
+		<p class="text-base-content/80 mb-3 text-sm">
+			Wie sich die Lehre dieses Moduls auf Vorlesung, Praktikum und Übung aufteilt. Das ZPA nennt
+			nur eine Gesamtzahl — die Aufteilung weiß die Fakultät. Sie wird einmal eingetragen und ändert
+			sich danach normalerweise nicht. Ohne sie lässt sich aus dem Modul keine Instanz bilden.
+		</p>
+
+		{#if proposed}
+			<p class="text-base-content/90 mb-3 text-sm">
+				<span class="badge badge-warning badge-sm align-middle">Vorschlag</span>
+				Aus der Lehrform abgeleitet und noch nicht gespeichert. Bitte prüfen und speichern.
+			</p>
+		{/if}
+
+		<!--
+			`enhance` ohne eigenen Callback setzt das Formular nach einem erfolgreichen Absenden
+			zurück, und Svelte 5 zieht ein `reset` in die gebundenen Werte. Der Editor stand danach
+			leer da, obwohl die Aufteilung gespeichert war — und wer das sieht, tippt sie noch
+			einmal ein. Also nicht zurücksetzen, sondern aus den frisch geladenen Daten neu füllen.
+		-->
+		<form
+			method="POST"
+			action="?/components"
+			use:enhance={() =>
+				async ({ update }) => {
+					await update({ reset: false });
+					rows = initialRows();
+				}}
+			class="flex flex-col gap-3"
+		>
+			{#each rows as row, i (i)}
+				<div class="flex flex-wrap items-end gap-2">
+					<label class="form-control">
+						<span class="label-text text-sm">Art</span>
+						<select name="kind" bind:value={row.kind} class="select select-bordered select-sm">
+							{#each ALL_PART_KINDS as kind (kind)}
+								<option value={kind}>{PART_KIND_LABELS[kind]}</option>
+							{/each}
+						</select>
+					</label>
+					<label class="form-control">
+						<span class="label-text text-sm">SWS</span>
+						<input
+							name="teachingHours"
+							type="text"
+							inputmode="decimal"
+							bind:value={row.hours}
+							placeholder="leer = entfernen"
+							class="input input-bordered input-sm w-32"
+						/>
+					</label>
+				</div>
+			{/each}
+
+			<div class="flex flex-wrap items-center gap-3">
+				<button
+					type="button"
+					class="btn btn-sm btn-ghost"
+					onclick={() => (rows = [...rows, { kind: 'LAB', hours: '' }])}
+				>
+					Teil hinzufügen
+				</button>
+				<button type="submit" class="btn btn-sm btn-primary">Aufteilung speichern</button>
+				<span class="text-base-content/80 text-sm">
+					Summe: {formatHours(enteredHours)} SWS
+				</span>
+			</div>
+
+			{#if mismatch}
+				<!-- A note, never a refusal: twelve modules carry no hours in the source at all and
+				     several carry a figure that does not match what is taught. A hard rule would make
+				     exactly those unplannable. -->
+				<p class="text-base-content/90 text-sm">
+					<span class="badge badge-warning badge-sm align-middle">Abweichung</span>
+					{mismatch}
+				</p>
+			{/if}
+		</form>
+	</div>
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">📗</span> Wo dieses Modul zählt
+		</h2>
+		{#if byProgramme.length === 0}
+			<p class="text-base-content/80 text-sm">
+				In keiner Prüfungsordnung, die das ZPA noch ausliefert. Das Modul gehört
+				{data.module.homeProgramme.code} und lässt sich weiterhin planen.
+			</p>
+		{:else}
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th>Studiengang</th>
+							<th>Prüfungsordnung</th>
+							<th>Art</th>
+							<th>ab Fachsemester</th>
+							<th>Modulcode</th>
+							<th>Schwerpunkt</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each byProgramme as [code, offerings] (code)}
+							{#each offerings as offering (offering.spo.id)}
+								<tr>
+									<td class="font-medium">{code}</td>
+									<td>{spoLabel(offering.spo)}</td>
+									<td>
+										<span
+											class="badge badge-sm {offering.isDuty ? 'badge-primary' : 'badge-ghost'}"
+										>
+											{offering.isDuty ? 'Pflicht' : 'Wahlpflicht'}
+										</span>
+									</td>
+									<td class="text-base-content/90">{offering.minProgrammeSemester ?? '—'}</td>
+									<td class="text-base-content/90 font-mono text-xs">
+										{offering.moduleCodes.join(', ') || '—'}
+									</td>
+									<td class="text-base-content/90">{offering.focuses.join(', ') || '—'}</td>
+								</tr>
+							{/each}
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
+
+	{#if data.module.zpaId}
+		<p class="text-base-content/80 text-xs">
+			ZPA-Kennung {data.module.zpaId}. Die Stammdaten kommen aus dem ZPA und werden hier nicht
+			geändert — nur die SWS-Aufteilung gehört Tallox.
+		</p>
+	{/if}
+</div>

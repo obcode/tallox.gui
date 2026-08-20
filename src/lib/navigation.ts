@@ -3,6 +3,16 @@ import type { Role } from '$lib/gql/__generated__/graphql';
 import { hasAnyRole } from '$lib/roles';
 
 /**
+ * A route that can be linked to without arguments.
+ *
+ * `RouteId` grew a parameterised member with the module detail page, and `resolve()` refuses one
+ * of those without its parameters — rightly, since a menu entry has none to give. Excluding them
+ * here means a future `/bedarf/[semester]` cannot be put in the menu by accident instead of
+ * being discovered as a type error in this file's four call sites.
+ */
+type StaticRoute = Exclude<RouteId, `${string}[${string}`>;
+
+/**
  * The areas of the application, in the order of the planning process.
  *
  * Areas without an `href` are not built yet. They are listed anyway, damped and without a
@@ -16,7 +26,7 @@ import { hasAnyRole } from '$lib/roles';
 export type NavItem = {
 	emoji: string;
 	label: string;
-	href?: RouteId;
+	href?: StaticRoute;
 	/** A short explanation, rendered as the title attribute. */
 	hint: string;
 	/**
@@ -34,7 +44,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ emoji: '🏠', label: 'Start', href: '/', hint: 'Übersicht' },
-	{ emoji: '📚', label: 'Module', hint: 'Modulkatalog mit Heimatstudiengang' },
+	{ emoji: '📚', label: 'Module', href: '/module', hint: 'Modulkatalog mit Heimatstudiengang' },
 	{ emoji: '🗓️', label: 'Semester', href: '/semester', hint: 'Semester, Phasen und Meilensteine' },
 	{
 		emoji: '🎯',
