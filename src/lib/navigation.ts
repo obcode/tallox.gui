@@ -49,6 +49,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	{
 		emoji: '🎯',
 		label: 'Bedarf',
+		href: '/bedarf',
 		hint: 'Welche Instanzen müssen angeboten werden?',
 		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
 	},
