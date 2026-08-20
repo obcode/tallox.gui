@@ -142,9 +142,11 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   comes from `+layout.svelte`; pages do not add their own. Grids are always
   `grid-cols-1 sm:grid-cols-N`, wide tables live in `overflow-x-auto`.
   Full usability does not mean everything at once: the nav bar shows its seven areas
-  side by side only from `lg` (1024px), below that the menu carries them — with the same
-  entries. Seven entries do not fit at 768px, and the version that tried made the page 883px
-  wide. `tests/responsive.spec.ts` watches the four widths.
+  side by side only from `xl` (1280px), below that the menu carries them — with the same
+  entries. They did not fit at 768px (883px wide) and did not fit at 1024px either (1061px,
+  once the identity and the role switcher had grown). `tests/responsive.spec.ts` watches five
+  widths, and 1280 is in the list because a breakpoint means _from_: the row appears at exactly
+  that width, so that is where the next area will break it.
 - **Prettier:** tabs, single quotes, no trailing commas, printWidth 100.
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
 

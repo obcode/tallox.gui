@@ -41,19 +41,22 @@
 		>
 			<span class="text-xl leading-none" aria-hidden="true">🎓</span>
 			<span class="text-lg font-semibold">Tallox</span>
-			<span class="text-base-content/80 hidden text-sm xl:inline">Einsatzplanung FK07</span>
+			<span class="text-base-content/80 hidden text-sm 2xl:inline">Einsatzplanung FK07</span>
 		</a>
 
-		<!-- Side by side from lg, below that in the hamburger.
-		     Originally md (768px). The seven areas do not fit there: the bar became 883px wide
-		     and pushed the body past the viewport — at exactly the width CLAUDE.md promises full
-		     usability from. Found by tests/responsive.spec.ts, which has watched the widths
-		     since.
-		     Tablet-first means fully operable, not everything visible at once: up to 1024px the
-		     menu carries the navigation, and it holds the same entries.
-		     Together with the xl on the brand subtitle above — lg alone is not enough, because
-		     lg applies *from* 1024px and at exactly 1024 the bar would otherwise need 1117px. -->
-		<ul class="ml-4 hidden flex-1 items-center gap-1 lg:flex">
+		<!-- Side by side from xl (1280px), below that in the hamburger.
+		     Moved twice, both times because the row does not fit and both times found by
+		     tests/responsive.spec.ts rather than by looking at it. First from md (768px), where
+		     the areas needed 883px. Then from lg (1024px), where the row measured 1061px:
+		     84px of brand, 667px of areas and 247px on the right — the identity, the role
+		     switcher and the theme menu, which have grown since and are not going to shrink.
+		     Tablet-first means fully operable, not everything visible at once: up to 1280px the
+		     menu carries the navigation, and it holds the same entries in the same order. That is
+		     the trade this makes — a horizontally scrolling navigation would keep the bar at
+		     1024px and hide "Statistik" behind a scroll nobody looks for.
+		     The brand subtitle moves along, to 2xl. Slack is what keeps the next area from
+		     starting this again: at 1280 the row now needs about 1090px. -->
+		<ul class="ml-4 hidden flex-1 items-center gap-1 xl:flex">
 			{#each areas as item (item.label)}
 				<li>
 					{#if item.href}
@@ -79,15 +82,15 @@
 			{/each}
 		</ul>
 
-		<div class="ml-auto flex items-center gap-1 lg:ml-0">
-			<!-- Only from lg, so exactly where the area bar appears too. Below that the menu at
+		<div class="ml-auto flex items-center gap-1 xl:ml-0">
+			<!-- Only from xl, so exactly where the area bar appears too. Below that the menu at
 			     the bottom carries the identity — it is never missing, it just sits somewhere
 			     else. -->
 			{#if remoteUser}
-				<!-- From lg the identity doubles as the way into the account. A separate entry in
+				<!-- From xl the identity doubles as the way into the account. A separate entry in
 				     the area bar would be wrong: that bar holds the planning process in its
 				     order, and tokens are not a step in it. -->
-				<div class="dropdown dropdown-end hidden lg:block">
+				<div class="dropdown dropdown-end hidden xl:block">
 					<div
 						tabindex="0"
 						role="button"
@@ -120,7 +123,7 @@
 				     themes — far below the 4.5:1 of WCAG 1.4.3. As a badge background they are
 				     paired with `warning-content`, and that pair is built for contrast. -->
 				<span
-					class="badge badge-warning badge-sm hidden items-center gap-1 lg:inline-flex"
+					class="badge badge-warning badge-sm hidden items-center gap-1 xl:inline-flex"
 					title="Kein X-Remote-User — lokale Entwicklung ohne Auth-Proxy"
 				>
 					<span aria-hidden="true">🔓</span>anonym
@@ -131,7 +134,7 @@
 
 			<ThemeSwitcher current={theme} />
 
-			<div class="dropdown dropdown-end lg:hidden">
+			<div class="dropdown dropdown-end xl:hidden">
 				<div tabindex="0" role="button" class="btn btn-ghost btn-sm" aria-label="Bereiche">
 					<span aria-hidden="true">☰</span>
 				</div>
@@ -164,7 +167,7 @@
 						</li>
 					{/each}
 
-					<!-- Below lg this menu carries both. The same entries as the account menu
+					<!-- Below xl this menu carries both. The same entries as the account menu
 					     above: a navigation that knows different destinations depending on the
 					     width is the kind of difference nobody suspects and everybody hunts. -->
 					<li></li>

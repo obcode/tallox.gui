@@ -9,23 +9,24 @@ import { test, expect, gotoRendered, openDropdown } from './fixtures';
  * horizontally.
  */
 /**
- * The widths that are measured. No exceptions any more: the overflow this test found on its
- * first run is fixed.
+ * The widths that are measured, and the one that matters most is the breakpoint itself.
  *
- * The finding was real — 883px at a 768px viewport, 1117px at 1024px. The area bar switched to
- * seven side-by-side entries at `md:` (768px) and did not fit there, at exactly the width
- * CLAUDE.md promises full usability from. At 375px the hamburger carried it, at 1440px there was
- * room enough; which is why it showed up precisely in between.
+ * The area bar has now been moved twice for the same reason. First away from `md` (768px),
+ * where its seven entries needed 883px — at exactly the width CLAUDE.md promises full
+ * usability from. Then away from `lg` (1024px), where the row measured 1061px: 84px of brand,
+ * 667px of areas, and 247px of identity, role switcher and theme menu on the right, which have
+ * grown since and are not going to shrink. A breakpoint means *from*, so the bar appears at
+ * exactly that width and has to fit there.
  *
- * Fixed by two changes in NavBar.svelte that belong together: the bar only switches from `lg`
- * (1024px), and the brand subtitle only from `xl`. The first alone is not enough — `lg` means
- * *from* 1024px, so the bar appears at exactly 1024 and still needs 1117px there. Only the room
- * from the second step brings it under.
+ * It sits at `xl` (1280px) now, with the brand subtitle at `2xl`, which leaves around 190px of
+ * slack. `laptop` below is that first width and is in this list on purpose: an eighth area or a
+ * wider identity shows up here rather than on somebody's tablet.
  */
 const VIEWPORTS = [
 	{ name: 'phone', width: 375, height: 812 },
 	{ name: 'tablet portrait', width: 768, height: 1024 },
 	{ name: 'tablet landscape', width: 1024, height: 768 },
+	{ name: 'laptop', width: 1280, height: 800 },
 	{ name: 'desktop', width: 1440, height: 900 }
 ] as const;
 
@@ -52,8 +53,10 @@ test.describe('rendering across widths', () => {
 		});
 	}
 
-	test('below 1024px the hamburger carries the navigation', async ({ page }) => {
-		await page.setViewportSize({ width: 768, height: 1024 });
+	test('below 1280px the hamburger carries the navigation', async ({ page }) => {
+		// At 1024 as well as at 768: tablet-first means fully operable, not everything visible at
+		// once, and the menu holds the same entries in the same order as the bar.
+		await page.setViewportSize({ width: 1024, height: 768 });
 		await gotoRendered(page, '/');
 
 		await expect(page.getByRole('button', { name: 'Bereiche' })).toBeVisible();
@@ -62,8 +65,8 @@ test.describe('rendering across widths', () => {
 		await expect(page.getByRole('banner').getByRole('list').last()).toBeVisible();
 	});
 
-	test('from 1024px the area bar stands side by side', async ({ page }) => {
-		await page.setViewportSize({ width: 1024, height: 768 });
+	test('from 1280px the area bar stands side by side', async ({ page }) => {
+		await page.setViewportSize({ width: 1280, height: 800 });
 		await gotoRendered(page, '/');
 
 		// The other direction: the hamburger disappears. Without this half, a layout showing both
