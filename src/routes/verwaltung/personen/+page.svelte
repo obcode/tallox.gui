@@ -117,6 +117,25 @@
 											>{ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role}</span
 										>
 									{/each}
+									{#if person.roles.includes('PROGRAMME_LEAD')}
+										{#if person.programmes.length > 0}
+											{#each person.programmes as programme (programme.code)}
+												<span class="badge badge-primary badge-sm">{programme.code}</span>
+											{/each}
+										{:else}
+											<!--
+												Ohne Studiengang darf eine Studiengangsleitung gar nichts festlegen —
+												nicht etwa alles. Das sieht man der Rollenliste nicht an, und genau
+												diese Verwechslung erzeugt die Supportfrage.
+											-->
+											<span
+												class="badge badge-warning badge-sm"
+												title="Ohne Zuordnung kann diese Person für keinen Studiengang Bedarf festlegen"
+											>
+												kein Studiengang
+											</span>
+										{/if}
+									{/if}
 								</div>
 							{/if}
 						</td>
@@ -172,6 +191,42 @@
 
 									<div class="flex flex-wrap gap-2">
 										<button type="submit" class="btn btn-sm btn-primary">Rollen speichern</button>
+									</div>
+								</form>
+
+								<form
+									method="POST"
+									action="?/programmes"
+									use:enhance
+									class="border-base-300 flex flex-col gap-3 border-t py-3"
+								>
+									<input type="hidden" name="id" value={person.id} />
+
+									<fieldset class="flex flex-col gap-1">
+										<legend class="mb-1 text-sm font-medium">Studiengänge dieser Leitung</legend>
+										<p class="text-base-content/80 mb-1 text-sm">
+											Für welche Studiengänge diese Person Bedarf festlegen darf. Ohne Zuordnung
+											darf sie es für keinen — die Rolle allein genügt nicht. Erst die Rolle
+											vergeben und speichern, dann hier zuordnen.
+										</p>
+										<div class="grid grid-cols-2 gap-1 sm:grid-cols-4">
+											{#each data.programmes.filter((p) => p.active) as programme (programme.code)}
+												<label class="flex items-center gap-2 text-sm">
+													<input
+														type="checkbox"
+														name="programmes"
+														value={programme.code}
+														checked={person.programmes.some((p) => p.code === programme.code)}
+														class="checkbox checkbox-sm"
+													/>
+													<span title={programme.title}>{programme.code}</span>
+												</label>
+											{/each}
+										</div>
+									</fieldset>
+
+									<div class="flex flex-wrap gap-2">
+										<button type="submit" class="btn btn-sm">Studiengänge speichern</button>
 									</div>
 								</form>
 

@@ -13,6 +13,14 @@ const PeopleDocument = graphql(`
 			mail
 			name
 			roles
+			programmes {
+				code
+			}
+		}
+		programmes {
+			code
+			title
+			active
 		}
 	}
 `);
@@ -31,6 +39,17 @@ const SetPersonRolesDocument = graphql(`
 		setPersonRoles(id: $id, roles: $roles, expiresAt: $expiresAt) {
 			id
 			roles
+		}
+	}
+`);
+
+const SetPersonProgrammesDocument = graphql(`
+	mutation SetPersonProgrammes($id: ID!, $programmes: [String!]!) {
+		setPersonProgrammes(id: $id, programmes: $programmes) {
+			id
+			programmes {
+				code
+			}
 		}
 	}
 `);
@@ -64,7 +83,15 @@ export const load: PageServerLoad = async ({ url }) => {
 			search: search === '' ? null : search,
 			includeInactive
 		});
-		return { people: data.people ?? [], search, includeInactive };
+		return {
+			people: data.people ?? [],
+			// Every programme, so the editor can offer them. Twenty rows, loaded with the list
+			// rather than on demand: a lead is assigned a programme in the same click path as
+			// being granted the role, and a second round trip in the middle of it would be one.
+			programmes: data.programmes,
+			search,
+			includeInactive
+		};
 	} catch (err) {
 		error(403, toRefusal(err).message);
 	}
@@ -123,6 +150,25 @@ export const actions: Actions = {
 		try {
 			await backendRequest(SetPersonRolesDocument, { id, roles, expiresAt });
 		} catch (error) {
+			return fail(400, { error: toRefusal(error).message });
+		}
+		return { saved: id };
+	},
+
+	programmes: async ({ request }) => {
+		const form = await request.formData();
+		const id = String(form.get('id') ?? '');
+
+		// The whole set, like the roles above and for the same reason: add/remove loses a race
+		// the moment two administrators have the same person open, and here the race would end
+		// with somebody leading a programme nobody assigned them.
+		const programmes = form.getAll('programmes').map(String);
+
+		try {
+			await backendRequest(SetPersonProgrammesDocument, { id, programmes });
+		} catch (error) {
+			// NOT_A_PROGRAMME_LEAD arrives here when somebody sets programmes before the role.
+			// Its sentence names the next step, which is worth more than a generic refusal.
 			return fail(400, { error: toRefusal(error).message });
 		}
 		return { saved: id };

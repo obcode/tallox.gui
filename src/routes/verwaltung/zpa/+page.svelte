@@ -11,6 +11,7 @@
 		lastSuccessful,
 		statusBadge
 	} from '$lib/zpa';
+	import { FINDING_LABELS, findingIsAlarming } from '$lib/catalogue';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -93,7 +94,106 @@
 				<span class="badge badge-success badge-sm">fertig</span>
 				Der Abgleich ist durchgelaufen. Seite neu laden für das Ergebnis.
 			</p>
+		{:else if form?.projected}
+			<p class="text-base-content/80 text-sm">
+				<span class="badge badge-success badge-sm">fertig</span>
+				Der Katalog wurde neu aufgebaut. Seite neu laden für den Bericht.
+			</p>
 		{/if}
+	</div>
+
+	<!--
+		Der Katalog ist das Zweite, was veralten kann, und steht deshalb neben den Läufen statt
+		hinter ihnen: ein erfolgreicher Abgleich mit gescheiterter Projektion sind frische
+		Rohdaten hinter einer wochenalten Modulliste.
+	-->
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-semibold">
+			<span aria-hidden="true">📚</span> Katalog-Projektion
+		</h2>
+		<p class="text-base-content/80 mb-3 text-sm">
+			Was aus den abgeglichenen Rohdaten geworden ist: Studiengänge, Prüfungsordnungen und Module,
+			wie Tallox mit ihnen plant. Läuft nach jedem vollständigen Abgleich automatisch.
+		</p>
+
+		{#if data.projection}
+			<p class="text-base-content/90 text-sm">
+				<span
+					class="badge badge-sm {data.projection.status === 'SUCCEEDED'
+						? 'badge-success'
+						: data.projection.status === 'FAILED'
+							? 'badge-error'
+							: 'badge-ghost'}"
+				>
+					{data.projection.status === 'SUCCEEDED'
+						? 'erfolgreich'
+						: data.projection.status === 'FAILED'
+							? 'gescheitert'
+							: 'läuft'}
+				</span>
+				{when(data.projection.finishedAt ?? data.projection.startedAt)} ·
+				{data.projection.programmesWritten} Studiengänge ·
+				{data.projection.modulesWritten} Module ·
+				{data.projection.offeringsWritten} Zuordnungen{#if data.projection.offeringsRemoved > 0},
+					{data.projection.offeringsRemoved} entfallen{/if}
+				{#if data.projection.runId === null}
+					· von Hand angestoßen
+				{/if}
+			</p>
+
+			{#if data.projection.error}
+				<p class="text-base-content/90 mt-1 text-sm">{data.projection.error}</p>
+			{/if}
+
+			{#if data.projection.notes.length > 0}
+				<div class="mt-3 overflow-x-auto">
+					<table class="table table-sm">
+						<thead>
+							<tr>
+								<th>Befund</th>
+								<th class="text-right">Anzahl</th>
+								<th>Beispiele</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each data.projection.notes as note (note.finding)}
+								<tr>
+									<td>
+										{FINDING_LABELS[note.finding]}
+										{#if findingIsAlarming(note.finding)}
+											<!--
+												Genau ein Befund ist eine Warnung, und das ist der Punkt der
+												Unterscheidung: die übrigen sind Entscheidungen, die die
+												Projektion bewusst trifft und meldet, damit niemand rätselt,
+												wo die Zeilen geblieben sind.
+											-->
+											<span class="badge badge-error badge-sm ml-1">nachsehen</span>
+										{/if}
+									</td>
+									<td class="text-right tabular-nums">{note.count}</td>
+									<td class="text-base-content/80 font-mono text-xs">
+										{note.sample.slice(0, 8).join(', ')}{note.sample.length > 8 ? ' …' : ''}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{:else}
+				<p class="text-base-content/80 mt-2 text-sm">Nichts zu berichten.</p>
+			{/if}
+		{:else}
+			<p class="text-base-content/80 text-sm">
+				Noch keine Projektion. Sie läuft nach dem nächsten vollständigen Abgleich, oder jetzt.
+			</p>
+		{/if}
+
+		<form method="POST" action="?/project" use:enhance class="mt-3 flex items-center gap-3">
+			<button class="btn btn-sm">Katalog neu aufbauen</button>
+			<span class="text-base-content/80 text-sm">
+				Nur aus dem, was schon zwischengespeichert ist — holt nichts vom ZPA.
+			</span>
+		</form>
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">

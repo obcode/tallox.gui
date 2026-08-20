@@ -23,7 +23,11 @@ const config: CodegenConfig = {
 				// meant to replace. On the wire `Time` is an RFC 3339 string; a `Date` would be a
 				// lie, because JSON has none.
 				scalars: {
-					Time: 'string'
+					Time: 'string',
+					// A calendar day, `2026-10-01`. A string for the same reason `Time` is —
+					// JSON has no date — and deliberately not JavaScript's `Date`, which would
+					// turn a day into an instant and let the reader's timezone move it.
+					Date: 'string'
 				}
 			}
 		}

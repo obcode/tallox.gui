@@ -42,6 +42,37 @@ const ImportChangesDocument = graphql(`
 	}
 `);
 
+const ProjectionsDocument = graphql(`
+	query ZpaCatalogueProjections {
+		zpaCatalogueProjections(limit: 10) {
+			id
+			runId
+			startedAt
+			finishedAt
+			status
+			programmesWritten
+			modulesWritten
+			offeringsWritten
+			offeringsRemoved
+			error
+			notes {
+				finding
+				count
+				sample
+			}
+		}
+	}
+`);
+
+const ProjectNowDocument = graphql(`
+	mutation ProjectZpaCatalogue {
+		projectZpaCatalogue {
+			id
+			status
+		}
+	}
+`);
+
 const SyncNowDocument = graphql(`
 	mutation SyncZpaNow {
 		syncZpaNow {
@@ -78,7 +109,19 @@ export const load: PageServerLoad = async ({ url }) => {
 			? (await backendRequest(ImportChangesDocument, { runId: selected.id })).zpaChanges
 			: [];
 
-		return { runs: zpaSyncRuns, selected, changes };
+		// The projection is a second thing that can be stale, and it is shown beside the runs
+		// rather than instead of them. A successful import with a failed projection is fresh
+		// payloads behind a week-old catalogue, and a page that showed only the first would say
+		// everything was fine.
+		const { zpaCatalogueProjections } = await backendRequest(ProjectionsDocument);
+
+		return {
+			runs: zpaSyncRuns,
+			selected,
+			changes,
+			projections: zpaCatalogueProjections,
+			projection: zpaCatalogueProjections[0] ?? null
+		};
 	} catch (err) {
 		// A refusal here means the caller is neither administration nor the dean's office. The
 		// root layout already turns "no account at all" into its own page, so passing this on
@@ -103,6 +146,23 @@ export const actions = {
 		try {
 			await backendRequest(SyncNowDocument);
 			return { started: true };
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+	},
+
+	/**
+	 * Rebuild the catalogue from what is already cached, without fetching.
+	 *
+	 * Separate from `sync` because they fail for different reasons and are wanted at different
+	 * times. This one reaches nothing outside the installation, so there is no interval and
+	 * nothing to hammer — it exists because the rules of the projection change, and a changed
+	 * rule has to be applicable to data already held.
+	 */
+	project: async () => {
+		try {
+			await backendRequest(ProjectNowDocument);
+			return { projected: true };
 		} catch (err) {
 			return fail(400, toRefusal(err));
 		}
