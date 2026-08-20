@@ -8,7 +8,7 @@ import type { Phase } from '$lib/gql/__generated__/graphql';
  * lives in exactly two places — the doc comment on `policy.Phase` and here.
  *
  * Free of Svelte and browser APIs, so the display logic can be checked in vitest. This is
- * precisely where `2026W` turns into "Wintersemester 2026" by accident, and in markup that
+ * precisely where `2026-WS` turns into "Wintersemester 2026" by accident, and in markup that
  * could only be shown by a browser test.
  */
 
@@ -32,28 +32,33 @@ export const PHASE_HINTS: Record<Phase, string> = {
 /**
  * The semester name as the faculty says it.
  *
- * `2027S` becomes "Sommersemester 2027", `2026W` becomes "Wintersemester 2026/27". The year in
- * the code is the year the semester *starts* in, so for a winter semester it is the first of
- * the two — and that is exactly where a naive formatter prints "Wintersemester 2026" and
- * nobody notices until somebody searches for the wrong semester.
+ * `2027-SS` becomes "Sommersemester 2027", `2026-WS` becomes "Wintersemester 2026/27". The
+ * year in the code is the year the semester *starts* in, so for a winter semester it is the
+ * first of the two — and that is exactly where a naive formatter prints "Wintersemester 2026"
+ * and nobody notices until somebody searches for the wrong semester.
  *
  * An unrecognised format is passed through rather than guessed at. The backend enforces the
  * shape with a CHECK constraint, so anything else here means the assumption no longer holds,
  * and the raw code is the more honest thing to show.
  */
 export function semesterName(code: string): string {
-	const match = /^(\d{4})([SW])$/.exec(code);
+	const match = /^(\d{4})-(SS|WS)$/.exec(code);
 	if (!match) return code;
 
 	const year = Number(match[1]);
-	if (match[2] === 'S') return `Sommersemester ${year}`;
+	if (match[2] === 'SS') return `Sommersemester ${year}`;
 
 	// Two digits, zero-padded: 2026/27, but 2099/00.
 	const next = String((year + 1) % 100).padStart(2, '0');
 	return `Wintersemester ${year}/${next}`;
 }
 
-/** Short form for narrow columns: "SS 2027" and "WS 2026/27". */
+/**
+ * Short form for narrow columns: "SS 2027" and "WS 2026/27".
+ *
+ * Close to the code itself now that the code carries the term — deliberately still not the
+ * code: the two-year span of a winter semester is the whole point of spelling it out.
+ */
 export function semesterShortName(code: string): string {
 	const full = semesterName(code);
 	return full.replace('Sommersemester ', 'SS ').replace('Wintersemester ', 'WS ');

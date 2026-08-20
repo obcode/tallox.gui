@@ -13,10 +13,10 @@ import { PERSONAS, gotoRendered, test } from './fixtures';
 
 /** A code per run: semesters are never deleted, so a fixed one would fail on SEMESTER_EXISTS. */
 function freshCode(): string {
-	// Four digits and S or W, and far enough out that it cannot collide with a real semester
-	// somebody entered. The year cycles through 2100..2199, the term alternates.
+	// Four digits, a hyphen and the term, and far enough out that it cannot collide with a real
+	// semester somebody entered. The year cycles through 2100..2199, the term alternates.
 	const n = Date.now() % 100;
-	return `21${String(n).padStart(2, '0')}${n % 2 === 0 ? 'S' : 'W'}`;
+	return `21${String(n).padStart(2, '0')}-${n % 2 === 0 ? 'SS' : 'WS'}`;
 }
 
 test.describe('semesters and phases', () => {
