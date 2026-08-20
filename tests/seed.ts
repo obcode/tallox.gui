@@ -94,6 +94,16 @@ export const CATALOGUE = {
 	teacher: '0e2e0000-0000-4000-8000-000000000021'
 } as const;
 
+/**
+ * The semester the demand tests plan in.
+ *
+ * Far enough out that nobody's real planning is in it, and recorded by the seed so that it is
+ * in the picker before anything has been declared. The list the backend offers is the calendar
+ * window *plus* every semester somebody has decided something about — without the row, the
+ * first test could not choose the semester it is about to plan.
+ */
+export const DEMAND = { semester: '2029-WS' } as const;
+
 const PROGRAMME_ID = '0e2e0000-0000-4000-8000-000000000000';
 
 export function catalogueStatements(): string[] {
@@ -161,6 +171,13 @@ export function catalogueStatements(): string[] {
 		 VALUES ('${CATALOGUE.split}', 'LECTURE', 2, 0), ('${CATALOGUE.split}', 'LAB', 2, 1)
 		 ON CONFLICT (module_id, position) DO NOTHING;`,
 
+		`INSERT INTO semester (code) VALUES (${quote(DEMAND.semester)}) ON CONFLICT (code) DO NOTHING;`,
+
+		// Everything the demand tests declared last time. Its parts go with it, and the run
+		// starts from the same state as the first one did — the alternative is a suite that
+		// passes once and then asserts about leftovers.
+		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
+
 		// Vier leads it. Without this she holds PROGRAMME_LEAD and may plan nothing — which is
 		// the correct behaviour and would make every write test assert the wrong refusal.
 		`INSERT INTO person_programme_scope (person_id, role, programme_id)
@@ -168,6 +185,21 @@ export function catalogueStatements(): string[] {
 		  WHERE p.mail = 'prof.vier@example.org' AND pr.code = ${p}
 		 ON CONFLICT DO NOTHING;`
 	];
+}
+
+/**
+ * Everything the demand tests declared, removed.
+ *
+ * Run before that spec rather than only in the global setup, because a retry re-runs the whole
+ * serial group without re-seeding: the second attempt would then start against the instances the
+ * first one declared, and "the demand starts empty" would fail for a reason that has nothing to
+ * do with what it asserts. A retry that fails differently from the original is worse than no
+ * retry at all.
+ *
+ * The parts go with the instances — `instance_part` is ON DELETE CASCADE.
+ */
+export function demandResetSql(): string {
+	return `DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`;
 }
 
 /** The complete script, exactly as it goes to psql. */

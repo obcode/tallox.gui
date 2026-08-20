@@ -69,7 +69,30 @@ const PASS_THROUGH = new Set([
 	'COMPONENTS_INVALID',
 	'UNKNOWN_PROGRAMME',
 	'NOT_A_PROGRAMME_LEAD',
-	'SPO_ID_INVALID'
+	'SPO_ID_INVALID',
+	// The demand. Not confidential either — it is what the wish phase is about — and every
+	// sentence here is the useful answer rather than a fact about the database.
+	//
+	// Two of them are the reason the codes are separate at all. MODULE_NOT_DECOMPOSED names its
+	// own repair, which is entering the module's split. INSTANCE_IN_USE deliberately names
+	// nothing: "this instance has three wishes" would be the confidential fact with the names
+	// taken out, so the backend's sentence says only that something hangs off it — and passing
+	// that sentence through is safe precisely because it says no more.
+	'DEMAND_PHASE_CLOSED',
+	'MODULE_NOT_DECOMPOSED',
+	'TRACK_TAKEN',
+	'TRACK_INVALID',
+	'PROGRAMME_SEMESTER_INVALID',
+	'INSTANCE_IN_USE',
+	'INSTANCE_NOT_FOUND',
+	'PART_NOT_FOUND',
+	'PART_INVALID',
+	'TOO_MANY_PARTS',
+	'NO_SIBLING_TRACKS',
+	'NOT_SHARED_ACROSS_TRACKS',
+	'PROGRAMME_NOT_FOUND',
+	'SAME_SEMESTER',
+	'SEMESTER_OUT_OF_RANGE'
 ]);
 
 /** What is shown when the error is none of the known ones. */

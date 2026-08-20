@@ -16,6 +16,18 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
 type Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": typeof types.BuildInfoDocument,
     "\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": typeof types.SessionDocument,
+    "\n\tquery Demand($semester: String!, $programme: String!, $withDemand: Boolean!) {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t\tme {\n\t\t\tprogrammes {\n\t\t\t\tcode\n\t\t\t\ttitle\n\t\t\t}\n\t\t}\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tactive\n\t\t}\n\t\tsemester(code: $semester) @include(if: $withDemand) {\n\t\t\tcode\n\t\t\tphase\n\t\t\twishesPublishedAt\n\t\t}\n\t\tcourseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {\n\t\t\tid\n\t\t\ttrack\n\t\t\tprogrammeSemester\n\t\t\tteachingHours\n\t\t\tmodule {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tzpaId\n\t\t\t\tcontactHoursPerWeek\n\t\t\t\tcomponentHours\n\t\t\t\tdutyStatus(programme: $programme)\n\t\t\t\tcomponents {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t\tparts {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t\tsharedAcrossTracks\n\t\t\t}\n\t\t\tborrowedParts {\n\t\t\t\tfromTrack\n\t\t\t\tpart {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n": typeof types.DemandDocument,
+    "\n\tquery DeclarableModules($programme: String!) {\n\t\tdeclarable: modules(filter: { programme: $programme }) {\n\t\t\tid\n\t\t\tname\n\t\t\tzpaId\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t}\n\t\t\tdutyStatus(programme: $programme)\n\t\t}\n\t}\n": typeof types.DeclarableModulesDocument,
+    "\n\tmutation DeclareCourseInstance($input: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $input) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.DeclareCourseInstanceDocument,
+    "\n\tmutation DuplicateCourseInstance($id: ID!, $track: String!, $sourceTrack: String) {\n\t\tduplicateCourseInstance(id: $id, track: $track, sourceTrack: $sourceTrack) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.DuplicateCourseInstanceDocument,
+    "\n\tmutation ChangeCourseInstance($id: ID!, $track: String!, $programmeSemester: Int) {\n\t\tchangeCourseInstance(id: $id, track: $track, programmeSemester: $programmeSemester) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.ChangeCourseInstanceDocument,
+    "\n\tmutation WithdrawCourseInstance($id: ID!) {\n\t\twithdrawCourseInstance(id: $id)\n\t}\n": typeof types.WithdrawCourseInstanceDocument,
+    "\n\tmutation AddInstancePart($instanceId: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\taddInstancePart(instanceId: $instanceId, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.AddInstancePartDocument,
+    "\n\tmutation ChangeInstancePart($id: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\tchangeInstancePart(id: $id, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.ChangeInstancePartDocument,
+    "\n\tmutation RemoveInstancePart($id: ID!) {\n\t\tremoveInstancePart(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.RemoveInstancePartDocument,
+    "\n\tmutation ShareInstancePartAcrossTracks($id: ID!) {\n\t\tshareInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.ShareInstancePartAcrossTracksDocument,
+    "\n\tmutation SplitInstancePartAcrossTracks($id: ID!) {\n\t\tsplitInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.SplitInstancePartAcrossTracksDocument,
+    "\n\tmutation CopyDemandFromSemester($from: String!, $to: String!, $programme: String!) {\n\t\tcopyDemandFromSemester(from: $from, to: $to, programme: $programme) {\n\t\t\tcreated\n\t\t\tskipped\n\t\t\tpartsCreated\n\t\t}\n\t}\n": typeof types.CopyDemandFromSemesterDocument,
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t\tscopes\n\t\t}\n\t}\n": typeof types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken(\n\t\t$description: String!\n\t\t$expiresInDays: Int\n\t\t$scopes: [ScopeGrantInput!]\n\t) {\n\t\tcreatePersonalAccessToken(\n\t\t\tdescription: $description\n\t\t\texpiresInDays: $expiresInDays\n\t\t\tscopes: $scopes\n\t\t) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t\tscopes\n\t\t\t}\n\t\t}\n\t}\n": typeof types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.RevokePersonalAccessTokenDocument,
@@ -40,6 +52,18 @@ type Documents = {
 const documents: Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": types.BuildInfoDocument,
     "\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": types.SessionDocument,
+    "\n\tquery Demand($semester: String!, $programme: String!, $withDemand: Boolean!) {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t\tme {\n\t\t\tprogrammes {\n\t\t\t\tcode\n\t\t\t\ttitle\n\t\t\t}\n\t\t}\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tactive\n\t\t}\n\t\tsemester(code: $semester) @include(if: $withDemand) {\n\t\t\tcode\n\t\t\tphase\n\t\t\twishesPublishedAt\n\t\t}\n\t\tcourseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {\n\t\t\tid\n\t\t\ttrack\n\t\t\tprogrammeSemester\n\t\t\tteachingHours\n\t\t\tmodule {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tzpaId\n\t\t\t\tcontactHoursPerWeek\n\t\t\t\tcomponentHours\n\t\t\t\tdutyStatus(programme: $programme)\n\t\t\t\tcomponents {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t\tparts {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t\tsharedAcrossTracks\n\t\t\t}\n\t\t\tborrowedParts {\n\t\t\t\tfromTrack\n\t\t\t\tpart {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n": types.DemandDocument,
+    "\n\tquery DeclarableModules($programme: String!) {\n\t\tdeclarable: modules(filter: { programme: $programme }) {\n\t\t\tid\n\t\t\tname\n\t\t\tzpaId\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t}\n\t\t\tdutyStatus(programme: $programme)\n\t\t}\n\t}\n": types.DeclarableModulesDocument,
+    "\n\tmutation DeclareCourseInstance($input: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $input) {\n\t\t\tid\n\t\t}\n\t}\n": types.DeclareCourseInstanceDocument,
+    "\n\tmutation DuplicateCourseInstance($id: ID!, $track: String!, $sourceTrack: String) {\n\t\tduplicateCourseInstance(id: $id, track: $track, sourceTrack: $sourceTrack) {\n\t\t\tid\n\t\t}\n\t}\n": types.DuplicateCourseInstanceDocument,
+    "\n\tmutation ChangeCourseInstance($id: ID!, $track: String!, $programmeSemester: Int) {\n\t\tchangeCourseInstance(id: $id, track: $track, programmeSemester: $programmeSemester) {\n\t\t\tid\n\t\t}\n\t}\n": types.ChangeCourseInstanceDocument,
+    "\n\tmutation WithdrawCourseInstance($id: ID!) {\n\t\twithdrawCourseInstance(id: $id)\n\t}\n": types.WithdrawCourseInstanceDocument,
+    "\n\tmutation AddInstancePart($instanceId: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\taddInstancePart(instanceId: $instanceId, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n": types.AddInstancePartDocument,
+    "\n\tmutation ChangeInstancePart($id: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\tchangeInstancePart(id: $id, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n": types.ChangeInstancePartDocument,
+    "\n\tmutation RemoveInstancePart($id: ID!) {\n\t\tremoveInstancePart(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.RemoveInstancePartDocument,
+    "\n\tmutation ShareInstancePartAcrossTracks($id: ID!) {\n\t\tshareInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.ShareInstancePartAcrossTracksDocument,
+    "\n\tmutation SplitInstancePartAcrossTracks($id: ID!) {\n\t\tsplitInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.SplitInstancePartAcrossTracksDocument,
+    "\n\tmutation CopyDemandFromSemester($from: String!, $to: String!, $programme: String!) {\n\t\tcopyDemandFromSemester(from: $from, to: $to, programme: $programme) {\n\t\t\tcreated\n\t\t\tskipped\n\t\t\tpartsCreated\n\t\t}\n\t}\n": types.CopyDemandFromSemesterDocument,
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t\tscopes\n\t\t}\n\t}\n": types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken(\n\t\t$description: String!\n\t\t$expiresInDays: Int\n\t\t$scopes: [ScopeGrantInput!]\n\t) {\n\t\tcreatePersonalAccessToken(\n\t\t\tdescription: $description\n\t\t\texpiresInDays: $expiresInDays\n\t\t\tscopes: $scopes\n\t\t) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t\tscopes\n\t\t\t}\n\t\t}\n\t}\n": types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.RevokePersonalAccessTokenDocument,
@@ -84,6 +108,54 @@ export function graphql(source: "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tv
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery Demand($semester: String!, $programme: String!, $withDemand: Boolean!) {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t\tme {\n\t\t\tprogrammes {\n\t\t\t\tcode\n\t\t\t\ttitle\n\t\t\t}\n\t\t}\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tactive\n\t\t}\n\t\tsemester(code: $semester) @include(if: $withDemand) {\n\t\t\tcode\n\t\t\tphase\n\t\t\twishesPublishedAt\n\t\t}\n\t\tcourseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {\n\t\t\tid\n\t\t\ttrack\n\t\t\tprogrammeSemester\n\t\t\tteachingHours\n\t\t\tmodule {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tzpaId\n\t\t\t\tcontactHoursPerWeek\n\t\t\t\tcomponentHours\n\t\t\t\tdutyStatus(programme: $programme)\n\t\t\t\tcomponents {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t\tparts {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t\tsharedAcrossTracks\n\t\t\t}\n\t\t\tborrowedParts {\n\t\t\t\tfromTrack\n\t\t\t\tpart {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery Demand($semester: String!, $programme: String!, $withDemand: Boolean!) {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t\tme {\n\t\t\tprogrammes {\n\t\t\t\tcode\n\t\t\t\ttitle\n\t\t\t}\n\t\t}\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tactive\n\t\t}\n\t\tsemester(code: $semester) @include(if: $withDemand) {\n\t\t\tcode\n\t\t\tphase\n\t\t\twishesPublishedAt\n\t\t}\n\t\tcourseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {\n\t\t\tid\n\t\t\ttrack\n\t\t\tprogrammeSemester\n\t\t\tteachingHours\n\t\t\tmodule {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tzpaId\n\t\t\t\tcontactHoursPerWeek\n\t\t\t\tcomponentHours\n\t\t\t\tdutyStatus(programme: $programme)\n\t\t\t\tcomponents {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t\tparts {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t\tsharedAcrossTracks\n\t\t\t}\n\t\t\tborrowedParts {\n\t\t\t\tfromTrack\n\t\t\t\tpart {\n\t\t\t\t\tid\n\t\t\t\t\tkind\n\t\t\t\t\tteachingHours\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery DeclarableModules($programme: String!) {\n\t\tdeclarable: modules(filter: { programme: $programme }) {\n\t\t\tid\n\t\t\tname\n\t\t\tzpaId\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t}\n\t\t\tdutyStatus(programme: $programme)\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery DeclarableModules($programme: String!) {\n\t\tdeclarable: modules(filter: { programme: $programme }) {\n\t\t\tid\n\t\t\tname\n\t\t\tzpaId\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t}\n\t\t\tdutyStatus(programme: $programme)\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation DeclareCourseInstance($input: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $input) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation DeclareCourseInstance($input: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $input) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation DuplicateCourseInstance($id: ID!, $track: String!, $sourceTrack: String) {\n\t\tduplicateCourseInstance(id: $id, track: $track, sourceTrack: $sourceTrack) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation DuplicateCourseInstance($id: ID!, $track: String!, $sourceTrack: String) {\n\t\tduplicateCourseInstance(id: $id, track: $track, sourceTrack: $sourceTrack) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation ChangeCourseInstance($id: ID!, $track: String!, $programmeSemester: Int) {\n\t\tchangeCourseInstance(id: $id, track: $track, programmeSemester: $programmeSemester) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation ChangeCourseInstance($id: ID!, $track: String!, $programmeSemester: Int) {\n\t\tchangeCourseInstance(id: $id, track: $track, programmeSemester: $programmeSemester) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation WithdrawCourseInstance($id: ID!) {\n\t\twithdrawCourseInstance(id: $id)\n\t}\n"): (typeof documents)["\n\tmutation WithdrawCourseInstance($id: ID!) {\n\t\twithdrawCourseInstance(id: $id)\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation AddInstancePart($instanceId: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\taddInstancePart(instanceId: $instanceId, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation AddInstancePart($instanceId: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\taddInstancePart(instanceId: $instanceId, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation ChangeInstancePart($id: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\tchangeInstancePart(id: $id, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation ChangeInstancePart($id: ID!, $kind: InstancePartKind!, $teachingHours: Float) {\n\t\tchangeInstancePart(id: $id, kind: $kind, teachingHours: $teachingHours) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation RemoveInstancePart($id: ID!) {\n\t\tremoveInstancePart(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation RemoveInstancePart($id: ID!) {\n\t\tremoveInstancePart(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation ShareInstancePartAcrossTracks($id: ID!) {\n\t\tshareInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation ShareInstancePartAcrossTracks($id: ID!) {\n\t\tshareInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation SplitInstancePartAcrossTracks($id: ID!) {\n\t\tsplitInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation SplitInstancePartAcrossTracks($id: ID!) {\n\t\tsplitInstancePartAcrossTracks(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation CopyDemandFromSemester($from: String!, $to: String!, $programme: String!) {\n\t\tcopyDemandFromSemester(from: $from, to: $to, programme: $programme) {\n\t\t\tcreated\n\t\t\tskipped\n\t\t\tpartsCreated\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation CopyDemandFromSemester($from: String!, $to: String!, $programme: String!) {\n\t\tcopyDemandFromSemester(from: $from, to: $to, programme: $programme) {\n\t\t\tcreated\n\t\t\tskipped\n\t\t\tpartsCreated\n\t\t}\n\t}\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
