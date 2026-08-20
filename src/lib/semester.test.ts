@@ -32,24 +32,27 @@ describe('PHASE_LABELS', () => {
 
 describe('semesterName', () => {
 	it('spells out a summer semester', () => {
-		expect(semesterName('2027S')).toBe('Sommersemester 2027');
+		expect(semesterName('2027-SS')).toBe('Sommersemester 2027');
 	});
 
 	it('spells out a winter semester across both years', () => {
 		// The interesting case, and the one a naive formatter gets wrong: the year in the code is
-		// the one the semester *starts* in, so 2026W runs into 2027.
-		expect(semesterName('2026W')).toBe('Wintersemester 2026/27');
+		// the one the semester *starts* in, so 2026-WS runs into 2027.
+		expect(semesterName('2026-WS')).toBe('Wintersemester 2026/27');
 	});
 
 	it('pads the second year of a winter semester across a century', () => {
-		expect(semesterName('2099W')).toBe('Wintersemester 2099/00');
-		expect(semesterName('2009W')).toBe('Wintersemester 2009/10');
+		expect(semesterName('2099-WS')).toBe('Wintersemester 2099/00');
+		expect(semesterName('2009-WS')).toBe('Wintersemester 2009/10');
 	});
 
 	it('passes an unrecognised code through rather than guessing', () => {
 		// The backend enforces the format with a CHECK constraint, so anything else here means
 		// the assumption no longer holds — and then the raw code is the honest thing to show.
-		for (const code of ['SS2027', '2027', '27S', '2027X', '']) {
+		// '2026W' is in the list because it is what this format used to be: the backend rewrote
+		// its rows in migration 7, and a code in that shape reaching the page again means
+		// something is serving stale data — showing it raw says so.
+		for (const code of ['2026W', 'WS 2026', 'SS2027', '2027', '27S', '2027X', '']) {
 			expect(semesterName(code), code).toBe(code);
 		}
 	});
@@ -57,8 +60,8 @@ describe('semesterName', () => {
 
 describe('semesterShortName', () => {
 	it('abbreviates both terms', () => {
-		expect(semesterShortName('2027S')).toBe('SS 2027');
-		expect(semesterShortName('2026W')).toBe('WS 2026/27');
+		expect(semesterShortName('2027-SS')).toBe('SS 2027');
+		expect(semesterShortName('2026-WS')).toBe('WS 2026/27');
 	});
 
 	it('leaves an unrecognised code alone', () => {
@@ -104,7 +107,7 @@ describe('phaseButtonLabel', () => {
 });
 
 describe('wishesAreVisible', () => {
-	const semester = { code: '2027S', phase: 'WISHES' as Phase };
+	const semester = { code: '2027-SS', phase: 'WISHES' as Phase };
 
 	it('is false while the timestamp is missing', () => {
 		expect(wishesAreVisible(semester)).toBe(false);
@@ -121,9 +124,9 @@ describe('wishesAreVisible', () => {
 		// display that inferred one from the other would be wrong in whichever order the faculty
 		// needs first.
 		for (const phase of PHASE_ORDER) {
-			expect(wishesAreVisible({ code: '2027S', phase }), phase).toBe(false);
+			expect(wishesAreVisible({ code: '2027-SS', phase }), phase).toBe(false);
 			expect(
-				wishesAreVisible({ code: '2027S', phase, wishesPublishedAt: '2026-10-27T09:00:00Z' }),
+				wishesAreVisible({ code: '2027-SS', phase, wishesPublishedAt: '2026-10-27T09:00:00Z' }),
 				phase
 			).toBe(true);
 		}
@@ -135,9 +138,9 @@ describe('mayStillPublish', () => {
 		// Cosmetic only — the backend is idempotent, so a second click is not an error. The
 		// button disappears anyway, because a button that no longer does anything looks broken.
 		for (const phase of PHASE_ORDER) {
-			expect(mayStillPublish({ code: '2027S', phase })).toBe(true);
+			expect(mayStillPublish({ code: '2027-SS', phase })).toBe(true);
 			expect(
-				mayStillPublish({ code: '2027S', phase, wishesPublishedAt: '2026-10-27T09:00:00Z' })
+				mayStillPublish({ code: '2027-SS', phase, wishesPublishedAt: '2026-10-27T09:00:00Z' })
 			).toBe(false);
 		}
 	});

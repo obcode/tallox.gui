@@ -46,9 +46,9 @@
 				<span aria-hidden="true">➕</span> Semester anlegen
 			</h2>
 			<p class="text-base-content/80 mb-3 text-sm">
-				Vier Ziffern und S oder W — das Jahr ist das, in dem das Semester <em>beginnt</em>. Das
-				Wintersemester 2026/27 heißt also <code>2026W</code>. Ein neues Semester startet in der
-				Bedarfsplanung.
+				Vier Ziffern, Bindestrich, <code>SS</code> oder <code>WS</code> — das Jahr ist das, in dem
+				das Semester <em>beginnt</em>. Das Wintersemester 2026/27 heißt also <code>2026-WS</code>.
+				Ein neues Semester startet in der Bedarfsplanung.
 			</p>
 
 			<form method="POST" action="?/create" use:enhance class="flex flex-wrap items-end gap-3">
@@ -59,7 +59,7 @@
 						type="text"
 						required
 						autocomplete="off"
-						placeholder="2027S"
+						placeholder="2026-WS"
 						class="input input-bordered input-sm w-32 font-mono"
 					/>
 				</label>
