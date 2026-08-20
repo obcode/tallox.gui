@@ -12,6 +12,9 @@ test.describe('the module catalogue', () => {
 
 		await expect(page.getByRole('heading', { name: 'Modulkatalog' })).toBeVisible();
 		await expect(page.getByRole('link', { name: 'E2E Modul mit Aufteilung' })).toBeVisible();
+		// The responsible person is a column of the list, not only of the detail page: it is
+		// what somebody scans for when they are looking for a module's owner.
+		await expect(page.getByRole('cell', { name: 'Zwei, Prof.' })).toBeVisible();
 
 		await checkA11y(page);
 	});
@@ -74,6 +77,33 @@ test.describe('the module catalogue', () => {
 });
 
 test.describe('one module', () => {
+	// The link the fifth ZPA endpoint exists for. A teacher is imported master data and not a
+	// user of this installation, and the page says which of the two this person is — the only
+	// place that distinction becomes visible.
+	test('names the person responsible for it, and whether they can sign in', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/module/${CATALOGUE.split}`);
+
+		await expect(page.getByRole('heading', { name: 'Modulverantwortung' })).toBeVisible();
+		await expect(page.getByText('Prof. Dr. Zwei')).toBeVisible();
+		await expect(page.getByText('Professur')).toBeVisible();
+		// Zwei is in the cast and therefore has a person row; a teacher who is not would read
+		// the other way.
+		await expect(page.getByText('hat einen Tallox-Zugang')).toBeVisible();
+	});
+
+	// About one real module in thirty names nobody Tallox can resolve. The page says why rather
+	// than leaving a blank, which would read as a fault in the page.
+	test('says so when the catalogue names nobody it can resolve', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/module/${CATALOGUE.unsplit}`);
+
+		await expect(page.getByRole('heading', { name: 'Modulverantwortung' })).toBeVisible();
+		await expect(page.getByText(/nennt niemanden/)).toBeVisible();
+	});
+
 	test('shows where it counts and what it is split into', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, `/module/${CATALOGUE.split}`);

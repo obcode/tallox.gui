@@ -30,6 +30,10 @@ const CatalogueDocument = graphql(`
 			homeProgramme {
 				code
 			}
+			responsible {
+				id
+				sortName
+			}
 			components {
 				id
 				kind

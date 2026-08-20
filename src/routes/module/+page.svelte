@@ -150,6 +150,7 @@
 					{#if data.filter.programme !== ''}
 						<th>Art</th>
 					{/if}
+					<th>Verantwortlich</th>
 					<th>Turnus</th>
 					<th>Lehrform</th>
 					<th>SWS-Aufteilung</th>
@@ -188,6 +189,19 @@
 								{/if}
 							</td>
 						{/if}
+						<td class="text-base-content/90">
+							{#if module.responsible}
+								{module.responsible.sortName}
+							{:else}
+								<!--
+									Etwa jedes dreißigste Modul. Zwei Gründe, die hier nicht
+									unterschieden werden: das ZPA nennt einen Platzhalter statt einer
+									Person, oder eine Adresse, die nicht in der Lehrendenliste steht.
+									Beides steht auf der Import-Seite.
+								-->
+								<span class="text-base-content/80">—</span>
+							{/if}
+						</td>
 						<td class="text-base-content/90">{FREQUENCY_LABELS[module.frequency]}</td>
 						<td class="text-base-content/90">
 							{COURSE_TYPE_LABELS[module.courseType]}
@@ -213,7 +227,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="6" class="text-base-content/80 text-sm">
+						<td colspan="7" class="text-base-content/80 text-sm">
 							Kein Modul passt zu diesen Filtern. Ist der Katalog schon importiert worden?
 						</td>
 					</tr>

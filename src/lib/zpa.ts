@@ -31,7 +31,8 @@ export const KIND_LABELS: Record<ZpaObjectKind, string> = {
 	MODULE: 'Module',
 	BASKET: 'Kataloge',
 	MSBA: 'Zuordnungen',
-	SPO: 'SPOs'
+	SPO: 'SPOs',
+	TEACHER: 'Lehrende'
 };
 
 export const CHANGE_LABELS: Record<ZpaChangeType, string> = {
