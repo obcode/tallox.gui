@@ -159,7 +159,10 @@ export const FINDING_LABELS: Record<ZpaProjectionFinding, string> = {
 	FREQUENCY_UNMAPPED: 'Unbekannte Angaben zum Turnus',
 	COURSE_TYPE_UNMAPPED: 'Unbekannte Angaben zur Lehrform',
 	MIN_SEMESTER_CONFLICT: 'Widersprüchliche Angaben zum frühesten Fachsemester',
-	DUTY_CONFLICT: 'Widersprüchliche Angaben zu Pflicht und Wahlpflicht'
+	DUTY_CONFLICT: 'Widersprüchliche Angaben zu Pflicht und Wahlpflicht',
+	MODULE_RESPONSIBLE_UNKNOWN:
+		'Module, deren Verantwortliche das ZPA nicht in der Lehrendenliste führt',
+	TEACHER_WITHOUT_MAIL: 'Lehrende ohne Mailadresse — übernommen, aber nie verknüpfbar'
 };
 
 /**
@@ -173,6 +176,26 @@ export const FINDING_LABELS: Record<ZpaProjectionFinding, string> = {
  */
 export function findingIsAlarming(finding: ZpaProjectionFinding): boolean {
 	return finding === 'DUTY_CONFLICT';
+}
+
+/**
+ * How somebody who teaches is described, for the line under their name.
+ *
+ * The four flags are not exclusive — somebody can be staff and hold an honorary professorship —
+ * so this reads them all and joins what it finds rather than picking the first.
+ */
+export function teacherRole(teacher: {
+	isProfessor: boolean;
+	isLecturerOnContract: boolean;
+	isHonoraryProfessor: boolean;
+	isStaff: boolean;
+}): string {
+	const parts: string[] = [];
+	if (teacher.isProfessor) parts.push('Professur');
+	if (teacher.isHonoraryProfessor) parts.push('Honorarprofessur');
+	if (teacher.isLecturerOnContract) parts.push('Lehrauftrag');
+	if (teacher.isStaff) parts.push('Mitarbeit');
+	return parts.join(', ');
 }
 
 /**

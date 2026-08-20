@@ -5,6 +5,7 @@
 		ALL_PART_KINDS,
 		COURSE_TYPE_LABELS,
 		FREQUENCY_LABELS,
+		teacherRole,
 		PART_KIND_LABELS,
 		componentMismatch,
 		formatHours,
@@ -95,6 +96,53 @@
 			</p>
 		</div>
 	{/if}
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">👤</span> Modulverantwortung
+		</h2>
+		{#if data.module.responsible}
+			{@const person = data.module.responsible}
+			<p class="text-base-content/90 text-sm">
+				<span class="font-medium">{person.name}</span>
+				{#if teacherRole(person)}
+					<span class="text-base-content/80"> — {teacherRole(person)}</span>
+				{/if}
+				{#if person.faculty}
+					<span class="text-base-content/80"> · {person.faculty}</span>
+				{/if}
+				{#if person.lastSemester}
+					<span class="text-base-content/80"> · zuletzt {person.lastSemester}</span>
+				{/if}
+			</p>
+			{#if person.mail}
+				<p class="text-base-content/80 font-mono text-xs">{person.mail}</p>
+			{/if}
+			<p class="text-base-content/80 mt-2 text-sm">
+				{#if !person.active}
+					<span class="badge badge-ghost badge-sm align-middle">lehrt laut ZPA nicht mehr</span>
+				{/if}
+				{#if person.isUser}
+					<span class="badge badge-ghost badge-sm align-middle">hat einen Tallox-Zugang</span>
+				{:else}
+					<!--
+						Aus dem ZPA übernommen zu sein heißt nicht, Tallox benutzen zu dürfen — wer
+						sich anmelden darf, steht in der Personenverwaltung. Das hier ist die einzige
+						Stelle, an der die Unterscheidung sichtbar wird, und sie ist keine
+						Aufforderung: die meisten Lehrenden brauchen keinen Zugang, solange sie keine
+						Wünsche eintragen.
+					-->
+					<span class="text-base-content/80">Kein Tallox-Zugang.</span>
+				{/if}
+			</p>
+		{:else}
+			<p class="text-base-content/80 text-sm">
+				Das ZPA nennt niemanden, den Tallox zuordnen kann — entweder einen Platzhalter statt einer
+				Person, oder eine Adresse, die nicht in der Lehrendenliste steht. Beides steht im Bericht
+				auf der ZPA-Seite.
+			</p>
+		{/if}
+	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="mb-2 flex items-center gap-2 font-medium">

@@ -30,6 +30,20 @@ const ModuleDocument = graphql(`
 				code
 				title
 			}
+			responsible {
+				id
+				name
+				sortName
+				mail
+				isProfessor
+				isLecturerOnContract
+				isHonoraryProfessor
+				isStaff
+				active
+				faculty
+				lastSemester
+				isUser
+			}
 			components {
 				id
 				kind

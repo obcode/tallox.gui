@@ -89,7 +89,9 @@ export const CATALOGUE = {
 	 * read as "has no split" passes alone and fails in a full run — which is the worst way for a
 	 * suite to fail, since the order that produced it is not in the report.
 	 */
-	writable: '0e2e0000-0000-4000-8000-000000000014'
+	writable: '0e2e0000-0000-4000-8000-000000000014',
+	/** The person the split module names as responsible. */
+	teacher: '0e2e0000-0000-4000-8000-000000000021'
 } as const;
 
 const PROGRAMME_ID = '0e2e0000-0000-4000-8000-000000000000';
@@ -139,6 +141,21 @@ export function catalogueStatements(): string[] {
 		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1),
 		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1)
 		 ON CONFLICT (module_id, spo_id) DO NOTHING;`,
+
+		// Somebody who teaches, and the module that names them.
+		//
+		// A teacher is imported master data and not a user: this row grants nothing, and the
+		// second module deliberately names nobody — about one real module in thirty does, either
+		// because the source writes a placeholder or because it writes an address that is not in
+		// the list.
+		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor, active, faculty,
+		                      last_semester)
+		 VALUES ('${CATALOGUE.teacher}', 'prof.zwei@example.org', 'Prof. Dr. Zwei', 'Zwei, Prof.',
+		         true, true, 'FK07', '2026-WS')
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`UPDATE module SET responsible_teacher_id = '${CATALOGUE.teacher}'
+		  WHERE id = '${CATALOGUE.split}';`,
 
 		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
 		 VALUES ('${CATALOGUE.split}', 'LECTURE', 2, 0), ('${CATALOGUE.split}', 'LAB', 2, 1)

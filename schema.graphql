@@ -274,6 +274,17 @@ type Module {
   """The programme that plans this module. Every module has exactly one."""
   homeProgramme: Programme!
 
+  """
+  Who the examination office names as responsible for this module, or `null`.
+  
+  Null for about one module in thirty, and for two different reasons that are not
+  distinguished here: the source names a placeholder rather than a person, or it names an
+  address that is not in the teacher list. Both appear on the import page, where the raw value
+  is; it is deliberately not carried here, because a mail address belongs in the type about
+  people rather than in the one about modules.
+  """
+  responsible: Teacher
+
   """How the teaching is broken up, as the catalogue describes it."""
   courseType: CourseType!
 
@@ -452,6 +463,9 @@ input ModuleFilter {
   Include modules the examination office has retired. About a hundred of them.
   """
   includeInactive: Boolean = false
+
+  """Only the modules this person is responsible for, by teacher id."""
+  responsible: ID
 
   """
   Keep only modules whose hours have not been split into teachable units yet.
@@ -922,6 +936,21 @@ type Query {
   module(id: ID!): Module
 
   """
+  The people who teach, as the examination office publishes them.
+  
+  Not the users of this installation — see `Teacher`. Readable by anybody with an account: it
+  is who teaches at the faculty, and a lecturer looking for the person responsible for a
+  module needs it.
+  """
+  teachers(
+    """Substring of the name or of the address. Case-insensitive."""
+    search: String
+
+    """Include the ones the examination office marks as no longer teaching."""
+    includeInactive: Boolean = false
+  ): [Teacher!]!
+
+  """
   Who you are, as far as this server is concerned — or `null` if you are not signed in.
   
   The field to start with when writing a script: getting a person back means the token is
@@ -1095,7 +1124,7 @@ enum ScopeArea {
   The first area worth narrowing a token to. `PUBLIC` and `PROFILE` are you describing
   yourself; `TOKENS` and `ADMIN` are unreachable through a token at all.
   
-  Fields: `semesters`, `semester`, `programmes`, `programme`, `modules`, `module`,
+  Fields: `semesters`, `semester`, `programmes`, `programme`, `modules`, `module`, `teachers`,
   `advanceSemesterPhase`, `publishWishes`, `setModuleComponents`.
   """
   PLANNING
@@ -1283,6 +1312,73 @@ type Spo {
 }
 
 """
+Somebody who teaches, as the examination office publishes them.
+
+**Not a user of this installation.** Who may sign in is a separate, curated list — the people
+administration — and importing this one grants nothing. The two are connected by the mail
+address where both know it, which is also why a teacher the source gives no address for can
+never be connected to anybody.
+"""
+type Teacher {
+  id: ID!
+
+  """The full name with its titles, as the examination office writes it."""
+  name: String!
+
+  """Surname first, for a list. Every one of them is in this form."""
+  sortName: String!
+
+  """
+  The address, or `null` for the handful the source gives none for.
+  
+  Also the link to a person in this installation: where somebody with this address may sign
+  in, that is the same human.
+  """
+  mail: String
+
+  """Holds a professorship."""
+  isProfessor: Boolean!
+
+  """Teaches on a contract (Lehrbeauftragte:r)."""
+  isLecturerOnContract: Boolean!
+
+  """Holds an honorary professorship."""
+  isHonoraryProfessor: Boolean!
+
+  """Is staff. Not exclusive with the three above — somebody can be both."""
+  isStaff: Boolean!
+
+  """
+  What the examination office says about the employment. Roughly four in five are true.
+  
+  Kept and shown rather than filtered on import: five of the people still named as responsible
+  for a module are false here, and dropping them would leave those modules pointing at nobody
+  for a reason nobody could see.
+  """
+  active: Boolean!
+
+  """
+  The faculty, where the source says one. Absent for more than half of them, so it is a hint
+  and not a filter.
+  """
+  faculty: String
+
+  """
+  The last semester this person taught in, in this system's spelling — or `null` where the
+  source says something that is not a semester.
+  """
+  lastSemester: String
+
+  """
+  Whether somebody with this address may sign in to Tallox.
+  
+  Derived from the address on every read rather than stored, so that somebody admitted this
+  morning is connected to their own modules now rather than after the next import.
+  """
+  isUser: Boolean!
+}
+
+"""
 A moment in time, as an RFC 3339 string — for example `2026-08-01T14:30:00+02:00`.
 
 Always in Europe/Berlin, the timezone the planning runs in.
@@ -1314,6 +1410,9 @@ type ZpaCatalogueProjection {
 
   """How many study programmes were written."""
   programmesWritten: Int!
+
+  """How many teachers were written."""
+  teachersWritten: Int!
 
   """How many modules were written."""
   modulesWritten: Int!
@@ -1421,6 +1520,15 @@ enum ZpaObjectKind {
 
   """One version of one programme's examination regulations."""
   SPO
+
+  """
+  Somebody who teaches. The list a module's responsible person is named from — and, alone
+  among the five, an endpoint whose values are actually typed.
+  
+  Importing these grants nobody access: who may use this installation is a separate, curated
+  list.
+  """
+  TEACHER
 }
 
 """
@@ -1476,6 +1584,23 @@ enum ZpaProjectionFinding {
   Folded with the lower value: the catalogue slots of one set of regulations disagree about the earliest semester.
   """
   MIN_SEMESTER_CONFLICT
+
+  """
+  Not stored: the source names a responsible person the teacher list does not contain.
+  
+  About one module in thirty. Either a placeholder rather than a person, or the address of
+  somebody who is not in the list. The value stays in the cached payload; carrying it into the
+  catalogue would put a mail address in the tables about modules.
+  """
+  MODULE_RESPONSIBLE_UNKNOWN
+
+  """
+  Kept: somebody who teaches and for whom the source gives no address.
+  
+  The address is the link to somebody who signs in, so such a person can never be connected to
+  one — worth seeing, not worth refusing.
+  """
+  TEACHER_WITHOUT_MAIL
 
   """
   The one that is an alarm rather than a note, and it should always be absent.

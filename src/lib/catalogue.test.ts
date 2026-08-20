@@ -13,7 +13,8 @@ import {
 	formatHours,
 	moduleName,
 	proposedComponents,
-	spoLabel
+	spoLabel,
+	teacherRole
 } from './catalogue';
 
 describe('moduleName', () => {
@@ -187,5 +188,33 @@ describe('the vocabularies', () => {
 
 	it('offer every kind of teachable unit in the editor', () => {
 		expect([...ALL_PART_KINDS].sort()).toEqual(Object.keys(PART_KIND_LABELS).sort());
+	});
+});
+
+describe('teacherRole', () => {
+	const none = {
+		isProfessor: false,
+		isLecturerOnContract: false,
+		isHonoraryProfessor: false,
+		isStaff: false
+	};
+
+	it('names the one thing somebody is', () => {
+		expect(teacherRole({ ...none, isProfessor: true })).toBe('Professur');
+		expect(teacherRole({ ...none, isLecturerOnContract: true })).toBe('Lehrauftrag');
+		expect(teacherRole({ ...none, isStaff: true })).toBe('Mitarbeit');
+	});
+
+	// The four flags are not exclusive in the source — somebody can be staff and hold an honorary
+	// professorship — so picking the first true one would drop half the answer.
+	it('names all of them when there are several', () => {
+		expect(teacherRole({ ...none, isProfessor: true, isStaff: true })).toBe('Professur, Mitarbeit');
+		expect(teacherRole({ ...none, isHonoraryProfessor: true, isLecturerOnContract: true })).toBe(
+			'Honorarprofessur, Lehrauftrag'
+		);
+	});
+
+	it('says nothing rather than something empty when the source says nothing', () => {
+		expect(teacherRole(none)).toBe('');
 	});
 });
