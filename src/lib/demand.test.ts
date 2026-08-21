@@ -209,6 +209,15 @@ describe('trackLetters', () => {
 		expect(trackLetters(2, [''])).toEqual(['A', 'B']);
 	});
 
+	// Two cohorts of one module are two instances of one identity, and the backend refuses the
+	// whole save for it. Filling the free slots by position produced exactly that as soon as the
+	// letters in use were not A, B, C from the start.
+	it('never proposes a letter that is already in use', () => {
+		expect(trackLetters(3, ['B', 'C'])).toEqual(['B', 'C', 'A']);
+		expect(trackLetters(2, ['B'])).toEqual(['B', 'A']);
+		expect(new Set(trackLetters(4, ['C'])).size).toBe(4);
+	});
+
 	it('keeps a single cohort as it is', () => {
 		expect(trackLetters(1, ['A'])).toEqual(['A']);
 		expect(trackLetters(0)).toEqual([]);

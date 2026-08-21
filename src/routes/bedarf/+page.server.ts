@@ -271,6 +271,18 @@ function entriesFrom(form: FormData): DemandEntryInput[] {
 		});
 }
 
+/**
+ * A refusal, in the shape the page renders it.
+ *
+ * The code travels with the sentence because the generic sentence — the one for a refusal nobody
+ * has thought about yet — says nothing anybody can act on. Beside the code it becomes a thing
+ * that can be reported, looked up, and fixed.
+ */
+function refusalFor(err: unknown) {
+	const refusal = toRefusal(err);
+	return { error: refusal.message, code: refusal.code, generic: refusal.generic };
+}
+
 /** The three things a save needs to know, in the order the page asks them. */
 type PlanVariables = {
 	semester: string;
@@ -316,7 +328,7 @@ export const actions: Actions = {
 			}
 			return { report: await runPlan({ ...variables, dryRun: false }) };
 		} catch (err) {
-			return fail(400, { error: toRefusal(err).message });
+			return fail(400, refusalFor(err));
 		}
 	},
 
@@ -328,7 +340,11 @@ export const actions: Actions = {
 		try {
 			entries = JSON.parse(String(form.get('payload') ?? '[]'));
 		} catch {
-			return fail(400, { error: 'Die Vorschau ist nicht mehr lesbar. Bitte erneut speichern.' });
+			return fail(400, {
+				error: 'Die Vorschau ist nicht mehr lesbar. Bitte erneut speichern.',
+				code: '',
+				generic: false
+			});
 		}
 
 		try {
@@ -341,7 +357,7 @@ export const actions: Actions = {
 				})
 			};
 		} catch (err) {
-			return fail(400, { error: toRefusal(err).message });
+			return fail(400, refusalFor(err));
 		}
 	},
 
@@ -365,7 +381,7 @@ export const actions: Actions = {
 				await backendRequest(SharePartDocument, { id });
 			}
 		} catch (err) {
-			return fail(400, { error: toRefusal(err).message });
+			return fail(400, refusalFor(err));
 		}
 		return { shared: id };
 	},
@@ -392,7 +408,11 @@ export const actions: Actions = {
 		for (let i = 0; i < kinds.length; i++) {
 			const kind = kinds[i];
 			if (!(ALL_PART_KINDS as readonly string[]).includes(kind)) {
-				return fail(400, { error: 'Unbekannte Art von Lehrveranstaltung.' });
+				return fail(400, {
+					error: 'Unbekannte Art von Lehrveranstaltung.',
+					code: '',
+					generic: false
+				});
 			}
 			components.push({
 				kind: kind as InstancePartKind,
@@ -401,13 +421,17 @@ export const actions: Actions = {
 		}
 
 		if (components.length === 0) {
-			return fail(400, { error: 'Für dieses Modul gibt es nichts zu bestätigen.' });
+			return fail(400, {
+				error: 'Für dieses Modul gibt es nichts zu bestätigen.',
+				code: '',
+				generic: false
+			});
 		}
 
 		try {
 			await backendRequest(ConfirmSplitDocument, { moduleId, components });
 		} catch (err) {
-			return fail(400, { error: toRefusal(err).message });
+			return fail(400, refusalFor(err));
 		}
 		return { confirmed: moduleId };
 	}

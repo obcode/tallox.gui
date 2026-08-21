@@ -19,7 +19,10 @@ describe('toRefusal', () => {
 
 		expect(refusal).toEqual({
 			code: 'TOKEN_NOT_FOUND',
-			message: 'Dieses Token existiert nicht.'
+			message: 'Dieses Token existiert nicht.',
+			// Not generic: the sentence is the backend's own, so a page showing it needs no code
+			// beside it.
+			generic: false
 		});
 	});
 
@@ -115,5 +118,19 @@ describe('httpStatusOf', () => {
 
 		expect(toRefusal(noAccount).code).toBe(toRefusal(dbRestarting).code);
 		expect(httpStatusOf(noAccount)).not.toBe(httpStatusOf(dbRestarting));
+	});
+});
+
+describe('toRefusal, the generic flag', () => {
+	// The flag exists so a page can show the code where the sentence says nothing. "Das hat nicht
+	// geklappt" on its own is unanswerable — for the person reading it and for whoever they ask
+	// about it afterwards.
+	it('marks a refusal nobody has worded yet', () => {
+		const refusal = toRefusal(clientError([{ message: 'boom', extensions: { code: 'WAT' } }]));
+		expect(refusal).toEqual({ code: 'WAT', message: GENERIC_MESSAGE, generic: true });
+	});
+
+	it('marks an error with no code at all', () => {
+		expect(toRefusal(new Error('network')).generic).toBe(true);
 	});
 });
