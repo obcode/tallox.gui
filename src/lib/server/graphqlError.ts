@@ -18,6 +18,14 @@ export type BackendRefusal = {
 	code: string;
 	/** The sentence to display. German, from the backend or from here. */
 	message: string;
+	/**
+	 * Whether the sentence is the generic one rather than the backend's own.
+	 *
+	 * A page that shows the generic sentence should show the code beside it. "Das hat nicht
+	 * geklappt" on its own is unanswerable — for the person reading it and for whoever they ask
+	 * about it afterwards — while the code is the one thing that identifies what happened.
+	 */
+	generic: boolean;
 };
 
 /**
@@ -92,7 +100,13 @@ const PASS_THROUGH = new Set([
 	'NOT_SHARED_ACROSS_TRACKS',
 	'PROGRAMME_NOT_FOUND',
 	'SAME_SEMESTER',
-	'SEMESTER_OUT_OF_RANGE'
+	'SEMESTER_OUT_OF_RANGE',
+	// The shape of a whole plan. They were missing until somebody met one and got the generic
+	// sentence — which for "ein Modul steht zweimal in der Liste" is the least useful answer
+	// possible, because the person cannot see the list the software sent.
+	'DUPLICATE_ENTRY',
+	'TOO_MANY_TRACKS',
+	'TOO_MANY_GROUPS'
 ]);
 
 /** What is shown when the error is none of the known ones. */
@@ -116,15 +130,15 @@ export function toRefusal(error: unknown): BackendRefusal {
 		const message = typeof entry.message === 'string' ? entry.message.trim() : '';
 
 		if (PASS_THROUGH.has(code) && message) {
-			return { code, message };
+			return { code, message, generic: false };
 		}
 		if (code) {
 			// Known code, unknown text (or the other way round): the code helps when searching
 			// the log, the text stays generic.
-			return { code, message: GENERIC_MESSAGE };
+			return { code, message: GENERIC_MESSAGE, generic: true };
 		}
 	}
-	return { code: 'UNKNOWN', message: GENERIC_MESSAGE };
+	return { code: 'UNKNOWN', message: GENERIC_MESSAGE, generic: true };
 }
 
 /**

@@ -90,6 +90,15 @@
 	const dirty = $derived(Object.keys(edits).length > 0);
 
 	/**
+	 * Rows that stand ticked because the previous semester had them, and are not stored yet.
+	 *
+	 * Worth a sentence of its own: the table saves itself, so the first change anybody makes
+	 * adopts the whole proposal along with it. That is what "prefilled" means — but it should be
+	 * read before it happens, not deduced afterwards from "73 angelegt".
+	 */
+	const proposedRows = $derived(shown.filter((row) => !row.planned && row.tracks.length > 0));
+
+	/**
 	 * The module whose split is being corrected, if any.
 	 *
 	 * One at a time: the editor replaces the line it is about, and two open at once would be two
@@ -103,6 +112,34 @@
 
 	function edit(row: Row, change: Partial<Draft>) {
 		edits = { ...edits, [row.module.id]: { ...draft(row), ...change } };
+		editSeq++;
+		scheduleSave();
+	}
+
+	/**
+	 * Saving without a button, and why it still has one.
+	 *
+	 * Every tick and every step is a decision somebody has made, and a screen that keeps them
+	 * only in the browser until a separate act is a screen that loses them — to a closed tab, a
+	 * mistaken back button, a colleague's question. So the form submits itself.
+	 *
+	 * Not per keystroke: the changes are collected for a moment and go together, because
+	 * pressing "+" three times is one decision and three round trips would also be three chances
+	 * for them to arrive out of order.
+	 *
+	 * The button stays. Without JavaScript nothing here submits itself, and the page has worked
+	 * without it so far — that is what a form action is for.
+	 */
+	let formEl = $state<HTMLFormElement | null>(null);
+	let saving = $state(false);
+	let saveTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Counts the edits, so a save that finishes late does not discard a newer one. */
+	let editSeq = $state(0);
+
+	function scheduleSave() {
+		if (!mayPlan) return;
+		clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => formEl?.requestSubmit(), 600);
 	}
 
 	function draftOf(row: Row): Draft {
@@ -306,6 +343,14 @@
 			<p class="text-base-content/90 text-sm">
 				<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
 				{form.error}
+				{#if 'generic' in form && form.generic && form.code}
+					<!--
+						Der Code steht nur dabei, wenn der Satz der allgemeine ist. „Das hat nicht
+						geklappt" allein ist für niemanden beantwortbar — für die Person davor nicht
+						und für die, die sie danach fragt, auch nicht.
+					-->
+					<span class="text-base-content/80">(Code: {form.code})</span>
+				{/if}
 			</p>
 		</div>
 	{/if}
@@ -352,7 +397,17 @@
 					Außerdem: {form.preview.created.length} neu, {form.preview.changed.length} geändert.
 				</p>
 			{/if}
-			<form method="POST" action="?/apply" use:enhance class="mt-3 flex flex-wrap gap-2">
+			<form
+				method="POST"
+				action="?/apply"
+				use:enhance={() =>
+					async ({ update }) => {
+						// Die Entscheidung ist gefallen, also gilt wieder, was der Server sagt.
+						edits = {};
+						await update({ reset: false });
+					}}
+				class="mt-3 flex flex-wrap gap-2"
+			>
 				<input type="hidden" name="semester" value={data.selected.semester} />
 				<input type="hidden" name="programme" value={data.selected.programme} />
 				<input type="hidden" name="payload" value={form.payload} />
@@ -389,6 +444,11 @@
 					{/if}
 				</p>
 			</div>
+			{#if proposedRows.length > 0}
+				<span class="badge badge-ghost">
+					{proposedRows.length} vorbelegt — wird mit der nächsten Änderung übernommen
+				</span>
+			{/if}
 			{#if openEstimates > 0}
 				<!-- Als GET-Formular statt als Link: `resolve()` kennt nur den Pfad, die Auswahl steht
 				     in Query-Parametern, und ein handgeschriebener Link mit beidem ist genau das, was
@@ -416,21 +476,33 @@
 		{/if}
 
 		<!--
-			`enhance` mit eigenem Callback: nach dem Speichern hat der Load neu geladen, und die
-			Bearbeitungen von vorhin sind damit beantwortet. Sie stehen zu lassen hieße, die
-			Zahlen von vor dem Speichern über die frisch geladenen zu legen.
+			`enhance` mit eigenem Callback. Nach dem Speichern hat der Load neu geladen, und die
+			Bearbeitungen von vorhin sind damit beantwortet — außer es kam eine Vorschau zurück
+			(dann steht die Entscheidung noch aus) oder jemand hat inzwischen weitergeklickt.
 		-->
 		<form
+			bind:this={formEl}
 			method="POST"
 			action="?/plan"
-			use:enhance={() =>
-				async ({ update }) => {
-					edits = {};
-					// And the split editor closes: what it was about is answered, and a form still
-					// standing open over the line it just wrote reads as though nothing happened.
+			use:enhance={() => {
+				const seq = editSeq;
+				saving = true;
+				return async ({ result, update }) => {
+					const preview =
+						result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
+					// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
+					// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
+					// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
+					if (!preview && editSeq === seq) edits = {};
+					// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
+					// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
+					// hat, liest sich, als wäre nichts passiert.
 					editingSplit = null;
 					await update({ reset: false });
-				}}
+					saving = false;
+					if (editSeq !== seq) scheduleSave();
+				};
+			}}
 			class="flex flex-col gap-4"
 		>
 			<input type="hidden" name="semester" value={data.selected.semester} />
@@ -768,12 +840,15 @@
 					class="border-base-300 bg-base-100 flex flex-wrap items-center gap-3 rounded-lg border p-4"
 				>
 					<button type="submit" class="btn btn-primary btn-sm">Bedarf speichern</button>
-					{#if dirty}
-						<span class="badge badge-warning">nicht gespeichert</span>
+					{#if saving}
+						<span class="badge badge-neutral">wird gespeichert …</span>
+					{:else if dirty}
+						<span class="badge badge-warning">noch nicht gespeichert</span>
 					{/if}
 					<span class="text-base-content/80 text-sm">
-						Gespeichert wird, was hier steht — Module, die der Filter gerade ausblendet, bleiben
-						unangetastet.
+						Jede Änderung wird von selbst gespeichert; der Knopf ist für den Fall, dass das Skript
+						im Browser nicht läuft. Gespeichert wird, was hier steht — Module, die der Filter gerade
+						ausblendet, bleiben unangetastet.
 					</span>
 				</div>
 			{/if}

@@ -34,6 +34,11 @@ test.describe('the demand table', () => {
 		// marked as a proposal and worth nothing until somebody saves.
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(row.getByText('Vorschlag aus')).toBeVisible();
+		// And the page says what that means before it happens: the table saves itself, so the
+		// first change anybody makes adopts the proposal with it.
+		await expect(
+			page.getByText(/vorbelegt — wird mit der nächsten Änderung übernommen/)
+		).toBeVisible();
 		await expect(row.getByRole('checkbox')).toBeChecked();
 		await expect(row.getByRole('spinbutton', { name: /^Gruppen von/ })).toHaveValue('2');
 
@@ -49,11 +54,12 @@ test.describe('the demand table', () => {
 		await checkA11y(page);
 	});
 
-	test('is saved in one click, with cohorts that need not be alike', async ({ asPersona }) => {
+	test('saves itself, with cohorts that need not be alike', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
-		// Tick a second module beside the prefilled one and save both at once.
+		// Tick a second module beside the prefilled one. Nothing else: the tick is a decision, and
+		// a decision that sits in a browser waiting for a second act is one a closed tab undoes.
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await guess.getByRole('checkbox').check();
 
@@ -61,9 +67,8 @@ test.describe('the demand table', () => {
 		// group is six hours of teaching. It used to say "—" for every row of a semester nobody
 		// had planned yet, which is every row on the day this page is most used.
 		await expect(guess.getByText('6 SWS')).toBeVisible();
-		await page.getByRole('button', { name: 'Bedarf speichern' }).click();
 
-		await expect(page.getByText('2 angelegt')).toBeVisible();
+		await expect(page.getByText('2 angelegt')).toBeVisible({ timeout: 15_000 });
 		// A four-hour module with two laboratory groups is six hours of teaching, and a six-hour
 		// one with one group is six more.
 		await expect(page.getByText('Geplant sind jetzt 12 SWS')).toBeVisible();
@@ -72,9 +77,8 @@ test.describe('the demand table', () => {
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await row.getByRole('button', { name: /Ein Zug mehr/ }).click();
 		await page.getByRole('spinbutton', { name: 'Gruppen von Zug B' }).fill('3');
-		await page.getByRole('button', { name: 'Bedarf speichern' }).click();
 
-		await expect(page.getByText('1 angelegt')).toBeVisible();
+		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
 		// E2E1A and E2E1B, and the first one was renamed rather than replaced.
 		await expect(page.getByText('E2E1A')).toBeVisible();
 		await expect(page.getByText('E2E1B')).toBeVisible();
@@ -154,9 +158,11 @@ test.describe('the demand table', () => {
 
 		const row = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await row.getByRole('checkbox').uncheck();
-		await page.getByRole('button', { name: 'Bedarf speichern' }).click();
 
-		await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toBeVisible();
+		// The one change that does not happen by itself: it is shown before it is done.
+		await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toBeVisible({
+			timeout: 15_000
+		});
 		await expect(page.getByText(/zieht 1 Instanz/)).toBeVisible();
 
 		// Nothing has happened yet: the summary of a save is what says something did.

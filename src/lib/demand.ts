@@ -257,7 +257,17 @@ export function trackLetters(count: number, existing: readonly string[] = []): s
 	const letters: string[] = [];
 	for (let i = 0; i < count; i++) {
 		const kept = existing[i];
-		letters.push(kept && kept !== '' ? kept : String.fromCharCode(65 + i));
+		if (kept && kept !== '' && !letters.includes(kept)) {
+			letters.push(kept);
+			continue;
+		}
+		// The first letter nobody has yet — not the one at this position. A cohort called C beside
+		// a new one would otherwise both be C, which is two instances of one identity: the backend
+		// refuses the whole save for it, and the sentence it refuses with explains nothing to the
+		// person who only pressed "+".
+		let next = 0;
+		while (letters.includes(String.fromCharCode(65 + next))) next++;
+		letters.push(String.fromCharCode(65 + next));
 	}
 	return letters;
 }
