@@ -56,6 +56,11 @@ test.describe('the demand table', () => {
 		// Tick a second module beside the prefilled one and save both at once.
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await guess.getByRole('checkbox').check();
+
+		// The SWS column answers before anything is saved: a six-hour module with one laboratory
+		// group is six hours of teaching. It used to say "—" for every row of a semester nobody
+		// had planned yet, which is every row on the day this page is most used.
+		await expect(guess.getByText('6 SWS')).toBeVisible();
 		await page.getByRole('button', { name: 'Bedarf speichern' }).click();
 
 		await expect(page.getByText('2 angelegt')).toBeVisible();
@@ -90,12 +95,12 @@ test.describe('the demand table', () => {
 		await page.getByRole('button', { name: 'Vorlesung einmal für alle Züge' }).click();
 
 		// Six hours instead of seven per cohort's worth: the lecture is held once now.
-		await expect(page.getByText('Vorlesung wird geteilt')).toBeVisible();
+		await expect(page.getByText('Vorlesung geteilt').first()).toBeVisible();
 		const merged = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(merged.getByText('12 SWS')).toBeVisible();
 
 		await page.getByRole('button', { name: 'Vorlesung wieder je Zug' }).click();
-		await expect(page.getByText('Vorlesung wird geteilt')).toHaveCount(0);
+		await expect(page.getByText('Vorlesung geteilt')).toHaveCount(0);
 	});
 
 	test('confirms a guessed split from the row it is shown in', async ({ asPersona }) => {

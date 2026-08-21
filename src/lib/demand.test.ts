@@ -9,10 +9,10 @@ import {
 	groupsOf,
 	hoursLabel,
 	partLabel,
+	plannedHours,
 	previousComparableSemester,
 	sharingState,
 	trackLetters,
-	trackSummary,
 	type InstanceLike,
 	type ModuleLike
 } from './demand';
@@ -136,8 +136,22 @@ describe('demandRows', () => {
 		);
 		expect(rows[0].planned).toBe(true);
 		expect(rows[0].tracks).toEqual([
-			{ track: 'A', groups: 3, instanceId: 'm-A', borrowed: 0 },
-			{ track: 'B', groups: 2, instanceId: 'm-B', borrowed: 0 }
+			{
+				track: 'A',
+				groups: 3,
+				instanceId: 'm-A',
+				borrowedKinds: [],
+				lecturePartId: undefined,
+				sharedPartId: undefined
+			},
+			{
+				track: 'B',
+				groups: 2,
+				instanceId: 'm-B',
+				borrowedKinds: [],
+				lecturePartId: undefined,
+				sharedPartId: undefined
+			}
 		]);
 		expect(rows[0].teachingHours).toBe(14);
 	});
@@ -148,7 +162,7 @@ describe('demandRows', () => {
 		const rows = demandRows([module('m')], [], [instance('m', '', 2)], '2026-WS');
 		expect(rows[0].planned).toBe(false);
 		expect(rows[0].proposedFrom).toBe('2026-WS');
-		expect(rows[0].tracks).toEqual([{ track: '', groups: 2, borrowed: 0 }]);
+		expect(rows[0].tracks).toEqual([{ track: '', groups: 2, borrowedKinds: [] }]);
 		// A proposal costs the faculty nothing, because it is not planned.
 		expect(rows[0].teachingHours).toBe(0);
 	});
@@ -197,18 +211,6 @@ describe('trackLetters', () => {
 	it('keeps a single cohort as it is', () => {
 		expect(trackLetters(1, ['A'])).toEqual(['A']);
 		expect(trackLetters(0)).toEqual([]);
-	});
-});
-
-describe('trackSummary', () => {
-	it('reads as the groups per cohort', () => {
-		expect(
-			trackSummary([
-				{ track: 'A', groups: 3, borrowed: 0 },
-				{ track: 'B', groups: 2, borrowed: 0 }
-			])
-		).toBe('A: 3, B: 2');
-		expect(trackSummary([{ track: '', groups: 2, borrowed: 0 }])).toBe('1 Zug: 2');
 	});
 });
 
@@ -314,5 +316,41 @@ describe('sharingState', () => {
 			])
 		);
 		expect(state).toEqual({ sharedPartId: 'a' });
+	});
+});
+
+describe('plannedHours', () => {
+	const split = [
+		{ kind: 'LECTURE' as const, teachingHours: 4 },
+		{ kind: 'LAB' as const, teachingHours: 2 }
+	];
+
+	// The number the faculty pays: a six-hour module with two laboratory groups is eight hours of
+	// teaching, not six. Summing the module's own figure is the plausible-looking wrong answer.
+	it('multiplies the practical unit by the groups', () => {
+		expect(plannedHours(split, 'LAB', [{ groups: 2 }])).toBe(8);
+		expect(plannedHours(split, 'LAB', [{ groups: 1 }])).toBe(6);
+	});
+
+	it('adds up over the cohorts', () => {
+		expect(plannedHours(split, 'LAB', [{ groups: 3 }, { groups: 2 }])).toBe(10 + 8);
+	});
+
+	// A lecture held once for both cohorts is counted at the cohort that holds it and nowhere
+	// else. Counting it twice is exactly the mistake the shared part exists to prevent.
+	it('does not count what a sibling cohort holds', () => {
+		expect(
+			plannedHours(split, 'LAB', [{ groups: 1 }, { groups: 1, borrowedKinds: ['LECTURE'] }])
+		).toBe(6 + 2);
+	});
+
+	it('is nothing without a split', () => {
+		expect(plannedHours([], 'LAB', [{ groups: 2 }])).toBe(0);
+	});
+
+	// A module that is nothing but a lecture has no practical unit, so the figure multiplies
+	// nothing and the lecture is counted once.
+	it('ignores the groups where there is no practical unit', () => {
+		expect(plannedHours([{ kind: 'LECTURE', teachingHours: 4 }], null, [{ groups: 3 }])).toBe(4);
 	});
 });
