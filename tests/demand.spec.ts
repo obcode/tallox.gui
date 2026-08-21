@@ -71,7 +71,7 @@ test.describe('the demand table', () => {
 		await expect(page.getByText('2 angelegt')).toBeVisible({ timeout: 15_000 });
 		// A four-hour module with two laboratory groups is six hours of teaching, and a six-hour
 		// one with one group is six more.
-		await expect(page.getByText('Geplant sind jetzt 12 SWS')).toBeVisible();
+		await expect(page.getByText('12 SWS geplant')).toBeVisible();
 
 		// A second cohort for one of them, with three groups where the first has two.
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
@@ -189,6 +189,40 @@ test.describe('the demand table', () => {
 		await row.getByRole('checkbox').check();
 
 		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+	});
+
+	// The page saves after every click, so what it says about saving must not move anything: it
+	// used to appear between the heading and the table, and every click pushed the table down and
+	// pulled it back. Measured rather than described, because "es verschiebt sich" is exactly the
+	// kind of defect a screenshot in a report cannot show.
+	test('says what it saved without moving the table', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const box = async () => {
+			const table = await page.locator('table').first().boundingBox();
+			const sws = await page.getByRole('columnheader', { name: 'SWS' }).first().boundingBox();
+			return { y: Math.round(table?.y ?? 0), x: Math.round(sws?.x ?? 0) };
+		};
+
+		const before = await box();
+		await page
+			.getByRole('button', { name: /^Eine Gruppe mehr/ })
+			.first()
+			.click();
+
+		await expect(page.getByText(/geändert/)).toBeVisible({ timeout: 15_000 });
+		expect(await box(), 'the table moved while the page reported a save').toEqual(before);
+
+		// And the columns of every cohort year are the same columns, which they were not while
+		// each block sized itself to its own contents.
+		const heads = page.getByRole('columnheader', { name: 'Aufteilung' });
+		const first = await heads.first().boundingBox();
+		for (let i = 1; i < (await heads.count()); i++) {
+			expect(Math.round((await heads.nth(i).boundingBox())?.x ?? 0)).toBe(
+				Math.round(first?.x ?? 0)
+			);
+		}
 	});
 
 	// Reading the demand needs an account and no role — it is what the wish phase is about — and
