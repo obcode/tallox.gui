@@ -11,6 +11,7 @@ import {
 	partLabel,
 	plannedHours,
 	previousComparableSemester,
+	splitSummary,
 	sharingState,
 	trackLetters,
 	type InstanceLike,
@@ -352,5 +353,24 @@ describe('plannedHours', () => {
 	// nothing and the lecture is counted once.
 	it('ignores the groups where there is no practical unit', () => {
 		expect(plannedHours([{ kind: 'LECTURE', teachingHours: 4 }], null, [{ groups: 3 }])).toBe(4);
+	});
+});
+
+describe('splitSummary', () => {
+	it('writes the unit once, at the end', () => {
+		expect(
+			splitSummary([
+				{ kind: 'LECTURE', teachingHours: 4 },
+				{ kind: 'LAB', teachingHours: 2 }
+			])
+		).toBe('Vorlesung 4 + Praktikum 2 SWS');
+	});
+
+	it('marks a part with no hours as a gap rather than a zero', () => {
+		expect(splitSummary([{ kind: 'LAB', teachingHours: null }])).toBe('Praktikum ? SWS');
+	});
+
+	it('is empty for a module with nothing to show', () => {
+		expect(splitSummary([])).toBe('');
 	});
 });

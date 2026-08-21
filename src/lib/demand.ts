@@ -370,6 +370,31 @@ export function sharingState(row: DemandRow): { sharedPartId?: string; mergeable
 	return { mergeablePartId: withLecture?.lecturePartId };
 }
 
+/**
+ * The split as one line for a dense table: `Vorlesung 4 + Praktikum 2 SWS`.
+ *
+ * The unit is written once, at the end. Repeating it per part — "Vorlesung 4 SWS + Praktikum 2
+ * SWS" — costs the column forty pixels twice over, and this table has six columns that all want
+ * to be visible without scrolling.
+ *
+ * A part nobody has stated hours for shows a question mark rather than a zero: zero is a
+ * statement, and "not settled yet" is a gap.
+ */
+export function splitSummary(
+	components: readonly { kind: InstancePartKind; teachingHours?: number | null }[]
+): string {
+	if (components.length === 0) return '';
+
+	// A part nobody has stated hours for gets the same question mark a missing cohort year does:
+	// short enough for the column, and unmistakably a gap rather than a number.
+	const parts = components.map((c) =>
+		c.teachingHours == null
+			? `${PART_KIND_LABELS[c.kind]} ?`
+			: `${PART_KIND_LABELS[c.kind]} ${formatHours(c.teachingHours)}`
+	);
+	return `${parts.join(' + ')} SWS`;
+}
+
 /** One cohort, as much of it as the arithmetic below needs. */
 export type TrackHours = {
 	groups: number;
