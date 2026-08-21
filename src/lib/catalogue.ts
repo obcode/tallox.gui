@@ -215,43 +215,23 @@ export const ALL_PART_KINDS: readonly InstancePartKind[] = [
 ];
 
 /**
- * The rows a split editor should start with for a module that has none.
+ * The frequencies a module may have if it can run in a given term.
  *
- * Derived from the course type, which is the only thing the examination office says about the
- * breakdown, and split evenly between the two named halves — which is what the effort
- * descriptions say wherever they say anything at all. A proposal for a form and never a stored
- * value: nothing writes these without somebody confirming them.
+ * Three of the six values say nothing about the term and are together more than half the
+ * catalogue — a module offered "nach Ankündigung" is exactly the sort somebody is looking for
+ * when they have a gap to fill. Leaving them out would hide far more than it removes.
  *
- * No proposal at all when the module carries no hours. Twelve modules of the real catalogue are
- * in that state, and an empty form is a more honest starting point than a row of zeroes.
+ * Shared by the catalogue and the demand, which ask the same question: the demand of a winter
+ * semester has no business proposing the 89 modules that run only in summer.
  */
-export function proposedComponents(
-	courseType: CourseType,
-	contactHours: number | null | undefined
-): { kind: InstancePartKind; teachingHours: number }[] {
-	if (contactHours == null || contactHours <= 0) return [];
-
-	const halves = (second: InstancePartKind) => [
-		{ kind: 'LECTURE' as InstancePartKind, teachingHours: Math.ceil(contactHours / 2) },
-		{ kind: second, teachingHours: Math.floor(contactHours / 2) }
+export function frequenciesForTerm(term: string): Frequency[] | null {
+	const indefinite: Frequency[] = [
+		'EVERY_SEMESTER',
+		'ALTERNATING_WITHIN_SUBJECT_GROUP',
+		'ON_ANNOUNCEMENT',
+		'UNKNOWN'
 	];
-
-	switch (courseType) {
-		case 'SU_WITH_LAB':
-			return halves('LAB');
-		case 'SU_WITH_EXERCISE':
-			return halves('EXERCISE');
-		case 'SU':
-			return [{ kind: 'LECTURE', teachingHours: contactHours }];
-		case 'SEMINAR':
-			return [{ kind: 'SEMINAR', teachingHours: contactHours }];
-		case 'LAB':
-			return [{ kind: 'LAB', teachingHours: contactHours }];
-		case 'EXERCISE':
-			return [{ kind: 'EXERCISE', teachingHours: contactHours }];
-		case 'PROJECT':
-			return [{ kind: 'PROJECT', teachingHours: contactHours }];
-		default:
-			return [{ kind: 'OTHER', teachingHours: contactHours }];
-	}
+	if (term === 'WS') return ['EVERY_WINTER_SEMESTER', ...indefinite];
+	if (term === 'SS') return ['EVERY_SUMMER_SEMESTER', ...indefinite];
+	return null;
 }

@@ -9,10 +9,10 @@ import {
 	componentMismatch,
 	componentSummary,
 	dutyBadge,
+	frequenciesForTerm,
 	findingIsAlarming,
 	formatHours,
 	moduleName,
-	proposedComponents,
 	spoLabel,
 	teacherRole
 } from './catalogue';
@@ -93,43 +93,6 @@ describe('componentMismatch', () => {
 	// warning about a rounding error.
 	it('tolerates the last bit of a floating point sum', () => {
 		expect(componentMismatch(0.1 + 0.2 + 3.7, 4)).toBeNull();
-	});
-});
-
-describe('proposedComponents', () => {
-	it('splits a course with a laboratory evenly', () => {
-		expect(proposedComponents('SU_WITH_LAB', 4)).toEqual([
-			{ kind: 'LECTURE', teachingHours: 2 },
-			{ kind: 'LAB', teachingHours: 2 }
-		]);
-	});
-
-	it('gives an odd total its larger half to the lecture', () => {
-		expect(proposedComponents('SU_WITH_EXERCISE', 5)).toEqual([
-			{ kind: 'LECTURE', teachingHours: 3 },
-			{ kind: 'EXERCISE', teachingHours: 2 }
-		]);
-	});
-
-	it('proposes one part for a course type that names one', () => {
-		expect(proposedComponents('SEMINAR', 4)).toEqual([{ kind: 'SEMINAR', teachingHours: 4 }]);
-		expect(proposedComponents('LAB', 4)).toEqual([{ kind: 'LAB', teachingHours: 4 }]);
-	});
-
-	// Twelve modules of the real catalogue carry no hours. An empty form is a more honest
-	// starting point than a row of zeroes, which somebody would save without reading.
-	it('proposes nothing when the catalogue states no hours', () => {
-		expect(proposedComponents('SU_WITH_LAB', null)).toEqual([]);
-		expect(proposedComponents('SU_WITH_LAB', 0)).toEqual([]);
-	});
-
-	it('never proposes a total other than what the catalogue states', () => {
-		for (const hours of [1, 2, 3, 4, 5, 6, 7, 8]) {
-			for (const type of ['SU_WITH_LAB', 'SU_WITH_EXERCISE', 'SU', 'SEMINAR'] as const) {
-				const sum = proposedComponents(type, hours).reduce((t, c) => t + c.teachingHours, 0);
-				expect(sum).toBe(hours);
-			}
-		}
 	});
 });
 
@@ -216,5 +179,23 @@ describe('teacherRole', () => {
 
 	it('says nothing rather than something empty when the source says nothing', () => {
 		expect(teacherRole(none)).toBe('');
+	});
+});
+
+describe('frequenciesForTerm', () => {
+	it('keeps the term-specific value and the three that say nothing about the term', () => {
+		expect(frequenciesForTerm('WS')).toEqual([
+			'EVERY_WINTER_SEMESTER',
+			'EVERY_SEMESTER',
+			'ALTERNATING_WITHIN_SUBJECT_GROUP',
+			'ON_ANNOUNCEMENT',
+			'UNKNOWN'
+		]);
+		expect(frequenciesForTerm('SS')?.[0]).toBe('EVERY_SUMMER_SEMESTER');
+	});
+
+	// Without a term there is no filter at all — not an empty list, which would match nothing.
+	it('is no filter without a term', () => {
+		expect(frequenciesForTerm('')).toBeNull();
 	});
 });

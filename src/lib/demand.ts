@@ -17,14 +17,6 @@ export type PartLike = {
 	sharedAcrossTracks?: boolean;
 };
 
-/** An instance, as much of it as the display logic needs. */
-export type InstanceLike = {
-	id: string;
-	track: string;
-	programmeSemester?: number | null;
-	module: { id: string };
-};
-
 /**
  * The label the faculty reads: `IF3A` — the programme's code, the cohort year, the cohort.
  *
@@ -70,74 +62,6 @@ export function hoursLabel(teachingHours: number): string {
 }
 
 /**
- * Whether this instance has a sibling cohort — another cohort of the same module in the same
- * programme and semester.
- *
- * What the "hold this once for both cohorts" control hangs off. Cosmetic, like every other
- * role-based hiding here: the backend refuses with `NO_SIBLING_TRACKS` either way. It is worth
- * doing because a button that always refuses teaches people to ignore refusals.
- */
-export function hasSibling(instance: InstanceLike, all: readonly InstanceLike[]): boolean {
-	return all.some((other) => other.id !== instance.id && other.module.id === instance.module.id);
-}
-
-/**
- * The next free cohort letter for a module: A, B, C…
- *
- * Only a proposal for the form. The backend owns the identity and refuses a collision with
- * `TRACK_TAKEN`; what this saves is the click that finds that out.
- *
- * A module that runs once has no letter at all, so the first duplication proposes B and offers
- * A for the original — which is what turns IF1 into IF1A and IF1B in one act.
- */
-export function nextTrack(instance: InstanceLike, all: readonly InstanceLike[]): string {
-	const taken = new Set(
-		all.filter((other) => other.module.id === instance.module.id).map((other) => other.track)
-	);
-	for (const letter of 'BCDEFGH') {
-		if (!taken.has(letter)) return letter;
-	}
-	return '';
-}
-
-/** A group of instances that share a cohort year, for the headings of the page. */
-export type CohortYearGroup = {
-	/** The cohort year, or null for the instances nobody has given one. */
-	programmeSemester: number | null;
-	instances: InstanceLike[];
-};
-
-/**
- * The demand, grouped by cohort year.
- *
- * That is how a study programme lead reads it — "what does the third semester need" — and it is
- * the order the backend already returns. Grouping here rather than in the query keeps the API
- * answering about instances rather than about a screen's layout.
- *
- * The instances with no cohort year come last rather than first: they are the ones still to be
- * finished, and a list that opened with them would look like a list of problems.
- */
-export function byCohortYear<T extends InstanceLike>(
-	instances: readonly T[]
-): { programmeSemester: number | null; instances: T[] }[] {
-	const groups = new Map<number | null, T[]>();
-	for (const instance of instances) {
-		const key = instance.programmeSemester ?? null;
-		const existing = groups.get(key);
-		if (existing) existing.push(instance);
-		else groups.set(key, [instance]);
-	}
-
-	return [...groups.entries()]
-		.map(([programmeSemester, group]) => ({ programmeSemester, instances: group }))
-		.sort((a, b) => {
-			if (a.programmeSemester == null) return 1;
-			if (b.programmeSemester == null) return -1;
-			return a.programmeSemester - b.programmeSemester;
-		});
-}
-
-/**
  * The sentence under a borrowed part: who holds it.
  *
  * Named after the cohort rather than after the instance, because that is what the reader is
@@ -148,4 +72,272 @@ export function byCohortYear<T extends InstanceLike>(
 export function borrowedFromLabel(programmeCode: string, fromTrack: string): string {
 	if (fromTrack === '') return 'einem anderen Zug';
 	return `${programmeCode}…${fromTrack}`;
+}
+
+/**
+ * The table.
+ *
+ * One row per module, the way the faculty has always planned a semester: a tick, a number of
+ * cohorts, a number of groups in each. Everything below turns the three lists the page loads —
+ * the catalogue, this semester's instances, and the previous comparable semester's — into those
+ * rows, and back into the entries `planDemand` takes.
+ *
+ * Svelte-free, because this is where a demand quietly becomes the wrong one: a cohort counted
+ * from the wrong parts, a prefill that carries a module into a semester it does not run in.
+ */
+
+/** A module, as much of it as the table needs. */
+export type ModuleLike = {
+	id: string;
+	name: string;
+	zpaId?: string | null;
+	practicalKind?: InstancePartKind | null;
+	splitIsEstimated: boolean;
+	plannable: boolean;
+	components: readonly { kind: InstancePartKind; teachingHours: number }[];
+	proposedComponents: readonly { kind: InstancePartKind; teachingHours: number }[];
+	programmeSemester?: number | null;
+};
+
+/** An instance, as much of it as the table needs. */
+export type InstanceLike = {
+	id: string;
+	track: string;
+	programmeSemester?: number | null;
+	teachingHours: number;
+	module: { id: string };
+	parts: readonly PartLike[];
+	borrowedParts?: readonly { fromTrack: string; part: PartLike }[];
+};
+
+/** One cohort in a row of the table. */
+export type RowTrack = {
+	track: string;
+	/** How many parallel groups of the practical unit this cohort runs. */
+	groups: number;
+	/** The instance behind it, or undefined while it is only a proposal. */
+	instanceId?: string;
+	/** Parts held by a sibling cohort for this one — rendered, never counted. */
+	borrowed: number;
+};
+
+/**
+ * One row of the table.
+ *
+ * Generic in the module, so that a page keeps the fields it queried — the badges it renders are
+ * not this module's business, and a row that narrowed them away would make every one of them a
+ * type error on the screen rather than here.
+ */
+export type DemandRow<M extends ModuleLike = ModuleLike> = {
+	module: M;
+	/** The cohort year: what the instances say, else what the regulations say. */
+	programmeSemester: number | null;
+	tracks: RowTrack[];
+	/** True while the row's cohorts are real instances rather than a proposal. */
+	planned: boolean;
+	/** Where the proposal came from, for the badge that says so. */
+	proposedFrom?: string;
+	/** What the planned cohorts cost the faculty. Zero for a row that is only proposed. */
+	teachingHours: number;
+};
+
+/**
+ * The split a row is planned with: what somebody stated, or the proposal.
+ *
+ * The same fall-back the backend makes when it builds the parts, so the hours on the screen are
+ * the hours that get written.
+ */
+export function effectiveComponents(
+	module: ModuleLike
+): readonly { kind: InstancePartKind; teachingHours: number }[] {
+	return module.components.length > 0 ? module.components : module.proposedComponents;
+}
+
+/**
+ * How many parallel groups a cohort runs.
+ *
+ * Parts of the module's practical kind, and only the ones this cohort holds itself: a lecture
+ * held for both cohorts is neither a group nor this cohort's.
+ */
+export function groupsOf(
+	parts: readonly PartLike[],
+	practicalKind?: InstancePartKind | null
+): number {
+	if (!practicalKind) return 0;
+	return parts.filter((p) => p.kind === practicalKind && !p.sharedAcrossTracks).length;
+}
+
+/**
+ * The rows of the table.
+ *
+ * A module with instances shows them. A module without shows what the same module had in the
+ * previous comparable semester, as a proposal — that is the "take over last year" of the
+ * spreadsheet, except that it arrives filled in rather than as a button, and nothing is written
+ * until somebody saves.
+ */
+export function demandRows<M extends ModuleLike>(
+	modules: readonly M[],
+	instances: readonly InstanceLike[],
+	previous: readonly InstanceLike[],
+	previousCode?: string
+): DemandRow<M>[] {
+	const byModule = groupByModule(instances);
+	const previousByModule = groupByModule(previous);
+
+	return modules.map((module) => {
+		const own = byModule.get(module.id) ?? [];
+		if (own.length > 0) {
+			return {
+				module,
+				programmeSemester: own[0].programmeSemester ?? module.programmeSemester ?? null,
+				tracks: own.map((instance) => ({
+					track: instance.track,
+					groups: groupsOf(instance.parts, module.practicalKind),
+					instanceId: instance.id,
+					borrowed: instance.borrowedParts?.length ?? 0
+				})),
+				planned: true,
+				teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
+			};
+		}
+
+		const before = previousByModule.get(module.id) ?? [];
+		return {
+			module,
+			programmeSemester: before[0]?.programmeSemester ?? module.programmeSemester ?? null,
+			tracks: before.map((instance) => ({
+				track: instance.track,
+				groups: groupsOf(instance.parts, module.practicalKind),
+				borrowed: 0
+			})),
+			planned: false,
+			proposedFrom: before.length > 0 ? previousCode : undefined,
+			teachingHours: 0
+		};
+	});
+}
+
+function groupByModule(instances: readonly InstanceLike[]): Map<string, InstanceLike[]> {
+	const byModule = new Map<string, InstanceLike[]>();
+	for (const instance of instances) {
+		const list = byModule.get(instance.module.id);
+		if (list) list.push(instance);
+		else byModule.set(instance.module.id, [instance]);
+	}
+	for (const list of byModule.values()) {
+		list.sort((a, b) => a.track.localeCompare(b.track));
+	}
+	return byModule;
+}
+
+/**
+ * The cohort letters for a given number of cohorts.
+ *
+ * One cohort has no letter at all — that is the ordinary case and the one the label reads best
+ * for. Two or more get A, B, C, because a cohort nobody can name is a cohort nobody can talk
+ * about. The existing letters are kept where there are enough of them, so that raising the number
+ * does not rename what is already there.
+ */
+export function trackLetters(count: number, existing: readonly string[] = []): string[] {
+	if (count <= 0) return [];
+	if (count === 1) return [existing.length === 1 ? existing[0] : ''];
+
+	const letters: string[] = [];
+	for (let i = 0; i < count; i++) {
+		const kept = existing[i];
+		letters.push(kept && kept !== '' ? kept : String.fromCharCode(65 + i));
+	}
+	return letters;
+}
+
+/** A row's cohorts, grouped for the summary line: `A: 3, B: 2`. */
+export function trackSummary(tracks: readonly RowTrack[]): string {
+	return tracks.map((t) => `${t.track === '' ? '1 Zug' : t.track}: ${t.groups}`).join(', ');
+}
+
+/** The rows of one cohort year, in the order the page shows them. */
+export type YearGroup<M extends ModuleLike = ModuleLike> = {
+	programmeSemester: number | null;
+	rows: DemandRow<M>[];
+	/** What the planned cohorts of this year cost the faculty. */
+	teachingHours: number;
+};
+
+/**
+ * The table, grouped by cohort year.
+ *
+ * How a study programme lead reads it — "what does the third semester need" — and the axis the
+ * capacity figures hang off. The rows nobody has filed under a year come last: they are the work
+ * still to do, and a list that opened with them would read as a list of problems.
+ */
+export function byYear<M extends ModuleLike>(rows: readonly DemandRow<M>[]): YearGroup<M>[] {
+	const groups = new Map<number | null, DemandRow<M>[]>();
+	for (const row of rows) {
+		const key = row.programmeSemester ?? null;
+		const list = groups.get(key);
+		if (list) list.push(row);
+		else groups.set(key, [row]);
+	}
+
+	return [...groups.entries()]
+		.map(([programmeSemester, group]) => ({
+			programmeSemester,
+			rows: group,
+			teachingHours: group.reduce((sum, r) => sum + r.teachingHours, 0)
+		}))
+		.sort((a, b) => {
+			if (a.programmeSemester == null) return 1;
+			if (b.programmeSemester == null) return -1;
+			return a.programmeSemester - b.programmeSemester;
+		});
+}
+
+/** What this semester's demand looks like next to the one it was taken over from. */
+export type Comparison = {
+	added: number;
+	removed: number;
+	hoursBefore: number;
+	hoursAfter: number;
+};
+
+/**
+ * The comparison line: how this semester's demand differs from the previous comparable one.
+ *
+ * Modules rather than cohorts, because that is the sentence somebody says out loud — "three
+ * subjects more than last year". The hours are the faculty's own figure, and the difference
+ * between them is what the capacity calculation reacts to.
+ */
+export function compareWithPrevious(
+	instances: readonly InstanceLike[],
+	previous: readonly InstanceLike[]
+): Comparison {
+	const now = new Set(instances.map((i) => i.module.id));
+	const before = new Set(previous.map((i) => i.module.id));
+
+	let added = 0;
+	for (const id of now) if (!before.has(id)) added++;
+	let removed = 0;
+	for (const id of before) if (!now.has(id)) removed++;
+
+	return {
+		added,
+		removed,
+		hoursBefore: previous.reduce((sum, i) => sum + i.teachingHours, 0),
+		hoursAfter: instances.reduce((sum, i) => sum + i.teachingHours, 0)
+	};
+}
+
+/**
+ * The semester whose demand this one is taken over from: the same term, one year earlier.
+ *
+ * Not the semester immediately before. A module that runs only in the winter does not appear in
+ * the summer before it — 89 of the real catalogue are winter-only — so prefilling a summer from
+ * the winter that precedes it would propose a list of modules that cannot run. The faculty's own
+ * spreadsheet plans a whole academic year at a time and is copied for the next one, which is the
+ * same relation seen from the other side.
+ */
+export function previousComparableSemester(code: string): string {
+	const match = /^(\d{4})-(SS|WS)$/.exec(code);
+	if (!match) return '';
+	return `${Number(match[1]) - 1}-${match[2]}`;
 }

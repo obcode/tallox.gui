@@ -90,6 +90,15 @@ export const CATALOGUE = {
 	 * suite to fail, since the order that produced it is not in the report.
 	 */
 	writable: '0e2e0000-0000-4000-8000-000000000014',
+	/**
+	 * The module the demand test confirms the estimated split of.
+	 *
+	 * Its own row, like `writable`, and for the same reason: a test that writes to a fixture
+	 * another test reads as "still a guess" passes alone and fails in a full run. Six hours, so
+	 * that the proposal it confirms is the one the rule is about — four of lecture and two of
+	 * laboratory, never three and three.
+	 */
+	confirmable: '0e2e0000-0000-4000-8000-000000000015',
 	/** The person the split module names as responsible. */
 	teacher: '0e2e0000-0000-4000-8000-000000000021'
 } as const;
@@ -102,7 +111,13 @@ export const CATALOGUE = {
  * window *plus* every semester somebody has decided something about — without the row, the
  * first test could not choose the semester it is about to plan.
  */
-export const DEMAND = { semester: '2029-WS' } as const;
+export const DEMAND = {
+	semester: '2029-WS',
+	/** What the table prefills from: the same term, one year earlier. */
+	previous: '2028-WS',
+	/** The instance the previous semester holds, so the prefill has something to propose. */
+	previousInstance: '0e2e0000-0000-4000-8000-000000000031'
+} as const;
 
 const PROGRAMME_ID = '0e2e0000-0000-4000-8000-000000000000';
 
@@ -141,15 +156,25 @@ export function catalogueStatements(): string[] {
 		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
 		 ON CONFLICT (id) DO NOTHING;`,
 
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.confirmable}', id, 'E2E Modul zum Bestätigen', 'SU_WITH_LAB',
+		        'EVERY_WINTER_SEMESTER', 6, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
 		// The split the write test leaves behind is cleared at the start of every run, so the
 		// second run asserts the same thing the first one did.
 		`DELETE FROM module_component WHERE module_id = '${CATALOGUE.writable}';`,
 
 		// Two of the four count in the regulations; the others deliberately do not, which is
 		// what makes the list a union rather than a lookup.
-		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows)
-		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1),
-		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1)
+		// The earliest semester each of them may be taken in: the demand table groups by it, and
+		// a fixture that left it empty would only ever exercise the "no cohort year" heading.
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
+		                              min_programme_semester)
+		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1, 1),
+		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1, 2),
+		        ('${CATALOGUE.confirmable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-05'], 1, 1)
 		 ON CONFLICT (module_id, spo_id) DO NOTHING;`,
 
 		// Somebody who teaches, and the module that names them.
@@ -172,6 +197,7 @@ export function catalogueStatements(): string[] {
 		 ON CONFLICT (module_id, position) DO NOTHING;`,
 
 		`INSERT INTO semester (code) VALUES (${quote(DEMAND.semester)}) ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO semester (code) VALUES (${quote(DEMAND.previous)}) ON CONFLICT (code) DO NOTHING;`,
 
 		// Everything the demand tests declared last time. Its parts go with it, and the run
 		// starts from the same state as the first one did — the alternative is a suite that
@@ -199,7 +225,21 @@ export function catalogueStatements(): string[] {
  * The parts go with the instances — `instance_part` is ON DELETE CASCADE.
  */
 export function demandResetSql(): string {
-	return `DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`;
+	return [
+		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
+		// The split the confirmation test states, so that the next run finds a guess again.
+		`DELETE FROM module_component WHERE module_id = '${CATALOGUE.confirmable}';`,
+		// And what the previous comparable semester held, so the table has something to prefill
+		// from: one cohort, a lecture and two laboratory groups.
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${DEMAND.previousInstance}', s.id, '${CATALOGUE.split}', '${PROGRAMME_ID}', '', 1
+		   FROM semester s WHERE s.code = ${quote(DEMAND.previous)};`,
+		`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${DEMAND.previousInstance}', 'LECTURE', 0, 2),
+		        ('${DEMAND.previousInstance}', 'LAB', 1, 2),
+		        ('${DEMAND.previousInstance}', 'LAB', 2, 2);`
+	].join('\n');
 }
 
 /** The complete script, exactly as it goes to psql. */

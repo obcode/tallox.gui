@@ -125,7 +125,9 @@ test.describe('one module', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, `/module/${CATALOGUE.unsplit}`);
 
-		await expect(page.getByText('Vorschlag')).toBeVisible();
+		// One word for one thing, on both pages that show it: the demand table marks such a row
+		// "geschätzt" too.
+		await expect(page.getByText('geschätzt')).toBeVisible();
 		// SU mit Übung, 4 SWS — two of lecture and two of exercise.
 		const hours = page.locator('input[name="teachingHours"]');
 		await expect(hours).toHaveCount(2);
@@ -140,8 +142,8 @@ test.describe('one module', () => {
 		await gotoRendered(page, `/module/${CATALOGUE.writable}`);
 
 		await page.getByRole('button', { name: 'Aufteilung speichern' }).click();
-		// The proposal is now stored, so the page no longer offers it as one.
-		await expect(page.getByText('Vorschlag')).toHaveCount(0);
+		// The estimate is now the faculty's own statement, so the page stops marking it as one.
+		await expect(page.getByText('geschätzt')).toHaveCount(0);
 		await expect(page.getByText('Summe: 4 SWS')).toBeVisible();
 	});
 
