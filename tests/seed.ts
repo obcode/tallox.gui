@@ -135,6 +135,14 @@ export const SEMESTERS = {
 	/** Walked forwards and back by the phase test, and put back where it was by the seed. */
 	phase: '2030-WS',
 	/**
+	 * The semester nobody has touched — the one the seed *removes* rather than creates.
+	 *
+	 * Planning the first thing in a semester with no row is the ordinary way this screen gets
+	 * used, and it is the case that failed in production: the preview had no semester to point
+	 * at. It stays a case only as long as the row keeps disappearing between runs.
+	 */
+	untouched: '2033-WS',
+	/**
 	 * Read by the test that checks a confidential semester shows no figure about its wishes.
 	 *
 	 * Its own, and unpublished by the seed, so that neither the publishing test nor a run that
@@ -291,7 +299,13 @@ export function demandResetSql(): string {
 		`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
 		 VALUES ('${DEMAND.previousInstance}', 'LECTURE', 0, 2),
 		        ('${DEMAND.previousInstance}', 'LAB', 1, 2),
-		        ('${DEMAND.previousInstance}', 'LAB', 2, 2);`
+		        ('${DEMAND.previousInstance}', 'LAB', 2, 2);`,
+
+		// And the one semester that has to be untouched again. Guarded, because a row another
+		// programme is planning in is not this fixture's to remove — and because the seed must
+		// not fail on a database that has one.
+		`DELETE FROM semester s WHERE s.code = ${quote(SEMESTERS.untouched)}
+		   AND NOT EXISTS (SELECT 1 FROM course_instance ci WHERE ci.semester_id = s.id);`
 	].join('\n');
 }
 
