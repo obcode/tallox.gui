@@ -118,8 +118,13 @@ export type RowTrack = {
 	groups: number;
 	/** The instance behind it, or undefined while it is only a proposal. */
 	instanceId?: string;
-	/** Parts held by a sibling cohort for this one — rendered, never counted. */
-	borrowed: number;
+	/**
+	 * The kinds a sibling cohort holds for this one — a shared lecture, usually.
+	 *
+	 * Rendered so the cohort does not look like it is missing a lecture, and never counted: the
+	 * point of holding one lecture for two cohorts is that it costs the faculty once.
+	 */
+	borrowedKinds: InstancePartKind[];
 	/** This cohort's own lecture, where it has one — what a merge would share. */
 	lecturePartId?: string;
 	/** The part this cohort holds for everybody, where it holds one. */
@@ -199,7 +204,7 @@ export function demandRows<M extends ModuleLike>(
 					track: instance.track,
 					groups: groupsOf(instance.parts, module.practicalKind),
 					instanceId: instance.id,
-					borrowed: instance.borrowedParts?.length ?? 0,
+					borrowedKinds: (instance.borrowedParts ?? []).map((b) => b.part.kind),
 					lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
 					sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id
 				})),
@@ -215,7 +220,7 @@ export function demandRows<M extends ModuleLike>(
 			tracks: before.map((instance) => ({
 				track: instance.track,
 				groups: groupsOf(instance.parts, module.practicalKind),
-				borrowed: 0
+				borrowedKinds: []
 			})),
 			planned: false,
 			proposedFrom: before.length > 0 ? previousCode : undefined,
@@ -255,11 +260,6 @@ export function trackLetters(count: number, existing: readonly string[] = []): s
 		letters.push(kept && kept !== '' ? kept : String.fromCharCode(65 + i));
 	}
 	return letters;
-}
-
-/** A row's cohorts, grouped for the summary line: `A: 3, B: 2`. */
-export function trackSummary(tracks: readonly RowTrack[]): string {
-	return tracks.map((t) => `${t.track === '' ? '1 Zug' : t.track}: ${t.groups}`).join(', ');
 }
 
 /** The rows of one cohort year, in the order the page shows them. */
@@ -368,4 +368,40 @@ export function sharingState(row: DemandRow): { sharedPartId?: string; mergeable
 
 	const withLecture = row.tracks.find((t) => t.lecturePartId);
 	return { mergeablePartId: withLecture?.lecturePartId };
+}
+
+/** One cohort, as much of it as the arithmetic below needs. */
+export type TrackHours = {
+	groups: number;
+	borrowedKinds?: readonly InstancePartKind[];
+};
+
+/**
+ * What a row costs the faculty, as it currently stands on the screen.
+ *
+ * The stored figure comes from the backend and covers what is stored; this is the same sum for a
+ * row somebody is still editing — ticked but not saved, a group added a moment ago. Without it
+ * the column can only say "—" for every row of a semester nobody has planned yet, which is every
+ * row on the day this page is most used.
+ *
+ * Per cohort: every unit of the split once, except the practical one, which is multiplied by the
+ * number of groups — and except what a sibling cohort holds for this one, which is counted at
+ * the cohort that holds it and nowhere else.
+ */
+export function plannedHours(
+	components: readonly { kind: InstancePartKind; teachingHours: number }[],
+	practicalKind: InstancePartKind | null | undefined,
+	tracks: readonly TrackHours[]
+): number {
+	let total = 0;
+	for (const track of tracks) {
+		for (const component of components) {
+			if (track.borrowedKinds?.includes(component.kind)) continue;
+			total +=
+				component.kind === practicalKind
+					? component.teachingHours * track.groups
+					: component.teachingHours;
+		}
+	}
+	return total;
 }

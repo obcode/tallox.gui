@@ -4,14 +4,15 @@
 	import { DUTY_LABELS, dutyBadge, moduleName } from '$lib/catalogue';
 	import {
 		byYear,
+		cohortLabel,
 		compareWithPrevious,
 		demandRows,
 		effectiveComponents,
 		hoursLabel,
 		partLabel,
-		trackLetters,
+		plannedHours,
 		sharingState,
-		trackSummary
+		trackLetters
 	} from '$lib/demand';
 	import { hasAnyRole } from '$lib/roles';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName } from '$lib/semester';
@@ -32,6 +33,11 @@
 		)
 	);
 	const groups = $derived(byYear(shown));
+
+	/** What the rows of one cohort year cost as they stand — the same figure the SWS column shows. */
+	function groupHours(rows: Row[]): number {
+		return rows.reduce((sum, row) => sum + liveHours(row), 0);
+	}
 
 	const totalHours = $derived(data.instances.reduce((sum, i) => sum + i.teachingHours, 0));
 	const openEstimates = $derived(data.modules.filter((m) => m.splitIsEstimated).length);
@@ -72,6 +78,9 @@
 		Object.fromEntries(rows.map((row) => [row.module.id, draftOf(row)] as const))
 	);
 	let edits = $state<Record<string, Draft>>({});
+
+	/** Whether anything on the screen differs from what is stored. */
+	const dirty = $derived(Object.keys(edits).length > 0);
 
 	function draft(row: Row): Draft {
 		return edits[row.module.id] ?? seeded[row.module.id] ?? draftOf(row);
@@ -126,6 +135,44 @@
 			draft(row).tracks,
 			row.tracks.map((t) => t.track)
 		);
+	}
+
+	/**
+	 * What a row costs the faculty as it currently stands — ticked or not, saved or not.
+	 *
+	 * The stored figure only covers what is stored, so on the day this page is most used — a
+	 * semester nobody has planned yet — it would say "—" in every line. This says what saving
+	 * would cost, and it moves while somebody clicks.
+	 */
+	function liveHours(row: Row): number {
+		const current = draft(row);
+		if (!current.offered) return 0;
+
+		const tracks = Array.from({ length: current.tracks }, (_, i) => ({
+			groups: current.groups[i] ?? 0,
+			// Only the cohorts that exist can be borrowing anything.
+			borrowedKinds: row.tracks[i]?.borrowedKinds ?? []
+		}));
+		return plannedHours(effectiveComponents(row.module), row.module.practicalKind, tracks);
+	}
+
+	/** The cohort year as the row currently states it, for the label. */
+	function yearOf(row: Row): number | null {
+		const year = Number(draft(row).year);
+		return Number.isFinite(year) && year > 0 ? year : null;
+	}
+
+	/**
+	 * The name a screen reader gets for a group stepper.
+	 *
+	 * One cohort: the module, because that is what distinguishes the control on the page. Several:
+	 * the cohort, because that is what distinguishes it from the one below.
+	 */
+	function groupLabel(row: Row, letters: string[], letter: string, direction = ''): string {
+		const what = letters.length > 1 ? `Zug ${letter}` : moduleName(row.module);
+		if (direction === 'mehr') return `Eine Gruppe mehr für ${what}`;
+		if (direction === 'weniger') return `Eine Gruppe weniger für ${what}`;
+		return `Gruppen von ${what}`;
 	}
 
 	/** The split a row is planned with, as one line: `Vorlesung 4 SWS + Praktikum 2 SWS`. */
@@ -315,7 +362,7 @@
 					{semesterName(data.selected.semester)} · {data.selected.programme}
 				</h2>
 				<p class="text-base-content/80 text-sm">
-					{data.instances.length} Instanz(en), zusammen {hoursLabel(totalHours)} Lehre.
+					{data.instances.length} Instanz(en), zusammen {hoursLabel(totalHours)} Lehre gespeichert.
 					{#if data.previousInstances.length > 0}
 						Gegenüber {semesterName(data.selected.previous)}: {comparison.added} Modul(e) neu,
 						{comparison.removed} nicht mehr, {hoursLabel(
@@ -380,7 +427,7 @@
 							{group.programmeSemester}. Fachsemester
 						{/if}
 						<span class="text-base-content/80 text-sm font-normal">
-							({group.rows.length} Module, {hoursLabel(group.teachingHours)})
+							({group.rows.length} Module, {hoursLabel(groupHours(group.rows))})
 						</span>
 					</h2>
 
@@ -398,17 +445,16 @@
 							</thead>
 							<tbody>
 								{#each group.rows as row (row.module.id)}
-									{@const d = draft(row)}
 									{@const letters = lettersOf(row)}
 									<tr>
 										<td>
 											<input type="hidden" name="module" value={row.module.id} />
-											<!-- Bei einem Zug steht sein Buchstabe hier, weil es keine Zug-Zeile
-											     gibt, in der er stehen könnte. Ein Feld zwischen zwei <tr> wäre
-											     ungültiges HTML, und der Browser verschöbe es beim Parsen. -->
-											{#if letters.length === 1}
-												<input type="hidden" name="track:{row.module.id}:0" value={letters[0]} />
-											{/if}
+											<!-- Die Buchstaben der Züge, wie die Seite sie zeigt. Sie stehen hier
+											     und nicht bei den Zählern, weil ein Feld auch dann mitgeschickt
+											     werden muss, wenn das Modul gar keine Gruppen kennt. -->
+											{#each letters as letter, i (i)}
+												<input type="hidden" name="track:{row.module.id}:{i}" value={letter} />
+											{/each}
 											<label class="flex items-start gap-2">
 												<input
 													type="checkbox"
@@ -510,70 +556,58 @@
 													aria-label="Ein Zug mehr für {moduleName(row.module)}">+</button
 												>
 											</div>
+
+											<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist eine
+											     Aussage über das Modul, und der Rückweg ist derselbe Knopf, weil ein
+											     Sabbatical die Entscheidung revidiert. -->
+											{#if mayPlan}
+												{@const sharing = sharingState(row)}
+												{#if sharing.sharedPartId}
+													<button
+														type="submit"
+														formaction="?/sharePart"
+														name="partId"
+														value={sharing.sharedPartId}
+														class="btn btn-xs mt-1"
+													>
+														Vorlesung wieder je Zug
+													</button>
+													<input type="hidden" name="split" value="1" />
+												{:else if sharing.mergeablePartId}
+													<button
+														type="submit"
+														formaction="?/sharePart"
+														name="partId"
+														value={sharing.mergeablePartId}
+														class="btn btn-xs mt-1"
+													>
+														Vorlesung einmal für alle Züge
+													</button>
+												{/if}
+											{/if}
 										</td>
 										<td>
 											{#if !row.module.practicalKind}
+												<!-- Nichts zu vervielfachen: ein Modul, das nur aus einer Vorlesung
+												     besteht, hat keine Gruppen — parallele Vorlesungen meint hier
+												     niemand. -->
 												<span class="text-base-content/80 text-sm">—</span>
-											{:else if letters.length === 1}
-												<div class="join">
-													<button
-														type="button"
-														class="btn btn-xs join-item"
-														onclick={() => setGroups(row, 0, draft(row).groups[0] - 1)}
-														disabled={!mayPlan}
-														aria-label="Eine Gruppe weniger für {moduleName(row.module)}">−</button
-													>
-													<input
-														type="number"
-														min="0"
-														max="12"
-														name="groups:{row.module.id}:0"
-														value={draft(row).groups[0]}
-														oninput={(e) => setGroups(row, 0, numberOf(e.currentTarget))}
-														disabled={!mayPlan}
-														class="input input-bordered input-xs join-item w-12 text-center"
-														aria-label="Gruppen von {moduleName(row.module)}"
-													/>
-													<button
-														type="button"
-														class="btn btn-xs join-item"
-														onclick={() => setGroups(row, 0, draft(row).groups[0] + 1)}
-														disabled={!mayPlan}
-														aria-label="Eine Gruppe mehr für {moduleName(row.module)}">+</button
-													>
-												</div>
 											{:else}
-												<span class="text-base-content/90 text-sm">{trackSummary(row.tracks)}</span>
-											{/if}
-										</td>
-										<td class="text-base-content/90 whitespace-nowrap">
-											{row.planned ? hoursLabel(row.teachingHours) : '—'}
-										</td>
-									</tr>
-
-									<!-- Die Zug-Zeilen erscheinen erst ab dem zweiten Zug: der häufige Fall ist
-									     einzügig, und für den steht alles in der Zeile darüber. -->
-									{#if letters.length > 1}
-										<tr>
-											<td colspan="6" class="bg-base-200/40">
-												<div class="flex flex-wrap items-center gap-4">
+												<div class="flex flex-col gap-1">
 													{#each letters as letter, i (i)}
-														<div class="flex items-center gap-2">
-															<span class="badge badge-neutral badge-sm">
-																{data.selected.programme}{d.year || '?'}{letter}
-															</span>
-															<input
-																type="hidden"
-																name="track:{row.module.id}:{i}"
-																value={letter}
-															/>
+														<div class="flex items-center gap-1">
+															{#if letters.length > 1}
+																<span class="badge badge-neutral badge-sm">
+																	{cohortLabel(data.selected.programme, yearOf(row), letter)}
+																</span>
+															{/if}
 															<div class="join">
 																<button
 																	type="button"
 																	class="btn btn-xs join-item"
 																	onclick={() => setGroups(row, i, draft(row).groups[i] - 1)}
 																	disabled={!mayPlan}
-																	aria-label="Eine Gruppe weniger für Zug {letter}">−</button
+																	aria-label={groupLabel(row, letters, letter, 'weniger')}>−</button
 																>
 																<input
 																	type="number"
@@ -584,56 +618,44 @@
 																	oninput={(e) => setGroups(row, i, numberOf(e.currentTarget))}
 																	disabled={!mayPlan}
 																	class="input input-bordered input-xs join-item w-12 text-center"
-																	aria-label="Gruppen von Zug {letter}"
+																	aria-label={groupLabel(row, letters, letter)}
 																/>
 																<button
 																	type="button"
 																	class="btn btn-xs join-item"
 																	onclick={() => setGroups(row, i, draft(row).groups[i] + 1)}
 																	disabled={!mayPlan}
-																	aria-label="Eine Gruppe mehr für Zug {letter}">+</button
+																	aria-label={groupLabel(row, letters, letter, 'mehr')}>+</button
 																>
 															</div>
-															{#if row.tracks[i]?.borrowed}
-																<span class="badge badge-ghost badge-sm"
-																	>Vorlesung wird geteilt</span
-																>
+															{#if row.tracks[i]?.borrowedKinds.length}
+																<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
 															{/if}
 														</div>
 													{/each}
 												</div>
-
-												<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
-												     eine Aussage über das Modul, und der Rückweg ist derselbe
-												     Knopf, weil ein Sabbatical die Entscheidung revidiert. -->
-												{#if mayPlan}
-													{@const sharing = sharingState(row)}
-													{#if sharing.sharedPartId}
-														<button
-															type="submit"
-															formaction="?/sharePart"
-															name="partId"
-															value={sharing.sharedPartId}
-															class="btn btn-xs mt-2"
-														>
-															Vorlesung wieder je Zug
-														</button>
-														<input type="hidden" name="split" value="1" />
-													{:else if sharing.mergeablePartId}
-														<button
-															type="submit"
-															formaction="?/sharePart"
-															name="partId"
-															value={sharing.mergeablePartId}
-															class="btn btn-xs mt-2"
-														>
-															Vorlesung einmal für alle Züge
-														</button>
-													{/if}
+											{/if}
+										</td>
+										<td class="text-base-content/90 whitespace-nowrap">
+											{#if draft(row).offered}
+												{hoursLabel(liveHours(row))}
+												{#if row.planned && liveHours(row) !== row.teachingHours}
+													<!-- Was auf dem Bildschirm steht, ist noch nicht, was in der
+													     Datenbank steht. Beides zu zeigen ist der Unterschied
+													     zwischen „ich habe geändert" und „ich habe gespeichert". -->
+													<span class="text-base-content/80 text-xs">
+														(gespeichert {hoursLabel(row.teachingHours)})
+													</span>
 												{/if}
-											</td>
-										</tr>
-									{/if}
+											{:else if row.planned}
+												<span class="text-base-content/80">
+													{hoursLabel(row.teachingHours)} — wird zurückgezogen
+												</span>
+											{:else}
+												<span class="text-base-content/80">—</span>
+											{/if}
+										</td>
+									</tr>
 								{/each}
 							</tbody>
 						</table>
@@ -646,6 +668,9 @@
 					class="border-base-300 bg-base-100 flex flex-wrap items-center gap-3 rounded-lg border p-4"
 				>
 					<button type="submit" class="btn btn-primary btn-sm">Bedarf speichern</button>
+					{#if dirty}
+						<span class="badge badge-warning">nicht gespeichert</span>
+					{/if}
 					<span class="text-base-content/80 text-sm">
 						Gespeichert wird, was hier steht — Module, die der Filter gerade ausblendet, bleiben
 						unangetastet.
