@@ -12,6 +12,7 @@ import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 
 /** A part of an instance, as much of it as the display needs. */
 export type PartLike = {
+	id?: string;
 	kind: InstancePartKind;
 	teachingHours?: number | null;
 	sharedAcrossTracks?: boolean;
@@ -119,6 +120,10 @@ export type RowTrack = {
 	instanceId?: string;
 	/** Parts held by a sibling cohort for this one — rendered, never counted. */
 	borrowed: number;
+	/** This cohort's own lecture, where it has one — what a merge would share. */
+	lecturePartId?: string;
+	/** The part this cohort holds for everybody, where it holds one. */
+	sharedPartId?: string;
 };
 
 /**
@@ -194,7 +199,9 @@ export function demandRows<M extends ModuleLike>(
 					track: instance.track,
 					groups: groupsOf(instance.parts, module.practicalKind),
 					instanceId: instance.id,
-					borrowed: instance.borrowedParts?.length ?? 0
+					borrowed: instance.borrowedParts?.length ?? 0,
+					lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
+					sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id
 				})),
 				planned: true,
 				teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
@@ -340,4 +347,25 @@ export function previousComparableSemester(code: string): string {
 	const match = /^(\d{4})-(SS|WS)$/.exec(code);
 	if (!match) return '';
 	return `${Number(match[1]) - 1}-${match[2]}`;
+}
+
+/**
+ * The lecture a module could hold once for all its cohorts, or the one it already does.
+ *
+ * The shared lecture is the case the whole cohort model is arranged around: one person gives it
+ * for IF3A and IF3B, it happens once, and its two hours count once. It is never the default —
+ * every cohort holds its own until somebody says otherwise — so the control that says otherwise
+ * has to be somewhere, and this is what it hangs off.
+ *
+ * Only meaningful from the second cohort: with one cohort there is nobody to share with, and the
+ * backend answers NO_SIBLING_TRACKS.
+ */
+export function sharingState(row: DemandRow): { sharedPartId?: string; mergeablePartId?: string } {
+	if (row.tracks.length < 2) return {};
+
+	const shared = row.tracks.find((t) => t.sharedPartId);
+	if (shared) return { sharedPartId: shared.sharedPartId };
+
+	const withLecture = row.tracks.find((t) => t.lecturePartId);
+	return { mergeablePartId: withLecture?.lecturePartId };
 }

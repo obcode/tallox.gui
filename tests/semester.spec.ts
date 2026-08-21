@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
+import { SEMESTERS } from './seed';
 
 /**
  * The semester page, against the real stack.
@@ -25,35 +26,6 @@ function cards(page: Page) {
 	return page.locator('div.rounded-lg').filter({ has: page.locator('h2') });
 }
 
-/**
- * The code of the oldest semester nobody has published yet.
- *
- * From the far end so that it cannot be the one the phase test walks, and chosen at runtime
- * rather than written down: a fixed code would be usable exactly once, since publishing is
- * final.
- *
- * Returns the *code* rather than the card. A locator is a query and not a handle — filtering on
- * "Wünsche vertraulich" and then publishing would make the same locator point at a different
- * card on the next assertion, which is a test that quietly stops watching what it started on.
- */
-async function oldestUnpublishedCode(page: Page): Promise<string> {
-	const unpublished = cards(page).filter({ hasText: 'Wünsche vertraulich' });
-	const count = await unpublished.count();
-	if (count === 0) {
-		throw new Error(
-			'every listed semester has had its wishes published — this is a local database ' +
-				"carrying earlier runs. Wipe it with: psql-tallox -c 'delete from semester'"
-		);
-	}
-	return (
-		(await unpublished
-			.nth(count - 1)
-			.locator('code')
-			.first()
-			.textContent()) ?? ''
-	);
-}
-
 test.describe('semesters and phases', () => {
 	test('a lecturer sees the process but cannot change it', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
@@ -77,11 +49,10 @@ test.describe('semesters and phases', () => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');
 
-		// The furthest one on the list: nothing has been decided about it, so it is in
-		// Bedarfsplanung without anybody having put it there — and the phase test ends where it
-		// started, so a second run finds it the same way.
-		const newest = (await cards(page).first().locator('code').first().textContent()) ?? '';
-		const row = cards(page).filter({ hasText: newest });
+		// Its own semester, which the seed puts back into Bedarfsplanung before every run. This
+		// test also ends where it started — but a run that fails halfway does not, and then the
+		// next one would assert about a phase somebody's failure left behind.
+		const row = cards(page).filter({ hasText: SEMESTERS.phase });
 		await expect(row.getByText('Bedarfsplanung')).toBeVisible();
 
 		// Forward one step. The button label comes from the same order the backend uses.
@@ -104,7 +75,10 @@ test.describe('semesters and phases', () => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');
 
-		const row = cards(page).filter({ hasText: await oldestUnpublishedCode(page) });
+		// Its own semester, unpublished again by the seed: this is the one act in the system that
+		// cannot be undone, so a test that consumed whichever semester happened to be unpublished
+		// would work exactly once per semester in the list.
+		const row = cards(page).filter({ hasText: SEMESTERS.publishable });
 		await expect(row.getByText('Wünsche vertraulich')).toBeVisible();
 
 		// Behind a disclosure rather than a confirm(): the page works without JavaScript, and
@@ -126,9 +100,11 @@ test.describe('semesters and phases', () => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');
 
-		// The second card rather than the first, so that the phase test walking the newest one
-		// cannot change this card's text underneath the assertion.
-		const row = cards(page).nth(1);
+		// Its own semester, which the seed leaves unpublished before every run. Picking a card by
+		// position instead held only until a development database had published a few of the
+		// semesters near the top — and picking "any confidential one" met the publishing test on
+		// the last of them.
+		const row = cards(page).filter({ hasText: SEMESTERS.confidential });
 		const code = (await row.locator('code').first().textContent()) ?? '';
 		await expect(row).toContainText('Wünsche vertraulich');
 

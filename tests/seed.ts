@@ -111,6 +111,31 @@ export const CATALOGUE = {
  * window *plus* every semester somebody has decided something about — without the row, the
  * first test could not choose the semester it is about to plan.
  */
+/**
+ * The semesters the phase and publishing tests own.
+ *
+ * Their own, because both tests change a semester and one of them cannot be undone: publishing
+ * ends the confidentiality window for good. Picking "the oldest unpublished one" instead worked
+ * once per semester in the list, and a development database runs out of them — after which the
+ * suite starts asserting about whatever is left.
+ *
+ * Reset by the seed on every run, the same way the split the module test writes is cleared.
+ */
+export const SEMESTERS = {
+	/** Published by the publishing test, unpublished again by the next run's seed. */
+	publishable: '2030-SS',
+	/** Walked forwards and back by the phase test, and put back where it was by the seed. */
+	phase: '2030-WS',
+	/**
+	 * Read by the test that checks a confidential semester shows no figure about its wishes.
+	 *
+	 * Its own, and unpublished by the seed, so that neither the publishing test nor a run that
+	 * failed halfway can leave it published — at which point the assertion would be about a card
+	 * that is no longer confidential.
+	 */
+	confidential: '2031-SS'
+} as const;
+
 export const DEMAND = {
 	semester: '2029-WS',
 	/** What the table prefills from: the same term, one year earlier. */
@@ -198,6 +223,17 @@ export function catalogueStatements(): string[] {
 
 		`INSERT INTO semester (code) VALUES (${quote(DEMAND.semester)}) ON CONFLICT (code) DO NOTHING;`,
 		`INSERT INTO semester (code) VALUES (${quote(DEMAND.previous)}) ON CONFLICT (code) DO NOTHING;`,
+
+		// The two the semester tests own, back in the state they expect to find. Publishing is
+		// the one act in this system that cannot be walked back, so the only way a test can do it
+		// twice is if something puts the row back first — and that something is the fixture,
+		// never the application.
+		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.publishable)})
+		 ON CONFLICT (code) DO UPDATE SET wishes_published_at = NULL, phase = 'DEMAND_PLANNING';`,
+		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.phase)})
+		 ON CONFLICT (code) DO UPDATE SET phase = 'DEMAND_PLANNING';`,
+		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.confidential)})
+		 ON CONFLICT (code) DO UPDATE SET wishes_published_at = NULL;`,
 
 		// Everything the demand tests declared last time. Its parts go with it, and the run
 		// starts from the same state as the first one did — the alternative is a suite that
