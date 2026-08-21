@@ -16,9 +16,9 @@
 		demandRows,
 		effectiveComponents,
 		hoursLabel,
-		partLabel,
 		plannedHours,
 		sharingState,
+		splitSummary,
 		trackLetters
 	} from '$lib/demand';
 	import { hasAnyRole } from '$lib/roles';
@@ -190,11 +190,11 @@
 		return `Gruppen von ${what}`;
 	}
 
-	/** The split a row is planned with, as one line: `Vorlesung 4 SWS + Praktikum 2 SWS`. */
+	/** The split a row is planned with, as one line: `Vorlesung 4 + Praktikum 2 SWS`. */
 	function splitLabel(row: Row): string {
 		const components = effectiveComponents(row.module);
 		if (components.length === 0) return 'keine SWS im Katalog';
-		return components.map((c) => partLabel(c)).join(' + ');
+		return splitSummary(components);
 	}
 </script>
 
@@ -576,9 +576,15 @@
 													</button>
 												</div>
 											{:else}
-												<div class="flex w-full items-center justify-between gap-3">
+												<!--
+													Zwei Zeilen: oben die Aufteilung, darunter alles, was man mit ihr tun
+													kann. Nebeneinander wuchs die Spalte um die Breite der Knöpfe, und
+													bei zwei Zügen schob das die SWS-Spalte aus dem Bild — die Zahl,
+													die man beim Klicken beobachtet.
+												-->
+												<div class="flex flex-col gap-1">
 													<span class="whitespace-nowrap">{splitLabel(row)}</span>
-													<span class="flex items-center gap-1 whitespace-nowrap">
+													<span class="flex flex-wrap items-center gap-1">
 														{#if row.module.splitIsEstimated}
 															<span class="badge badge-warning badge-sm">geschätzt</span>
 															{#if mayPlan}
@@ -601,6 +607,36 @@
 															>
 																ändern
 															</button>
+														{/if}
+														<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
+														     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
+														     Knopf, weil ein Sabbatical die Entscheidung revidiert. -->
+														{#if mayPlan}
+															{@const sharing = sharingState(row)}
+															{#if sharing.sharedPartId}
+																<button
+																	type="submit"
+																	formaction="?/sharePart"
+																	name="partId"
+																	value={sharing.sharedPartId}
+																	class="btn btn-xs"
+																	title="Jeder Zug hält seine Vorlesung wieder selbst"
+																>
+																	Vorlesung trennen
+																</button>
+																<input type="hidden" name="split" value="1" />
+															{:else if sharing.mergeablePartId}
+																<button
+																	type="submit"
+																	formaction="?/sharePart"
+																	name="partId"
+																	value={sharing.mergeablePartId}
+																	class="btn btn-xs"
+																	title="Eine Vorlesung für alle Züge — sie findet einmal statt und zählt einmal"
+																>
+																	Vorlesung zusammenlegen
+																</button>
+															{/if}
 														{/if}
 													</span>
 												</div>
@@ -649,35 +685,6 @@
 													aria-label="Ein Zug mehr für {moduleName(row.module)}">+</button
 												>
 											</div>
-
-											<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist eine
-											     Aussage über das Modul, und der Rückweg ist derselbe Knopf, weil ein
-											     Sabbatical die Entscheidung revidiert. -->
-											{#if mayPlan}
-												{@const sharing = sharingState(row)}
-												{#if sharing.sharedPartId}
-													<button
-														type="submit"
-														formaction="?/sharePart"
-														name="partId"
-														value={sharing.sharedPartId}
-														class="btn btn-xs mt-1"
-													>
-														Vorlesung wieder je Zug
-													</button>
-													<input type="hidden" name="split" value="1" />
-												{:else if sharing.mergeablePartId}
-													<button
-														type="submit"
-														formaction="?/sharePart"
-														name="partId"
-														value={sharing.mergeablePartId}
-														class="btn btn-xs mt-1"
-													>
-														Vorlesung einmal für alle Züge
-													</button>
-												{/if}
-											{/if}
 										</td>
 										<td>
 											{#if !row.module.practicalKind}

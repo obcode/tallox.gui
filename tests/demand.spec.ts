@@ -44,7 +44,7 @@ test.describe('the demand table', () => {
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await expect(guess.getByText('geschätzt')).toBeVisible();
 		// Six hours, and the rule this morning changed: four of lecture and two of laboratory.
-		await expect(guess.getByText('Vorlesung 4 SWS + Praktikum 2 SWS')).toBeVisible();
+		await expect(guess.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
 
 		await checkA11y(page);
 	});
@@ -92,14 +92,14 @@ test.describe('the demand table', () => {
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(row.getByText('14 SWS')).toBeVisible();
 
-		await page.getByRole('button', { name: 'Vorlesung einmal für alle Züge' }).click();
+		await page.getByRole('button', { name: 'Vorlesung zusammenlegen' }).click();
 
 		// Six hours instead of seven per cohort's worth: the lecture is held once now.
 		await expect(page.getByText('Vorlesung geteilt').first()).toBeVisible();
 		const merged = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(merged.getByText('12 SWS')).toBeVisible();
 
-		await page.getByRole('button', { name: 'Vorlesung wieder je Zug' }).click();
+		await page.getByRole('button', { name: 'Vorlesung trennen' }).click();
 		await expect(page.getByText('Vorlesung geteilt')).toHaveCount(0);
 	});
 
@@ -116,7 +116,7 @@ test.describe('the demand table', () => {
 		const confirmed = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await expect(confirmed.getByText('geschätzt')).toHaveCount(0);
 		// The split it took over is the one that was shown.
-		await expect(confirmed.getByText('Vorlesung 4 SWS + Praktikum 2 SWS')).toBeVisible();
+		await expect(confirmed.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
 	});
 
 	// The other half of the estimate: it is a guess, so it has to be correctable where it is
@@ -129,7 +129,7 @@ test.describe('the demand table', () => {
 		// Its own module, because this writes: the seed clears its split before every run, so a
 		// failure halfway leaves nothing behind for the next one to trip over.
 		const row = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
-		await expect(row.getByText('Vorlesung 2 SWS + Praktikum 2 SWS')).toBeVisible();
+		await expect(row.getByText('Vorlesung 2 + Praktikum 2 SWS')).toBeVisible();
 		await expect(row.getByText('geschätzt')).toBeVisible();
 
 		// Exact again: the module is called "…zum Ändern", so every stepper in its row carries the
@@ -141,7 +141,7 @@ test.describe('the demand table', () => {
 		await page.getByRole('button', { name: 'speichern', exact: true }).click();
 
 		const corrected = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
-		await expect(corrected.getByText('Vorlesung 3 SWS + Praktikum 1 SWS')).toBeVisible();
+		await expect(corrected.getByText('Vorlesung 3 + Praktikum 1 SWS')).toBeVisible();
 		// And it is the faculty's own statement now, not a guess.
 		await expect(corrected.getByText('geschätzt')).toHaveCount(0);
 	});
