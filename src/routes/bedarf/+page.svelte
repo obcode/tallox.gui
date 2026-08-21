@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { DUTY_LABELS, dutyBadge, moduleName } from '$lib/catalogue';
+	import {
+		ALL_PART_KINDS,
+		DUTY_LABELS,
+		PART_KIND_LABELS,
+		dutyBadge,
+		formatHours,
+		moduleName
+	} from '$lib/catalogue';
 	import {
 		byYear,
 		cohortLabel,
@@ -81,6 +88,14 @@
 
 	/** Whether anything on the screen differs from what is stored. */
 	const dirty = $derived(Object.keys(edits).length > 0);
+
+	/**
+	 * The module whose split is being corrected, if any.
+	 *
+	 * One at a time: the editor replaces the line it is about, and two open at once would be two
+	 * places where the same "speichern" means different things.
+	 */
+	let editingSplit = $state<string | null>(null);
 
 	function draft(row: Row): Draft {
 		return edits[row.module.id] ?? seeded[row.module.id] ?? draftOf(row);
@@ -411,6 +426,9 @@
 			use:enhance={() =>
 				async ({ update }) => {
 					edits = {};
+					// And the split editor closes: what it was about is answered, and a form still
+					// standing open over the line it just wrote reads as though nothing happened.
+					editingSplit = null;
 					await update({ reset: false });
 				}}
 			class="flex flex-col gap-4"
@@ -503,28 +521,103 @@
 												aria-label="Fachsemester von {moduleName(row.module)}"
 											/>
 										</td>
-										<td class="text-base-content/90 whitespace-nowrap">
-											{splitLabel(row)}
-											{#if row.module.splitIsEstimated}
-												<span class="badge badge-warning badge-sm ml-1">geschätzt</span>
-												{#each effectiveComponents(row.module) as component, i (i)}
-													<input type="hidden" name="kind:{row.module.id}" value={component.kind} />
-													<input
-														type="hidden"
-														name="hours:{row.module.id}"
-														value={component.teachingHours}
-													/>
-												{/each}
-												{#if mayPlan}
+										<td class="text-base-content/90">
+											<!--
+												Die Aufteilung links, die Marke und der Knopf rechts am Spaltenrand.
+												Hinter dem Text her stünden sie in jeder Zeile woanders — und was
+												hier durchgegangen wird, ist eine Spalte von Schätzungen, keine
+												Zeile: das Auge braucht sie untereinander.
+											-->
+											{#if editingSplit === row.module.id}
+												<!--
+													Geändert wird hier, wo die Zahl steht: „4+2 statt 3+3" ist eine
+													Korrektur von zwei Feldern und keine Reise auf eine andere Seite —
+													und die Seite, auf der man gerade fünfzehn Häkchen gesetzt hat,
+													verlässt man dafür nicht. Eine Einheit hinzuzunehmen bleibt der
+													Modulseite vorbehalten, die der Modulname verlinkt.
+												-->
+												<div class="flex flex-wrap items-center gap-1">
+													{#each effectiveComponents(row.module) as component, i (i)}
+														<select
+															name="kind:{row.module.id}"
+															class="select select-bordered select-xs"
+															aria-label="Art des {i + 1}. Teils von {moduleName(row.module)}"
+														>
+															{#each ALL_PART_KINDS as kind (kind)}
+																<option value={kind} selected={kind === component.kind}>
+																	{PART_KIND_LABELS[kind]}
+																</option>
+															{/each}
+														</select>
+														<input
+															type="text"
+															inputmode="decimal"
+															name="hours:{row.module.id}"
+															value={formatHours(component.teachingHours)}
+															class="input input-bordered input-xs w-14"
+															aria-label="SWS des {i + 1}. Teils von {moduleName(row.module)}"
+														/>
+													{/each}
 													<button
 														type="submit"
 														formaction="?/confirmSplit"
 														name="moduleId"
 														value={row.module.id}
-														class="btn btn-xs ml-1"
+														class="btn btn-primary btn-xs"
 													>
-														bestätigen
+														speichern
 													</button>
+													<button
+														type="button"
+														class="btn btn-xs"
+														onclick={() => (editingSplit = null)}
+													>
+														abbrechen
+													</button>
+												</div>
+											{:else}
+												<div class="flex w-full items-center justify-between gap-3">
+													<span class="whitespace-nowrap">{splitLabel(row)}</span>
+													<span class="flex items-center gap-1 whitespace-nowrap">
+														{#if row.module.splitIsEstimated}
+															<span class="badge badge-warning badge-sm">geschätzt</span>
+															{#if mayPlan}
+																<button
+																	type="submit"
+																	formaction="?/confirmSplit"
+																	name="moduleId"
+																	value={row.module.id}
+																	class="btn btn-xs"
+																>
+																	bestätigen
+																</button>
+															{/if}
+														{/if}
+														{#if mayPlan && row.module.plannable}
+															<button
+																type="button"
+																class="btn btn-xs"
+																onclick={() => (editingSplit = row.module.id)}
+															>
+																ändern
+															</button>
+														{/if}
+													</span>
+												</div>
+												{#if row.module.splitIsEstimated}
+													<!-- Was „bestätigen" absendet: die Schätzung, so wie sie danebensteht. -->
+													{#each effectiveComponents(row.module) as component, i (i)}
+														<input
+															type="hidden"
+															name="kind:{row.module.id}"
+															value={component.kind}
+														/>
+														<input
+															type="hidden"
+															name="hours:{row.module.id}"
+															value={component.teachingHours}
+														/>
+													{/each}
 												{/if}
 											{/if}
 										</td>
