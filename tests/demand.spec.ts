@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
-import { CATALOGUE, DEMAND, demandResetSql } from './seed';
+import { CATALOGUE, DEMAND, SEMESTERS, demandResetSql } from './seed';
 
 /**
  * Planning a semester's demand, end to end.
@@ -171,6 +171,24 @@ test.describe('the demand table', () => {
 
 		await page.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
 		await expect(page.getByText('1 zurückgezogen')).toBeVisible();
+	});
+
+	// The first thing anybody plans in a semester nobody has touched — the ordinary way this
+	// screen gets used, and the case that failed in production: the preview the save runs first
+	// had no semester row to point at, and the person got "Das hat nicht geklappt".
+	test('plans the first demand of a semester nobody has touched', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${SEMESTERS.untouched}&studiengang=${CATALOGUE.programme}`
+		);
+
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		// Nothing is planned here yet, and nothing was a year ago either: no prefill, no ticks.
+		await expect(row.getByRole('checkbox')).not.toBeChecked();
+		await row.getByRole('checkbox').check();
+
+		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
 	});
 
 	// Reading the demand needs an account and no role — it is what the wish phase is about — and
