@@ -10,6 +10,7 @@
 		hoursLabel,
 		partLabel,
 		trackLetters,
+		sharingState,
 		trackSummary
 	} from '$lib/demand';
 	import { hasAnyRole } from '$lib/roles';
@@ -594,13 +595,42 @@
 																>
 															</div>
 															{#if row.tracks[i]?.borrowed}
-																<span class="badge badge-ghost badge-sm">
-																	Vorlesung wird geteilt
-																</span>
+																<span class="badge badge-ghost badge-sm"
+																	>Vorlesung wird geteilt</span
+																>
 															{/if}
 														</div>
 													{/each}
 												</div>
+
+												<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
+												     eine Aussage über das Modul, und der Rückweg ist derselbe
+												     Knopf, weil ein Sabbatical die Entscheidung revidiert. -->
+												{#if mayPlan}
+													{@const sharing = sharingState(row)}
+													{#if sharing.sharedPartId}
+														<button
+															type="submit"
+															formaction="?/sharePart"
+															name="partId"
+															value={sharing.sharedPartId}
+															class="btn btn-xs mt-2"
+														>
+															Vorlesung wieder je Zug
+														</button>
+														<input type="hidden" name="split" value="1" />
+													{:else if sharing.mergeablePartId}
+														<button
+															type="submit"
+															formaction="?/sharePart"
+															name="partId"
+															value={sharing.mergeablePartId}
+															class="btn btn-xs mt-2"
+														>
+															Vorlesung einmal für alle Züge
+														</button>
+													{/if}
+												{/if}
 											</td>
 										</tr>
 									{/if}

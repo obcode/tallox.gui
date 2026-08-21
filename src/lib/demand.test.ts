@@ -10,6 +10,7 @@ import {
 	hoursLabel,
 	partLabel,
 	previousComparableSemester,
+	sharingState,
 	trackLetters,
 	trackSummary,
 	type InstanceLike,
@@ -260,5 +261,58 @@ describe('previousComparableSemester', () => {
 
 	it('answers nothing for a code that is not one', () => {
 		expect(previousComparableSemester('WS 2026')).toBe('');
+	});
+});
+
+describe('sharingState', () => {
+	const rowOf = (tracks: { track: string; groups: number; parts: InstanceLike['parts'] }[]) =>
+		demandRows(
+			[module('m')],
+			tracks.map((t, i) => ({
+				id: `m-${i}`,
+				track: t.track,
+				programmeSemester: 1,
+				teachingHours: 4,
+				module: { id: 'm' },
+				parts: t.parts,
+				borrowedParts: []
+			})),
+			[],
+			'2026-WS'
+		)[0];
+
+	const lecture = (id: string, shared = false) => ({
+		id,
+		kind: 'LECTURE' as const,
+		teachingHours: 2,
+		sharedAcrossTracks: shared
+	});
+	const lab = { id: 'lab', kind: 'LAB' as const, teachingHours: 2, sharedAcrossTracks: false };
+
+	// With one cohort there is nobody to share with, and the backend says so too.
+	it('offers nothing for a module that runs once', () => {
+		expect(sharingState(rowOf([{ track: '', groups: 1, parts: [lecture('a'), lab] }]))).toEqual({});
+	});
+
+	it('offers the first cohort’s lecture for merging', () => {
+		const state = sharingState(
+			rowOf([
+				{ track: 'A', groups: 1, parts: [lecture('a'), lab] },
+				{ track: 'B', groups: 1, parts: [lecture('b'), lab] }
+			])
+		);
+		expect(state).toEqual({ mergeablePartId: 'a' });
+	});
+
+	// Once it is shared, what is offered is the way back — sharing is a judgement that gets
+	// revised, and the undo has to be as easy as the merge.
+	it('offers the shared lecture for splitting again', () => {
+		const state = sharingState(
+			rowOf([
+				{ track: 'A', groups: 1, parts: [lecture('a', true), lab] },
+				{ track: 'B', groups: 1, parts: [lab] }
+			])
+		);
+		expect(state).toEqual({ sharedPartId: 'a' });
 	});
 });

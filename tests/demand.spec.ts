@@ -77,6 +77,27 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toHaveValue('3');
 	});
 
+	// One lecture for both cohorts: it happens once and its hours count once. Never the default —
+	// every cohort holds its own until somebody says otherwise — so the saying-so has to be here,
+	// and so does the way back.
+	test('holds one lecture for both cohorts, and undoes it', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(row.getByText('14 SWS')).toBeVisible();
+
+		await page.getByRole('button', { name: 'Vorlesung einmal für alle Züge' }).click();
+
+		// Six hours instead of seven per cohort's worth: the lecture is held once now.
+		await expect(page.getByText('Vorlesung wird geteilt')).toBeVisible();
+		const merged = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(merged.getByText('12 SWS')).toBeVisible();
+
+		await page.getByRole('button', { name: 'Vorlesung wieder je Zug' }).click();
+		await expect(page.getByText('Vorlesung wird geteilt')).toHaveCount(0);
+	});
+
 	test('confirms a guessed split from the row it is shown in', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);

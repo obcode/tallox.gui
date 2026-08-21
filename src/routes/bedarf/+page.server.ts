@@ -157,6 +157,22 @@ const PlanDocument = graphql(`
 	}
 `);
 
+const SharePartDocument = graphql(`
+	mutation SharePartFromTable($id: ID!) {
+		shareInstancePartAcrossTracks(id: $id) {
+			id
+		}
+	}
+`);
+
+const SplitPartDocument = graphql(`
+	mutation SplitPartFromTable($id: ID!) {
+		splitInstancePartAcrossTracks(id: $id) {
+			id
+		}
+	}
+`);
+
 const ConfirmSplitDocument = graphql(`
 	mutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {
 		setModuleComponents(moduleId: $moduleId, components: $components) {
@@ -327,6 +343,31 @@ export const actions: Actions = {
 		} catch (err) {
 			return fail(400, { error: toRefusal(err).message });
 		}
+	},
+
+	/**
+	 * Hold one lecture for all the cohorts of its module — or stop.
+	 *
+	 * The case the cohort model exists for: one person gives the lecture for IF3A and IF3B, it
+	 * happens once, and its hours count once. Never the default, so this is where somebody says
+	 * otherwise; and the way back is the same button, because a sabbatical revises the judgement.
+	 */
+	sharePart: async ({ request }) => {
+		const form = await request.formData();
+		const id = String(form.get('partId') ?? '');
+
+		try {
+			// Two documents rather than one with a flag: they are two mutations, and the
+			// generated types are two types — a variable holding either would be neither.
+			if (form.has('split')) {
+				await backendRequest(SplitPartDocument, { id });
+			} else {
+				await backendRequest(SharePartDocument, { id });
+			}
+		} catch (err) {
+			return fail(400, { error: toRefusal(err).message });
+		}
+		return { shared: id };
 	},
 
 	/**
