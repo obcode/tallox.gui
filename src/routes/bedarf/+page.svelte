@@ -99,6 +99,53 @@
 	const proposedRows = $derived(shown.filter((row) => !row.planned && row.tracks.length > 0));
 
 	/**
+	 * What the toast says, in the order that matters: a refusal, then what a save did, then that
+	 * one is running, then that something is waiting to be saved.
+	 *
+	 * A single derived value rather than four conditions in the markup, because only one of them
+	 * may ever be on screen — two would be two answers to "did that work".
+	 */
+	const toast = $derived.by(() => {
+		if (form && 'error' in form && form.error) {
+			return {
+				badge: 'error',
+				label: 'Nicht gespeichert',
+				text: form.error,
+				code: 'generic' in form && form.generic ? form.code : ''
+			};
+		}
+		if (showResult && form && 'report' in form && form.report) {
+			const r = form.report;
+			const refused = r.refused.length > 0 ? ` ${r.refused.length} nicht möglich.` : '';
+			return {
+				badge: 'success',
+				label: 'Gespeichert',
+				text:
+					`${r.created.length} angelegt, ${r.changed.length} geändert, ` +
+					`${r.withdrawn.length} zurückgezogen — ${hoursLabel(r.teachingHours)} geplant.${refused}`,
+				code: ''
+			};
+		}
+		if (saving) return { badge: '', label: 'wird gespeichert …', text: '', code: '' };
+		if (dirty) return { badge: 'warning', label: 'noch nicht gespeichert', text: '', code: '' };
+		return null;
+	});
+
+	/**
+	 * Whether the result of the last save is still worth showing.
+	 *
+	 * It says what happened, and what happened stops being news. Five seconds is long enough to
+	 * read one line and short enough that the next click is not answered by the one before it.
+	 */
+	let showResult = $state(false);
+	$effect(() => {
+		if (!form) return;
+		showResult = true;
+		const timer = setTimeout(() => (showResult = false), 5000);
+		return () => clearTimeout(timer);
+	});
+
+	/**
 	 * The module whose split is being corrected, if any.
 	 *
 	 * One at a time: the editor replaces the line it is about, and two open at once would be two
@@ -235,6 +282,37 @@
 	}
 </script>
 
+<!--
+	Der Zustand des Speicherns steht über der Seite, nicht in ihr.
+
+	Im Fluss stand er zwischen Kopf und Tabelle, und jede Meldung schob die Tabelle nach unten und
+	wieder zurück — bei einer Seite, die sich nach jedem Klick selbst speichert, also bei jedem
+	Klick. Was sich beim Lesen bewegt, liest niemand.
+-->
+<div
+	class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
+	role="status"
+	aria-live="polite"
+>
+	{#if toast}
+		<div
+			class="border-base-300 bg-base-100 pointer-events-auto rounded-lg border px-4 py-2 shadow-lg"
+		>
+			<p class="text-base-content/90 flex flex-wrap items-center gap-2 text-sm">
+				{#if toast.badge}
+					<span class="badge badge-{toast.badge} badge-sm">{toast.label}</span>
+				{:else}
+					<span class="badge badge-neutral badge-sm">{toast.label}</span>
+				{/if}
+				{toast.text}
+				{#if toast.code}
+					<span class="text-base-content/80">(Code: {toast.code})</span>
+				{/if}
+			</p>
+		</div>
+	{/if}
+</div>
+
 <div class="flex flex-col gap-4">
 	<div>
 		<h1 class="text-2xl font-semibold">Bedarf</h1>
@@ -337,44 +415,6 @@
 
 		<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
 	</form>
-
-	{#if form && 'error' in form && form.error}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<p class="text-base-content/90 text-sm">
-				<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
-				{form.error}
-				{#if 'generic' in form && form.generic && form.code}
-					<!--
-						Der Code steht nur dabei, wenn der Satz der allgemeine ist. „Das hat nicht
-						geklappt" allein ist für niemanden beantwortbar — für die Person davor nicht
-						und für die, die sie danach fragt, auch nicht.
-					-->
-					<span class="text-base-content/80">(Code: {form.code})</span>
-				{/if}
-			</p>
-		</div>
-	{/if}
-
-	{#if form && 'report' in form && form.report}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<p class="text-base-content/90 text-sm">
-				<span class="badge badge-success badge-sm align-middle">Gespeichert</span>
-				{form.report.created.length} angelegt, {form.report.changed.length} geändert, {form.report
-					.withdrawn.length} zurückgezogen. Geplant sind jetzt
-				{hoursLabel(form.report.teachingHours)}.
-			</p>
-			{#if form.report.refused.length > 0}
-				<ul class="mt-2 flex flex-col gap-1">
-					{#each form.report.refused as refusal, i (i)}
-						<li class="text-base-content/90 text-sm">
-							<span class="badge badge-warning badge-sm align-middle">Nicht möglich</span>
-							{refusal.moduleName}{refusal.track ? ` ${refusal.track}` : ''}: {refusal.message}
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
-	{/if}
 
 	{#if form && 'preview' in form && form.preview}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
@@ -522,7 +562,21 @@
 					</h2>
 
 					<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-						<table class="table table-sm">
+						<!--
+							`table-fixed` mit festen Spaltenanteilen: sonst misst der Browser die Spalten
+							nach ihrem Inhalt, und jede gespeicherte Zahl — aus „—" wird „14 SWS" —
+							vermisst die ganze Tabelle neu. Nebenbei stehen damit die Spalten aller
+							Fachsemester-Blöcke untereinander, was sie vorher nicht taten.
+						-->
+						<table class="table table-fixed table-sm w-full min-w-[900px]">
+							<colgroup>
+								<col style="width: 28%" />
+								<col style="width: 8%" />
+								<col style="width: 26%" />
+								<col style="width: 11%" />
+								<col style="width: 17%" />
+								<col style="width: 10%" />
+							</colgroup>
 							<thead>
 								<tr>
 									<th>Modul</th>
@@ -655,7 +709,7 @@
 													die man beim Klicken beobachtet.
 												-->
 												<div class="flex flex-col gap-1">
-													<span class="whitespace-nowrap">{splitLabel(row)}</span>
+													<span>{splitLabel(row)}</span>
 													<span class="flex flex-wrap items-center gap-1">
 														{#if row.module.splitIsEstimated}
 															<span class="badge badge-warning badge-sm">geschätzt</span>
@@ -840,11 +894,6 @@
 					class="border-base-300 bg-base-100 flex flex-wrap items-center gap-3 rounded-lg border p-4"
 				>
 					<button type="submit" class="btn btn-primary btn-sm">Bedarf speichern</button>
-					{#if saving}
-						<span class="badge badge-neutral">wird gespeichert …</span>
-					{:else if dirty}
-						<span class="badge badge-warning">noch nicht gespeichert</span>
-					{/if}
 					<span class="text-base-content/80 text-sm">
 						Jede Änderung wird von selbst gespeichert; der Knopf ist für den Fall, dass das Skript
 						im Browser nicht läuft. Gespeichert wird, was hier steht — Module, die der Filter gerade
