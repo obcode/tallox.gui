@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
+import { frequenciesForTerm } from '$lib/catalogue';
 import { graphql } from '$lib/gql/__generated__';
-import type { DutyStatus, Frequency } from '$lib/gql/__generated__/graphql';
+import type { DutyStatus } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
 import type { PageServerLoad } from './$types';
@@ -45,28 +46,6 @@ const CatalogueDocument = graphql(`
 	}
 `);
 
-/**
- * The terms a module could be offered in, for a filter that says "runs in winter".
- *
- * Three of the six values say nothing about the term and together are more than half the
- * catalogue. Leaving them out would hide far more than it removes — a module offered "nach
- * Ankündigung" is exactly the sort somebody is looking for when they have a gap to fill.
- */
-const WINTER: Frequency[] = [
-	'EVERY_WINTER_SEMESTER',
-	'EVERY_SEMESTER',
-	'ALTERNATING_WITHIN_SUBJECT_GROUP',
-	'ON_ANNOUNCEMENT',
-	'UNKNOWN'
-];
-const SUMMER: Frequency[] = [
-	'EVERY_SUMMER_SEMESTER',
-	'EVERY_SEMESTER',
-	'ALTERNATING_WITHIN_SUBJECT_GROUP',
-	'ON_ANNOUNCEMENT',
-	'UNKNOWN'
-];
-
 const DUTY_VALUES: DutyStatus[] = ['COMPULSORY', 'ELECTIVE', 'MIXED'];
 
 /**
@@ -91,7 +70,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const includeInactive = url.searchParams.get('inaktiv') === '1';
 	const withoutComponents = url.searchParams.get('ohne-aufteilung') === '1';
 
-	const frequency = term === 'WS' ? WINTER : term === 'SS' ? SUMMER : null;
+	const frequency = frequenciesForTerm(term);
 	const dutyFilter = DUTY_VALUES.includes(duty as DutyStatus) ? (duty as DutyStatus) : null;
 
 	try {

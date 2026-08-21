@@ -64,6 +64,17 @@ export function semesterShortName(code: string): string {
 	return full.replace('Sommersemester ', 'SS ').replace('Wintersemester ', 'WS ');
 }
 
+/**
+ * The term of a semester code: `WS`, `SS`, or empty for a code that is not one.
+ *
+ * For the demand, which starts from the term it is planning: a winter semester's list has no
+ * business offering the modules that run only in summer.
+ */
+export function semesterTerm(code: string): string {
+	const match = /^(\d{4})-(SS|WS)$/.exec(code);
+	return match ? match[2] : '';
+}
+
 export type PhaseDirection = 'forward' | 'backward';
 
 /**

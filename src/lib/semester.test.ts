@@ -9,7 +9,8 @@ import {
 	phaseDirection,
 	semesterName,
 	semesterShortName,
-	wishesAreVisible
+	wishesAreVisible,
+	semesterTerm
 } from './semester';
 
 describe('PHASE_LABELS', () => {
@@ -143,5 +144,17 @@ describe('mayStillPublish', () => {
 				mayStillPublish({ code: '2027-SS', phase, wishesPublishedAt: '2026-10-27T09:00:00Z' })
 			).toBe(false);
 		}
+	});
+});
+
+describe('semesterTerm', () => {
+	it('reads the term off the code', () => {
+		expect(semesterTerm('2026-WS')).toBe('WS');
+		expect(semesterTerm('2027-SS')).toBe('SS');
+	});
+
+	it('answers nothing for a code that is not one', () => {
+		expect(semesterTerm('WS 2026')).toBe('');
+		expect(semesterTerm('')).toBe('');
 	});
 });

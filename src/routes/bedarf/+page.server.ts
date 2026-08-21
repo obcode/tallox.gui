@@ -1,23 +1,37 @@
 import { error, fail } from '@sveltejs/kit';
+import { ALL_PART_KINDS, frequenciesForTerm } from '$lib/catalogue';
+import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type {
+	DemandEntryInput,
+	DutyStatus,
+	InstancePartKind
+} from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
+import { semesterTerm } from '$lib/semester';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
- * The demand of one study programme in one semester.
+ * The demand of one study programme in one semester, as one table.
  *
- * Both choices travel in the URL — `?semester=2027-SS&studiengang=IF` — rather than in component
- * state, for the reason the module catalogue does it: a screen somebody is looking at is a thing
- * they send to a colleague, and "look at IF in the summer" has to survive being pasted into a
- * mail. It also means a form with two selects and no JavaScript is the whole picker.
+ * The faculty has always planned a semester this way: one row per module, a tick, the cohorts,
+ * the groups in each — their spreadsheet for the winter of 2026/27 has 346 such rows. So this
+ * page is that table, and the three steps that used to be three screens (pick a module, declare
+ * it, add its groups) are three fields in a row.
  *
- * Nothing is preselected for somebody who leads several programmes. The one thing worse than an
- * extra click here is planning the wrong programme for a while without noticing.
+ * Semester and study programme travel in the URL, like every filter on the catalogue page: a
+ * view somebody is looking at is a thing they send to a colleague.
  */
 const DemandDocument = graphql(`
-	query Demand($semester: String!, $programme: String!, $withDemand: Boolean!) {
+	query DemandTable(
+		$semester: String!
+		$programme: String!
+		$previous: String!
+		$filter: ModuleFilter
+		$withDemand: Boolean!
+		$withPrevious: Boolean!
+	) {
 		semesters {
 			code
 			phase
@@ -38,6 +52,26 @@ const DemandDocument = graphql(`
 			phase
 			wishesPublishedAt
 		}
+		modules(filter: $filter) @include(if: $withDemand) {
+			id
+			name
+			zpaId
+			active
+			contactHoursPerWeek
+			splitIsEstimated
+			plannable
+			practicalKind
+			components {
+				kind
+				teachingHours
+			}
+			proposedComponents {
+				kind
+				teachingHours
+			}
+			dutyStatus(programme: $programme)
+			programmeSemester(programme: $programme)
+		}
 		courseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {
 			id
 			track
@@ -45,16 +79,30 @@ const DemandDocument = graphql(`
 			teachingHours
 			module {
 				id
-				name
-				zpaId
-				contactHoursPerWeek
-				componentHours
-				dutyStatus(programme: $programme)
-				components {
+			}
+			parts {
+				id
+				kind
+				teachingHours
+				sharedAcrossTracks
+			}
+			borrowedParts {
+				fromTrack
+				part {
 					id
 					kind
 					teachingHours
 				}
+			}
+		}
+		previous: courseInstances(semester: $previous, programme: $programme)
+			@include(if: $withPrevious) {
+			id
+			track
+			programmeSemester
+			teachingHours
+			module {
+				id
 			}
 			parts {
 				id
@@ -74,316 +122,252 @@ const DemandDocument = graphql(`
 	}
 `);
 
-/**
- * The modules an instance could be declared for.
- *
- * Filtered by the backend to the programme's own catalogue *and* its own modules, and to the
- * ones whose hours have been split — a module without a split cannot be declared, and offering
- * it in the picker would be a click path into a refusal.
- *
- * The work list is the other half of the same fact and is linked rather than solved here: the
- * count of modules without a split points at the catalogue page, where they are entered.
- */
-const DeclarableModulesDocument = graphql(`
-	query DeclarableModules($programme: String!) {
-		declarable: modules(filter: { programme: $programme }) {
-			id
-			name
-			zpaId
-			components {
-				id
+const PlanDocument = graphql(`
+	mutation PlanDemand(
+		$semester: String!
+		$programme: String!
+		$entries: [DemandEntryInput!]!
+		$dryRun: Boolean!
+	) {
+		planDemand(semester: $semester, programme: $programme, entries: $entries, dryRun: $dryRun) {
+			dryRun
+			teachingHours
+			created {
+				moduleName
+				track
 			}
-			dutyStatus(programme: $programme)
+			withdrawn {
+				moduleName
+				track
+			}
+			changed {
+				moduleName
+				track
+				trackBefore
+				groupsBefore
+				groupsAfter
+			}
+			refused {
+				moduleName
+				track
+				code
+				message
+			}
 		}
 	}
 `);
 
-const DeclareDocument = graphql(`
-	mutation DeclareCourseInstance($input: DeclareCourseInstanceInput!) {
-		declareCourseInstance(input: $input) {
+const ConfirmSplitDocument = graphql(`
+	mutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {
+		setModuleComponents(moduleId: $moduleId, components: $components) {
 			id
+			splitIsEstimated
 		}
 	}
 `);
 
-const DuplicateDocument = graphql(`
-	mutation DuplicateCourseInstance($id: ID!, $track: String!, $sourceTrack: String) {
-		duplicateCourseInstance(id: $id, track: $track, sourceTrack: $sourceTrack) {
-			id
-		}
-	}
-`);
-
-const ChangeInstanceDocument = graphql(`
-	mutation ChangeCourseInstance($id: ID!, $track: String!, $programmeSemester: Int) {
-		changeCourseInstance(id: $id, track: $track, programmeSemester: $programmeSemester) {
-			id
-		}
-	}
-`);
-
-const WithdrawDocument = graphql(`
-	mutation WithdrawCourseInstance($id: ID!) {
-		withdrawCourseInstance(id: $id)
-	}
-`);
-
-const AddPartDocument = graphql(`
-	mutation AddInstancePart($instanceId: ID!, $kind: InstancePartKind!, $teachingHours: Float) {
-		addInstancePart(instanceId: $instanceId, kind: $kind, teachingHours: $teachingHours) {
-			id
-		}
-	}
-`);
-
-const ChangePartDocument = graphql(`
-	mutation ChangeInstancePart($id: ID!, $kind: InstancePartKind!, $teachingHours: Float) {
-		changeInstancePart(id: $id, kind: $kind, teachingHours: $teachingHours) {
-			id
-		}
-	}
-`);
-
-const RemovePartDocument = graphql(`
-	mutation RemoveInstancePart($id: ID!) {
-		removeInstancePart(id: $id) {
-			id
-		}
-	}
-`);
-
-const SharePartDocument = graphql(`
-	mutation ShareInstancePartAcrossTracks($id: ID!) {
-		shareInstancePartAcrossTracks(id: $id) {
-			id
-		}
-	}
-`);
-
-const SplitPartDocument = graphql(`
-	mutation SplitInstancePartAcrossTracks($id: ID!) {
-		splitInstancePartAcrossTracks(id: $id) {
-			id
-		}
-	}
-`);
-
-const CopyDocument = graphql(`
-	mutation CopyDemandFromSemester($from: String!, $to: String!, $programme: String!) {
-		copyDemandFromSemester(from: $from, to: $to, programme: $programme) {
-			created
-			skipped
-			partsCreated
-		}
-	}
-`);
+const DUTY_VALUES: DutyStatus[] = ['COMPULSORY', 'ELECTIVE', 'MIXED'];
 
 export const load: PageServerLoad = async ({ url }) => {
 	const semester = url.searchParams.get('semester') ?? '';
 	const programme = url.searchParams.get('studiengang') ?? '';
-	// Both, or neither. A semester without a programme is every programme's demand, which is a
-	// screen for the dean's office and not this one — and a programme without a semester is not
-	// a question at all.
+	const search = url.searchParams.get('q') ?? '';
+	const duty = url.searchParams.get('art') ?? '';
+	// The term of the semester being planned, unless somebody widened it: the demand of a winter
+	// has no business proposing the modules that run only in summer.
+	const term = url.searchParams.get('turnus') ?? semesterTerm(semester);
+	const onlyEstimated = url.searchParams.get('offen') === '1';
+	const onlyPlanned = url.searchParams.get('geplant') === '1';
+
 	const withDemand = semester !== '' && programme !== '';
+	const previous = previousComparableSemester(semester);
 
 	try {
 		const data = await backendRequest(DemandDocument, {
 			semester,
 			programme,
-			withDemand
+			previous,
+			withDemand,
+			// A previous semester is only asked for when there is one to ask about — and only
+			// when it could hold anything, which a code the backend would refuse cannot.
+			withPrevious: withDemand && previous !== '',
+			filter: {
+				programme: programme === '' ? null : programme,
+				search: search === '' ? null : search,
+				duty: DUTY_VALUES.includes(duty as DutyStatus) ? (duty as DutyStatus) : null,
+				frequency: frequenciesForTerm(term)
+			}
 		});
-
-		const modules = withDemand
-			? (await backendRequest(DeclarableModulesDocument, { programme })).declarable
-			: [];
 
 		return {
 			semesters: data.semesters,
-			// `me` is null for a caller with no identity, which the root layout has already turned
-			// into its own page by the time this renders. Empty rather than a crash, so that the
-			// picker still shows every programme.
 			myProgrammes: data.me?.programmes ?? [],
 			programmes: data.programmes,
-			selected: { semester, programme },
 			current: data.semester ?? null,
+			modules: data.modules ?? [],
 			instances: data.courseInstances ?? [],
-			modules
+			previousInstances: data.previous ?? [],
+			selected: { semester, programme, previous, search, duty, term, onlyEstimated, onlyPlanned }
 		};
 	} catch (err) {
-		// A refusal here is either "no account" — which the root layout already handles — or a
-		// semester code that is not one, which a hand-edited URL produces. Both are worth a
-		// sentence rather than an empty page that looks like a programme with no demand.
+		// A refusal here is "no account", which the root layout already shows as its own page, or
+		// a semester code a hand-edited URL invented. Both are worth a sentence rather than an
+		// empty table that looks like a programme with nothing to plan.
 		error(403, toRefusal(err).message);
 	}
 };
 
-/** What every action answers with when the backend refuses. */
-function refuse(err: unknown) {
-	return fail(400, { error: toRefusal(err).message });
-}
-
-/** Reads an optional number out of a form field. Empty means "not stated", which is a value. */
-function optionalNumber(value: FormDataEntryValue | null): number | null {
-	const text = String(value ?? '').trim();
-	if (text === '') return null;
-	const parsed = Number(text.replace(',', '.'));
-	return Number.isFinite(parsed) ? parsed : null;
-}
-
 /**
- * The writes as form actions rather than /gui-api proxies.
+ * The entries of a plan, read out of the table's fields.
  *
- * They belong to this page and nothing else needs them, and as forms they keep working without
- * JavaScript. Every one of them is a thin pass-through: the rules — who may write, in which
- * phase, for which programme, whether the module has a split — are all in the backend, and a
- * version of any of them here would be a second opinion.
+ * Every row of the screen sends its module id, ticked or not — that is what tells the backend
+ * "this row was on the screen and its tick is off" rather than "I did not mention it". Silence
+ * means untouched, which is what makes a filtered table safe to save.
+ *
+ * The cohort letters travel as fields of their own rather than being derived here, because the
+ * page renders them and what is saved has to be what was shown.
  */
+function entriesFrom(form: FormData): DemandEntryInput[] {
+	const offered = new Set(form.getAll('offer').map(String));
+
+	return form
+		.getAll('module')
+		.map(String)
+		.map((moduleId) => {
+			if (!offered.has(moduleId)) {
+				return { moduleId, tracks: [] };
+			}
+
+			const tracks = [];
+			for (let i = 0; form.has(`track:${moduleId}:${i}`); i++) {
+				tracks.push({
+					track: String(form.get(`track:${moduleId}:${i}`) ?? ''),
+					groups: Math.max(0, Number(form.get(`groups:${moduleId}:${i}`) ?? 0))
+				});
+			}
+
+			const year = String(form.get(`semester:${moduleId}`) ?? '').trim();
+			return {
+				moduleId,
+				tracks,
+				programmeSemester: year === '' ? null : Number(year)
+			};
+		});
+}
+
+/** The three things a save needs to know, in the order the page asks them. */
+type PlanVariables = {
+	semester: string;
+	programme: string;
+	entries: DemandEntryInput[];
+	dryRun: boolean;
+};
+
+async function runPlan(variables: PlanVariables) {
+	const data = await backendRequest(PlanDocument, variables);
+	return data.planDemand;
+}
+
 export const actions: Actions = {
-	declare: async ({ request }) => {
+	/**
+	 * Save the table.
+	 *
+	 * A dry run first, always. If it would take nothing away, the save follows immediately and
+	 * the whole thing is one click — ticking modules and setting groups is the ordinary case and
+	 * deserves no ceremony. If it would withdraw something, the preview comes back for
+	 * confirmation instead: a tick taken away is a statement, and from the wish phase onwards
+	 * somebody's entry may be behind it.
+	 */
+	plan: async ({ request }) => {
 		const form = await request.formData();
-		const moduleId = String(form.get('moduleId') ?? '');
-		if (moduleId === '') return fail(400, { error: 'Bitte ein Modul auswählen.' });
+		const variables: PlanVariables = {
+			semester: String(form.get('semester') ?? ''),
+			programme: String(form.get('programme') ?? ''),
+			entries: entriesFrom(form),
+			dryRun: true
+		};
 
 		try {
-			await backendRequest(DeclareDocument, {
-				input: {
+			const preview = await runPlan(variables);
+			if (preview.withdrawn.length > 0) {
+				return {
+					preview,
+					// What the confirmation re-submits. Server-built, so the second call plans
+					// exactly what the first one previewed rather than whatever the page looks
+					// like by then.
+					payload: JSON.stringify(variables.entries)
+				};
+			}
+			return { report: await runPlan({ ...variables, dryRun: false }) };
+		} catch (err) {
+			return fail(400, { error: toRefusal(err).message });
+		}
+	},
+
+	/** Write what the preview showed. */
+	apply: async ({ request }) => {
+		const form = await request.formData();
+
+		let entries: DemandEntryInput[];
+		try {
+			entries = JSON.parse(String(form.get('payload') ?? '[]'));
+		} catch {
+			return fail(400, { error: 'Die Vorschau ist nicht mehr lesbar. Bitte erneut speichern.' });
+		}
+
+		try {
+			return {
+				report: await runPlan({
 					semester: String(form.get('semester') ?? ''),
 					programme: String(form.get('programme') ?? ''),
-					moduleId,
-					track: String(form.get('track') ?? ''),
-					programmeSemester: optionalNumber(form.get('programmeSemester'))
-				}
+					entries,
+					dryRun: false
+				})
+			};
+		} catch (err) {
+			return fail(400, { error: toRefusal(err).message });
+		}
+	},
+
+	/**
+	 * Confirm one proposed split, from the row it is shown in.
+	 *
+	 * The estimate is good enough to plan with, so this is not a gate — it is the moment the
+	 * faculty takes the number over from the software. One row at a time and deliberately no
+	 * "confirm everything": a proposal is looked at and then confirmed, or the tick means
+	 * nothing.
+	 */
+	confirmSplit: async ({ request }) => {
+		const form = await request.formData();
+		const moduleId = String(form.get('moduleId') ?? '');
+
+		// Named per module, because this button lives inside the big table form — HTML has no
+		// nested forms, so `formaction` sends the whole screen and the action picks out the one
+		// row it is about.
+		const kinds = form.getAll(`kind:${moduleId}`).map(String);
+		const hours = form.getAll(`hours:${moduleId}`).map(String);
+
+		const components: { kind: InstancePartKind; teachingHours: number }[] = [];
+		for (let i = 0; i < kinds.length; i++) {
+			const kind = kinds[i];
+			if (!(ALL_PART_KINDS as readonly string[]).includes(kind)) {
+				return fail(400, { error: 'Unbekannte Art von Lehrveranstaltung.' });
+			}
+			components.push({
+				kind: kind as InstancePartKind,
+				teachingHours: Number((hours[i] ?? '').replace(',', '.'))
 			});
-		} catch (err) {
-			return refuse(err);
 		}
-		return { declared: true };
-	},
 
-	duplicate: async ({ request }) => {
-		const form = await request.formData();
-		const sourceTrack = String(form.get('sourceTrack') ?? '').trim();
+		if (components.length === 0) {
+			return fail(400, { error: 'Für dieses Modul gibt es nichts zu bestätigen.' });
+		}
 
 		try {
-			await backendRequest(DuplicateDocument, {
-				id: String(form.get('id') ?? ''),
-				track: String(form.get('track') ?? ''),
-				// Empty means "leave the source as it is". Sent as null rather than as an empty
-				// string, which the backend would read as a request to clear the letter.
-				sourceTrack: sourceTrack === '' ? null : sourceTrack
-			});
+			await backendRequest(ConfirmSplitDocument, { moduleId, components });
 		} catch (err) {
-			return refuse(err);
+			return fail(400, { error: toRefusal(err).message });
 		}
-		return { duplicated: true };
-	},
-
-	change: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(ChangeInstanceDocument, {
-				id: String(form.get('id') ?? ''),
-				track: String(form.get('track') ?? ''),
-				programmeSemester: optionalNumber(form.get('programmeSemester'))
-			});
-		} catch (err) {
-			return refuse(err);
-		}
-		return { changed: true };
-	},
-
-	withdraw: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(WithdrawDocument, { id: String(form.get('id') ?? '') });
-		} catch (err) {
-			return refuse(err);
-		}
-		return { withdrawn: true };
-	},
-
-	addPart: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(AddPartDocument, {
-				instanceId: String(form.get('instanceId') ?? ''),
-				kind: String(form.get('kind') ?? 'LAB') as InstancePartKind,
-				teachingHours: optionalNumber(form.get('teachingHours'))
-			});
-		} catch (err) {
-			return refuse(err);
-		}
-		return { partAdded: true };
-	},
-
-	changePart: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(ChangePartDocument, {
-				id: String(form.get('id') ?? ''),
-				kind: String(form.get('kind') ?? 'LAB') as InstancePartKind,
-				teachingHours: optionalNumber(form.get('teachingHours'))
-			});
-		} catch (err) {
-			return refuse(err);
-		}
-		return { partChanged: true };
-	},
-
-	removePart: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(RemovePartDocument, { id: String(form.get('id') ?? '') });
-		} catch (err) {
-			return refuse(err);
-		}
-		return { partRemoved: true };
-	},
-
-	sharePart: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(SharePartDocument, { id: String(form.get('id') ?? '') });
-		} catch (err) {
-			return refuse(err);
-		}
-		return { partShared: true };
-	},
-
-	splitPart: async ({ request }) => {
-		const form = await request.formData();
-
-		try {
-			await backendRequest(SplitPartDocument, { id: String(form.get('id') ?? '') });
-		} catch (err) {
-			return refuse(err);
-		}
-		return { partSplit: true };
-	},
-
-	copy: async ({ request }) => {
-		const form = await request.formData();
-		const from = String(form.get('from') ?? '');
-		if (from === '') return fail(400, { error: 'Bitte ein Semester auswählen.' });
-
-		try {
-			const data = await backendRequest(CopyDocument, {
-				from,
-				to: String(form.get('to') ?? ''),
-				programme: String(form.get('programme') ?? '')
-			});
-			// The numbers, always — a copy into a semester that already holds the same instances
-			// writes nothing, and "nothing happened" has to be distinguishable from "it failed"
-			// by the person who pressed the button.
-			return { copied: data.copyDemandFromSemester };
-		} catch (err) {
-			return refuse(err);
-		}
+		return { confirmed: moduleId };
 	}
 };

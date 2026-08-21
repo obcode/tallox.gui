@@ -50,6 +50,11 @@ const ModuleDocument = graphql(`
 				teachingHours
 				position
 			}
+			splitIsEstimated
+			proposedComponents {
+				kind
+				teachingHours
+			}
 			offerings {
 				isDuty
 				moduleCodes

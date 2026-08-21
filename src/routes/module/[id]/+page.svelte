@@ -10,7 +10,6 @@
 		componentMismatch,
 		formatHours,
 		moduleName,
-		proposedComponents,
 		spoLabel
 	} from '$lib/catalogue';
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
@@ -32,13 +31,16 @@
 				hours: formatHours(c.teachingHours)
 			}));
 		}
-		return proposedComponents(data.module.courseType, data.module.contactHoursPerWeek).map((c) => ({
+		// The proposal comes from the server. It used to be computed here as well, in a second
+		// implementation of the same rule — and an instance may now be declared from it, so the
+		// two disagreeing would mean the form showed one split and the database held another.
+		return data.module.proposedComponents.map((c) => ({
 			kind: c.kind,
 			hours: formatHours(c.teachingHours)
 		}));
 	}
 
-	const proposed = $derived(data.module.components.length === 0 && rows.length > 0);
+	const proposed = $derived(data.module.splitIsEstimated);
 
 	const enteredHours = $derived(
 		rows.reduce((sum, r) => {
@@ -151,13 +153,14 @@
 		<p class="text-base-content/80 mb-3 text-sm">
 			Wie sich die Lehre dieses Moduls auf Vorlesung, Praktikum und Übung aufteilt. Das ZPA nennt
 			nur eine Gesamtzahl — die Aufteilung weiß die Fakultät. Sie wird einmal eingetragen und ändert
-			sich danach normalerweise nicht. Ohne sie lässt sich aus dem Modul keine Instanz bilden.
+			sich danach normalerweise nicht. Fehlt sie, plant Tallox mit der Schätzung unten.
 		</p>
 
 		{#if proposed}
 			<p class="text-base-content/90 mb-3 text-sm">
-				<span class="badge badge-warning badge-sm align-middle">Vorschlag</span>
-				Aus der Lehrform abgeleitet und noch nicht gespeichert. Bitte prüfen und speichern.
+				<span class="badge badge-warning badge-sm align-middle">geschätzt</span>
+				Aus Lehrform und SWS abgeleitet, von niemandem bestätigt. Instanzen lassen sich damit schon anlegen
+				— bitte trotzdem prüfen und speichern.
 			</p>
 		{/if}
 

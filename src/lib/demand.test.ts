@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import {
 	borrowedFromLabel,
-	byCohortYear,
+	byYear,
 	cohortLabel,
-	hasSibling,
+	compareWithPrevious,
+	demandRows,
+	groupsOf,
 	hoursLabel,
-	nextTrack,
-	partLabel
+	partLabel,
+	previousComparableSemester,
+	trackLetters,
+	trackSummary,
+	type InstanceLike,
+	type ModuleLike
 } from './demand';
 
 describe('cohortLabel', () => {
@@ -43,61 +50,6 @@ describe('hoursLabel', () => {
 	});
 });
 
-describe('hasSibling', () => {
-	const a = { id: '1', track: 'A', module: { id: 'm' } };
-	const b = { id: '2', track: 'B', module: { id: 'm' } };
-	const other = { id: '3', track: '', module: { id: 'n' } };
-
-	it('finds another cohort of the same module', () => {
-		expect(hasSibling(a, [a, b, other])).toBe(true);
-	});
-
-	it('does not count a different module or the instance itself', () => {
-		expect(hasSibling(other, [a, b, other])).toBe(false);
-		expect(hasSibling(a, [a])).toBe(false);
-	});
-});
-
-describe('nextTrack', () => {
-	// The first duplication of a single cohort proposes B, which is what turns IF1 into IF1A and
-	// IF1B in one act.
-	it('proposes B for a module that runs once', () => {
-		const only = { id: '1', track: '', module: { id: 'm' } };
-		expect(nextTrack(only, [only])).toBe('B');
-	});
-
-	it('skips the letters already taken', () => {
-		const a = { id: '1', track: 'A', module: { id: 'm' } };
-		const b = { id: '2', track: 'B', module: { id: 'm' } };
-		expect(nextTrack(a, [a, b])).toBe('C');
-	});
-
-	it('ignores the cohorts of other modules', () => {
-		const a = { id: '1', track: 'A', module: { id: 'm' } };
-		const foreign = { id: '2', track: 'B', module: { id: 'n' } };
-		expect(nextTrack(a, [a, foreign])).toBe('B');
-	});
-});
-
-describe('byCohortYear', () => {
-	const first = { id: '1', track: 'A', programmeSemester: 1, module: { id: 'm' } };
-	const third = { id: '2', track: '', programmeSemester: 3, module: { id: 'n' } };
-	const unfiled = { id: '3', track: '', programmeSemester: null, module: { id: 'o' } };
-
-	it('groups by year, lowest first', () => {
-		const groups = byCohortYear([third, first]);
-		expect(groups.map((g) => g.programmeSemester)).toEqual([1, 3]);
-		expect(groups[0].instances).toEqual([first]);
-	});
-
-	// The ones nobody has filed yet are the work still to do. A list that opened with them would
-	// read as a list of problems.
-	it('puts the instances without a year last', () => {
-		const groups = byCohortYear([unfiled, first]);
-		expect(groups.map((g) => g.programmeSemester)).toEqual([1, null]);
-	});
-});
-
 describe('borrowedFromLabel', () => {
 	it('names the cohort that holds the part', () => {
 		expect(borrowedFromLabel('IF', 'A')).toBe('IF…A');
@@ -107,5 +59,206 @@ describe('borrowedFromLabel', () => {
 	// would be worse than saying less.
 	it('says less when the sibling has no letter yet', () => {
 		expect(borrowedFromLabel('IF', '')).toBe('einem anderen Zug');
+	});
+});
+
+// A module of the catalogue, with only what the table reads.
+function module(id: string, overrides: Partial<ModuleLike> = {}): ModuleLike {
+	return {
+		id,
+		name: `Modul ${id}`,
+		practicalKind: 'LAB',
+		splitIsEstimated: true,
+		plannable: true,
+		components: [],
+		proposedComponents: [
+			{ kind: 'LECTURE', teachingHours: 2 },
+			{ kind: 'LAB', teachingHours: 2 }
+		],
+		programmeSemester: 1,
+		...overrides
+	};
+}
+
+function instance(
+	moduleId: string,
+	track: string,
+	groups: number,
+	overrides: Partial<InstanceLike> = {}
+): InstanceLike {
+	const parts: { kind: InstancePartKind; teachingHours: number; sharedAcrossTracks: boolean }[] = [
+		{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: false }
+	];
+	for (let i = 0; i < groups; i++) {
+		parts.push({ kind: 'LAB', teachingHours: 2, sharedAcrossTracks: false });
+	}
+	return {
+		id: `${moduleId}-${track}`,
+		track,
+		programmeSemester: 1,
+		teachingHours: 2 + groups * 2,
+		module: { id: moduleId },
+		parts,
+		borrowedParts: [],
+		...overrides
+	};
+}
+
+describe('groupsOf', () => {
+	it('counts the parts of the practical kind', () => {
+		expect(groupsOf(instance('m', '', 3).parts, 'LAB')).toBe(3);
+	});
+
+	// A lecture held for both cohorts is neither a group nor this cohort's, and counting it would
+	// put a number in the stepper that nobody set.
+	it('does not count a part held for the sibling cohorts', () => {
+		const parts = [
+			{ kind: 'LAB' as const, teachingHours: 2, sharedAcrossTracks: false },
+			{ kind: 'LAB' as const, teachingHours: 2, sharedAcrossTracks: true }
+		];
+		expect(groupsOf(parts, 'LAB')).toBe(1);
+	});
+
+	// A module that is nothing but a lecture has no practical unit, and the stepper is not shown.
+	it('counts nothing where there is no practical kind', () => {
+		expect(groupsOf(instance('m', '', 2).parts, null)).toBe(0);
+	});
+});
+
+describe('demandRows', () => {
+	it('shows the cohorts a module is planned in', () => {
+		const rows = demandRows(
+			[module('m')],
+			[instance('m', 'A', 3), instance('m', 'B', 2)],
+			[],
+			'2026-WS'
+		);
+		expect(rows[0].planned).toBe(true);
+		expect(rows[0].tracks).toEqual([
+			{ track: 'A', groups: 3, instanceId: 'm-A', borrowed: 0 },
+			{ track: 'B', groups: 2, instanceId: 'm-B', borrowed: 0 }
+		]);
+		expect(rows[0].teachingHours).toBe(14);
+	});
+
+	// The takeover, as a prefilled row rather than a button: what the module had a year ago,
+	// marked as a proposal, and worth nothing until somebody saves it.
+	it('proposes what the previous comparable semester had', () => {
+		const rows = demandRows([module('m')], [], [instance('m', '', 2)], '2026-WS');
+		expect(rows[0].planned).toBe(false);
+		expect(rows[0].proposedFrom).toBe('2026-WS');
+		expect(rows[0].tracks).toEqual([{ track: '', groups: 2, borrowed: 0 }]);
+		// A proposal costs the faculty nothing, because it is not planned.
+		expect(rows[0].teachingHours).toBe(0);
+	});
+
+	it('leaves a module nobody has planned or had before empty', () => {
+		const rows = demandRows([module('m')], [], [], '2026-WS');
+		expect(rows[0].tracks).toEqual([]);
+		expect(rows[0].proposedFrom).toBeUndefined();
+	});
+
+	// What is planned wins over what was: somebody who has already changed this semester must not
+	// see last year's numbers back.
+	it('prefers this semester over the previous one', () => {
+		const rows = demandRows(
+			[module('m')],
+			[instance('m', '', 1)],
+			[instance('m', '', 3)],
+			'2026-WS'
+		);
+		expect(rows[0].tracks[0].groups).toBe(1);
+	});
+});
+
+describe('trackLetters', () => {
+	// One cohort has no letter: IF1 rather than IF1A, which is what the faculty says.
+	it('gives a single cohort no letter', () => {
+		expect(trackLetters(1)).toEqual(['']);
+	});
+
+	it('letters two or more', () => {
+		expect(trackLetters(2)).toEqual(['A', 'B']);
+		expect(trackLetters(3)).toEqual(['A', 'B', 'C']);
+	});
+
+	// Raising the number must not rename what is there — the letters people already say out loud.
+	it('keeps the letters that exist', () => {
+		expect(trackLetters(3, ['A', 'B'])).toEqual(['A', 'B', 'C']);
+		expect(trackLetters(2, ['A', 'B', 'C'])).toEqual(['A', 'B']);
+	});
+
+	// The one rename that has to happen: a cohort with no letter beside a second one.
+	it('letters an unlettered cohort when a second appears', () => {
+		expect(trackLetters(2, [''])).toEqual(['A', 'B']);
+	});
+
+	it('keeps a single cohort as it is', () => {
+		expect(trackLetters(1, ['A'])).toEqual(['A']);
+		expect(trackLetters(0)).toEqual([]);
+	});
+});
+
+describe('trackSummary', () => {
+	it('reads as the groups per cohort', () => {
+		expect(
+			trackSummary([
+				{ track: 'A', groups: 3, borrowed: 0 },
+				{ track: 'B', groups: 2, borrowed: 0 }
+			])
+		).toBe('A: 3, B: 2');
+		expect(trackSummary([{ track: '', groups: 2, borrowed: 0 }])).toBe('1 Zug: 2');
+	});
+});
+
+describe('byYear', () => {
+	it('groups by cohort year and sums the hours', () => {
+		const rows = demandRows(
+			[module('m'), module('n', { programmeSemester: 3 })],
+			[instance('m', '', 2), instance('n', '', 1, { programmeSemester: 3 })],
+			[],
+			'2026-WS'
+		);
+		const groups = byYear(rows);
+		expect(groups.map((g) => g.programmeSemester)).toEqual([1, 3]);
+		expect(groups[0].teachingHours).toBe(6);
+		expect(groups[1].teachingHours).toBe(4);
+	});
+
+	it('puts the rows without a year last', () => {
+		const rows = demandRows(
+			[module('m', { programmeSemester: null }), module('n')],
+			[],
+			[],
+			'2026-WS'
+		);
+		expect(byYear(rows).map((g) => g.programmeSemester)).toEqual([1, null]);
+	});
+});
+
+describe('compareWithPrevious', () => {
+	it('counts the modules that came and went, and the hours', () => {
+		const now = [instance('a', '', 2), instance('b', '', 1)];
+		const before = [instance('a', '', 1), instance('c', '', 1)];
+		expect(compareWithPrevious(now, before)).toEqual({
+			added: 1,
+			removed: 1,
+			hoursBefore: 8,
+			hoursAfter: 10
+		});
+	});
+});
+
+describe('previousComparableSemester', () => {
+	// The same term a year earlier, never the semester immediately before: 89 modules of the real
+	// catalogue run only in the winter, and prefilling a summer from the winter before it would
+	// propose a list of modules that cannot run.
+	it('is the same term a year earlier', () => {
+		expect(previousComparableSemester('2027-SS')).toBe('2026-SS');
+		expect(previousComparableSemester('2026-WS')).toBe('2025-WS');
+	});
+
+	it('answers nothing for a code that is not one', () => {
+		expect(previousComparableSemester('WS 2026')).toBe('');
 	});
 });
