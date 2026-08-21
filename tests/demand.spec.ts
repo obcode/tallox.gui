@@ -119,6 +119,33 @@ test.describe('the demand table', () => {
 		await expect(confirmed.getByText('Vorlesung 4 SWS + Praktikum 2 SWS')).toBeVisible();
 	});
 
+	// The other half of the estimate: it is a guess, so it has to be correctable where it is
+	// shown. "Four and two instead of three and three" is two fields, not a trip to another page —
+	// least of all from a screen where fifteen ticks are waiting to be saved.
+	test('corrects a split from the row it is shown in', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		// Its own module, because this writes: the seed clears its split before every run, so a
+		// failure halfway leaves nothing behind for the next one to trip over.
+		const row = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
+		await expect(row.getByText('Vorlesung 2 SWS + Praktikum 2 SWS')).toBeVisible();
+		await expect(row.getByText('geschätzt')).toBeVisible();
+
+		// Exact again: the module is called "…zum Ändern", so every stepper in its row carries the
+		// word in its label.
+		await row.getByRole('button', { name: 'ändern', exact: true }).click();
+		await page.getByRole('textbox', { name: /SWS des 1\. Teils/ }).fill('3');
+		await page.getByRole('textbox', { name: /SWS des 2\. Teils/ }).fill('1');
+		// Exact: "Bedarf speichern" stands at the foot of the same form.
+		await page.getByRole('button', { name: 'speichern', exact: true }).click();
+
+		const corrected = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
+		await expect(corrected.getByText('Vorlesung 3 SWS + Praktikum 1 SWS')).toBeVisible();
+		// And it is the faculty's own statement now, not a guess.
+		await expect(corrected.getByText('geschätzt')).toHaveCount(0);
+	});
+
 	// A tick taken away is a statement, and from the wish phase onwards somebody's entry may be
 	// behind it — so it is shown before it is acted on.
 	test('asks before it withdraws anything', async ({ asPersona }) => {

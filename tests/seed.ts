@@ -99,6 +99,14 @@ export const CATALOGUE = {
 	 * laboratory, never three and three.
 	 */
 	confirmable: '0e2e0000-0000-4000-8000-000000000015',
+	/**
+	 * The module the demand test corrects the split of.
+	 *
+	 * Its own again: correcting one is a write, and a test that wrote to the module the other
+	 * rows read would leave 3+1 behind the moment it failed halfway — which is how a suite starts
+	 * asserting about the wreckage of its last run.
+	 */
+	correctable: '0e2e0000-0000-4000-8000-000000000016',
 	/** The person the split module names as responsible. */
 	teacher: '0e2e0000-0000-4000-8000-000000000021'
 } as const;
@@ -187,6 +195,12 @@ export function catalogueStatements(): string[] {
 		        'EVERY_WINTER_SEMESTER', 6, 5 FROM programme WHERE code = ${p}
 		 ON CONFLICT (id) DO NOTHING;`,
 
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.correctable}', id, 'E2E Modul zum Ändern', 'SU_WITH_LAB',
+		        'EVERY_WINTER_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
 		// The split the write test leaves behind is cleared at the start of every run, so the
 		// second run asserts the same thing the first one did.
 		`DELETE FROM module_component WHERE module_id = '${CATALOGUE.writable}';`,
@@ -199,7 +213,8 @@ export function catalogueStatements(): string[] {
 		                              min_programme_semester)
 		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1, 1),
 		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1, 2),
-		        ('${CATALOGUE.confirmable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-05'], 1, 1)
+		        ('${CATALOGUE.confirmable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-05'], 1, 1),
+		        ('${CATALOGUE.correctable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-06'], 1, 2)
 		 ON CONFLICT (module_id, spo_id) DO NOTHING;`,
 
 		// Somebody who teaches, and the module that names them.
@@ -263,8 +278,10 @@ export function catalogueStatements(): string[] {
 export function demandResetSql(): string {
 	return [
 		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
-		// The split the confirmation test states, so that the next run finds a guess again.
-		`DELETE FROM module_component WHERE module_id = '${CATALOGUE.confirmable}';`,
+		// The splits the confirming and the correcting tests state, so that the next run finds a
+		// guess again — including after a run that failed halfway and restored nothing.
+		`DELETE FROM module_component
+		  WHERE module_id IN ('${CATALOGUE.confirmable}', '${CATALOGUE.correctable}');`,
 		// And what the previous comparable semester held, so the table has something to prefill
 		// from: one cohort, a lecture and two laboratory groups.
 		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
