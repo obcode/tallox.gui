@@ -1,5 +1,10 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
+import { admissionResetSql } from './seed';
+import { runSql } from './psql';
+
+/** The accounts tab. The ZPA list is what /verwaltung/personen opens on. */
+const ACCOUNTS = '/verwaltung/personen?ansicht=konten';
 
 /**
  * Who sees the administration area, who can use it, and what the role preview does.
@@ -26,7 +31,7 @@ test.describe('administration', () => {
 
 	test('lists the people for administrators', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
-		await page.goto('/verwaltung/personen');
+		await page.goto(ACCOUNTS);
 
 		await expect(page.getByRole('heading', { name: 'Personen und Rollen' })).toBeVisible();
 		await expect(page.getByText(PERSONAS.eins.name)).toBeVisible();
@@ -46,7 +51,7 @@ test.describe('administration', () => {
 test.describe('creating people and setting roles', () => {
 	test('creates with the mail address alone and grants roles afterwards', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
-		await page.goto('/verwaltung/personen');
+		await page.goto(ACCOUNTS);
 
 		// One address per run: people are never deleted, so a fixed value would fail on
 		// PERSON_EXISTS the second time round — and that would look like a defect in the
@@ -79,7 +84,7 @@ test.describe('creating people and setting roles', () => {
 		// it is reachable from the screen the damage would be done on, and that it arrives as a
 		// readable sentence and not as a 500.
 		const page = await asPersona(PERSONAS.sechs);
-		await page.goto('/verwaltung/personen');
+		await page.goto(ACCOUNTS);
 
 		// A precondition, and it is checked rather than assumed: the rule only applies when there
 		// is exactly one administrator. Were there a second one locally, this test would actually
@@ -97,6 +102,137 @@ test.describe('creating people and setting roles', () => {
 
 		await expect(page.getByText('Nicht gespeichert')).toBeVisible();
 		await expect(page.getByText(/ohne Administration/)).toBeVisible();
+	});
+});
+
+/**
+ * Admitting somebody from the ZPA list.
+ *
+ * Serial, and for the domain rather than the framework: these tests admit and withdraw the same
+ * two people, and "nobody has admitted them yet" is a precondition one of them takes away from
+ * the other.
+ */
+test.describe('admitting people from the ZPA list', () => {
+	test.describe.configure({ mode: 'serial' });
+
+	test.beforeAll(() => {
+		// Before, not after. A run that failed halfway leaves the accounts behind, and the next
+		// one has to be able to start anyway.
+		runSql(admissionResetSql(), 'removing the accounts the admission tests create');
+	});
+
+	test('opens on the professors of faculty 07 and says what it is keeping out', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		await expect(page.getByRole('row').filter({ hasText: 'Sieben, Prof.' })).toBeVisible();
+		// Another faculty, and a lecturer on a contract: both kept out by the pre-filter.
+		await expect(page.getByRole('row').filter({ hasText: 'Neun, Prof.' })).toHaveCount(0);
+		await expect(page.getByRole('row').filter({ hasText: 'Zehn, M.Sc.' })).toHaveCount(0);
+
+		// And it says so. A pre-filtered list that does not is indistinguishable from a short one
+		// — which matters here because more than half of the real entries state no faculty at all.
+		await expect(page.getByText(/weitere mit anderer oder ohne Fakultätsangabe/)).toBeVisible();
+
+		// Widening the filter brings them back, without a page load.
+		await page.getByRole('checkbox', { name: /FK99/ }).check();
+		await expect(page.getByRole('row').filter({ hasText: 'Neun, Prof.' })).toBeVisible();
+		// And the address carries the selection, so a reload shows the same rows.
+		await page.reload();
+		await expect(page.getByRole('row').filter({ hasText: 'Neun, Prof.' })).toBeVisible();
+	});
+
+	test('makes somebody a user with one click, and it is saved without a save button', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const row = page.getByRole('row').filter({ hasText: 'Sieben, Prof.' });
+		const account = row.getByRole('switch', { name: 'Konto' });
+		await expect(account).not.toBeChecked();
+
+		await account.click();
+
+		// Admitting grants exactly the one role, and the row shows it immediately.
+		await expect(account).toBeChecked();
+		await expect(row.getByRole('switch', { name: 'Dozent:in' })).toBeChecked();
+		await expect(row.getByRole('switch', { name: 'Administration' })).not.toBeChecked();
+
+		// There is no save button. A reload is the only way to tell that from a screen that only
+		// looks as though it saved.
+		await page.reload();
+		await expect(
+			page
+				.getByRole('row')
+				.filter({ hasText: 'Sieben, Prof.' })
+				.getByRole('switch', { name: 'Konto' })
+		).toBeChecked();
+	});
+
+	test('grants a role in the list, and the study programmes beside it', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const row = page.getByRole('row').filter({ hasText: 'Sieben, Prof.' });
+		await row.getByRole('switch', { name: 'Studiengangsleitung' }).click();
+
+		// Without a study programme a lead may plan nothing — not everything — so the row says so
+		// and offers the codes in the same line.
+		await expect(row.getByText('kein Studiengang')).toBeVisible();
+
+		await row.getByRole('switch', { name: 'E2E' }).click();
+		await expect(row.getByRole('switch', { name: 'E2E' })).toBeChecked();
+		await expect(row.getByText('kein Studiengang')).toHaveCount(0);
+
+		await page.reload();
+		const reloaded = page.getByRole('row').filter({ hasText: 'Sieben, Prof.' });
+		await expect(reloaded.getByRole('switch', { name: 'Studiengangsleitung' })).toBeChecked();
+		await expect(reloaded.getByRole('switch', { name: 'E2E' })).toBeChecked();
+	});
+
+	test('shows the same person on the accounts tab', async ({ asPersona }) => {
+		// The two tabs are two readings of the same table, and somebody admitted on one has to be
+		// administrable on the other — that is where the expiry and the deactivation live.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto(ACCOUNTS);
+
+		await page.getByRole('searchbox', { name: 'Suchen' }).fill('prof.sieben@example.org');
+		await page.getByRole('button', { name: 'Anwenden' }).click();
+
+		const row = page.getByRole('row').filter({ hasText: 'prof.sieben@example.org' });
+		await expect(row).toContainText('Dozent:in');
+		await expect(row).toContainText('Studiengangsleitung');
+	});
+
+	test('withdrawing keeps the roles for when somebody is admitted again', async ({ asPersona }) => {
+		// Nobody is ever deleted here: deactivating refuses authentication on both doors and
+		// keeps every grant, so re-admitting restores what somebody had rather than starting them
+		// over. A switch that quietly emptied the roles would be a different thing entirely.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const row = page.getByRole('row').filter({ hasText: 'Sieben, Prof.' });
+		await row.getByRole('switch', { name: 'Konto' }).click();
+		await expect(row.getByRole('switch', { name: 'Konto' })).not.toBeChecked();
+		await expect(row.getByText('deaktiviert')).toBeVisible();
+
+		await row.getByRole('switch', { name: 'Konto' }).click();
+		await expect(row.getByRole('switch', { name: 'Konto' })).toBeChecked();
+		await expect(row.getByRole('switch', { name: 'Studiengangsleitung' })).toBeChecked();
+	});
+
+	test('offers no switch for somebody the ZPA gives no address for', async ({ asPersona }) => {
+		// The address is the whole link between the two lists. Offering a switch here would
+		// promise something the backend refuses — three of the 257 real ones are in this state.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const row = page.getByRole('row').filter({ hasText: 'Zwoelf, ohne Adresse' });
+		await expect(row).toContainText('ohne Adresse kein Konto möglich');
+		await expect(row.getByRole('switch', { name: 'Konto' })).toHaveCount(0);
 	});
 });
 
@@ -222,6 +358,14 @@ test.describe('no account', () => {
 
 test.describe('accessibility', () => {
 	test('the administration area is accessible', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await gotoRendered(page, ACCOUNTS);
+		await checkA11y(page);
+	});
+
+	test('the admission list is accessible', async ({ asPersona, checkA11y }) => {
+		// Its own check, because it is a different screen behind the same address: two hundred
+		// rows of switches, and switches are where a state that is only a colour hides.
 		const page = await asPersona(PERSONAS.sechs);
 		await gotoRendered(page, '/verwaltung/personen');
 		await checkA11y(page);

@@ -189,3 +189,35 @@ test.describe('the module catalogue across all themes', () => {
 		});
 	}
 });
+
+/**
+ * The admission list across all themes.
+ *
+ * Its own sweep, because it is the first screen built out of switches: `btn-primary`,
+ * `btn-secondary` and `btn-outline`, dozens per row, and each of them says what it says by being
+ * filled or not. daisyUI pairs a filled button with its own `*-content` foreground; `btn-outline`
+ * takes its colour from the surface it sits on, and that surface differs per theme. A ratio that
+ * is comfortable on `nord` is the one that fails on `winter`, and here it would make the
+ * difference between "has an account" and "has none" unreadable.
+ */
+test.describe('the admission list across all themes', () => {
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ browser, context }) => {
+			await context.addCookies([
+				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
+			]);
+
+			const signedIn = await browser.newContext({
+				extraHTTPHeaders: { 'X-Remote-User': PERSONAS.sechs.mail },
+				storageState: { cookies: await context.cookies(), origins: [] }
+			});
+			const page = await signedIn.newPage();
+
+			await gotoRendered(page, '/verwaltung/personen');
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			await expectNoContrastViolations(page, theme.value);
+			await signedIn.close();
+		});
+	}
+});
