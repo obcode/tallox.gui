@@ -81,8 +81,17 @@
 	opacity: 1;
 }
 
+/*
+ * 90 % for the tabs, and the extra ten points are not caution.
+ *
+ * `tabs-box` puts the row on `base-200` rather than on `base-100`, and against that darker
+ * surface 80 % of `base-content` measures 4.3:1 on `retro` — under the threshold, while the same
+ * value clears it comfortably on every other theme and in every other component. Found by the
+ * admission list in tests/contrast.spec.ts, which is the first screen with tabs that sweep runs
+ * over; /api-doku had been carrying the same finding unmeasured.
+ */
 .tabs .tab {
-	color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+	color: color-mix(in oklab, var(--color-base-content) 90%, transparent);
 	opacity: 1;
 }
 
