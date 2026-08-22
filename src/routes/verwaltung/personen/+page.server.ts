@@ -49,6 +49,7 @@ const PeopleDocument = graphql(`
 			id
 			mail
 			name
+			sortName
 			active
 			roles
 			programmes {

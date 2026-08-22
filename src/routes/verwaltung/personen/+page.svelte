@@ -548,8 +548,16 @@
 					{#each data.people as person (person.id)}
 						<tr>
 							<td>
-								<div class="font-medium">{displayName(person)}</div>
-								{#if person.name}
+								<!-- Der Nachname zuerst, wo das ZPA ihn kennt: die Liste ist danach
+								     sortiert, und eine Liste, die nach etwas sortiert ist, das sie nicht
+								     zeigt, liest sich wie eine unsortierte. Für alle anderen der Name, wie
+								     ihn jemand geschrieben hat — welches Wort davon der Nachname ist,
+								     wird hier nicht geraten. -->
+								<div class="font-medium">{person.sortName ?? displayName(person)}</div>
+								{#if person.sortName}
+									<div class="text-base-content/80 text-xs">{person.name}</div>
+								{/if}
+								{#if person.name || person.sortName}
 									<div class="text-base-content/80 font-mono text-xs">{person.mail}</div>
 								{/if}
 								{#if !person.active}

@@ -238,6 +238,24 @@ test.describe('admitting people from the ZPA list', () => {
 		const row = page.getByRole('row').filter({ hasText: 'prof.sieben@example.org' });
 		await expect(row).toContainText('Dozent:in');
 		await expect(row).toContainText('Studiengangsleitung');
+		// Surname first, because that is what the list is sorted by — and a list sorted by
+		// something it does not show reads as unsorted.
+		await expect(row).toContainText('Sieben, Prof.');
+	});
+
+	test('sorts the accounts by the surname and not by the title', async ({ asPersona }) => {
+		// The discriminator, and it is one: by the written-out name "Prof. Dr. Sieben" comes
+		// before "Prof. Eins" — Dr. before Eins — and by the surname it comes after. Every
+		// professor under P is what a list ordered by `name` does.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto(ACCOUNTS);
+
+		const names = await page.locator('tbody tr td:first-child .font-medium').allInnerTexts();
+		const eins = names.indexOf('Prof. Eins');
+		const sieben = names.indexOf('Sieben, Prof.');
+		expect(eins, `no row for Prof. Eins in ${JSON.stringify(names)}`).toBeGreaterThanOrEqual(0);
+		expect(sieben, `no admitted teacher in ${JSON.stringify(names)}`).toBeGreaterThanOrEqual(0);
+		expect(eins).toBeLessThan(sieben);
 	});
 
 	test('withdrawing keeps the roles for when somebody is admitted again', async ({ asPersona }) => {
