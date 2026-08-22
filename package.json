@@ -27,6 +27,7 @@
 		"update-schema": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${TALLOX_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
 	},
 	"dependencies": {
+		"@sentry/sveltekit": "^10.70.0",
 		"graphql": "^16.11.0",
 		"graphql-request": "^7.2.0"
 	},
