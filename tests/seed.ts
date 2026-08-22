@@ -240,6 +240,25 @@ export function catalogueStatements(): string[] {
 		`UPDATE module SET responsible_teacher_id = '${CATALOGUE.teacher}'
 		  WHERE id = '${CATALOGUE.split}';`,
 
+		// The admission screen's own rows: one per state its filter can be in. Every one of them
+		// grants nothing — a teacher is imported master data, and who may sign in is a decision
+		// somebody makes on that screen.
+		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor,
+		                      is_lecturer_on_contract, is_staff, active, faculty, last_semester)
+		 VALUES ('${TEACHERS.admittable}', 'prof.sieben@example.org', 'Prof. Dr. Sieben',
+		         'Sieben, Prof.', true, false, false, true, 'FK07', '2026-WS'),
+		        ('${TEACHERS.spare}', 'prof.acht@example.org', 'Prof. Dr. Acht',
+		         'Acht, Prof.', true, false, false, true, 'FK07', '2026-WS'),
+		        ('${TEACHERS.elsewhere}', 'prof.neun@example.org', 'Prof. Dr. Neun',
+		         'Neun, Prof.', true, false, false, true, 'FK99', '2026-WS'),
+		        ('${TEACHERS.onContract}', 'lba.zehn@example.org', 'Zehn, M.Sc.',
+		         'Zehn, M.Sc.', false, true, false, true, 'FK07', '2026-WS'),
+		        ('${TEACHERS.former}', 'prof.elf@example.org', 'Prof. Dr. Elf',
+		         'Elf, Prof.', true, false, false, false, 'FK07', '2025-SS'),
+		        ('${TEACHERS.withoutMail}', NULL, 'Zwoelf, ohne Adresse',
+		         'Zwoelf, ohne Adresse', true, false, true, true, 'FK07', '2026-WS')
+		 ON CONFLICT (id) DO NOTHING;`,
+
 		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
 		 VALUES ('${CATALOGUE.split}', 'LECTURE', 2, 0), ('${CATALOGUE.split}', 'LAB', 2, 1)
 		 ON CONFLICT (module_id, position) DO NOTHING;`,
@@ -306,6 +325,53 @@ export function demandResetSql(): string {
 		// not fail on a database that has one.
 		`DELETE FROM semester s WHERE s.code = ${quote(SEMESTERS.untouched)}
 		   AND NOT EXISTS (SELECT 1 FROM course_instance ci WHERE ci.semester_id = s.id);`
+	].join('\n');
+}
+
+/**
+ * The people who teach, for the admission screen.
+ *
+ * Six rows, and each of them is one row of that screen's filter. Without them the list would be
+ * the single professor the catalogue already needed, the pre-filter would have nothing to keep
+ * out, and every assertion about it would pass for the wrong reason.
+ *
+ * Invented, like the rest of the cast. Both public repositories, and this is the list of who
+ * teaches at a real faculty.
+ */
+export const TEACHERS = {
+	/** FK07, professor, teaches, no account. What the switch is clicked on. */
+	admittable: '0e2e0000-0000-4000-8000-000000000031',
+	/** FK07, professor, teaches, no account — the second one, so a test may keep one untouched. */
+	spare: '0e2e0000-0000-4000-8000-000000000032',
+	/** Another faculty. The pre-filter keeps them out, and widening it brings them back. */
+	elsewhere: '0e2e0000-0000-4000-8000-000000000033',
+	/** Teaches on a contract. Kept out by the employment facet rather than by the faculty one. */
+	onContract: '0e2e0000-0000-4000-8000-000000000034',
+	/** The examination office no longer lists them as teaching. */
+	former: '0e2e0000-0000-4000-8000-000000000035',
+	/** No address at all. Can never be admitted, because the address is the whole link. */
+	withoutMail: '0e2e0000-0000-4000-8000-000000000036'
+} as const;
+
+/** The addresses the admission tests admit, so that a run can start from "nobody admitted". */
+export const ADMITTABLE_MAILS = ['prof.sieben@example.org', 'prof.acht@example.org'] as const;
+
+/**
+ * The accounts the admission tests create, removed again.
+ *
+ * Called before the admission spec, not after: a run that failed halfway leaves them behind, and
+ * the next run has to be able to start anyway. Deleting a person is something the application
+ * deliberately cannot do — the assignments stay in the history — which is exactly why the
+ * fixture has to, and only for addresses no real person carries.
+ */
+export function admissionResetSql(): string {
+	const list = ADMITTABLE_MAILS.map(quote).join(', ');
+	return [
+		`DELETE FROM person_programme_scope WHERE person_id IN
+		   (SELECT id FROM person WHERE mail IN (${list}));`,
+		`DELETE FROM person_role WHERE person_id IN
+		   (SELECT id FROM person WHERE mail IN (${list}));`,
+		`DELETE FROM person WHERE mail IN (${list});`
 	].join('\n');
 }
 

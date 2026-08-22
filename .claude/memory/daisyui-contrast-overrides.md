@@ -46,4 +46,12 @@ die rot werden.
 daisyUI Farbverläufe, Noise oder sonst ein `background-image` malt, muss der Kontrast von Hand
 gemessen werden, sonst ist die Prüfung lautlos wirkungslos.
 
-Siehe auch [[theme-cookie]] (die Themeliste und warum sie kuratiert ist).
+**Nachtrag 2026-08-22, `tabs-box`:** Der Override für `.tabs .tab` stand auf 80 % — gemessen
+gegen `base-100`. `tabs-box` legt die Leiste aber auf `base-200`, und dagegen sind es auf
+`retro` nur 4,3:1. Jetzt 90 %. Gefunden hat das erst der Kontrast-Durchlauf über den
+Zulassungsbildschirm; `/api-doku` trug denselben Befund seit seiner Entstehung, weil kein
+Durchlauf je eine Seite mit Reitern besucht hat. **Der Sweep prüft nur die Seiten, die er
+besucht** — eine neue Seite mit einer neuen Komponentenkombination braucht einen eigenen Fall.
+
+Siehe auch [[theme-cookie]] (die Themeliste und warum sie kuratiert ist) und
+[[save-on-toggle]].
