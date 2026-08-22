@@ -77,6 +77,11 @@ const PASS_THROUGH = new Set([
 	'COMPONENTS_INVALID',
 	'UNKNOWN_PROGRAMME',
 	'NOT_A_PROGRAMME_LEAD',
+	// The admission screen. TEACHER_HAS_NO_MAIL is the one refusal there that nobody can act on,
+	// and its sentence says why — a generic "that did not work" would send an administrator
+	// looking for a mistake they did not make.
+	'TEACHER_NOT_FOUND',
+	'TEACHER_HAS_NO_MAIL',
 	'SPO_ID_INVALID',
 	// The demand. Not confidential either — it is what the wish phase is about — and every
 	// sentence here is the useful answer rather than a fact about the database.
