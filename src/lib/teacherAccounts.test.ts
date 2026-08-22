@@ -19,7 +19,6 @@ import {
 	parseTeacherFilter,
 	programmesAfterToggle,
 	rolesAfterToggle,
-	semestersIn,
 	teacherFilterParams,
 	type TeacherAccountRow
 } from './teacherAccounts';
@@ -42,7 +41,6 @@ function row(
 			isStaff: false,
 			active: true,
 			faculty: 'FK07',
-			lastSemester: '2026-WS',
 			...teacher
 		},
 		account
@@ -203,8 +201,7 @@ describe('the filter in the URL', () => {
 			employment: ['PROFESSOR' as const, 'STAFF' as const],
 			teaching: ['FORMER' as const],
 			account: ['NONE' as const],
-			roles: ['ADMIN'],
-			lastSemester: ['2026-WS']
+			roles: ['ADMIN']
 		};
 		expect(parseTeacherFilter(teacherFilterParams(filter))).toEqual(filter);
 	});
@@ -220,18 +217,10 @@ describe('the filter in the URL', () => {
 });
 
 describe('facets offered', () => {
-	const rows = [
-		row('Eins'),
-		row('Zwei', { faculty: 'FK10', lastSemester: '2025-SS' }),
-		row('Drei', { faculty: null, lastSemester: null })
-	];
+	const rows = [row('Eins'), row('Zwei', { faculty: 'FK10' }), row('Drei', { faculty: null })];
 
 	it('offers the faculties that occur, with the unstated one last', () => {
 		expect(facultiesIn(rows)).toEqual(['FK07', 'FK10', FACULTY_UNKNOWN]);
-	});
-
-	it('offers the semesters newest first and leaves out the empty one', () => {
-		expect(semestersIn(rows)).toEqual(['2026-WS', '2025-SS']);
 	});
 
 	it('counts how many rows carry each value', () => {

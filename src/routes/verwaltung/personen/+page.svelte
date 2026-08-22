@@ -24,7 +24,7 @@
 		parseTeacherFilter,
 		programmesAfterToggle,
 		rolesAfterToggle,
-		semestersIn,
+		rolesOf,
 		teacherFilterParams,
 		type TeacherAccountRow,
 		type TeacherFilter
@@ -60,10 +60,13 @@
 	const accounts = $derived(data.accounts as TeacherAccountRow[]);
 	const shown = $derived(filterTeacherAccounts(accounts, filter));
 	const faculties = $derived(facultiesIn(accounts));
-	const semesters = $derived(semestersIn(accounts));
 	const facultyCounts = $derived(facetCounts(accounts, (row) => [facultyOf(row)]));
 	const employmentCounts = $derived(facetCounts(accounts, employmentsOf));
+	const teachingCounts = $derived(
+		facetCounts(accounts, (row) => [row.teacher.active ? 'ACTIVE' : 'FORMER'])
+	);
 	const accountCounts = $derived(facetCounts(accounts, (row) => [accountState(row)]));
+	const roleCounts = $derived(facetCounts(accounts, rolesOf));
 	const activeProgrammes = $derived(data.programmes.filter((programme) => programme.active));
 
 	/** Read the checkboxes back out of the form and put them in the address. */
@@ -237,24 +240,13 @@
 							class="checkbox checkbox-sm"
 						/>
 						{TEACHING_LABELS[state]}
-					</label>
-				{/each}
-				{#each semesters as semester (semester)}
-					<label class="flex items-center gap-1 text-sm">
-						<input
-							type="checkbox"
-							name="sem"
-							value={semester}
-							checked={filter.lastSemester.includes(semester)}
-							class="checkbox checkbox-sm"
-						/>
-						zuletzt {semester}
+						<span class="text-base-content/80">({teachingCounts.get(state) ?? 0})</span>
 					</label>
 				{/each}
 			</fieldset>
 
 			<fieldset class="flex flex-wrap items-center gap-x-4 gap-y-1">
-				<legend class="sr-only">Konto und Rollen</legend>
+				<legend class="sr-only">Konto</legend>
 				<span class="text-base-content/80 w-24 text-sm">Konto</span>
 				{#each ACCOUNT_STATES as state (state)}
 					<label class="flex items-center gap-1 text-sm">
@@ -269,6 +261,15 @@
 						<span class="text-base-content/80">({accountCounts.get(state) ?? 0})</span>
 					</label>
 				{/each}
+			</fieldset>
+
+			<!-- Eine Zeile für sich, nicht hinter den Kontozuständen: eine Rolle hat nur, wer ein
+			     Konto hat, und in einer gemeinsamen Zeile las sich das wie acht gleichrangige
+			     Kästchen. Mit Zahlen dahinter, wie in jeder anderen Zeile — „Administration (2)"
+			     ist die Antwort auf die Frage, mit der man diesen Filter überhaupt anfasst. -->
+			<fieldset class="flex flex-wrap items-center gap-x-4 gap-y-1">
+				<legend class="sr-only">Rolle</legend>
+				<span class="text-base-content/80 w-24 text-sm">Rolle</span>
 				{#each ALL_ROLES as role (role)}
 					<label class="flex items-center gap-1 text-sm">
 						<input
@@ -279,6 +280,7 @@
 							class="checkbox checkbox-sm"
 						/>
 						{ROLE_LABELS[role]}
+						<span class="text-base-content/80">({roleCounts.get(role) ?? 0})</span>
 					</label>
 				{/each}
 			</fieldset>

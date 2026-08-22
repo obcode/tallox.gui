@@ -24,7 +24,6 @@ const TeacherAccountsDocument = graphql(`
 				isStaff
 				active
 				faculty
-				lastSemester
 			}
 			account {
 				id

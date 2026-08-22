@@ -24,7 +24,6 @@ export type TeacherAccountRow = {
 		isStaff: boolean;
 		active: boolean;
 		faculty?: string | null;
-		lastSemester?: string | null;
 	};
 	account?: {
 		id: string;
@@ -67,10 +66,11 @@ export type AccountState = 'NONE' | 'ACTIVE' | 'INACTIVE';
 
 export const ACCOUNT_STATES: readonly AccountState[] = ['NONE', 'ACTIVE', 'INACTIVE'];
 
+/** Short, because the row they sit in is already labelled "Konto". */
 export const ACCOUNT_STATE_LABELS: Record<AccountState, string> = {
-	NONE: 'kein Konto',
-	ACTIVE: 'Konto aktiv',
-	INACTIVE: 'Konto deaktiviert'
+	NONE: 'keins',
+	ACTIVE: 'aktiv',
+	INACTIVE: 'deaktiviert'
 };
 
 /** Whether the examination office still lists somebody as teaching. */
@@ -102,7 +102,6 @@ export type TeacherFilter = {
 	teaching: Teaching[];
 	account: AccountState[];
 	roles: string[];
-	lastSemester: string[];
 };
 
 /**
@@ -120,8 +119,7 @@ export const DEFAULT_FILTER: TeacherFilter = {
 	employment: ['PROFESSOR'],
 	teaching: ['ACTIVE'],
 	account: [],
-	roles: [],
-	lastSemester: []
+	roles: []
 };
 
 export const EMPTY_FILTER: TeacherFilter = {
@@ -130,8 +128,7 @@ export const EMPTY_FILTER: TeacherFilter = {
 	employment: [],
 	teaching: [],
 	account: [],
-	roles: [],
-	lastSemester: []
+	roles: []
 };
 
 /** The URL parameter that says the filter in this address was written by somebody. */
@@ -160,8 +157,7 @@ export function parseTeacherFilter(params: URLSearchParams): TeacherFilter {
 		employment: known('art', EMPLOYMENTS),
 		teaching: known('lehrt', TEACHING_STATES),
 		account: known('konto', ACCOUNT_STATES),
-		roles: params.getAll('rolle'),
-		lastSemester: params.getAll('sem')
+		roles: params.getAll('rolle')
 	};
 }
 
@@ -182,7 +178,6 @@ export function teacherFilterParams(filter: TeacherFilter): URLSearchParams {
 	add('lehrt', filter.teaching);
 	add('konto', filter.account);
 	add('rolle', filter.roles);
-	add('sem', filter.lastSemester);
 	return params;
 }
 
@@ -248,7 +243,6 @@ export function filterTeacherAccounts(
 		if (!some(filter.teaching, [row.teacher.active ? 'ACTIVE' : 'FORMER'])) return false;
 		if (!some(filter.account, [accountState(row)])) return false;
 		if (!some(filter.roles, rolesOf(row))) return false;
-		if (!some(filter.lastSemester, [row.teacher.lastSemester ?? ''])) return false;
 		return true;
 	});
 }
@@ -294,14 +288,6 @@ export function facultiesIn(rows: readonly TeacherAccountRow[]): string[] {
 		.filter((faculty) => faculty !== FACULTY_UNKNOWN)
 		.sort()
 		.concat(seen.includes(FACULTY_UNKNOWN) ? [FACULTY_UNKNOWN] : []);
-}
-
-/** The semesters the list mentions, newest first — the codes sort chronologically as text. */
-export function semestersIn(rows: readonly TeacherAccountRow[]): string[] {
-	return [...new Set(rows.map((row) => row.teacher.lastSemester ?? ''))]
-		.filter((code) => code !== '')
-		.sort()
-		.reverse();
 }
 
 /**
