@@ -1,4 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
+import { env } from '$env/dynamic/private';
 import { authContext } from '$lib/server/backend';
 import { ASSUME_COOKIE, parseAssumedRoles } from '$lib/assumedRoles';
 import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
@@ -14,7 +17,21 @@ import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
  * stuttering backend must not lock anybody out, but it must not let anybody in either — which
  * is why authorization lives there and not here.
  */
-export const handle: Handle = async ({ event, resolve }) => {
+const reporting = !!env.GLITCHTIP_DSN;
+if (reporting) {
+	Sentry.init({
+		dsn: env.GLITCHTIP_DSN,
+		environment: env.GLITCHTIP_ENVIRONMENT || 'production',
+		// Errors only — GlitchTip does not read traces.
+		tracesSampleRate: 0,
+		sendDefaultPii: false
+	});
+}
+
+/** Reports failures from SSR loads and /gui-api handlers. A pass-through without a DSN. */
+export const handleError = Sentry.handleErrorWithSentry();
+
+export const guiHandle: Handle = async ({ event, resolve }) => {
 	const remoteUser = event.request.headers.get('x-remote-user') || undefined;
 	const remoteDisplayname = event.request.headers.get('x-remote-displayname') || undefined;
 
@@ -43,3 +60,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		})
 	);
 };
+
+/**
+ * sentryHandle() attaches the request — url, method, headers — to whatever fails inside it;
+ * without it an issue carries a message and no circumstances.
+ *
+ * Left out entirely when no DSN is set, rather than left in place doing nothing: it writes
+ * trace meta tags into every page it serves, and that is cost with no reader.
+ */
+export const handle: Handle = reporting ? sequence(Sentry.sentryHandle(), guiHandle) : guiHandle;
