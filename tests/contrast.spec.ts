@@ -191,6 +191,35 @@ test.describe('the module catalogue across all themes', () => {
 });
 
 /**
+ * The API documentation across all themes.
+ *
+ * Here for its tabs, and it earns the place: on `retro` its inactive tab measured 4.3:1 for as
+ * long as the page has existed, because no sweep had ever visited a page with tabs. The
+ * component is shared, so the next value somebody lowers would take both screens with it.
+ */
+test.describe('the API documentation across all themes', () => {
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ browser, context }) => {
+			await context.addCookies([
+				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
+			]);
+
+			const signedIn = await browser.newContext({
+				extraHTTPHeaders: { 'X-Remote-User': PERSONAS.eins.mail },
+				storageState: { cookies: await context.cookies(), origins: [] }
+			});
+			const page = await signedIn.newPage();
+
+			await gotoRendered(page, '/api-doku');
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			await expectNoContrastViolations(page, theme.value);
+			await signedIn.close();
+		});
+	}
+});
+
+/**
  * The admission list across all themes.
  *
  * Its own sweep, because it is the first screen built out of switches: `btn-primary`,

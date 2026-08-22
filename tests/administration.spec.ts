@@ -37,6 +37,39 @@ test.describe('administration', () => {
 		await expect(page.getByText(PERSONAS.eins.name)).toBeVisible();
 	});
 
+	test('shows the two lists as tabs that are told apart', async ({ asPersona }) => {
+		// The daisyUI tab styles hang off `.tabs > .tab`, so a tab that is not a child of the bar
+		// silently loses its padding and its marked state: the two labels then run together into
+		// one word, and nothing about it fails. Both properties are asserted, because the second
+		// is the one that says which list is on screen.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const zpa = page.getByRole('tab', { name: 'Aus dem ZPA' });
+		const accounts = page.getByRole('tab', { name: 'Alle Konten' });
+		await expect(zpa).toHaveAttribute('aria-selected', 'true');
+		await expect(accounts).toHaveAttribute('aria-selected', 'false');
+
+		// The padding, because that is what daisyUI separates tabs with — the boxes themselves sit
+		// flush and the marked one carries a surface of its own. With zero padding the two labels
+		// touch and read as one word, which is exactly the state this guards against.
+		for (const tab of [zpa, accounts]) {
+			const padding = await tab.evaluate((node) => {
+				const style = getComputedStyle(node);
+				return Math.min(parseFloat(style.paddingInlineStart), parseFloat(style.paddingInlineEnd));
+			});
+			expect(padding, await tab.innerText()).toBeGreaterThan(4);
+		}
+
+		await accounts.click();
+		await page.waitForURL(/ansicht=konten/);
+		await expect(page.getByRole('tab', { name: 'Alle Konten' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(page.getByLabel('Mailadresse')).toBeVisible();
+	});
+
 	test('refuses a lecturer rather than showing her an empty list', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		const response = await page.goto('/verwaltung/personen');

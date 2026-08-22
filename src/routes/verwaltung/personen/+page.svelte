@@ -119,28 +119,35 @@
 		</p>
 	</div>
 
-	<!-- Als GET-Formulare statt als Links: `resolve()` kennt nur den Pfad, die Auswahl steht in
-	     Query-Parametern, und ein handgeschriebener Link mit beidem ist genau das, was die
-	     Lint-Regel verhindert. -->
-	<div role="tablist" class="tabs tabs-box w-fit">
-		<form method="GET">
+	<!-- Ein GET-Formular *um* die Leiste, und die Reiter sind seine Absende-Knöpfe: ein
+	     `<button name="ansicht" value="…">` schickt genau sein eigenes Paar mit. Als Links ginge
+	     es nicht — `resolve()` kennt nur den Pfad, und die Auswahl steht im Query-String.
+
+	     Das Formular gehört nach außen und nicht um jeden Knopf: daisyUI stylt die Reiter über
+	     `.tabs > .tab`, also muss der Knopf ein echtes Kind der Leiste sein. Mit einem Formular
+	     dazwischen greift der Selektor nicht, die Reiter verlieren ihr Innenabstand und ihren
+	     markierten Zustand — und die beiden Beschriftungen kleben zu einem Wort zusammen.
+	     `display: contents` hilft dagegen nicht: es ändert das Layout, nicht den Baum. -->
+	<form method="GET">
+		<div role="tablist" class="tabs tabs-box w-fit">
 			<button
 				type="submit"
+				name="ansicht"
+				value="zpa"
 				role="tab"
 				class="tab {data.view === 'zpa' ? 'tab-active' : ''}"
 				aria-selected={data.view === 'zpa'}>Aus dem ZPA</button
 			>
-		</form>
-		<form method="GET">
-			<input type="hidden" name="ansicht" value="konten" />
 			<button
 				type="submit"
+				name="ansicht"
+				value="konten"
 				role="tab"
 				class="tab {data.view === 'konten' ? 'tab-active' : ''}"
 				aria-selected={data.view === 'konten'}>Alle Konten</button
 			>
-		</form>
-	</div>
+		</div>
+	</form>
 
 	{#if globalRefusal}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">

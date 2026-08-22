@@ -86,9 +86,9 @@
  *
  * `tabs-box` puts the row on `base-200` rather than on `base-100`, and against that darker
  * surface 80 % of `base-content` measures 4.3:1 on `retro` — under the threshold, while the same
- * value clears it comfortably on every other theme and in every other component. Found by the
- * admission list in tests/contrast.spec.ts, which is the first screen with tabs that sweep runs
- * over; /api-doku had been carrying the same finding unmeasured.
+ * value clears it comfortably on every other theme and in every other component. Measured on the
+ * inactive tab of both /api-doku and the admission list, which had been carrying it unmeasured
+ * because no contrast sweep had ever visited a page with tabs. Both are in the sweep now.
  */
 .tabs .tab {
 	color: color-mix(in oklab, var(--color-base-content) 90%, transparent);
