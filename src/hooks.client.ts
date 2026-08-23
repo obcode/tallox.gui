@@ -11,11 +11,15 @@ import { env } from '$env/dynamic/public';
  *
  * Empty or unset means no reporting at all, so development needs neither a collector nor
  * configuration.
+ *
+ * SENTRY_*, not GLITCHTIP_*: the collector happens to be GlitchTip, but the protocol and
+ * the variable are Sentry's, and plexams.gui already carries that name. One name across
+ * both installations beats naming the product we currently point at.
  */
-if (env.PUBLIC_GLITCHTIP_DSN) {
+if (env.PUBLIC_SENTRY_DSN) {
 	Sentry.init({
-		dsn: env.PUBLIC_GLITCHTIP_DSN,
-		environment: env.PUBLIC_GLITCHTIP_ENVIRONMENT || 'production',
+		dsn: env.PUBLIC_SENTRY_DSN,
+		environment: env.PUBLIC_SENTRY_ENVIRONMENT || 'production',
 		// Errors only. GlitchTip does not read traces, and every span would be another
 		// request out of every user's browser.
 		tracesSampleRate: 0,

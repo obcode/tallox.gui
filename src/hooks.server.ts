@@ -17,11 +17,11 @@ import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
  * stuttering backend must not lock anybody out, but it must not let anybody in either — which
  * is why authorization lives there and not here.
  */
-const reporting = !!env.GLITCHTIP_DSN;
+const reporting = !!env.SENTRY_DSN;
 if (reporting) {
 	Sentry.init({
-		dsn: env.GLITCHTIP_DSN,
-		environment: env.GLITCHTIP_ENVIRONMENT || 'production',
+		dsn: env.SENTRY_DSN,
+		environment: env.SENTRY_ENVIRONMENT || 'production',
 		// Errors only — GlitchTip does not read traces.
 		tracesSampleRate: 0,
 		sendDefaultPii: false
