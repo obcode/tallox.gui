@@ -318,6 +318,44 @@ test.describe('the demand table', () => {
 		await expect(page.getByText('1 zurückgezogen')).toBeVisible({ timeout: 15_000 });
 	});
 
+	// The FWP placeholder, and the sentence the whole design rests on: three of them are three
+	// cohorts of one. Not a workaround — three offerings of one module in one programme and
+	// semester have to differ in their cohort, so the identity says it already, and the table
+	// expresses it with the stepper it has.
+	test('an FWP placeholder is planned like any other module, and three are three cohorts', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('FWP-Platzhalter (technisch)');
+		await page.getByLabel('Art der Lehrveranstaltung').selectOption('FWP_PLACEHOLDER');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+
+		const row = page.getByRole('row', { name: /FWP-Platzhalter \(technisch\)/ });
+		await expect(row).toBeVisible();
+		// The badge, not the name — exact, because the name begins with the same word.
+		await expect(row.getByText('FWP-Platzhalter', { exact: true })).toBeVisible();
+		await expect(row.getByRole('checkbox')).toBeChecked();
+
+		// A placeholder holds no lecture two cohorts could share: three FWPs are three different
+		// subjects, not three cohorts of one.
+		await expect(row.getByRole('button', { name: 'Vorlesung zusammenlegen' })).toHaveCount(0);
+
+		// Three of them.
+		const tracks = row.getByRole('spinbutton', { name: /^Züge von/ });
+		await tracks.fill('3');
+		await expect(page.getByText(/angelegt/)).toBeVisible({ timeout: 15_000 });
+
+		await expect(page.getByRole('row', { name: /FWP-Platzhalter/ })).toHaveCount(1);
+		// `?` rather than a number: a local course counts in no set of regulations, so there is
+		// nothing to seed the cohort year from. The gap is spelled out instead of left off —
+		// E2E1A and E2EA differ by one character and mean quite different things.
+		await expect(row.getByText('E2E?A')).toBeVisible();
+		await expect(row.getByText('E2E?C')).toBeVisible();
+	});
+
 	// The filters that switch on the click rather than on a second button. They are submit
 	// buttons of a GET form, so the address carries the choice and the back button works — the
 	// two properties a client-side filter would have cost.
