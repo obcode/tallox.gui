@@ -44,7 +44,10 @@
 				{#if block.kind === 'code'}
 					<!-- tabindex, because a region that scrolls has to be reachable from the
 					     keyboard: without it the only way to see the right-hand end of a long
-					     line is a pointer. WCAG 2.1.1, and axe reports it as serious. -->
+					     line is a pointer. WCAG 2.1.1, and axe reports it as serious. The rule
+					     below is about decorative elements; a scroll container is the documented
+					     exception to it, and the two checkers disagree in this one case. -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 					<pre
 						tabindex="0"
 						class="bg-base-200 mt-2 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
@@ -61,6 +64,7 @@
 				<!-- A named, focusable region rather than a bare scroll container. The field
 				     tables of the big types are wider than any screen, and a scrollable thing
 				     that cannot be focused is unreachable without a pointer. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<div
 					class="mt-3 overflow-x-auto"
 					tabindex="0"
@@ -96,6 +100,7 @@
 										{/if}
 										{#each describeBlocks(field.description) as block, index (index)}
 											{#if block.kind === 'code'}
+												<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 												<pre
 													tabindex="0"
 													class="bg-base-200 mt-1 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>

@@ -2,12 +2,18 @@ import { describe, expect, it } from 'vitest';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import {
 	borrowedFromLabel,
+	byProgramme,
 	byYear,
 	cohortLabel,
 	compareWithPrevious,
 	demandRows,
+	groupParts,
 	groupsOf,
 	hoursLabel,
+	instanceRows,
+	instancesByYear,
+	moduleCount,
+	partGroupLabel,
 	partLabel,
 	plannedHours,
 	previousComparableSemester,
@@ -15,7 +21,8 @@ import {
 	sharingState,
 	trackLetters,
 	type InstanceLike,
-	type ModuleLike
+	type ModuleLike,
+	type ReadInstanceLike
 } from './demand';
 
 describe('cohortLabel', () => {
@@ -381,5 +388,205 @@ describe('splitSummary', () => {
 
 	it('is empty for a module with nothing to show', () => {
 		expect(splitSummary([])).toBe('');
+	});
+});
+
+// An instance as the overview reads it: module and programme come with it.
+function readInstance(
+	moduleId: string,
+	track: string,
+	groups: number,
+	overrides: Partial<ReadInstanceLike> = {}
+): ReadInstanceLike {
+	const parts: { kind: InstancePartKind; teachingHours: number; sharedAcrossTracks: boolean }[] = [
+		{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: false }
+	];
+	for (let i = 0; i < groups; i++) {
+		parts.push({ kind: 'LAB', teachingHours: 2, sharedAcrossTracks: false });
+	}
+	return {
+		id: `${moduleId}-${track}`,
+		track,
+		programmeSemester: 1,
+		teachingHours: 2 + 2 * groups,
+		module: module(moduleId),
+		programme: { code: 'IF', title: 'Informatik' },
+		parts,
+		borrowedParts: [],
+		...overrides
+	};
+}
+
+describe('groupParts', () => {
+	// Four identical laboratory lines is not what anybody is reading — the number is.
+	it('folds parts of the same kind and size into one entry with a count', () => {
+		const groups = groupParts([
+			{ kind: 'LECTURE', teachingHours: 2 },
+			{ kind: 'LAB', teachingHours: 2 },
+			{ kind: 'LAB', teachingHours: 2 },
+			{ kind: 'LAB', teachingHours: 2 }
+		]);
+		expect(groups).toEqual([
+			{ kind: 'LECTURE', teachingHours: 2, count: 1, shared: false },
+			{ kind: 'LAB', teachingHours: 2, count: 3, shared: false }
+		]);
+	});
+
+	// The order is the split's, not the alphabet's: the lecture is what people know a module by.
+	it('keeps the order the parts arrive in', () => {
+		const groups = groupParts([
+			{ kind: 'LAB', teachingHours: 2 },
+			{ kind: 'LECTURE', teachingHours: 4 }
+		]);
+		expect(groups.map((g) => g.kind)).toEqual(['LAB', 'LECTURE']);
+	});
+
+	// A shared lecture is a different thing from an unshared one of the same size, and folding
+	// the two together would hide which cohort holds it.
+	it('keeps a shared part apart from an identical unshared one', () => {
+		const groups = groupParts([
+			{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: true },
+			{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: false }
+		]);
+		expect(groups).toHaveLength(2);
+		expect(groups[0].shared).toBe(true);
+	});
+
+	// Two groups of different sizes are two facts, not one with a count of two.
+	it('does not fold parts of the same kind and different sizes', () => {
+		const groups = groupParts([
+			{ kind: 'LAB', teachingHours: 2 },
+			{ kind: 'LAB', teachingHours: 4 }
+		]);
+		expect(groups.map((g) => g.count)).toEqual([1, 1]);
+	});
+});
+
+describe('partGroupLabel', () => {
+	it('adds a multiplier only where there is more than one', () => {
+		expect(partGroupLabel({ kind: 'LAB', teachingHours: 2, count: 3, shared: false })).toBe(
+			'Praktikum 2 SWS ×3'
+		);
+		expect(partGroupLabel({ kind: 'LECTURE', teachingHours: 2, count: 1, shared: false })).toBe(
+			'Vorlesung 2 SWS'
+		);
+	});
+
+	it('says when a part is held for every cohort', () => {
+		expect(partGroupLabel({ kind: 'LECTURE', teachingHours: 2, count: 1, shared: true })).toBe(
+			'Vorlesung 2 SWS, für alle Züge'
+		);
+	});
+
+	it('spells an unsettled figure as a gap rather than a zero', () => {
+		expect(partGroupLabel({ kind: 'LAB', teachingHours: null, count: 2, shared: false })).toBe(
+			'Praktikum (SWS offen) ×2'
+		);
+	});
+});
+
+describe('instanceRows', () => {
+	it('makes one row per instance, labelled the way the faculty reads it', () => {
+		const rows = instanceRows([readInstance('m', 'A', 3), readInstance('m', 'B', 2)]);
+
+		expect(rows.map((r) => r.label)).toEqual(['IF1A', 'IF1B']);
+		expect(rows[0].parts).toEqual([
+			{ kind: 'LECTURE', teachingHours: 2, count: 1, shared: false },
+			{ kind: 'LAB', teachingHours: 2, count: 3, shared: false }
+		]);
+		expect(rows[0].teachingHours).toBe(8);
+	});
+
+	// The two cohorts of one module have to stand together, or the line that borrows a lecture
+	// sits nowhere near the line that holds it and reads as a cohort with no lecture at all.
+	it('sorts by cohort year, then module, then cohort', () => {
+		const rows = instanceRows([
+			readInstance('b', 'B', 0, { module: module('b'), programmeSemester: 3 }),
+			readInstance('a', '', 0, { module: module('a'), programmeSemester: 3 }),
+			readInstance('b', 'A', 0, { module: module('b'), programmeSemester: 3 }),
+			readInstance('c', '', 0, { module: module('c'), programmeSemester: 1 })
+		]);
+		expect(rows.map((r) => `${r.module.id}${r.track}`)).toEqual(['c', 'a', 'bA', 'bB']);
+	});
+
+	// Rows with no cohort year come last: they are the work still to do, and a list that opened
+	// with them would read as a list of problems. "No year" means neither the instance nor the
+	// regulations say one — the regulations are asked second, exactly as the planning table does.
+	it('puts the rows nobody has filed under a year at the end', () => {
+		const rows = instanceRows([
+			readInstance('a', '', 0, {
+				programmeSemester: null,
+				module: module('a', { programmeSemester: null })
+			}),
+			readInstance('b', '', 0, { programmeSemester: 5 })
+		]);
+		expect(rows.map((r) => r.programmeSemester)).toEqual([5, null]);
+	});
+
+	it('falls back to what the regulations say when the instance names no year', () => {
+		const rows = instanceRows([
+			readInstance('a', '', 0, {
+				programmeSemester: null,
+				module: module('a', { programmeSemester: 4 })
+			})
+		]);
+		expect(rows[0].programmeSemester).toBe(4);
+		expect(rows[0].label).toBe('IF4');
+	});
+
+	it('carries the borrowed parts, with the cohort that holds them', () => {
+		const rows = instanceRows([
+			readInstance('m', 'B', 2, {
+				borrowedParts: [{ fromTrack: 'A', part: { kind: 'LECTURE', teachingHours: 2 } }]
+			})
+		]);
+		expect(rows[0].borrowed).toEqual([{ fromTrack: 'A', kind: 'LECTURE' }]);
+	});
+});
+
+describe('instancesByYear', () => {
+	it('groups by cohort year and sums what each one costs', () => {
+		const groups = instancesByYear(
+			instanceRows([
+				readInstance('a', '', 1, { programmeSemester: 1 }),
+				readInstance('b', '', 2, { programmeSemester: 3 })
+			])
+		);
+		expect(groups.map((g) => g.programmeSemester)).toEqual([1, 3]);
+		expect(groups.map((g) => g.teachingHours)).toEqual([4, 6]);
+	});
+});
+
+describe('byProgramme', () => {
+	// "What does the faculty offer next semester" is asked before anybody knows which programme
+	// a module belongs to, so the overview groups by one rather than insisting on one.
+	it('groups by study programme, by code, and sums each one', () => {
+		const groups = byProgramme(
+			instanceRows([
+				readInstance('a', '', 1, { programme: { code: 'IG', title: 'Wirtschaftsinformatik' } }),
+				readInstance('b', '', 1, { programme: { code: 'IF', title: 'Informatik' } }),
+				readInstance('c', '', 2, { programme: { code: 'IF', title: 'Informatik' } })
+			])
+		);
+		expect(groups.map((g) => g.code)).toEqual(['IF', 'IG']);
+		expect(groups[0].teachingHours).toBe(10);
+		expect(groups[0].title).toBe('Informatik');
+	});
+
+	// A programme whose title the catalogue does not carry is still a programme.
+	it('falls back to the code when there is no title', () => {
+		const groups = byProgramme(
+			instanceRows([readInstance('a', '', 0, { programme: { code: 'WA' } })])
+		);
+		expect(groups[0].title).toBe('WA');
+	});
+});
+
+describe('moduleCount', () => {
+	// Two cohorts of one module are one subject being offered, and that is the figure the
+	// summary line says out loud.
+	it('counts modules and not cohorts', () => {
+		const rows = instanceRows([readInstance('m', 'A', 1), readInstance('m', 'B', 1)]);
+		expect(moduleCount(rows)).toBe(1);
 	});
 });
