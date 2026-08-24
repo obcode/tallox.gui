@@ -21,6 +21,16 @@ type StaticRoute = Exclude<RouteId, `${string}[${string}`>;
  * click paths into nothing. This way what the tool is heading towards is visible at a glance,
  * without pretending anything is there.
  *
+ * **No entry for the start page.** The wordmark in the bar links there, which is where every
+ * site puts it and where people look for it — a second way to the same place costs a slot in a
+ * row that is already full at 1280px, and makes one of the two look wrong the moment the other
+ * is marked active.
+ *
+ * **The semester comes last**, after the process it frames. It is not a step of the planning:
+ * it is where somebody says which semester is being planned and moves the phases along, which
+ * is done once and then left alone. Between "Module" and "Bedarf" it interrupted the sequence
+ * the row exists to show.
+ *
  * When an area comes into being: add the route, add the `href` here — nothing else.
  */
 export type NavItem = {
@@ -43,9 +53,7 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: readonly NavItem[] = [
-	{ emoji: '🏠', label: 'Start', href: '/', hint: 'Übersicht' },
 	{ emoji: '📚', label: 'Module', href: '/module', hint: 'Modulkatalog mit Heimatstudiengang' },
-	{ emoji: '🗓️', label: 'Semester', href: '/semester', hint: 'Semester, Phasen und Meilensteine' },
 	{
 		// No roles: the demand is what the wish phase is about, so a lecturer who cannot see
 		// which instances exist has nothing to register interest in. The page opens read-only for
@@ -67,6 +75,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		label: 'Statistik',
 		hint: 'Auswertungen für das Dekanat',
 		roles: ['DEANS_OFFICE']
+	},
+	{
+		emoji: '🗓️',
+		label: 'Semester',
+		href: '/semester',
+		hint: 'Planungssemester, Phasen und Meilensteine'
 	}
 ];
 

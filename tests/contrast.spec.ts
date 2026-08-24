@@ -122,15 +122,19 @@ test.describe('contrast with menus open, across all themes', () => {
 				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
 			]);
 
-			// Below lg the hamburger carries the navigation, and on `/` the entry "Start" is marked
-			// there — the case in question. The design picker brings its marked entry along at
-			// every width.
+			// Below lg the hamburger carries the navigation, and the current page is marked there —
+			// the case in question. On a page of its own rather than on `/`: there is no entry for
+			// the start page any more, because the wordmark leads there. The design picker brings
+			// its marked entry along at every width.
 			await page.setViewportSize({ width: 375, height: 812 });
-			await gotoRendered(page, '/');
+			await gotoRendered(page, '/module');
 			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
 
 			await openDropdown(page, 'Bereiche');
-			await expect(page.getByRole('link', { name: /Start/ })).toHaveClass(/menu-active/);
+			// Exact: the catalogue behind the menu has a module whose name contains the word.
+			await expect(page.getByRole('link', { name: 'Module', exact: true })).toHaveClass(
+				/menu-active/
+			);
 			await expectNoContrastViolations(page, `${theme.value}, area menu`);
 			expect(
 				await contrastRatio(page, '.dropdown-content a.menu-active'),

@@ -245,15 +245,17 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, DEMAND_URL);
 
-		// One row per instance, which is what the overview is: the column exists only there.
-		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
+		// The overview, told apart from the planning table by the column only it has. Both show
+		// one row per module and both have a "Züge" column, so the cohorts are not the tell —
+		// what the overview lists and the planning table does not is the parts.
+		await expect(page.getByRole('columnheader', { name: 'Teile' }).first()).toBeVisible();
 		await expect(
 			page.getByRole('link', { name: 'E2E Modul mit Aufteilung' }).first()
 		).toBeVisible();
 
 		await expect(page.getByRole('button', { name: 'Bedarf speichern' })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
-		await expect(page.getByRole('columnheader', { name: 'Züge' })).toHaveCount(0);
+		await expect(page.getByRole('columnheader', { name: 'Gruppen' })).toHaveCount(0);
 
 		await checkA11y(page);
 	});
@@ -267,17 +269,17 @@ test.describe('the demand table', () => {
 			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
 		);
 
-		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'Teile' }).first()).toBeVisible();
 
 		await page.getByRole('button', { name: 'Bearbeiten' }).click();
 
-		await expect(page.getByRole('columnheader', { name: 'Züge' }).first()).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'Gruppen' }).first()).toBeVisible();
 		await expect(page).toHaveURL(/bearbeiten=1/);
 		await expect(page.getByRole('button', { name: 'Bedarf speichern' })).toBeVisible();
 
 		// And back, without losing the semester and the programme on the way.
 		await page.getByRole('button', { name: 'Ansicht' }).click();
-		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
+		await expect(page.getByRole('columnheader', { name: 'Teile' }).first()).toBeVisible();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 	});
 
@@ -379,6 +381,25 @@ test.describe('the demand table', () => {
 			.click();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 		await expect(page.getByRole('button', { name: 'Anzeigen' }).first()).toBeVisible();
+	});
+
+	// A module in two cohorts is one subject offered twice, not two subjects — and the overview
+	// has to say that the same way the planning table does, or the two screens disagree about
+	// what is being offered.
+	test('shows a module in two cohorts once, with both cohorts in the row', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+
+		// The earlier tests in this serial group left this module planned in two cohorts.
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ });
+		await expect(row).toHaveCount(1);
+		await expect(row.getByText('E2E1A')).toBeVisible();
+		await expect(row.getByText('E2E1B')).toBeVisible();
 	});
 
 	// Arriving without a semester lands on the one the faculty is planning, and the choice ends

@@ -629,16 +629,70 @@ function yearOrder(a: number | null, b: number | null): number {
 	return a - b;
 }
 
+/**
+ * One row of the overview: a module, with the cohorts it is offered in.
+ *
+ * Not one row per instance, and that is a correction rather than a preference. The planning
+ * table shows a module once and counts its cohorts beside it; an overview that listed the same
+ * module twice would look like two different offerings of it to the person reading both screens,
+ * which is exactly what a cohort is not.
+ *
+ * The cohorts stay individually visible inside the row, because they are what differs: one may
+ * run three laboratory groups and the other two, and one may borrow the lecture the other holds.
+ */
+export type ModuleRow<M extends ModuleLike = ModuleLike> = {
+	module: M;
+	programme: { code: string; title?: string | null };
+	programmeSemester: number | null;
+	cohorts: InstanceRow<M>[];
+	/** What all the cohorts together cost the faculty. A shared lecture is counted once. */
+	teachingHours: number;
+};
+
+/**
+ * The overview's rows: one per module and programme, with its cohorts inside.
+ *
+ * Keyed by the programme as well as the module, because the same module may be offered by two
+ * programmes and those are two demands — the difference between them is what the dean's office's
+ * import/export figures are about.
+ */
+export function moduleRows<M extends ModuleLike>(
+	instances: readonly ReadInstanceLike<M>[]
+): ModuleRow<M>[] {
+	const rows = instanceRows(instances);
+
+	const byModule = new Map<string, ModuleRow<M>>();
+	for (const row of rows) {
+		const key = `${row.programme.code}\u0000${row.module.id}`;
+		const existing = byModule.get(key);
+		if (existing) {
+			existing.cohorts.push(row);
+			existing.teachingHours += row.teachingHours;
+			continue;
+		}
+		byModule.set(key, {
+			module: row.module,
+			programme: row.programme,
+			programmeSemester: row.programmeSemester,
+			cohorts: [row],
+			teachingHours: row.teachingHours
+		});
+	}
+	// instanceRows already sorted by year, module and cohort, and a Map keeps insertion order —
+	// so the rows come out in that order and each row's cohorts are in theirs.
+	return [...byModule.values()];
+}
+
 /** One cohort year of the overview. */
 export type InstanceYearGroup<M extends ModuleLike = ModuleLike> = {
 	programmeSemester: number | null;
-	rows: InstanceRow<M>[];
+	rows: ModuleRow<M>[];
 	teachingHours: number;
 };
 
 /** The overview, grouped by cohort year — the same axis the planning table uses. */
 export function instancesByYear<M extends ModuleLike>(
-	rows: readonly InstanceRow<M>[]
+	rows: readonly ModuleRow<M>[]
 ): InstanceYearGroup<M>[] {
 	return groupByYear(rows);
 }
@@ -647,7 +701,7 @@ export function instancesByYear<M extends ModuleLike>(
 export type ProgrammeGroup<M extends ModuleLike = ModuleLike> = {
 	code: string;
 	title: string;
-	rows: InstanceRow<M>[];
+	rows: ModuleRow<M>[];
 	/**
 	 * What this programme's instances cost the faculty.
 	 *
@@ -666,9 +720,9 @@ export type ProgrammeGroup<M extends ModuleLike = ModuleLike> = {
  * groups by one instead.
  */
 export function byProgramme<M extends ModuleLike>(
-	rows: readonly InstanceRow<M>[]
+	rows: readonly ModuleRow<M>[]
 ): ProgrammeGroup<M>[] {
-	const groups = new Map<string, InstanceRow<M>[]>();
+	const groups = new Map<string, ModuleRow<M>[]>();
 	for (const row of rows) {
 		const list = groups.get(row.programme.code);
 		if (list) list.push(row);
@@ -685,7 +739,7 @@ export function byProgramme<M extends ModuleLike>(
 		.sort((a, b) => a.code.localeCompare(b.code));
 }
 
-/** How many distinct modules a set of rows offers — the figure a summary line says out loud. */
-export function moduleCount<M extends ModuleLike>(rows: readonly InstanceRow<M>[]): number {
-	return new Set(rows.map((r) => r.module.id)).size;
+/** How many cohorts a set of module rows holds — one instance each, and the figure to say. */
+export function cohortCount<M extends ModuleLike>(rows: readonly ModuleRow<M>[]): number {
+	return rows.reduce((sum, row) => sum + row.cohorts.length, 0);
 }

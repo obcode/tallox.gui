@@ -12,7 +12,8 @@ import {
 	hoursLabel,
 	instanceRows,
 	instancesByYear,
-	moduleCount,
+	moduleRows,
+	cohortCount,
 	partGroupLabel,
 	partLabel,
 	plannedHours,
@@ -587,7 +588,7 @@ describe('instanceRows', () => {
 describe('instancesByYear', () => {
 	it('groups by cohort year and sums what each one costs', () => {
 		const groups = instancesByYear(
-			instanceRows([
+			moduleRows([
 				readInstance('a', '', 1, { programmeSemester: 1 }),
 				readInstance('b', '', 2, { programmeSemester: 3 })
 			])
@@ -602,7 +603,7 @@ describe('byProgramme', () => {
 	// a module belongs to, so the overview groups by one rather than insisting on one.
 	it('groups by study programme, by code, and sums each one', () => {
 		const groups = byProgramme(
-			instanceRows([
+			moduleRows([
 				readInstance('a', '', 1, { programme: { code: 'IG', title: 'Wirtschaftsinformatik' } }),
 				readInstance('b', '', 1, { programme: { code: 'IF', title: 'Informatik' } }),
 				readInstance('c', '', 2, { programme: { code: 'IF', title: 'Informatik' } })
@@ -616,17 +617,62 @@ describe('byProgramme', () => {
 	// A programme whose title the catalogue does not carry is still a programme.
 	it('falls back to the code when there is no title', () => {
 		const groups = byProgramme(
-			instanceRows([readInstance('a', '', 0, { programme: { code: 'WA' } })])
+			moduleRows([readInstance('a', '', 0, { programme: { code: 'WA' } })])
 		);
 		expect(groups[0].title).toBe('WA');
 	});
 });
 
-describe('moduleCount', () => {
-	// Two cohorts of one module are one subject being offered, and that is the figure the
-	// summary line says out loud.
-	it('counts modules and not cohorts', () => {
-		const rows = instanceRows([readInstance('m', 'A', 1), readInstance('m', 'B', 1)]);
-		expect(moduleCount(rows)).toBe(1);
+describe('moduleRows', () => {
+	// The correction: a module offered in two cohorts is one subject offered twice, not two
+	// subjects. The planning table has always shown it once, and a reader who moves between the
+	// two screens has to find the same list on each.
+	it('shows a module once, with its cohorts inside it', () => {
+		const rows = moduleRows([readInstance('m', 'A', 3), readInstance('m', 'B', 2)]);
+
+		expect(rows).toHaveLength(1);
+		expect(rows[0].cohorts.map((c) => c.label)).toEqual(['IF1A', 'IF1B']);
+		// The hours are the module's total, and the column says exactly that.
+		expect(rows[0].teachingHours).toBe(8 + 6);
+	});
+
+	// What differs between the cohorts stays visible: three laboratory groups against two.
+	it('keeps the parts each cohort holds itself', () => {
+		const rows = moduleRows([readInstance('m', 'A', 3), readInstance('m', 'B', 2)]);
+		expect(rows[0].cohorts[0].parts.at(-1)?.count).toBe(3);
+		expect(rows[0].cohorts[1].parts.at(-1)?.count).toBe(2);
+	});
+
+	// Two programmes offering one module are two demands — the difference between them is what
+	// the dean's office's import/export figures are about.
+	it('keeps the same module apart when two programmes offer it', () => {
+		const rows = moduleRows([
+			readInstance('m', '', 1, { programme: { code: 'IF' } }),
+			readInstance('m', '', 1, { programme: { code: 'IG' } })
+		]);
+		expect(rows).toHaveLength(2);
+		expect(rows.map((r) => r.programme.code).sort()).toEqual(['IF', 'IG']);
+	});
+
+	it('keeps the order instanceRows sorted them into', () => {
+		const rows = moduleRows([
+			readInstance('b', '', 0, { module: module('b'), programmeSemester: 3 }),
+			readInstance('a', '', 0, { module: module('a'), programmeSemester: 1 })
+		]);
+		expect(rows.map((r) => r.module.id)).toEqual(['a', 'b']);
+	});
+});
+
+describe('cohortCount', () => {
+	// The summary line says both figures — modules and instances — because they answer
+	// different questions: how many subjects, and how many things to assign.
+	it('counts the cohorts across the module rows', () => {
+		const rows = moduleRows([
+			readInstance('m', 'A', 1),
+			readInstance('m', 'B', 1),
+			readInstance('n', '', 1)
+		]);
+		expect(rows).toHaveLength(2);
+		expect(cohortCount(rows)).toBe(3);
 	});
 });
