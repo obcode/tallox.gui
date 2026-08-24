@@ -201,10 +201,18 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
+		// Relative to the document, not to the viewport. boundingBox() reports viewport
+		// coordinates, so a click that scrolls the button into view moves every number on the
+		// page — which says nothing about whether the table moved, and made this test depend on
+		// how tall the filter card happens to be.
 		const box = async () => {
+			const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
 			const table = await page.locator('table').first().boundingBox();
 			const sws = await page.getByRole('columnheader', { name: 'SWS' }).first().boundingBox();
-			return { y: Math.round(table?.y ?? 0), x: Math.round(sws?.x ?? 0) };
+			return {
+				y: Math.round((table?.y ?? 0) + scroll.y),
+				x: Math.round((sws?.x ?? 0) + scroll.x)
+			};
 		};
 
 		const before = await box();
@@ -271,6 +279,31 @@ test.describe('the demand table', () => {
 		await page.getByRole('button', { name: 'Ansicht' }).click();
 		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+	});
+
+	// The filters that switch on the click rather than on a second button. They are submit
+	// buttons of a GET form, so the address carries the choice and the back button works — the
+	// two properties a client-side filter would have cost.
+	test('switches semester and programme without a second click', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+
+		// The programme this persona leads is a tab of its own, above the nineteen in the select.
+		await page.getByRole('tab', { name: CATALOGUE.programme, exact: true }).click();
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+		await expect(page.getByRole('tab', { name: CATALOGUE.programme, exact: true })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+
+		// And a semester, which keeps the programme — one form, so every tab sends the state of
+		// every other field with it.
+		await page
+			.getByRole('tab', { name: new RegExp(DEMAND.previous.slice(-2)) })
+			.first()
+			.click();
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+		await expect(page.getByRole('button', { name: 'Anzeigen' }).first()).toBeVisible();
 	});
 
 	// Arriving without a semester lands on the one the faculty is planning, and the choice ends

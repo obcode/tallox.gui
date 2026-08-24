@@ -23,7 +23,7 @@
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import { hasAnyRole } from '$lib/roles';
-	import { PHASE_HINTS, PHASE_LABELS, semesterName } from '$lib/semester';
+	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -351,9 +351,25 @@
 	mitschicken — sonst fällt beim Umschalten der Sicht die halbe Auswahl weg. Einmal geschrieben,
 	dreimal benutzt.
 -->
-{#snippet currentFilter()}
+<!--
+	Die nicht sofort schaltenden Filter als versteckte Felder.
+
+	Für das Formular der Reiter: ein Klick auf ein Semester darf die Suche und den Turnus nicht
+	verlieren, und beide Bedienelemente können nicht in demselben Formular stehen.
+-->
+{#snippet textFilters()}
+	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
+	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
+	<input type="hidden" name="turnus" value={data.selected.term} />
+	{#if data.selected.onlyEstimated}<input type="hidden" name="offen" value="1" />{/if}
+	{#if data.selected.onlyPlanned}<input type="hidden" name="geplant" value="1" />{/if}
+{/snippet}
+
+{#snippet currentFilter(withProgramme: boolean)}
 	<input type="hidden" name="semester" value={data.selected.semester} />
-	<input type="hidden" name="studiengang" value={data.selected.programme} />
+	{#if withProgramme}
+		<input type="hidden" name="studiengang" value={data.selected.programme} />
+	{/if}
 	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
 	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
 	<input type="hidden" name="turnus" value={data.selected.term} />
@@ -385,7 +401,7 @@
 		-->
 		{#if mayPlan && data.selected.programme !== ''}
 			<form method="GET" class="shrink-0">
-				{@render currentFilter()}
+				{@render currentFilter(true)}
 				{#if editing}
 					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
 				{:else}
@@ -407,98 +423,172 @@
 		</div>
 	{/if}
 
-	<form
-		method="GET"
-		class="border-base-300 bg-base-100 flex flex-wrap items-end gap-3 rounded-lg border p-4"
-	>
-		<label class="form-control">
-			<span class="label-text text-sm">Semester</span>
-			<select name="semester" class="select select-bordered select-sm">
-				<option value="">bitte wählen</option>
-				{#each data.semesters as semester (semester.code)}
-					<option value={semester.code} selected={semester.code === data.selected.semester}>
-						{semesterName(semester.code)}
-					</option>
-				{/each}
-			</select>
-		</label>
+	<div class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
+		<!--
+			Semester und Studiengang schalten sofort um, der Rest nicht.
 
-		<label class="form-control">
-			<span class="label-text text-sm">Studiengang</span>
-			<select name="studiengang" class="select select-bordered select-sm">
-				<option value="">bitte wählen</option>
-				{#if data.myProgrammes.length > 0}
-					<optgroup label="Meine Studiengänge">
+			Die Reiter sind Absende-Knöpfe eines GET-Formulars: SvelteKit fängt die ab und macht
+			daraus eine echte Navigation, also stimmt `page.url` und der Load läuft — ohne
+			`replaceState`, ohne zweiten Zustand neben der Adresse, und ohne Skript tut es dasselbe
+			mit vollem Seitenaufbau. Weil alle Felder in *einem* Formular stehen, schickt ein Klick
+			seinen eigenen Wert und den Stand aller anderen Felder mit.
+
+			Das <form> steht um die Leiste herum, nie dazwischen: daisyUI stylt über `.tabs > .tab`,
+			und ein Formular in der Mitte nimmt der Leiste Rahmen, Abstände und den markierten
+			Zustand.
+		-->
+		<form method="GET" class="flex flex-col gap-3">
+			{#if data.selected.editing}
+				<input type="hidden" name="bearbeiten" value="1" />
+			{/if}
+			{@render textFilters()}
+
+			<div class="flex flex-col gap-1">
+				<span class="label-text text-sm">Semester</span>
+				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+					{#each data.semesters as semester (semester.code)}
+						{@const active = semester.code === data.selected.semester}
+						<button
+							type="submit"
+							name="semester"
+							value={semester.code}
+							role="tab"
+							aria-selected={active}
+							class="tab whitespace-nowrap {active ? 'tab-active' : ''}"
+						>
+							{semesterShortName(semester.code)}
+							{#if semester.isPlanningSemester}
+								<span class="badge badge-primary badge-xs ml-1">Planung</span>
+							{/if}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<div class="flex flex-col gap-1">
+				<span class="label-text text-sm">Studiengang</span>
+				<div class="flex flex-wrap items-center gap-2">
+					<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+						<!-- „alle" gibt es nur in der Lesesicht: planDemand schreibt genau einen. -->
+						{#if !data.selected.editing}
+							{@const active = data.selected.programme === ''}
+							<button
+								type="submit"
+								name="studiengang"
+								value=""
+								role="tab"
+								aria-selected={active}
+								class="tab {active ? 'tab-active' : ''}"
+							>
+								alle
+							</button>
+						{/if}
 						{#each data.myProgrammes as programme (programme.code)}
-							<option value={programme.code} selected={programme.code === data.selected.programme}>
-								{programme.code}{programme.title ? ` — ${programme.title}` : ''}
-							</option>
+							{@const active = programme.code === data.selected.programme}
+							<button
+								type="submit"
+								name="studiengang"
+								value={programme.code}
+								role="tab"
+								aria-selected={active}
+								title={programme.title ?? programme.code}
+								class="tab {active ? 'tab-active' : ''}"
+							>
+								{programme.code}
+							</button>
 						{/each}
-					</optgroup>
-				{/if}
-				<optgroup label="Alle Studiengänge">
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<!--
+			Der Rest schaltet nicht sofort — eine Suche, die nach jedem Buchstaben lädt, ist keine.
+			Eigenes Formular, weil der Studiengang hier als Auswahlliste noch einmal vorkommt und
+			zwei Bedienelemente gleichen Namens nicht in ein Formular passen.
+		-->
+		<form method="GET" class="flex flex-wrap items-end gap-3">
+			{@render currentFilter(false)}
+			<label class="form-control">
+				<span class="label-text text-sm">Suche</span>
+				<input
+					type="search"
+					name="q"
+					value={data.selected.search}
+					placeholder="Modulname"
+					class="input input-bordered input-sm"
+				/>
+			</label>
+
+			<label class="form-control">
+				<span class="label-text text-sm">Art</span>
+				<select name="art" class="select select-bordered select-sm">
+					<option value="">alle</option>
+					<option value="COMPULSORY" selected={data.selected.duty === 'COMPULSORY'}>
+						Pflicht
+					</option>
+					<option value="ELECTIVE" selected={data.selected.duty === 'ELECTIVE'}>
+						Wahlpflicht
+					</option>
+				</select>
+			</label>
+
+			<label class="form-control">
+				<span class="label-text text-sm">Turnus</span>
+				<select name="turnus" class="select select-bordered select-sm">
+					<option value="WS" selected={data.selected.term === 'WS'}>Wintersemester</option>
+					<option value="SS" selected={data.selected.term === 'SS'}>Sommersemester</option>
+					<option value="" selected={data.selected.term === ''}>alle</option>
+				</select>
+			</label>
+
+			<label class="flex items-center gap-2 pb-1 text-sm">
+				<input
+					name="offen"
+					type="checkbox"
+					value="1"
+					checked={data.selected.onlyEstimated}
+					class="checkbox checkbox-sm"
+				/>
+				nur geschätzte Aufteilungen
+			</label>
+
+			<label class="flex items-center gap-2 pb-1 text-sm">
+				<input
+					name="geplant"
+					type="checkbox"
+					value="1"
+					checked={data.selected.onlyPlanned}
+					class="checkbox checkbox-sm"
+				/>
+				nur geplante
+			</label>
+
+			<!--
+				Die übrigen Studiengänge — neunzehn passen in keine Reiterleiste, und „welchen
+				meiner beiden" ist ohnehin eine andere Frage als „welchen der neunzehn". Hier statt
+				bei den Reitern, weil zwei Bedienelemente gleichen Namens nicht in ein Formular
+				passen; `requestSubmit()` schaltet trotzdem sofort um.
+			-->
+			<label class="form-control w-fit max-w-full">
+				<span class="label-text text-sm">Anderer Studiengang</span>
+				<select
+					name="studiengang"
+					class="select select-bordered select-sm max-w-full"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				>
+					<option value="">— wählen —</option>
 					{#each data.programmes as programme (programme.code)}
 						<option value={programme.code} selected={programme.code === data.selected.programme}>
 							{programme.code}{programme.title ? ` — ${programme.title}` : ''}
 						</option>
 					{/each}
-				</optgroup>
-			</select>
-		</label>
+				</select>
+			</label>
 
-		<label class="form-control">
-			<span class="label-text text-sm">Suche</span>
-			<input
-				type="search"
-				name="q"
-				value={data.selected.search}
-				placeholder="Modulname"
-				class="input input-bordered input-sm"
-			/>
-		</label>
-
-		<label class="form-control">
-			<span class="label-text text-sm">Art</span>
-			<select name="art" class="select select-bordered select-sm">
-				<option value="">alle</option>
-				<option value="COMPULSORY" selected={data.selected.duty === 'COMPULSORY'}>Pflicht</option>
-				<option value="ELECTIVE" selected={data.selected.duty === 'ELECTIVE'}>Wahlpflicht</option>
-			</select>
-		</label>
-
-		<label class="form-control">
-			<span class="label-text text-sm">Turnus</span>
-			<select name="turnus" class="select select-bordered select-sm">
-				<option value="WS" selected={data.selected.term === 'WS'}>Wintersemester</option>
-				<option value="SS" selected={data.selected.term === 'SS'}>Sommersemester</option>
-				<option value="" selected={data.selected.term === ''}>alle</option>
-			</select>
-		</label>
-
-		<label class="flex items-center gap-2 pb-1 text-sm">
-			<input
-				name="offen"
-				type="checkbox"
-				value="1"
-				checked={data.selected.onlyEstimated}
-				class="checkbox checkbox-sm"
-			/>
-			nur geschätzte Aufteilungen
-		</label>
-
-		<label class="flex items-center gap-2 pb-1 text-sm">
-			<input
-				name="geplant"
-				type="checkbox"
-				value="1"
-				checked={data.selected.onlyPlanned}
-				class="checkbox checkbox-sm"
-			/>
-			nur geplante
-		</label>
-
-		<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
-	</form>
+			<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
+		</form>
+	</div>
 
 	{#if form && 'preview' in form && form.preview}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
