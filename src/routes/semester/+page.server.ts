@@ -10,6 +10,7 @@ const SemestersDocument = graphql(`
 		semesters {
 			code
 			phase
+			isPlanningSemester
 			reachablePhases
 			wishesPublishedAt
 		}
@@ -21,6 +22,15 @@ const AdvancePhaseDocument = graphql(`
 		advanceSemesterPhase(code: $code, to: $to) {
 			code
 			phase
+		}
+	}
+`);
+
+const SetPlanningSemesterDocument = graphql(`
+	mutation SetPlanningSemester($code: String!) {
+		setPlanningSemester(code: $code) {
+			code
+			isPlanningSemester
 		}
 	}
 `);
@@ -77,6 +87,25 @@ export const actions: Actions = {
 			return fail(400, toRefusal(err));
 		}
 		return { advanced: code };
+	},
+
+	/**
+	 * Say which semester the faculty is planning from now on.
+	 *
+	 * Unlike publishing, this one is reversible — so no disclosure, no second sentence, just a
+	 * button. The mark moves off whichever semester carried it in the same act, so there is
+	 * nothing to clear first and no way to end up with two.
+	 */
+	setPlanning: async ({ request }) => {
+		const form = await request.formData();
+		const code = String(form.get('code') ?? '');
+
+		try {
+			await backendRequest(SetPlanningSemesterDocument, { code });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { planning: code };
 	},
 
 	publish: async ({ request }) => {

@@ -42,7 +42,12 @@
 			     paragraphs; the blank line between two of them stays a statement. -->
 			{#each describeBlocks(type.description) as block, index (index)}
 				{#if block.kind === 'code'}
-					<pre class="bg-base-200 mt-2 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
+					<!-- tabindex, because a region that scrolls has to be reachable from the
+					     keyboard: without it the only way to see the right-hand end of a long
+					     line is a pointer. WCAG 2.1.1, and axe reports it as serious. -->
+					<pre
+						tabindex="0"
+						class="bg-base-200 mt-2 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
 				{:else}
 					<p class="text-base-content/90 mt-2 text-sm">
 						{#each inlineSegments(block.text) as segment, part (part)}{#if segment.code}<code
@@ -53,7 +58,15 @@
 			{/each}
 
 			{#if type.fields.length > 0}
-				<div class="mt-3 overflow-x-auto">
+				<!-- A named, focusable region rather than a bare scroll container. The field
+				     tables of the big types are wider than any screen, and a scrollable thing
+				     that cannot be focused is unreachable without a pointer. -->
+				<div
+					class="mt-3 overflow-x-auto"
+					tabindex="0"
+					role="region"
+					aria-label="Felder von {type.name}"
+				>
 					<table class="table text-sm">
 						<thead>
 							<tr>
@@ -84,6 +97,7 @@
 										{#each describeBlocks(field.description) as block, index (index)}
 											{#if block.kind === 'code'}
 												<pre
+													tabindex="0"
 													class="bg-base-200 mt-1 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
 											{:else}
 												<div class="text-base-content/90 not-first:mt-2">
