@@ -387,6 +387,42 @@ test.describe('the demand table', () => {
 		).toHaveAttribute('aria-selected', 'true');
 	});
 
+	// The toggle is about the person, not about this programme: somebody who plans finds it in
+	// the same place every time, disabled and saying why where it cannot be used. A control that
+	// comes and goes while one clicks through the programmes reads as a bug, and its absence
+	// answers nothing.
+	test('offers the edit toggle to a planner even where it cannot be used', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+
+		// Across all programmes: she plans, but "all of them" is not one — planDemand writes
+		// exactly one.
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+		const toggle = page.getByRole('button', { name: 'Bearbeiten' });
+		await expect(toggle).toBeVisible();
+		await expect(toggle).toBeDisabled();
+		await expect(toggle).toHaveAttribute('title', /Studiengang wählen/);
+
+		// A programme somebody else leads: still there, still disabled, different sentence.
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.otherProgramme}`
+		);
+		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toBeDisabled();
+		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveAttribute(
+			'title',
+			/leiten Sie nicht/
+		);
+
+		// And her own, where it works.
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toBeEnabled();
+	});
+
 	// Every form on this page owns some of the filter and has to carry the rest across. It did
 	// not: a GET form submits only the clicked one of its submit buttons, so a click on a
 	// programme sent `studiengang` alone — no semester, and the page landed back in the planning

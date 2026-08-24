@@ -120,6 +120,23 @@
 	);
 
 	/**
+	 * Whether this person plans at all — which is what the toggle's *presence* answers.
+	 *
+	 * Deliberately a different question from `mayPlan`. That one is about this programme; this
+	 * one is about the person, and the two want opposite treatment. Somebody who never plans
+	 * should not see a control at all — a lecturer reads this page. Somebody who does plan should
+	 * see it even where it cannot be used, disabled and saying why, because a control that
+	 * appears and disappears as one clicks through the programmes reads as a bug, and its
+	 * absence answers nothing.
+	 *
+	 * The unscoped programme lead is the case this is really for: they hold the role, the button
+	 * is theirs, and what is missing is an assignment somebody else has to make.
+	 */
+	const plansAtAll = $derived(
+		hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE', 'PROGRAMME_LEAD'])
+	);
+
+	/**
 	 * Whether the planning table is showing, rather than the overview.
 	 *
 	 * The address asks for it and the permission decides. Somebody without it who types
@@ -142,6 +159,28 @@
 			data.myProgrammes.length === 0 &&
 			!hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE'])
 	);
+
+	/**
+	 * Why the toggle cannot be used here, or empty when it can.
+	 *
+	 * Three reasons with three different repairs, so three sentences: choose a programme, choose
+	 * a different one, or ask for an assignment. A single "not possible" would send everybody to
+	 * the wrong one of the three — and the third is not a refusal at all, it is a waiting room.
+	 */
+	const editingBlocked = $derived.by(() => {
+		if (data.selected.programme === '') {
+			// The dean's office reaches this too: they may plan every programme, and "all of them"
+			// is still not one. planDemand writes exactly one.
+			return 'Zum Bearbeiten bitte einen Studiengang wählen.';
+		}
+		if (leadsNothing) {
+			return 'Ihre Studiengangsleitung ist noch keinem Studiengang zugeordnet.';
+		}
+		if (!mayPlan) {
+			return 'Diesen Studiengang leiten Sie nicht.';
+		}
+		return '';
+	});
 
 	/**
 	 * A row of this page's table, with the module fields the query asked for.
@@ -457,13 +496,26 @@
 			Client-Zustand wären zwei Ansichten unter einer Adresse — nicht verschickbar, und der
 			Zurück-Knopf zeigte die falsche.
 		-->
-		{#if mayPlan && data.selected.programme !== ''}
+		{#if plansAtAll}
 			<form method="GET" class="shrink-0">
 				{@render carriedOver([])}
 				{#if editing}
 					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
 				{:else}
-					<button type="submit" name="bearbeiten" value="1" class="btn btn-sm btn-primary">
+					<!--
+						Abgeschaltet statt versteckt, wenn er hier nicht geht: wer plant, soll den
+						Knopf immer an derselben Stelle finden. Einer, der beim Durchklicken der
+						Studiengänge kommt und geht, liest sich wie ein Fehler — und seine
+						Abwesenheit beantwortet nichts, während der `title` genau sagt, was fehlt.
+					-->
+					<button
+						type="submit"
+						name="bearbeiten"
+						value="1"
+						class="btn btn-sm btn-primary"
+						disabled={editingBlocked !== ''}
+						title={editingBlocked || undefined}
+					>
 						Bearbeiten
 					</button>
 				{/if}

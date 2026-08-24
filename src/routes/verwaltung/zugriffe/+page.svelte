@@ -135,7 +135,13 @@
 	{/if}
 
 	{#if data.summary && data.summary.refused.length > 0}
-		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div
+			class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border"
+			tabindex="0"
+			role="region"
+			aria-label="Abgewiesene Anmeldungen"
+		>
 			<table class="table table-sm">
 				<caption class="text-base-content/80 px-4 py-2 text-left text-sm">
 					Abgewiesene Anmeldungen. Wer hier steht, hat eine HM-Kennung und in Tallox kein Konto —
@@ -167,7 +173,24 @@
 		</div>
 	{/if}
 
-	<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
+	<!--
+		Fokussierbar, weil scrollbar. Sobald das Protokoll Zeilen hat, ist die Tabelle breiter als
+		der Bildschirm, und ein Bereich, der scrollt, muss von der Tastatur erreichbar sein
+		(WCAG 2.1.1; axe meldet es als „serious"). Leer läuft nichts über — deshalb war der
+		Befund allein nicht zu sehen und erst im vollen Lauf da, wo die anderen Tests Einträge
+		erzeugen.
+
+		Die Lint-Regel unten meint dekorative Elemente; ein Scroll-Container ist die dokumentierte
+		Ausnahme, und die beiden Prüfer sind sich genau hier uneins. Dieselbe Stelle gab es schon
+		auf /api-doku/schema.
+	-->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div
+		class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border"
+		tabindex="0"
+		role="region"
+		aria-label="Zugriffsprotokoll"
+	>
 		<table class="table table-sm">
 			<caption class="text-base-content/80 px-4 py-2 text-left text-sm">
 				Die Einträge selbst, neueste zuerst.
