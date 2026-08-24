@@ -137,6 +137,13 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		roles: ['ADMIN', 'DEANS_OFFICE']
 	},
 	{
+		emoji: '📋',
+		label: 'Zugriffe',
+		href: '/verwaltung/zugriffe',
+		hint: 'Wer hat wann worauf zugegriffen — und wer wurde abgewiesen',
+		roles: ['ADMIN']
+	},
+	{
 		emoji: '🔍',
 		label: 'Diagnose',
 		href: '/verwaltung/diagnose',

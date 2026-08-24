@@ -4,6 +4,58 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+/** Which mount a request came through. */
+export type AccessDoor =
+  /** A person in a browser, behind the authentication proxy. */
+  | 'INTERACTIVE'
+  /** A Personal Access Token: a script, a notebook, a cron job. */
+  | 'TOKEN';
+
+/**
+ * Narrows a page of the log. Everything is optional; omitting all of it means the whole log,
+ * newest first.
+ */
+export type AccessLogFilter = {
+  /** One door — the browser or a Personal Access Token. */
+  door?: AccessDoor | null | undefined;
+  /** Only entries at or after this moment. */
+  from?: string | null | undefined;
+  /** A substring of the mail address — for the support question that starts with half an address. */
+  mail?: string | null | undefined;
+  /** Only entries that changed something. */
+  onlyMutations?: boolean | null | undefined;
+  /** Only entries that did not end in `OK`. */
+  onlyRefused?: boolean | null | undefined;
+  /** One person, by id. */
+  personId?: string | number | null | undefined;
+  /** Only entries strictly before this moment. */
+  until?: string | null | undefined;
+};
+
+/**
+ * How a request ended.
+ *
+ * Three kinds of refusal rather than one, because they are three different events with three
+ * different answers. A refused sign-in is somebody who cannot get in at all. A scope refusal is a
+ * colleague's script asking for something its token was not minted for, and the fix is a new
+ * token. An interactive-only refusal is a script reaching for personnel data, and the fix is not a
+ * new token — it is the person, in a browser.
+ */
+export type AccessOutcome =
+  /** The operation ran and failed. */
+  | 'ERROR'
+  /** The operation ran and returned no error. */
+  | 'OK'
+  /**
+   * The request never reached the schema: an unknown identity, a deactivated person, an expired or
+   * revoked token. The only outcome that appears without a person.
+   */
+  | 'REFUSED_AUTH'
+  /** A token reached for a field that is available only in an interactive session. */
+  | 'REFUSED_INTERACTIVE'
+  /** The token's scopes did not cover what the operation asked for. */
+  | 'REFUSED_SCOPE';
+
 /**
  * How the teaching of a module is broken up, as the catalogue describes it.
  *
@@ -359,8 +411,8 @@ export type Role =
  */
 export type ScopeArea =
   /**
-   * Running the installation: user and role administration, and the module import. Also
-   * `@interactiveOnly`, for the same reason.
+   * Running the installation: user and role administration, the module import, and the access
+   * log. Also `@interactiveOnly`, for the same reason.
    *
    * The import is here rather than under `PLANNING` because what these fields expose is the
    * operation — did the nightly job run, what did it change, run it now, what did it make of the
@@ -372,7 +424,7 @@ export type ScopeArea =
    * Fields: `people`, `person`, `roleGrants`, `diagnoseAccess`, `teacherAccounts`,
    * `createPerson`, `renamePerson`, `setPersonRoles`, `setPersonActive`, `setPersonProgrammes`,
    * `setTeacherAdmitted`, `zpaSyncRuns`, `zpaSyncRun`, `zpaChanges`, `zpaCatalogueProjections`,
-   * `syncZpaNow`, `projectZpaCatalogue`.
+   * `syncZpaNow`, `projectZpaCatalogue`, `accessLog`, `accessSummary`.
    */
   | 'ADMIN'
   /**
@@ -825,6 +877,23 @@ export type SyncZpaNowMutationVariables = Exact<{ [key: string]: never; }>;
 
 export type SyncZpaNowMutation = { syncZpaNow: { id: string, status: ZpaSyncStatus } };
 
+export type AccessLogQueryVariables = Exact<{
+  filter?: AccessLogFilter | null | undefined;
+  limit: number;
+  before?: string | number | null | undefined;
+}>;
+
+
+export type AccessLogQuery = { accessLog: Array<{ id: string, at: string, personId: string | null, personName: string | null, mail: string | null, door: AccessDoor, tokenId: string | null, roles: Array<Role>, narrowedFrom: Array<Role> | null, operation: string | null, fields: Array<string>, mutation: boolean, outcome: AccessOutcome, errorCode: string | null, durationMs: number | null, sourceIp: string | null }> | null };
+
+export type AccessSummaryQueryVariables = Exact<{
+  from: string;
+  until: string;
+}>;
+
+
+export type AccessSummaryQuery = { accessSummary: { from: string, until: string, counts: { total: number, interactive: number, token: number, mutations: number, errors: number, refusedAuth: number, refusedScope: number, refusedInteractive: number, people: number }, roles: Array<{ role: Role, operations: number }>, refused: Array<{ mail: string, tokenId: string, reason: string, door: AccessDoor, attempts: number, lastAt: string }>, mutations: Array<{ mail: string, field: string, calls: number, lastAt: string }> } | null };
+
 
 export const BuildInfoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"BuildInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"buildInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"commit"}},{"kind":"Field","name":{"kind":"Name","value":"builtAt"}}]}}]}}]} as unknown as DocumentNode<BuildInfoQuery, BuildInfoQueryVariables>;
 export const SessionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Session"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"session"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"narrowed"}},{"kind":"Field","name":{"kind":"Name","value":"interactive"}},{"kind":"Field","name":{"kind":"Name","value":"effectiveRoles"}},{"kind":"Field","name":{"kind":"Name","value":"grantedRoles"}},{"kind":"Field","name":{"kind":"Name","value":"person"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mail"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<SessionQuery, SessionQueryVariables>;
@@ -860,3 +929,5 @@ export const ZpaChangesDocument = {"kind":"Document","definitions":[{"kind":"Ope
 export const ZpaCatalogueProjectionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ZpaCatalogueProjections"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"zpaCatalogueProjections"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"runId"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"finishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"programmesWritten"}},{"kind":"Field","name":{"kind":"Name","value":"modulesWritten"}},{"kind":"Field","name":{"kind":"Name","value":"offeringsWritten"}},{"kind":"Field","name":{"kind":"Name","value":"offeringsRemoved"}},{"kind":"Field","name":{"kind":"Name","value":"error"}},{"kind":"Field","name":{"kind":"Name","value":"notes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"finding"}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"sample"}}]}}]}}]}}]} as unknown as DocumentNode<ZpaCatalogueProjectionsQuery, ZpaCatalogueProjectionsQueryVariables>;
 export const ProjectZpaCatalogueDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ProjectZpaCatalogue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectZpaCatalogue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<ProjectZpaCatalogueMutation, ProjectZpaCatalogueMutationVariables>;
 export const SyncZpaNowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SyncZpaNow"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"syncZpaNow"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<SyncZpaNowMutation, SyncZpaNowMutationVariables>;
+export const AccessLogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AccessLog"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AccessLogFilter"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"before"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessLog"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"before"},"value":{"kind":"Variable","name":{"kind":"Name","value":"before"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"at"}},{"kind":"Field","name":{"kind":"Name","value":"personId"}},{"kind":"Field","name":{"kind":"Name","value":"personName"}},{"kind":"Field","name":{"kind":"Name","value":"mail"}},{"kind":"Field","name":{"kind":"Name","value":"door"}},{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}},{"kind":"Field","name":{"kind":"Name","value":"narrowedFrom"}},{"kind":"Field","name":{"kind":"Name","value":"operation"}},{"kind":"Field","name":{"kind":"Name","value":"fields"}},{"kind":"Field","name":{"kind":"Name","value":"mutation"}},{"kind":"Field","name":{"kind":"Name","value":"outcome"}},{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"durationMs"}},{"kind":"Field","name":{"kind":"Name","value":"sourceIp"}}]}}]}}]} as unknown as DocumentNode<AccessLogQuery, AccessLogQueryVariables>;
+export const AccessSummaryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AccessSummary"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"from"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Time"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"until"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Time"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessSummary"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"from"}}},{"kind":"Argument","name":{"kind":"Name","value":"until"},"value":{"kind":"Variable","name":{"kind":"Name","value":"until"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"until"}},{"kind":"Field","name":{"kind":"Name","value":"counts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"interactive"}},{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"mutations"}},{"kind":"Field","name":{"kind":"Name","value":"errors"}},{"kind":"Field","name":{"kind":"Name","value":"refusedAuth"}},{"kind":"Field","name":{"kind":"Name","value":"refusedScope"}},{"kind":"Field","name":{"kind":"Name","value":"refusedInteractive"}},{"kind":"Field","name":{"kind":"Name","value":"people"}}]}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"operations"}}]}},{"kind":"Field","name":{"kind":"Name","value":"refused"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mail"}},{"kind":"Field","name":{"kind":"Name","value":"tokenId"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"door"}},{"kind":"Field","name":{"kind":"Name","value":"attempts"}},{"kind":"Field","name":{"kind":"Name","value":"lastAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"mutations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mail"}},{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"calls"}},{"kind":"Field","name":{"kind":"Name","value":"lastAt"}}]}}]}}]}}]} as unknown as DocumentNode<AccessSummaryQuery, AccessSummaryQueryVariables>;
