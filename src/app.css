@@ -6,12 +6,17 @@
  *
  * `--default` and `--prefersdark` are what makes the "System" choice possible at all: they
  * apply exactly when there is no data-theme on the <html> tag.
+ *
+ * The light default is `corporate` and not `nord`, because the whole app damps text with
+ * opacity (see the menu rules below): `base-content` on `base-100` gives 17.2:1 on `corporate`
+ * against 10.8:1 on `nord`, so every damped variant keeps more headroom over the 4.5:1 that
+ * WCAG 1.4.3 — and with it BITV 2.0 — demands of us as a public body.
  */
 @plugin "daisyui" {
 	themes:
-		nord --default,
+		corporate --default,
 		dim --prefersdark,
-		corporate,
+		nord,
 		emerald,
 		winter,
 		lofi,

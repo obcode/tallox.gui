@@ -32,8 +32,8 @@ export const SYSTEM_THEME = 'system';
  * only selected. An entry app.css does not know about visibly switches to nothing.
  */
 export const THEMES = [
-	{ value: 'nord', label: 'Nord', dark: false },
 	{ value: 'corporate', label: 'Corporate', dark: false },
+	{ value: 'nord', label: 'Nord', dark: false },
 	{ value: 'emerald', label: 'Emerald', dark: false },
 	{ value: 'winter', label: 'Winter', dark: false },
 	{ value: 'lofi', label: 'Lo-Fi', dark: false },
