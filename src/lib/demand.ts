@@ -100,13 +100,20 @@ export type ModuleLike = {
 	programmeSemester?: number | null;
 };
 
-/** An instance, as much of it as the table needs. */
-export type InstanceLike = {
+/**
+ * An instance, as much of it as the table needs.
+ *
+ * Generic in the module, because two callers want different amounts of it: the comparison with
+ * last year needs an id, and the table needs the whole catalogue entry — an instance may point
+ * at a module the catalogue query does not return, and then the instance is the only place the
+ * module comes from.
+ */
+export type InstanceLike<M extends { id: string } = { id: string }> = {
 	id: string;
 	track: string;
 	programmeSemester?: number | null;
 	teachingHours: number;
-	module: { id: string };
+	module: M;
 	parts: readonly PartLike[];
 	borrowedParts?: readonly { fromTrack: string; part: PartLike }[];
 };
@@ -147,6 +154,16 @@ export type DemandRow<M extends ModuleLike = ModuleLike> = {
 	planned: boolean;
 	/** Where the proposal came from, for the badge that says so. */
 	proposedFrom?: string;
+	/**
+	 * True for a row the catalogue filter did not produce — it exists because an instance
+	 * points at the module.
+	 *
+	 * A module of another programme, or one the term filter excludes. The row is shown anyway
+	 * and marked, because `planDemand` only ever touches the modules it is told about: a row
+	 * that is not on the screen cannot have its tick taken away, and an instance nobody can
+	 * withdraw is worse than one nobody meant to declare.
+	 */
+	foreign?: boolean;
 	/** What the planned cohorts cost the faculty. Zero for a row that is only proposed. */
 	teachingHours: number;
 };
@@ -187,50 +204,72 @@ export function groupsOf(
  */
 export function demandRows<M extends ModuleLike>(
 	modules: readonly M[],
-	instances: readonly InstanceLike[],
+	instances: readonly InstanceLike<M>[],
 	previous: readonly InstanceLike[],
 	previousCode?: string
 ): DemandRow<M>[] {
 	const byModule = groupByModule(instances);
 	const previousByModule = groupByModule(previous);
 
-	return modules.map((module) => {
-		const own = byModule.get(module.id) ?? [];
-		if (own.length > 0) {
-			return {
-				module,
-				programmeSemester: own[0].programmeSemester ?? module.programmeSemester ?? null,
-				tracks: own.map((instance) => ({
-					track: instance.track,
-					groups: groupsOf(instance.parts, module.practicalKind),
-					instanceId: instance.id,
-					borrowedKinds: (instance.borrowedParts ?? []).map((b) => b.part.kind),
-					lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
-					sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id
-				})),
-				planned: true,
-				teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
-			};
-		}
+	// The catalogue's modules, and then whatever is planned beyond them. The second half is not
+	// a rarity to tidy up later: a module of another programme is a legitimate declaration —
+	// borrowing across programmes is what the dean's office's import/export figures are about —
+	// and the term filter alone is enough to hide a module somebody planned on purpose.
+	const listed = new Set(modules.map((m) => m.id));
+	const rows = modules.map((module) => rowFor(module, byModule, previousByModule, previousCode));
 
-		const before = previousByModule.get(module.id) ?? [];
-		return {
-			module,
-			programmeSemester: before[0]?.programmeSemester ?? module.programmeSemester ?? null,
-			tracks: before.map((instance) => ({
-				track: instance.track,
-				groups: groupsOf(instance.parts, module.practicalKind),
-				borrowedKinds: []
-			})),
-			planned: false,
-			proposedFrom: before.length > 0 ? previousCode : undefined,
-			teachingHours: 0
-		};
-	});
+	for (const [id, own] of byModule) {
+		if (listed.has(id)) continue;
+		const row = rowFor(own[0].module, byModule, previousByModule, previousCode);
+		row.foreign = true;
+		rows.push(row);
+	}
+	return rows;
 }
 
-function groupByModule(instances: readonly InstanceLike[]): Map<string, InstanceLike[]> {
-	const byModule = new Map<string, InstanceLike[]>();
+function rowFor<M extends ModuleLike>(
+	module: M,
+	byModule: Map<string, InstanceLike<M>[]>,
+	previousByModule: Map<string, InstanceLike[]>,
+	previousCode?: string
+): DemandRow<M> {
+	const own = byModule.get(module.id) ?? [];
+	if (own.length > 0) {
+		return {
+			module,
+			programmeSemester: own[0].programmeSemester ?? module.programmeSemester ?? null,
+			tracks: own.map((instance) => ({
+				track: instance.track,
+				groups: groupsOf(instance.parts, module.practicalKind),
+				instanceId: instance.id,
+				borrowedKinds: (instance.borrowedParts ?? []).map((b) => b.part.kind),
+				lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
+				sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id
+			})),
+			planned: true,
+			teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
+		};
+	}
+
+	const before = previousByModule.get(module.id) ?? [];
+	return {
+		module,
+		programmeSemester: before[0]?.programmeSemester ?? module.programmeSemester ?? null,
+		tracks: before.map((instance) => ({
+			track: instance.track,
+			groups: groupsOf(instance.parts, module.practicalKind),
+			borrowedKinds: []
+		})),
+		planned: false,
+		proposedFrom: before.length > 0 ? previousCode : undefined,
+		teachingHours: 0
+	};
+}
+
+function groupByModule<M extends { id: string }>(
+	instances: readonly InstanceLike<M>[]
+): Map<string, InstanceLike<M>[]> {
+	const byModule = new Map<string, InstanceLike<M>[]>();
 	for (const instance of instances) {
 		const list = byModule.get(instance.module.id);
 		if (list) list.push(instance);

@@ -108,7 +108,18 @@ export const CATALOGUE = {
 	 */
 	correctable: '0e2e0000-0000-4000-8000-000000000016',
 	/** The person the split module names as responsible. */
-	teacher: '0e2e0000-0000-4000-8000-000000000021'
+	teacher: '0e2e0000-0000-4000-8000-000000000021',
+	/**
+	 * A second study programme, and one module at home in it.
+	 *
+	 * For the case the demand page's escape hatch is about: a module that is in no catalogue of
+	 * the programme being planned and has to be offered anyway. It has to be a *real* second
+	 * programme rather than an unlisted module of the first, because what is being tested is
+	 * that the permission hangs off the programme of the instance and not off the home of the
+	 * module.
+	 */
+	otherProgramme: 'E2F',
+	otherModule: '0e2e0000-0000-4000-8000-000000000031'
 } as const;
 
 /**
@@ -221,6 +232,18 @@ export function catalogueStatements(): string[] {
 		                     contact_hours_per_week, credits)
 		 SELECT '${CATALOGUE.correctable}', id, 'E2E Modul zum Ändern', 'SU_WITH_LAB',
 		        'EVERY_WINTER_SEMESTER', 4, 5 FROM programme WHERE code = ${p}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		// The second programme and its module — the one the demand page fetches in from outside
+		// its own catalogue. No offering row, deliberately: it counts in no set of regulations
+		// of the programme being planned, which is what makes it foreign there.
+		`INSERT INTO programme (code, title) VALUES (${quote(CATALOGUE.otherProgramme)},
+		        'Zweiter Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${CATALOGUE.otherModule}', id, 'E2E Fremdmodul', 'SU_WITH_LAB',
+		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${quote(CATALOGUE.otherProgramme)}
 		 ON CONFLICT (id) DO NOTHING;`,
 
 		// The split the write test leaves behind is cleared at the start of every run, so the

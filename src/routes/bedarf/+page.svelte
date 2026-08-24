@@ -42,6 +42,9 @@
 	 */
 	const semesterTabs = $derived([...data.semesters].reverse());
 
+	/** The search block stands open while it is showing something, and folded away otherwise. */
+	const foreignOpen = $derived(data.selected.foreignSearch !== '');
+
 	const rows = $derived(
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
 	);
@@ -160,6 +163,14 @@
 				text:
 					`${r.created.length} angelegt, ${r.changed.length} geändert, ` +
 					`${r.withdrawn.length} zurückgezogen — ${hoursLabel(r.teachingHours)} geplant.${refused}`,
+				code: ''
+			};
+		}
+		if (showResult && form && 'adopted' in form && form.adopted) {
+			return {
+				badge: 'success',
+				label: 'Übernommen',
+				text: `${form.adopted} steht jetzt im Bedarf dieses Studiengangs.`,
 				code: ''
 			};
 		}
@@ -600,6 +611,77 @@
 		</form>
 	</div>
 
+	{#if editing}
+		<!--
+			Ein Fach hereinholen, das nicht für diesen Studiengang markiert ist.
+
+			Der Notfall, den die Fakultät ausdrücklich braucht: ein Modul muss angeboten werden und
+			steht in keinem Katalog dieses Studiengangs. Erlaubt ist das im Backend längst — die
+			Berechtigung hängt am Studiengang der Instanz und nie an der Heimat des Moduls, denn
+			genau dieser Unterschied *ist* die Import/Export-Zahl des Dekanats.
+
+			Eigene Suche und nicht der Filter oben: der Filter beschreibt die Tabelle, und ein
+			Filter, der plötzlich fremde Module einmischte, machte jedes Speichern zu einem Ritt
+			über einen Katalog, den niemand überblickt.
+		-->
+		<details class="border-base-300 bg-base-100 rounded-lg border p-4" open={foreignOpen}>
+			<summary class="cursor-pointer text-sm font-medium">
+				Fach aus einem anderen Studiengang hereinholen
+			</summary>
+
+			<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
+				{@render currentFilter(true)}
+				<input type="hidden" name="bearbeiten" value="1" />
+				<label class="form-control">
+					<span class="label-text text-sm">Modul suchen</span>
+					<input
+						type="search"
+						name="fremd"
+						value={data.selected.foreignSearch}
+						placeholder="Name oder Modulkürzel"
+						class="input input-bordered input-sm"
+					/>
+				</label>
+				<button type="submit" class="btn btn-sm">Suchen</button>
+			</form>
+
+			{#if data.selected.foreignSearch !== ''}
+				{#if data.foreignMatches.length === 0}
+					<p class="text-base-content/80 mt-3 text-sm">Kein Modul mit diesem Namen.</p>
+				{:else}
+					<ul class="mt-3 flex flex-col gap-2">
+						{#each data.foreignMatches as match (match.id)}
+							<li class="flex flex-wrap items-center gap-2 text-sm">
+								<a class="link" href={resolve('/module/[id]', { id: match.id })}>
+									{moduleName(match)}
+								</a>
+								<span class="badge badge-ghost badge-sm">
+									{match.homeProgramme.code}
+								</span>
+								{#if !match.plannable}
+									<span class="badge badge-ghost badge-sm">keine SWS im Katalog</span>
+								{/if}
+								<!--
+									Eigenes Formular, nicht die große Tabelle: für dieses Modul gibt es dort
+									noch keine Zeile — es ist genau das, was die Katalogabfrage nicht
+									liefert. Nach dem Anlegen steht es als gewöhnliche, markierte Zeile da.
+								-->
+								<form method="POST" action="?/adopt" use:enhance>
+									<input type="hidden" name="semester" value={data.selected.semester} />
+									<input type="hidden" name="programme" value={data.selected.programme} />
+									<input type="hidden" name="moduleId" value={match.id} />
+									<button type="submit" class="btn btn-xs" disabled={!match.plannable}>
+										in den Bedarf übernehmen
+									</button>
+								</form>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			{/if}
+		</details>
+	{/if}
+
 	{#if form && 'preview' in form && form.preview}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<h2 class="mb-2 font-medium">
@@ -823,6 +905,16 @@
 															{#if !row.module.plannable}
 																<span class="badge badge-ghost badge-sm">
 																	keine SWS im Katalog
+																</span>
+															{/if}
+															<!-- Eine Zeile, die der Filter nicht geliefert hat: das
+															     Modul gehört woanders hin, oder der Turnus blendet es
+															     aus. Sie steht trotzdem da, denn planDemand fasst nur
+															     an, was auf dem Bildschirm stand — eine unsichtbare
+															     Zeile ließe sich nie wieder abwählen. -->
+															{#if row.foreign}
+																<span class="badge badge-ghost badge-sm">
+																	außerhalb des Filters
 																</span>
 															{/if}
 														</span>
