@@ -35,3 +35,17 @@ eingetragen ist. Auf Schreibpfaden generische Meldungen anzeigen.
 Die Regel selbst wird im Backend durchgesetzt ([[auth-header-relay]] erklärt, warum diese
 Anwendung ohnehin keine Sicherheitsgrenze ist) — hier geht es darum, sie nicht durch die
 Darstellung zu unterlaufen.
+
+## Die Lesesicht des Bedarfs (2026-08-24)
+
+`/bedarf` zeigt jetzt für alle eine Übersicht: **eine Zeile je Instanz**, also je Zug — genau
+die Einheit, die später zugeteilt und bewünscht wird. Damit ist das die Tabelle, in die jemand
+als Nächstes „3 Interessent:innen" schreiben möchte.
+
+**Dort darf nie eine Zahl über Wünsche stehen** — kein Zähler, kein „hat Interesse"-Häkchen,
+keine Einfärbung, keine Sortierung danach. Der Satz steht als Kommentar in
+`src/lib/components/DemandOverview.svelte` und in `src/lib/demand.ts` über `instanceRows`, weil
+das die zwei Stellen sind, an denen es jemand ergänzen würde.
+
+Was aus `instance_part` kommt (Teile, Gruppen, SWS), ist unbedenklich: das ist Bedarf, nicht
+Wunsch.

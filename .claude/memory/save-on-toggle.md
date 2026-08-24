@@ -1,6 +1,6 @@
 ---
 name: save-on-toggle
-description: Der Zulassungsbildschirm — Schalter ohne Speichern-Knopf, Filtern im Browser, und warum page.url dafür nicht reicht
+description: Schalter ohne Speichern-Knopf, Filtern im Browser, warum page.url dafür nicht reicht — und wann ein GET-Formular das bessere Werkzeug ist
 metadata:
   type: project
 ---
@@ -61,3 +61,33 @@ ausgelöst hat. Alle Actions geben dafür die id mit zurück.
 
 Zum Backend siehe `../../tallox.go/.claude/memory/admitting-a-teacher.md` — dort steht, warum
 das Zulassen `LECTURER` mitvergibt. Kontrast-Overrides: [[daisyui-contrast-overrides]].
+
+## Sichtwechsel und Filter sind GET-Formulare, kein `replaceState` (2026-08-24)
+
+Auf `/bedarf` schalten Semester und Studiengang beim Klick um, und der Bearbeiten-Schalter
+wechselt die Sicht — alles ohne `replaceState`, und das ist kein Versehen.
+
+**SvelteKit fängt GET-Formulare ab.** Im Client-Runtime steht ein Submit-Listener mit
+`if (method !== 'get') return;` und danach eine gewöhnliche clientseitige Navigation. Ein
+`<button type="submit" name="studiengang" value="IF">` in einem `<form method="GET">` ist damit
+sofortiges Umschalten **mit** korrektem `page.url`, laufendem Load und funktionierendem
+Zurück-Knopf — und ohne Skript tut dasselbe Markup dasselbe mit vollem Seitenaufbau.
+
+Der Unterschied zu `/verwaltung/personen`: dort wird **im Browser** gefiltert, es braucht also
+gar keine Runde, und `replaceState` schreibt nur die Adresse nach. Hier braucht jede Umschaltung
+ohnehin einen Server-Load — dann ist das Formular die richtige Bauart und `replaceState` das
+falsche Werkzeug. Die `page.url`-Falle entfällt, statt umgangen zu werden.
+
+Zwei Bauregeln, die dabei Zeit gekostet hätten:
+
+- **Zwei Bedienelemente gleichen Namens passen nicht in ein Formular.** Die Reiter „meiner"
+  Studiengänge und die Auswahlliste der übrigen heißen beide `studiengang`, also stehen sie in
+  zwei Formularen — und jedes schickt die übrigen Filter als versteckte Felder mit, sonst fällt
+  beim Umschalten die halbe Auswahl weg.
+- **`<form>` gehört nicht in ein `<label>`.** Ungültige Verschachtelung; der Parser hebt das
+  Formular heraus, und das Layout springt nach der Hydration.
+
+Und ein Testfallstrick derselben Runde: `boundingBox()` ist **viewport-relativ**. Ein Klick, der
+seinen Knopf ins Bild scrollt, verschiebt jede Zahl auf der Seite — der Test „die Tabelle bewegt
+sich beim Speichern nicht" hing damit an der Höhe der Filterkarte. Jetzt wird gegen das Dokument
+gemessen (`+ window.scrollY`).
