@@ -6,10 +6,19 @@
 	let {
 		remoteUser,
 		remoteDisplayname,
+		feedbackUrl,
 		effectiveRoles
 	}: {
 		remoteUser: string | null;
 		remoteDisplayname: string | null;
+		/**
+		 * Where to send feedback, or null for no entry at all.
+		 *
+		 * Temporary, and its own prop rather than an entry in NAV_ITEMS: that list is the steps
+		 * of the planning process in their order, and this is neither a step nor permanent.
+		 * Removing it later is this block and the value that feeds it.
+		 */
+		feedbackUrl: string | null;
 		/** The roles the server judges this request by — not the ones held. */
 		effectiveRoles: readonly string[];
 	} = $props();
@@ -76,6 +85,33 @@
 		</ul>
 
 		<div class="ml-auto flex items-center gap-1 xl:ml-0">
+			<!--
+				Neben der Identität und bei jeder Breite sichtbar, nicht in der Bereichsleiste:
+				die zeigt den Planungsprozess in seiner Reihenfolge, und eine Rückmeldung ist
+				kein Schritt darin. Unterhalb von `sm` bleibt das Sprechblasen-Zeichen allein
+				stehen — die Zeile hat dort 375px, und der `title` trägt den Namen weiter.
+
+				`target="_blank"`, weil das Ziel außerhalb dieser Anwendung liegt: wer mitten in
+				einer halb ausgefüllten Bedarfstabelle etwas anmerken will, soll sie nicht
+				verlassen. `rel="noopener noreferrer"` gehört zwingend dazu.
+			-->
+			{#if feedbackUrl}
+				<!-- `resolve()` wäre hier falsch: es löst interne Routen auf, und dieses Ziel liegt
+				     außerhalb. Die Lint-Regel sieht das einem dynamischen href nicht an, also ist
+				     sie für diese eine Stelle aus — wie beim Release-Link im Footer. Der Wert
+				     kommt aus der Umgebung des Deployments und aus keiner Eingabe. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					href={feedbackUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-ghost btn-sm gap-1.5 font-normal"
+					title="Rückmeldungen zu Tallox — öffnet die Seite der Fakultät in einem neuen Tab"
+				>
+					<span aria-hidden="true">💬</span><span class="hidden sm:inline">Feedback</span>
+				</a>
+			{/if}
+
 			<!-- Only from xl, so exactly where the area bar appears too. Below that the menu at
 			     the bottom carries the identity — it is never missing, it just sits somewhere
 			     else. -->

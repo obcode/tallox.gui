@@ -24,6 +24,7 @@
 	<NavBar
 		remoteUser={data.remoteUser}
 		remoteDisplayname={data.remoteDisplayname}
+		feedbackUrl={data.feedbackUrl}
 		{effectiveRoles}
 	/>
 

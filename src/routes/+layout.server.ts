@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { env } from '$env/dynamic/public';
 import type { LayoutServerLoad } from './$types';
 import { loadServerBuildInfo } from '$lib/server/buildInfo';
 import { loadSession } from '$lib/server/session';
@@ -26,6 +27,13 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	return {
+		// A temporary "Feedback" entry in the navigation, or null for none.
+		//
+		// From the environment rather than from the source: this repository is public and the
+		// space it points at is not, and it makes "temporary" a configuration change instead of
+		// a revert. `$env/dynamic/public` rather than `static`, so the deployment can set it
+		// without a rebuild.
+		feedbackUrl: env.PUBLIC_TALLOX_FEEDBACK_URL || null,
 		remoteUser: locals.remoteUser ?? null,
 		remoteDisplayname: locals.remoteDisplayname ?? null,
 		// null when the backend was unreachable. The page keeps rendering, with the note in the
