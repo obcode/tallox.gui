@@ -48,6 +48,27 @@
 	/** The search block stands open while it is showing something, and folded away otherwise. */
 	const foreignOpen = $derived(data.selected.foreignSearch !== '');
 
+	/**
+	 * The filter, as the query parameters it is made of.
+	 *
+	 * Every form on this page owns *some* of these and has to carry the rest across, or clicking
+	 * one control silently resets another. Written once here so that "what is the filter made of"
+	 * has a single answer, and each form says which parts it provides itself.
+	 *
+	 * `always` is for `turnus` alone, and the distinction is real: an absent `turnus` means "take
+	 * the term of the semester", an empty one means "every term". Dropping it because it is empty
+	 * would turn the second into the first.
+	 */
+	const filterFields = $derived([
+		{ name: 'semester', value: data.selected.semester, always: false },
+		{ name: 'studiengang', value: data.selected.programme, always: false },
+		{ name: 'q', value: data.selected.search, always: false },
+		{ name: 'art', value: data.selected.duty, always: false },
+		{ name: 'turnus', value: data.selected.term, always: true },
+		{ name: 'offen', value: data.selected.onlyEstimated ? '1' : '', always: false },
+		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '', always: false }
+	]);
+
 	const rows = $derived(
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
 	);
@@ -375,27 +396,24 @@
 	dreimal benutzt.
 -->
 <!--
-	Die nicht sofort schaltenden Filter als versteckte Felder.
+	Der Teil des Filters, den dieses Formular nicht selbst trägt.
 
-	Für das Formular der Reiter: ein Klick auf ein Semester darf die Suche und den Turnus nicht
-	verlieren, und beide Bedienelemente können nicht in demselben Formular stehen.
+	Ein GET-Formular schickt nur seine eigenen Felder — und von seinen Absende-Knöpfen nur den
+	geklickten. Wer also einen Studiengang anklickt, schickt genau `studiengang`, und alles
+	andere fällt weg: die Seite landete wieder im Planungssemester, weil `semester` fehlte.
+
+	`own` nennt die Parameter, für die dieses Formular ein sichtbares Bedienelement hat. Alles
+	andere reist als verstecktes Feld mit. Zwei Felder desselben Namens in einem Formular sind
+	kein Ausweg: `searchParams.get` nimmt das erste, also gewönne je nach Reihenfolge im Markup
+	mal das versteckte, mal das sichtbare — genau die stille Abhängigkeit, die hier nirgends
+	sein soll.
 -->
-{#snippet textFilters()}
-	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
-	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
-	<input type="hidden" name="turnus" value={data.selected.term} />
-	{#if data.selected.onlyEstimated}<input type="hidden" name="offen" value="1" />{/if}
-	{#if data.selected.onlyPlanned}<input type="hidden" name="geplant" value="1" />{/if}
-{/snippet}
-
-{#snippet currentFilter()}
-	<input type="hidden" name="semester" value={data.selected.semester} />
-	<input type="hidden" name="studiengang" value={data.selected.programme} />
-	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
-	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
-	<input type="hidden" name="turnus" value={data.selected.term} />
-	{#if data.selected.onlyEstimated}<input type="hidden" name="offen" value="1" />{/if}
-	{#if data.selected.onlyPlanned}<input type="hidden" name="geplant" value="1" />{/if}
+{#snippet carriedOver(own: readonly string[])}
+	{#each filterFields as field (field.name)}
+		{#if !own.includes(field.name) && (field.always || field.value !== '')}
+			<input type="hidden" name={field.name} value={field.value} />
+		{/if}
+	{/each}
 {/snippet}
 
 <div class="flex flex-col gap-4">
@@ -423,7 +441,7 @@
 		-->
 		{#if mayPlan && data.selected.programme !== ''}
 			<form method="GET" class="shrink-0">
-				{@render currentFilter()}
+				{@render carriedOver([])}
 				{#if editing}
 					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
 				{:else}
@@ -452,18 +470,23 @@
 			Die Reiter sind Absende-Knöpfe eines GET-Formulars: SvelteKit fängt die ab und macht
 			daraus eine echte Navigation, also stimmt `page.url` und der Load läuft — ohne
 			`replaceState`, ohne zweiten Zustand neben der Adresse, und ohne Skript tut es dasselbe
-			mit vollem Seitenaufbau. Weil alle Felder in *einem* Formular stehen, schickt ein Klick
-			seinen eigenen Wert und den Stand aller anderen Felder mit.
+			mit vollem Seitenaufbau.
+
+			**Ein Formular je Leiste**, und das ist keine Kosmetik. Ein Formular schickt von seinen
+			Absende-Knöpfen nur den geklickten — beide Leisten in einem Formular hieß also: wer
+			einen Studiengang anklickt, schickt `studiengang` und sonst nichts, landet ohne
+			`semester` und damit im Planungssemester. Umgekehrt genauso. Jede Leiste trägt jetzt
+			den Rest des Filters als versteckte Felder mit (`carriedOver`).
 
 			Das <form> steht um die Leiste herum, nie dazwischen: daisyUI stylt über `.tabs > .tab`,
 			und ein Formular in der Mitte nimmt der Leiste Rahmen, Abstände und den markierten
 			Zustand.
 		-->
-		<form method="GET" class="flex flex-col gap-3">
+		<form method="GET" class="flex flex-col gap-1">
+			{@render carriedOver(['semester'])}
 			{#if data.selected.editing}
 				<input type="hidden" name="bearbeiten" value="1" />
 			{/if}
-			{@render textFilters()}
 
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Semester</span>
@@ -486,6 +509,13 @@
 					{/each}
 				</div>
 			</div>
+		</form>
+
+		<form method="GET" class="flex flex-col gap-1">
+			{@render carriedOver(['studiengang'])}
+			{#if data.selected.editing}
+				<input type="hidden" name="bearbeiten" value="1" />
+			{/if}
 
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Studiengang</span>
@@ -536,9 +566,13 @@
 			Der Rest schaltet nicht sofort — eine Suche, die nach jedem Buchstaben lädt, ist keine.
 			Eigenes Formular, weil ein Absenden hier nicht dasselbe bedeutet wie ein Reiterklick
 			oben: dort ist der Knopf die Auswahl, hier ist er das Ende einer Eingabe.
+
+			Diese fünf trägt es selbst, also dürfen sie nicht *auch* versteckt mitreisen: zwei
+			Felder gleichen Namens, und `searchParams.get` nähme das erste — die Auswahllisten
+			hätten stumm den alten Wert wieder eingesetzt.
 		-->
 		<form method="GET" class="flex flex-wrap items-end gap-3">
-			{@render currentFilter()}
+			{@render carriedOver(['q', 'art', 'turnus', 'offen', 'geplant'])}
 			<label class="form-control">
 				<span class="label-text text-sm">Suche</span>
 				<input
@@ -617,7 +651,7 @@
 			</summary>
 
 			<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
-				{@render currentFilter()}
+				{@render carriedOver([])}
 				<input type="hidden" name="bearbeiten" value="1" />
 				<label class="form-control">
 					<span class="label-text text-sm">Modul suchen</span>
@@ -838,8 +872,7 @@
 				     in Query-Parametern, und ein handgeschriebener Link mit beidem ist genau das, was
 				     die Lint-Regel verhindert. -->
 				<form method="GET">
-					<input type="hidden" name="semester" value={data.selected.semester} />
-					<input type="hidden" name="studiengang" value={data.selected.programme} />
+					{@render carriedOver(['offen'])}
 					<input type="hidden" name="bearbeiten" value="1" />
 					<input type="hidden" name="offen" value="1" />
 					<button type="submit" class="badge badge-warning">
