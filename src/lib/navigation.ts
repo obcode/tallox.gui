@@ -47,11 +47,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	{ emoji: '📚', label: 'Module', href: '/module', hint: 'Modulkatalog mit Heimatstudiengang' },
 	{ emoji: '🗓️', label: 'Semester', href: '/semester', hint: 'Semester, Phasen und Meilensteine' },
 	{
+		// No roles: the demand is what the wish phase is about, so a lecturer who cannot see
+		// which instances exist has nothing to register interest in. The page opens read-only for
+		// everybody and offers the planning table to whoever may write it.
 		emoji: '🎯',
 		label: 'Bedarf',
 		href: '/bedarf',
-		hint: 'Welche Instanzen müssen angeboten werden?',
-		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
+		hint: 'Was wird angeboten? Studiengangsleitungen legen es fest'
 	},
 	{ emoji: '✋', label: 'Wünsche', hint: 'Interesse an Instanz-Teilen bekunden' },
 	{

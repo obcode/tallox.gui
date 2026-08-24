@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
 import { THEME_COOKIE, THEMES } from '../src/lib/themes';
-import { CATALOGUE } from './seed';
+import { CATALOGUE, DEMAND } from './seed';
 
 async function expectNoContrastViolations(page: Page, theme: string): Promise<void> {
 	const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
@@ -185,6 +185,43 @@ test.describe('the module catalogue across all themes', () => {
 			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
 
 			await expectNoContrastViolations(page, theme.value);
+			await signedIn.close();
+		});
+	}
+});
+
+/**
+ * The demand across all themes, in both of its views.
+ *
+ * Here because it carries the two things this sweep exists for and no other page has together:
+ * the overview's badges sit in a dense table of their own, and the planning table adds the
+ * stepper buttons and the warning badge on a guessed split. The toggle between them is a
+ * `btn-primary` in a place no other page has one.
+ *
+ * Signed in as a planner, so that both views are reachable — a lecturer would only ever see one
+ * of the two, and the half that has the controls is the half with the untested pairs in it.
+ */
+test.describe('the demand across all themes', () => {
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ browser, context }) => {
+			await context.addCookies([
+				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
+			]);
+
+			const signedIn = await browser.newContext({
+				extraHTTPHeaders: { 'X-Remote-User': PERSONAS.vier.mail },
+				storageState: { cookies: await context.cookies(), origins: [] }
+			});
+			const page = await signedIn.newPage();
+
+			const view = `/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`;
+			await gotoRendered(page, view);
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+			await expectNoContrastViolations(page, theme.value);
+
+			await gotoRendered(page, `${view}&bearbeiten=1`);
+			await expectNoContrastViolations(page, theme.value);
+
 			await signedIn.close();
 		});
 	}

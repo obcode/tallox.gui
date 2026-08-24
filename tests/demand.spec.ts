@@ -18,7 +18,9 @@ test.beforeAll(() => {
 	runSql(demandResetSql(), 'clearing the demand of the test programme');
 });
 
-const DEMAND_URL = `/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`;
+// The planning table, not the overview. `/bedarf` opens read-only for everybody now, and the
+// table is what these tests are about — so they ask for it the same way the toggle does.
+const DEMAND_URL = `/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}&bearbeiten=1`;
 
 test.describe('the demand table', () => {
 	test('arrives prefilled from the previous comparable semester', async ({
@@ -180,7 +182,7 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(
 			page,
-			`/bedarf?semester=${SEMESTERS.untouched}&studiengang=${CATALOGUE.programme}`
+			`/bedarf?semester=${SEMESTERS.untouched}&studiengang=${CATALOGUE.programme}&bearbeiten=1`
 		);
 
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
@@ -226,18 +228,49 @@ test.describe('the demand table', () => {
 	});
 
 	// Reading the demand needs an account and no role — it is what the wish phase is about — and
-	// the controls that write are not offered to somebody who cannot.
-	test('a lecturer reads it and is offered no controls', async ({ asPersona }) => {
+	// what a lecturer gets is the overview rather than the planning table with its controls
+	// switched off. The address here asks for the table; the permission decides.
+	test('a lecturer reads the overview, even when the address asks to edit', async ({
+		asPersona,
+		checkA11y
+	}) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, DEMAND_URL);
 
+		// One row per instance, which is what the overview is: the column exists only there.
+		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
 		await expect(
 			page.getByRole('link', { name: 'E2E Modul mit Aufteilung' }).first()
 		).toBeVisible();
+
 		await expect(page.getByRole('button', { name: 'Bedarf speichern' })).toHaveCount(0);
-		// The row's own tick, not the filter's: the filters are for everybody.
-		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await expect(row.getByRole('checkbox')).toBeDisabled();
+		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
+		await expect(page.getByRole('columnheader', { name: 'Züge' })).toHaveCount(0);
+
+		await checkA11y(page);
+	});
+
+	// The toggle, from the side that has the permission: the overview first, the table on the
+	// button — and the address carries which one, so the link a colleague gets shows the same.
+	test('a planner arrives at the overview and switches into the table', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+
+		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
+
+		await page.getByRole('button', { name: 'Bearbeiten' }).click();
+
+		await expect(page.getByRole('columnheader', { name: 'Züge' }).first()).toBeVisible();
+		await expect(page).toHaveURL(/bearbeiten=1/);
+		await expect(page.getByRole('button', { name: 'Bedarf speichern' })).toBeVisible();
+
+		// And back, without losing the semester and the programme on the way.
+		await page.getByRole('button', { name: 'Ansicht' }).click();
+		await expect(page.getByRole('columnheader', { name: 'Instanz' }).first()).toBeVisible();
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 	});
 
 	// Arriving without a semester lands on the one the faculty is planning, and the choice ends

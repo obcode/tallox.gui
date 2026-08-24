@@ -300,7 +300,10 @@ test.describe('areas by role', () => {
 		// checked in responsive.spec.ts.
 		const lecturerNav = lecturer.getByRole('navigation');
 		await expect(lecturerNav.getByText('Wünsche').first()).toBeVisible();
-		await expect(lecturerNav.getByText('Bedarf')).toHaveCount(0);
+		// The demand is on a lecturer's menu, and that is the change the read view made: it is
+		// what the wish phase is about, so somebody who cannot see which instances exist has
+		// nothing to register interest in. What they get there is the overview.
+		await expect(lecturerNav.getByText('Bedarf').first()).toBeVisible();
 		await expect(lecturerNav.getByText('Statistik')).toHaveCount(0);
 
 		// Vier plans, so she sees demand and assignment — but not the statistics. That

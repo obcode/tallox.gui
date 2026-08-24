@@ -21,13 +21,17 @@
 		splitSummary,
 		trackLetters
 	} from '$lib/demand';
+	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName } from '$lib/semester';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const chosen = $derived(data.selected.semester !== '' && data.selected.programme !== '');
+	// The overview needs a semester and nothing else. The planning table needs a programme too,
+	// because planDemand writes exactly one — so "edit" without one is not a state, it is a
+	// question, and the answer to it is the overview.
+	const chosen = $derived(data.selected.semester !== '');
 
 	const rows = $derived(
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
@@ -59,6 +63,30 @@
 	const mayPlan = $derived(
 		hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE']) ||
 			data.myProgrammes.some((p) => p.code === data.selected.programme)
+	);
+
+	/**
+	 * Whether the planning table is showing, rather than the overview.
+	 *
+	 * The address asks for it and the permission decides. Somebody without it who types
+	 * `?bearbeiten=1` gets the overview — not a planning table with nine disabled controls,
+	 * which is a screen that says "you may not" nine times over. Cosmetic either way: the lock is
+	 * `policy.MayWriteDemand`, asked again on every save and on the token path too.
+	 */
+	const editing = $derived(data.selected.editing && mayPlan && data.selected.programme !== '');
+
+	/**
+	 * Somebody who holds the role and has not been given a programme.
+	 *
+	 * Worth its own sentence, because the two refusals have different repairs: "not your
+	 * programme" sends somebody to the right one, "no programme assigned" sends them to the
+	 * administration. The backend distinguishes them too (PROGRAMME_SCOPE_MISSING); this is the
+	 * same distinction made from what the page already knows, not a copy of its German.
+	 */
+	const leadsNothing = $derived(
+		hasAnyRole(data.session?.effectiveRoles ?? [], ['PROGRAMME_LEAD']) &&
+			data.myProgrammes.length === 0 &&
+			!hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE'])
 	);
 
 	/**
@@ -184,7 +212,10 @@
 	let editSeq = $state(0);
 
 	function scheduleSave() {
-		if (!mayPlan) return;
+		// `editing` rather than `mayPlan`: switching to the overview is a navigation, so the
+		// component is rebuilt anyway — but a timer that fired across it would submit a table
+		// nobody is looking at.
+		if (!editing) return;
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(() => formEl?.requestSubmit(), 600);
 	}
@@ -313,15 +344,68 @@
 	{/if}
 </div>
 
+<!--
+	Die Filter der aktuellen Ansicht als versteckte Felder.
+
+	Jedes GET-Formular auf dieser Seite, das nur *einen* Parameter setzen will, muss die übrigen
+	mitschicken — sonst fällt beim Umschalten der Sicht die halbe Auswahl weg. Einmal geschrieben,
+	dreimal benutzt.
+-->
+{#snippet currentFilter()}
+	<input type="hidden" name="semester" value={data.selected.semester} />
+	<input type="hidden" name="studiengang" value={data.selected.programme} />
+	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
+	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
+	<input type="hidden" name="turnus" value={data.selected.term} />
+	{#if data.selected.onlyEstimated}<input type="hidden" name="offen" value="1" />{/if}
+	{#if data.selected.onlyPlanned}<input type="hidden" name="geplant" value="1" />{/if}
+{/snippet}
+
 <div class="flex flex-col gap-4">
-	<div>
-		<h1 class="text-2xl font-semibold">Bedarf</h1>
-		<p class="text-base-content/80 text-sm">
-			Welche Instanzen muss ein Studiengang in einem Semester anbieten? Eine Zeile je Modul:
-			anhaken, Züge und Praktikumsgruppen setzen, speichern. Zugeteilt werden später die Teile —
-			Vorlesung und Praktikum können verschiedene Personen halten.
-		</p>
+	<div class="flex flex-wrap items-start justify-between gap-3">
+		<div>
+			<h1 class="text-2xl font-semibold">Bedarf</h1>
+			<p class="text-base-content/80 text-sm">
+				{#if editing}
+					Welche Instanzen muss ein Studiengang in einem Semester anbieten? Eine Zeile je Modul:
+					anhaken, Züge und Praktikumsgruppen setzen. Zugeteilt werden später die Teile — Vorlesung
+					und Praktikum können verschiedene Personen halten.
+				{:else}
+					Was in diesem Semester angeboten wird — eine Zeile je Instanz, also je Zug, denn das ist
+					die Einheit, die später zugeteilt und gewünscht wird. Vorlesung und Praktikum können
+					verschiedene Personen halten.
+				{/if}
+			</p>
+		</div>
+
+		<!--
+			Der Umschalter, wie in Moodle: oben rechts, und er steht in der Adresse.
+			Client-Zustand wären zwei Ansichten unter einer Adresse — nicht verschickbar, und der
+			Zurück-Knopf zeigte die falsche.
+		-->
+		{#if mayPlan && data.selected.programme !== ''}
+			<form method="GET" class="shrink-0">
+				{@render currentFilter()}
+				{#if editing}
+					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
+				{:else}
+					<button type="submit" name="bearbeiten" value="1" class="btn btn-sm btn-primary">
+						Bearbeiten
+					</button>
+				{/if}
+			</form>
+		{/if}
 	</div>
+
+	{#if leadsNothing}
+		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+			<p class="text-base-content/90 text-sm">
+				<span class="badge badge-warning badge-sm align-middle">Kein Studiengang</span>
+				Ihre Studiengangsleitung ist noch keinem Studiengang zugeordnet — bitte in der Verwaltung eintragen
+				lassen. Lesen können Sie den Bedarf trotzdem.
+			</p>
+		</div>
+	{/if}
 
 	<form
 		method="GET"
@@ -459,8 +543,8 @@
 	{#if !chosen}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<p class="text-base-content/80 text-sm">
-				Bitte Semester und Studiengang wählen. Beides steht danach in der Adresse, die Ansicht lässt
-				sich also verschicken.
+				Bitte ein Semester wählen. Die Auswahl steht danach in der Adresse, die Ansicht lässt sich
+				also verschicken.
 			</p>
 		</div>
 	{:else}
@@ -469,7 +553,7 @@
 		>
 			<div class="grow">
 				<h2 class="font-medium">
-					{semesterName(data.selected.semester)} · {data.selected.programme}
+					{semesterName(data.selected.semester)} · {data.selected.programme || 'alle Studiengänge'}
 				</h2>
 				<p class="text-base-content/80 text-sm">
 					{data.instances.length} Instanz(en), zusammen {hoursLabel(totalHours)} Lehre gespeichert.
@@ -496,6 +580,7 @@
 				<form method="GET">
 					<input type="hidden" name="semester" value={data.selected.semester} />
 					<input type="hidden" name="studiengang" value={data.selected.programme} />
+					<input type="hidden" name="bearbeiten" value="1" />
 					<input type="hidden" name="offen" value="1" />
 					<button type="submit" class="badge badge-warning">
 						{openEstimates} Aufteilung(en) geschätzt
@@ -507,400 +592,412 @@
 			{/if}
 		</div>
 
-		{#if shown.length === 0}
-			<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-				<p class="text-base-content/80 text-sm">
-					Keine Module in dieser Auswahl. Vielleicht ist der Turnus zu eng gesetzt.
-				</p>
-			</div>
-		{/if}
+		{#if !editing}
+			<!--
+				Die Lesesicht: eine Zeile je Instanz, nicht je Katalogmodul. Keine ausgegraute
+				Planungstabelle — deren Zeilen sind zum größten Teil Module, die niemand angehakt
+				hat, also eine Arbeitsliste, und die gehört jemand anderem.
+			-->
+			<DemandOverview instances={data.instances} programme={data.selected.programme} />
+		{:else}
+			{#if shown.length === 0}
+				<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+					<p class="text-base-content/80 text-sm">
+						Keine Module in dieser Auswahl. Vielleicht ist der Turnus zu eng gesetzt.
+					</p>
+				</div>
+			{/if}
 
-		<!--
+			<!--
 			`enhance` mit eigenem Callback. Nach dem Speichern hat der Load neu geladen, und die
 			Bearbeitungen von vorhin sind damit beantwortet — außer es kam eine Vorschau zurück
 			(dann steht die Entscheidung noch aus) oder jemand hat inzwischen weitergeklickt.
 		-->
-		<form
-			bind:this={formEl}
-			method="POST"
-			action="?/plan"
-			use:enhance={() => {
-				const seq = editSeq;
-				saving = true;
-				return async ({ result, update }) => {
-					const preview =
-						result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
-					// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
-					// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
-					// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
-					if (!preview && editSeq === seq) edits = {};
-					// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
-					// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
-					// hat, liest sich, als wäre nichts passiert.
-					editingSplit = null;
-					await update({ reset: false });
-					saving = false;
-					if (editSeq !== seq) scheduleSave();
-				};
-			}}
-			class="flex flex-col gap-4"
-		>
-			<input type="hidden" name="semester" value={data.selected.semester} />
-			<input type="hidden" name="programme" value={data.selected.programme} />
+			<form
+				bind:this={formEl}
+				method="POST"
+				action="?/plan"
+				use:enhance={() => {
+					const seq = editSeq;
+					saving = true;
+					return async ({ result, update }) => {
+						const preview =
+							result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
+						// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
+						// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
+						// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
+						if (!preview && editSeq === seq) edits = {};
+						// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
+						// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
+						// hat, liest sich, als wäre nichts passiert.
+						editingSplit = null;
+						await update({ reset: false });
+						saving = false;
+						if (editSeq !== seq) scheduleSave();
+					};
+				}}
+				class="flex flex-col gap-4"
+			>
+				<input type="hidden" name="semester" value={data.selected.semester} />
+				<input type="hidden" name="programme" value={data.selected.programme} />
 
-			{#each groups as group (group.programmeSemester ?? 'offen')}
-				<section class="flex flex-col gap-2">
-					<h2 class="text-lg font-medium">
-						{#if group.programmeSemester == null}
-							Ohne Fachsemester
-						{:else}
-							{group.programmeSemester}. Fachsemester
-						{/if}
-						<span class="text-base-content/80 text-sm font-normal">
-							({group.rows.length} Module, {hoursLabel(groupHours(group.rows))})
-						</span>
-					</h2>
+				{#each groups as group (group.programmeSemester ?? 'offen')}
+					<section class="flex flex-col gap-2">
+						<h2 class="text-lg font-medium">
+							{#if group.programmeSemester == null}
+								Ohne Fachsemester
+							{:else}
+								{group.programmeSemester}. Fachsemester
+							{/if}
+							<span class="text-base-content/80 text-sm font-normal">
+								({group.rows.length} Module, {hoursLabel(groupHours(group.rows))})
+							</span>
+						</h2>
 
-					<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-						<!--
+						<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
+							<!--
 							`table-fixed` mit festen Spaltenanteilen: sonst misst der Browser die Spalten
 							nach ihrem Inhalt, und jede gespeicherte Zahl — aus „—" wird „14 SWS" —
 							vermisst die ganze Tabelle neu. Nebenbei stehen damit die Spalten aller
 							Fachsemester-Blöcke untereinander, was sie vorher nicht taten.
 						-->
-						<table class="table table-fixed table-sm w-full min-w-[900px]">
-							<colgroup>
-								<col style="width: 28%" />
-								<col style="width: 8%" />
-								<col style="width: 26%" />
-								<col style="width: 11%" />
-								<col style="width: 17%" />
-								<col style="width: 10%" />
-							</colgroup>
-							<thead>
-								<tr>
-									<th>Modul</th>
-									<th>Fachsem.</th>
-									<th>Aufteilung</th>
-									<th>Züge</th>
-									<th>Gruppen</th>
-									<th>SWS</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each group.rows as row (row.module.id)}
-									{@const letters = lettersOf(row)}
+							<table class="table table-fixed table-sm w-full min-w-[900px]">
+								<colgroup>
+									<col style="width: 28%" />
+									<col style="width: 8%" />
+									<col style="width: 26%" />
+									<col style="width: 11%" />
+									<col style="width: 17%" />
+									<col style="width: 10%" />
+								</colgroup>
+								<thead>
 									<tr>
-										<td>
-											<input type="hidden" name="module" value={row.module.id} />
-											<!-- Die Buchstaben der Züge, wie die Seite sie zeigt. Sie stehen hier
+										<th>Modul</th>
+										<th>Fachsem.</th>
+										<th>Aufteilung</th>
+										<th>Züge</th>
+										<th>Gruppen</th>
+										<th>SWS</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each group.rows as row (row.module.id)}
+										{@const letters = lettersOf(row)}
+										<tr>
+											<td>
+												<input type="hidden" name="module" value={row.module.id} />
+												<!-- Die Buchstaben der Züge, wie die Seite sie zeigt. Sie stehen hier
 											     und nicht bei den Zählern, weil ein Feld auch dann mitgeschickt
 											     werden muss, wenn das Modul gar keine Gruppen kennt. -->
-											{#each letters as letter, i (i)}
-												<input type="hidden" name="track:{row.module.id}:{i}" value={letter} />
-											{/each}
-											<label class="flex items-start gap-2">
-												<input
-													type="checkbox"
-													name="offer"
-													value={row.module.id}
-													checked={draft(row).offered}
-													onchange={(e) => edit(row, { offered: e.currentTarget.checked })}
-													disabled={!mayPlan || !row.module.plannable}
-													class="checkbox checkbox-sm mt-1"
-												/>
-												<span>
-													<a
-														class="link font-medium"
-														href={resolve('/module/[id]', { id: row.module.id })}
-													>
-														{moduleName(row.module)}
-													</a>
-													<span class="flex flex-wrap items-center gap-1">
-														{#if row.module.dutyStatus}
-															<span class="badge {dutyBadge(row.module.dutyStatus)} badge-sm">
-																{DUTY_LABELS[row.module.dutyStatus]}
-															</span>
-														{/if}
-														{#if !row.planned && row.proposedFrom}
-															<span class="badge badge-ghost badge-sm">
-																Vorschlag aus {semesterName(row.proposedFrom)}
-															</span>
-														{/if}
-														{#if !row.module.plannable}
-															<span class="badge badge-ghost badge-sm"> keine SWS im Katalog </span>
-														{/if}
+												{#each letters as letter, i (i)}
+													<input type="hidden" name="track:{row.module.id}:{i}" value={letter} />
+												{/each}
+												<label class="flex items-start gap-2">
+													<input
+														type="checkbox"
+														name="offer"
+														value={row.module.id}
+														checked={draft(row).offered}
+														onchange={(e) => edit(row, { offered: e.currentTarget.checked })}
+														disabled={!mayPlan || !row.module.plannable}
+														class="checkbox checkbox-sm mt-1"
+													/>
+													<span>
+														<a
+															class="link font-medium"
+															href={resolve('/module/[id]', { id: row.module.id })}
+														>
+															{moduleName(row.module)}
+														</a>
+														<span class="flex flex-wrap items-center gap-1">
+															{#if row.module.dutyStatus}
+																<span class="badge {dutyBadge(row.module.dutyStatus)} badge-sm">
+																	{DUTY_LABELS[row.module.dutyStatus]}
+																</span>
+															{/if}
+															{#if !row.planned && row.proposedFrom}
+																<span class="badge badge-ghost badge-sm">
+																	Vorschlag aus {semesterName(row.proposedFrom)}
+																</span>
+															{/if}
+															{#if !row.module.plannable}
+																<span class="badge badge-ghost badge-sm">
+																	keine SWS im Katalog
+																</span>
+															{/if}
+														</span>
 													</span>
-												</span>
-											</label>
-										</td>
-										<td>
-											<input
-												type="number"
-												min="1"
-												max="12"
-												name="semester:{row.module.id}"
-												value={draft(row).year}
-												oninput={(e) => edit(row, { year: e.currentTarget.value })}
-												disabled={!mayPlan}
-												class="input input-bordered input-xs w-14"
-												aria-label="Fachsemester von {moduleName(row.module)}"
-											/>
-										</td>
-										<td class="text-base-content/90">
-											<!--
+												</label>
+											</td>
+											<td>
+												<input
+													type="number"
+													min="1"
+													max="12"
+													name="semester:{row.module.id}"
+													value={draft(row).year}
+													oninput={(e) => edit(row, { year: e.currentTarget.value })}
+													disabled={!mayPlan}
+													class="input input-bordered input-xs w-14"
+													aria-label="Fachsemester von {moduleName(row.module)}"
+												/>
+											</td>
+											<td class="text-base-content/90">
+												<!--
 												Die Aufteilung links, die Marke und der Knopf rechts am Spaltenrand.
 												Hinter dem Text her stünden sie in jeder Zeile woanders — und was
 												hier durchgegangen wird, ist eine Spalte von Schätzungen, keine
 												Zeile: das Auge braucht sie untereinander.
 											-->
-											{#if editingSplit === row.module.id}
-												<!--
+												{#if editingSplit === row.module.id}
+													<!--
 													Geändert wird hier, wo die Zahl steht: „4+2 statt 3+3" ist eine
 													Korrektur von zwei Feldern und keine Reise auf eine andere Seite —
 													und die Seite, auf der man gerade fünfzehn Häkchen gesetzt hat,
 													verlässt man dafür nicht. Eine Einheit hinzuzunehmen bleibt der
 													Modulseite vorbehalten, die der Modulname verlinkt.
 												-->
-												<div class="flex flex-wrap items-center gap-1">
-													{#each effectiveComponents(row.module) as component, i (i)}
-														<select
-															name="kind:{row.module.id}"
-															class="select select-bordered select-xs"
-															aria-label="Art des {i + 1}. Teils von {moduleName(row.module)}"
+													<div class="flex flex-wrap items-center gap-1">
+														{#each effectiveComponents(row.module) as component, i (i)}
+															<select
+																name="kind:{row.module.id}"
+																class="select select-bordered select-xs"
+																aria-label="Art des {i + 1}. Teils von {moduleName(row.module)}"
+															>
+																{#each ALL_PART_KINDS as kind (kind)}
+																	<option value={kind} selected={kind === component.kind}>
+																		{PART_KIND_LABELS[kind]}
+																	</option>
+																{/each}
+															</select>
+															<input
+																type="text"
+																inputmode="decimal"
+																name="hours:{row.module.id}"
+																value={formatHours(component.teachingHours)}
+																class="input input-bordered input-xs w-14"
+																aria-label="SWS des {i + 1}. Teils von {moduleName(row.module)}"
+															/>
+														{/each}
+														<button
+															type="submit"
+															formaction="?/confirmSplit"
+															name="moduleId"
+															value={row.module.id}
+															class="btn btn-primary btn-xs"
 														>
-															{#each ALL_PART_KINDS as kind (kind)}
-																<option value={kind} selected={kind === component.kind}>
-																	{PART_KIND_LABELS[kind]}
-																</option>
-															{/each}
-														</select>
-														<input
-															type="text"
-															inputmode="decimal"
-															name="hours:{row.module.id}"
-															value={formatHours(component.teachingHours)}
-															class="input input-bordered input-xs w-14"
-															aria-label="SWS des {i + 1}. Teils von {moduleName(row.module)}"
-														/>
-													{/each}
-													<button
-														type="submit"
-														formaction="?/confirmSplit"
-														name="moduleId"
-														value={row.module.id}
-														class="btn btn-primary btn-xs"
-													>
-														speichern
-													</button>
-													<button
-														type="button"
-														class="btn btn-xs"
-														onclick={() => (editingSplit = null)}
-													>
-														abbrechen
-													</button>
-												</div>
-											{:else}
-												<!--
+															speichern
+														</button>
+														<button
+															type="button"
+															class="btn btn-xs"
+															onclick={() => (editingSplit = null)}
+														>
+															abbrechen
+														</button>
+													</div>
+												{:else}
+													<!--
 													Zwei Zeilen: oben die Aufteilung, darunter alles, was man mit ihr tun
 													kann. Nebeneinander wuchs die Spalte um die Breite der Knöpfe, und
 													bei zwei Zügen schob das die SWS-Spalte aus dem Bild — die Zahl,
 													die man beim Klicken beobachtet.
 												-->
-												<div class="flex flex-col gap-1">
-													<span>{splitLabel(row)}</span>
-													<span class="flex flex-wrap items-center gap-1">
-														{#if row.module.splitIsEstimated}
-															<span class="badge badge-warning badge-sm">geschätzt</span>
-															{#if mayPlan}
+													<div class="flex flex-col gap-1">
+														<span>{splitLabel(row)}</span>
+														<span class="flex flex-wrap items-center gap-1">
+															{#if row.module.splitIsEstimated}
+																<span class="badge badge-warning badge-sm">geschätzt</span>
+																{#if mayPlan}
+																	<button
+																		type="submit"
+																		formaction="?/confirmSplit"
+																		name="moduleId"
+																		value={row.module.id}
+																		class="btn btn-xs"
+																	>
+																		bestätigen
+																	</button>
+																{/if}
+															{/if}
+															{#if mayPlan && row.module.plannable}
 																<button
-																	type="submit"
-																	formaction="?/confirmSplit"
-																	name="moduleId"
-																	value={row.module.id}
+																	type="button"
 																	class="btn btn-xs"
+																	onclick={() => (editingSplit = row.module.id)}
 																>
-																	bestätigen
+																	ändern
 																</button>
 															{/if}
-														{/if}
-														{#if mayPlan && row.module.plannable}
-															<button
-																type="button"
-																class="btn btn-xs"
-																onclick={() => (editingSplit = row.module.id)}
-															>
-																ändern
-															</button>
-														{/if}
-														<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
+															<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
 														     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
 														     Knopf, weil ein Sabbatical die Entscheidung revidiert. -->
-														{#if mayPlan}
-															{@const sharing = sharingState(row)}
-															{#if sharing.sharedPartId}
-																<button
-																	type="submit"
-																	formaction="?/sharePart"
-																	name="partId"
-																	value={sharing.sharedPartId}
-																	class="btn btn-xs"
-																	title="Jeder Zug hält seine Vorlesung wieder selbst"
-																>
-																	Vorlesung trennen
-																</button>
-																<input type="hidden" name="split" value="1" />
-															{:else if sharing.mergeablePartId}
-																<button
-																	type="submit"
-																	formaction="?/sharePart"
-																	name="partId"
-																	value={sharing.mergeablePartId}
-																	class="btn btn-xs"
-																	title="Eine Vorlesung für alle Züge — sie findet einmal statt und zählt einmal"
-																>
-																	Vorlesung zusammenlegen
-																</button>
+															{#if mayPlan}
+																{@const sharing = sharingState(row)}
+																{#if sharing.sharedPartId}
+																	<button
+																		type="submit"
+																		formaction="?/sharePart"
+																		name="partId"
+																		value={sharing.sharedPartId}
+																		class="btn btn-xs"
+																		title="Jeder Zug hält seine Vorlesung wieder selbst"
+																	>
+																		Vorlesung trennen
+																	</button>
+																	<input type="hidden" name="split" value="1" />
+																{:else if sharing.mergeablePartId}
+																	<button
+																		type="submit"
+																		formaction="?/sharePart"
+																		name="partId"
+																		value={sharing.mergeablePartId}
+																		class="btn btn-xs"
+																		title="Eine Vorlesung für alle Züge — sie findet einmal statt und zählt einmal"
+																	>
+																		Vorlesung zusammenlegen
+																	</button>
+																{/if}
 															{/if}
-														{/if}
-													</span>
-												</div>
-												{#if row.module.splitIsEstimated}
-													<!-- Was „bestätigen" absendet: die Schätzung, so wie sie danebensteht. -->
-													{#each effectiveComponents(row.module) as component, i (i)}
-														<input
-															type="hidden"
-															name="kind:{row.module.id}"
-															value={component.kind}
-														/>
-														<input
-															type="hidden"
-															name="hours:{row.module.id}"
-															value={component.teachingHours}
-														/>
-													{/each}
+														</span>
+													</div>
+													{#if row.module.splitIsEstimated}
+														<!-- Was „bestätigen" absendet: die Schätzung, so wie sie danebensteht. -->
+														{#each effectiveComponents(row.module) as component, i (i)}
+															<input
+																type="hidden"
+																name="kind:{row.module.id}"
+																value={component.kind}
+															/>
+															<input
+																type="hidden"
+																name="hours:{row.module.id}"
+																value={component.teachingHours}
+															/>
+														{/each}
+													{/if}
 												{/if}
-											{/if}
-										</td>
-										<td>
-											<div class="join">
-												<button
-													type="button"
-													class="btn btn-xs join-item"
-													onclick={() => setTracks(row, draft(row).tracks - 1)}
-													disabled={!mayPlan}
-													aria-label="Ein Zug weniger für {moduleName(row.module)}">−</button
-												>
-												<input
-													type="number"
-													min="1"
-													max="8"
-													name="tracks:{row.module.id}"
-													value={draft(row).tracks}
-													oninput={(e) => setTracks(row, numberOf(e.currentTarget))}
-													disabled={!mayPlan}
-													class="input input-bordered input-xs join-item w-12 text-center"
-													aria-label="Züge von {moduleName(row.module)}"
-												/>
-												<button
-													type="button"
-													class="btn btn-xs join-item"
-													onclick={() => setTracks(row, draft(row).tracks + 1)}
-													disabled={!mayPlan}
-													aria-label="Ein Zug mehr für {moduleName(row.module)}">+</button
-												>
-											</div>
-										</td>
-										<td>
-											{#if !row.module.practicalKind}
-												<!-- Nichts zu vervielfachen: ein Modul, das nur aus einer Vorlesung
+											</td>
+											<td>
+												<div class="join">
+													<button
+														type="button"
+														class="btn btn-xs join-item"
+														onclick={() => setTracks(row, draft(row).tracks - 1)}
+														disabled={!mayPlan}
+														aria-label="Ein Zug weniger für {moduleName(row.module)}">−</button
+													>
+													<input
+														type="number"
+														min="1"
+														max="8"
+														name="tracks:{row.module.id}"
+														value={draft(row).tracks}
+														oninput={(e) => setTracks(row, numberOf(e.currentTarget))}
+														disabled={!mayPlan}
+														class="input input-bordered input-xs join-item w-12 text-center"
+														aria-label="Züge von {moduleName(row.module)}"
+													/>
+													<button
+														type="button"
+														class="btn btn-xs join-item"
+														onclick={() => setTracks(row, draft(row).tracks + 1)}
+														disabled={!mayPlan}
+														aria-label="Ein Zug mehr für {moduleName(row.module)}">+</button
+													>
+												</div>
+											</td>
+											<td>
+												{#if !row.module.practicalKind}
+													<!-- Nichts zu vervielfachen: ein Modul, das nur aus einer Vorlesung
 												     besteht, hat keine Gruppen — parallele Vorlesungen meint hier
 												     niemand. -->
-												<span class="text-base-content/80 text-sm">—</span>
-											{:else}
-												<div class="flex flex-col gap-1">
-													{#each letters as letter, i (i)}
-														<div class="flex items-center gap-1">
-															{#if letters.length > 1}
-																<span class="badge badge-neutral badge-sm">
-																	{cohortLabel(data.selected.programme, yearOf(row), letter)}
-																</span>
-															{/if}
-															<div class="join">
-																<button
-																	type="button"
-																	class="btn btn-xs join-item"
-																	onclick={() => setGroups(row, i, draft(row).groups[i] - 1)}
-																	disabled={!mayPlan}
-																	aria-label={groupLabel(row, letters, letter, 'weniger')}>−</button
-																>
-																<input
-																	type="number"
-																	min="0"
-																	max="12"
-																	name="groups:{row.module.id}:{i}"
-																	value={draft(row).groups[i]}
-																	oninput={(e) => setGroups(row, i, numberOf(e.currentTarget))}
-																	disabled={!mayPlan}
-																	class="input input-bordered input-xs join-item w-12 text-center"
-																	aria-label={groupLabel(row, letters, letter)}
-																/>
-																<button
-																	type="button"
-																	class="btn btn-xs join-item"
-																	onclick={() => setGroups(row, i, draft(row).groups[i] + 1)}
-																	disabled={!mayPlan}
-																	aria-label={groupLabel(row, letters, letter, 'mehr')}>+</button
-																>
+													<span class="text-base-content/80 text-sm">—</span>
+												{:else}
+													<div class="flex flex-col gap-1">
+														{#each letters as letter, i (i)}
+															<div class="flex items-center gap-1">
+																{#if letters.length > 1}
+																	<span class="badge badge-neutral badge-sm">
+																		{cohortLabel(data.selected.programme, yearOf(row), letter)}
+																	</span>
+																{/if}
+																<div class="join">
+																	<button
+																		type="button"
+																		class="btn btn-xs join-item"
+																		onclick={() => setGroups(row, i, draft(row).groups[i] - 1)}
+																		disabled={!mayPlan}
+																		aria-label={groupLabel(row, letters, letter, 'weniger')}
+																		>−</button
+																	>
+																	<input
+																		type="number"
+																		min="0"
+																		max="12"
+																		name="groups:{row.module.id}:{i}"
+																		value={draft(row).groups[i]}
+																		oninput={(e) => setGroups(row, i, numberOf(e.currentTarget))}
+																		disabled={!mayPlan}
+																		class="input input-bordered input-xs join-item w-12 text-center"
+																		aria-label={groupLabel(row, letters, letter)}
+																	/>
+																	<button
+																		type="button"
+																		class="btn btn-xs join-item"
+																		onclick={() => setGroups(row, i, draft(row).groups[i] + 1)}
+																		disabled={!mayPlan}
+																		aria-label={groupLabel(row, letters, letter, 'mehr')}>+</button
+																	>
+																</div>
+																{#if row.tracks[i]?.borrowedKinds.length}
+																	<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
+																{/if}
 															</div>
-															{#if row.tracks[i]?.borrowedKinds.length}
-																<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
-															{/if}
-														</div>
-													{/each}
-												</div>
-											{/if}
-										</td>
-										<td class="text-base-content/90 whitespace-nowrap">
-											{#if draft(row).offered}
-												{hoursLabel(liveHours(row))}
-												{#if row.planned && liveHours(row) !== row.teachingHours}
-													<!-- Was auf dem Bildschirm steht, ist noch nicht, was in der
+														{/each}
+													</div>
+												{/if}
+											</td>
+											<td class="text-base-content/90 whitespace-nowrap">
+												{#if draft(row).offered}
+													{hoursLabel(liveHours(row))}
+													{#if row.planned && liveHours(row) !== row.teachingHours}
+														<!-- Was auf dem Bildschirm steht, ist noch nicht, was in der
 													     Datenbank steht. Beides zu zeigen ist der Unterschied
 													     zwischen „ich habe geändert" und „ich habe gespeichert". -->
-													<span class="text-base-content/80 text-xs">
-														(gespeichert {hoursLabel(row.teachingHours)})
+														<span class="text-base-content/80 text-xs">
+															(gespeichert {hoursLabel(row.teachingHours)})
+														</span>
+													{/if}
+												{:else if row.planned}
+													<span class="text-base-content/80">
+														{hoursLabel(row.teachingHours)} — wird zurückgezogen
 													</span>
+												{:else}
+													<span class="text-base-content/80">—</span>
 												{/if}
-											{:else if row.planned}
-												<span class="text-base-content/80">
-													{hoursLabel(row.teachingHours)} — wird zurückgezogen
-												</span>
-											{:else}
-												<span class="text-base-content/80">—</span>
-											{/if}
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				</section>
-			{/each}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</section>
+				{/each}
 
-			{#if mayPlan && shown.length > 0}
-				<div
-					class="border-base-300 bg-base-100 flex flex-wrap items-center gap-3 rounded-lg border p-4"
-				>
-					<button type="submit" class="btn btn-primary btn-sm">Bedarf speichern</button>
-					<span class="text-base-content/80 text-sm">
-						Jede Änderung wird von selbst gespeichert; der Knopf ist für den Fall, dass das Skript
-						im Browser nicht läuft. Gespeichert wird, was hier steht — Module, die der Filter gerade
-						ausblendet, bleiben unangetastet.
-					</span>
-				</div>
-			{/if}
-		</form>
+				{#if mayPlan && shown.length > 0}
+					<div
+						class="border-base-300 bg-base-100 flex flex-wrap items-center gap-3 rounded-lg border p-4"
+					>
+						<button type="submit" class="btn btn-primary btn-sm">Bedarf speichern</button>
+						<span class="text-base-content/80 text-sm">
+							Jede Änderung wird von selbst gespeichert; der Knopf ist für den Fall, dass das Skript
+							im Browser nicht läuft. Gespeichert wird, was hier steht — Module, die der Filter
+							gerade ausblendet, bleiben unangetastet.
+						</span>
+					</div>
+				{/if}
+			</form>
+		{/if}
 	{/if}
 </div>
