@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { CATALOGUE, DEMAND, SEMESTERS, demandResetSql } from './seed';
+import { semesterShortName } from '../src/lib/semester';
 
 /**
  * Planning a semester's demand, end to end.
@@ -374,14 +375,16 @@ test.describe('the demand table', () => {
 			'true'
 		);
 
-		// And a semester, which keeps the programme — one form, so every tab sends the state of
-		// every other field with it.
-		await page
-			.getByRole('tab', { name: new RegExp(DEMAND.previous.slice(-2)) })
-			.first()
-			.click();
-		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
-		await expect(page.getByRole('button', { name: 'Anzeigen' }).first()).toBeVisible();
+		// And a semester. That it keeps the programme is the next test's subject; here it is that
+		// the click alone is the navigation and the tab it landed on carries the mark.
+		// By its label rather than by a fragment of its code: every winter tab contains "WS", and
+		// `.first()` then picks whichever one happens to sort earliest.
+		const previous = page.getByRole('tab', { name: semesterShortName(DEMAND.previous) });
+		await previous.click();
+		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.previous}`));
+		await expect(
+			page.getByRole('tab', { name: semesterShortName(DEMAND.previous) })
+		).toHaveAttribute('aria-selected', 'true');
 	});
 
 	// Every form on this page owns some of the filter and has to carry the rest across. It did
@@ -404,15 +407,27 @@ test.describe('the demand table', () => {
 		await expect(page).toHaveURL(/semester=2028-SS/);
 
 		// And back, so the rest of this serial group finds the semester it expects.
-		await page.getByRole('tab', { name: new RegExp(`${DEMAND.semester.slice(0, 4)}/`) }).click();
+		await page.getByRole('tab', { name: semesterShortName(DEMAND.semester) }).click();
 		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.semester}`));
 
-		// The controls the third form owns are not shadowed by a hidden copy of themselves.
-		await page.getByLabel('Turnus').selectOption('');
+		// The controls of the third row are not shadowed by a hidden copy of themselves — and
+		// that row belongs to the planning view, because it filters the catalogue list the
+		// planning table is made of and nothing the overview shows.
+		await expect(page.getByRole('button', { name: 'Anzeigen' })).toHaveCount(0);
+		await page.getByRole('button', { name: 'Bearbeiten' }).click();
+
+		const widen = page.getByRole('checkbox', { name: /^auch Module/ });
+		await expect(widen).not.toBeChecked();
+		await widen.check();
 		await page.getByRole('button', { name: 'Anzeigen' }).click();
-		await expect(page).toHaveURL(/turnus=(&|$)/);
+
+		await expect(page).toHaveURL(/turnus=alle/);
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
-		await expect(page.getByLabel('Turnus')).toHaveValue('');
+		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.semester}`));
+		await expect(page.getByRole('checkbox', { name: /^auch Module/ })).toBeChecked();
+
+		// The switch is named after the term it would add, which is the other one.
+		await expect(page.getByText('auch Module, die nur im Sommersemester laufen')).toBeVisible();
 	});
 
 	// The programmes this faculty does not plan are not offered anywhere on this page — neither
