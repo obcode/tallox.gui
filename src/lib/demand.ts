@@ -288,7 +288,20 @@ export type YearGroup<M extends ModuleLike = ModuleLike> = {
  * still to do, and a list that opened with them would read as a list of problems.
  */
 export function byYear<M extends ModuleLike>(rows: readonly DemandRow<M>[]): YearGroup<M>[] {
-	const groups = new Map<number | null, DemandRow<M>[]>();
+	return groupByYear(rows);
+}
+
+/**
+ * Group anything that has a cohort year and a number of hours, in the order both views show it.
+ *
+ * Shared by the two, and that is the point of it being generic: the planning table and the
+ * overview are read side by side by the same person, and a year that came third in one and
+ * second in the other would be read as two different years.
+ */
+function groupByYear<T extends { programmeSemester: number | null; teachingHours: number }>(
+	rows: readonly T[]
+): { programmeSemester: number | null; rows: T[]; teachingHours: number }[] {
+	const groups = new Map<number | null, T[]>();
 	for (const row of rows) {
 		const key = row.programmeSemester ?? null;
 		const list = groups.get(key);
@@ -439,4 +452,201 @@ export function plannedHours(
 		}
 	}
 	return total;
+}
+
+/**
+ * The overview.
+ *
+ * The other half of this page, and a different table rather than the planning one with its
+ * controls greyed out. It answers "what is being offered"; the planning table answers "what is
+ * still missing". A read-only version of the planning table would answer neither: most of its
+ * rows are catalogue modules nobody has ticked, which is a work list and not an offer.
+ *
+ * One row per **instance**, because the instance is what gets planned and later assigned — so a
+ * lecturer looking for the cohort they want to teach finds a line that is exactly it.
+ *
+ * Nothing here says anything about wishes. Not a count, not a "somebody is interested" mark, not
+ * a colour. Before publication such a figure gives the confidential information away completely
+ * without naming anybody, and this table — one line per assignable cohort — is exactly where
+ * somebody would think to add it. See the workspace CLAUDE.md, "Die drei tragenden Regeln".
+ */
+
+/** An instance as the overview reads it: the module and the programme come with it. */
+export type ReadInstanceLike<M extends ModuleLike = ModuleLike> = {
+	id: string;
+	track: string;
+	programmeSemester?: number | null;
+	teachingHours: number;
+	module: M;
+	programme: { code: string; title?: string | null };
+	parts: readonly PartLike[];
+	borrowedParts?: readonly { fromTrack: string; part: PartLike }[];
+};
+
+/**
+ * Several parts of one kind and one size, as one entry: the three laboratory groups of a cohort.
+ *
+ * Grouped rather than listed, because a cohort with four groups is four identical lines
+ * otherwise, and the number of groups is the fact somebody is actually reading.
+ */
+export type PartGroup = {
+	kind: InstancePartKind;
+	teachingHours: number | null;
+	count: number;
+	/** Held once for all the cohorts of this module — counted at the cohort that owns it. */
+	shared: boolean;
+};
+
+/** One line of the overview. */
+export type InstanceRow<M extends ModuleLike = ModuleLike> = {
+	instanceId: string;
+	module: M;
+	programme: { code: string; title?: string | null };
+	programmeSemester: number | null;
+	track: string;
+	/** `IF3A`, assembled from the three facts it is made of. */
+	label: string;
+	parts: PartGroup[];
+	/** What a sibling cohort holds for this one, with the cohort it is held by. */
+	borrowed: { fromTrack: string; kind: InstancePartKind }[];
+	teachingHours: number;
+};
+
+/**
+ * Parts of the same kind and the same size, folded into one entry with a count.
+ *
+ * Order is preserved from the first part of each kind, which is the order the split states —
+ * lecture first, then the practical unit. Sorting by kind here would put the laboratory before
+ * the lecture in half the modules, and the split is what people know these by.
+ */
+export function groupParts(parts: readonly PartLike[]): PartGroup[] {
+	const out: PartGroup[] = [];
+	for (const part of parts) {
+		const hours = part.teachingHours ?? null;
+		const shared = part.sharedAcrossTracks ?? false;
+		const same = out.find(
+			(g) => g.kind === part.kind && g.teachingHours === hours && g.shared === shared
+		);
+		if (same) same.count++;
+		else out.push({ kind: part.kind, teachingHours: hours, count: 1, shared });
+	}
+	return out;
+}
+
+/**
+ * One grouped entry as a line: `Praktikum 2 SWS ×3`.
+ *
+ * The multiplier only where there is one. `×1` on every lecture would be noise on the majority
+ * of lines, and the reader would stop seeing the `×3` that matters.
+ */
+export function partGroupLabel(group: PartGroup): string {
+	const base = partLabel({ kind: group.kind, teachingHours: group.teachingHours });
+	const counted = group.count > 1 ? `${base} ×${group.count}` : base;
+	return group.shared ? `${counted}, für alle Züge` : counted;
+}
+
+/**
+ * The overview's rows, in the order it shows them.
+ *
+ * Sorted by cohort year, then by module name, then by cohort letter — so the two cohorts of one
+ * module stand together, which is what makes a shared lecture legible: the line that borrows it
+ * sits directly under the line that holds it.
+ */
+export function instanceRows<M extends ModuleLike>(
+	instances: readonly ReadInstanceLike<M>[]
+): InstanceRow<M>[] {
+	return instances
+		.map((instance) => {
+			const programmeSemester =
+				instance.programmeSemester ?? instance.module.programmeSemester ?? null;
+			return {
+				instanceId: instance.id,
+				module: instance.module,
+				programme: instance.programme,
+				programmeSemester,
+				track: instance.track,
+				label: cohortLabel(instance.programme.code, programmeSemester, instance.track),
+				parts: groupParts(instance.parts),
+				borrowed: (instance.borrowedParts ?? []).map((b) => ({
+					fromTrack: b.fromTrack,
+					kind: b.part.kind
+				})),
+				teachingHours: instance.teachingHours
+			};
+		})
+		.sort(
+			(a, b) =>
+				yearOrder(a.programmeSemester, b.programmeSemester) ||
+				a.module.name.localeCompare(b.module.name, 'de') ||
+				a.track.localeCompare(b.track)
+		);
+}
+
+/** Rows with no cohort year last — they are the work still to do, not the start of the list. */
+function yearOrder(a: number | null, b: number | null): number {
+	if (a === b) return 0;
+	if (a == null) return 1;
+	if (b == null) return -1;
+	return a - b;
+}
+
+/** One cohort year of the overview. */
+export type InstanceYearGroup<M extends ModuleLike = ModuleLike> = {
+	programmeSemester: number | null;
+	rows: InstanceRow<M>[];
+	teachingHours: number;
+};
+
+/** The overview, grouped by cohort year — the same axis the planning table uses. */
+export function instancesByYear<M extends ModuleLike>(
+	rows: readonly InstanceRow<M>[]
+): InstanceYearGroup<M>[] {
+	return groupByYear(rows);
+}
+
+/** One study programme's part of the overview, when it shows more than one. */
+export type ProgrammeGroup<M extends ModuleLike = ModuleLike> = {
+	code: string;
+	title: string;
+	rows: InstanceRow<M>[];
+	/**
+	 * What this programme's instances cost the faculty.
+	 *
+	 * Summed over the rows, which is safe here in a way it is not on the planning table: a
+	 * shared lecture is counted at the cohort that owns the row and contributes nothing at the
+	 * cohort that borrows it, so adding up `teachingHours` never counts it twice.
+	 */
+	teachingHours: number;
+};
+
+/**
+ * The overview by study programme, for the view that shows all of them.
+ *
+ * "What does the faculty offer next semester" is the question a lecturer asks before they know
+ * which programme a module belongs to — so the overview does not insist on a programme, and
+ * groups by one instead.
+ */
+export function byProgramme<M extends ModuleLike>(
+	rows: readonly InstanceRow<M>[]
+): ProgrammeGroup<M>[] {
+	const groups = new Map<string, InstanceRow<M>[]>();
+	for (const row of rows) {
+		const list = groups.get(row.programme.code);
+		if (list) list.push(row);
+		else groups.set(row.programme.code, [row]);
+	}
+
+	return [...groups.entries()]
+		.map(([code, group]) => ({
+			code,
+			title: group[0].programme.title || code,
+			rows: group,
+			teachingHours: group.reduce((sum, r) => sum + r.teachingHours, 0)
+		}))
+		.sort((a, b) => a.code.localeCompare(b.code));
+}
+
+/** How many distinct modules a set of rows offers — the figure a summary line says out loud. */
+export function moduleCount<M extends ModuleLike>(rows: readonly InstanceRow<M>[]): number {
+	return new Set(rows.map((r) => r.module.id)).size;
 }

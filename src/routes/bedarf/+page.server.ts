@@ -27,9 +27,11 @@ const DemandDocument = graphql(`
 	query DemandTable(
 		$semester: String!
 		$programme: String!
+		$programmeFilter: String
 		$previous: String!
 		$filter: ModuleFilter
-		$withDemand: Boolean!
+		$withTable: Boolean!
+		$withOverview: Boolean!
 		$withPrevious: Boolean!
 	) {
 		semesters {
@@ -51,12 +53,12 @@ const DemandDocument = graphql(`
 			title
 			active
 		}
-		semester(code: $semester) @include(if: $withDemand) {
+		semester(code: $semester) @include(if: $withOverview) {
 			code
 			phase
 			wishesPublishedAt
 		}
-		modules(filter: $filter) @include(if: $withDemand) {
+		modules(filter: $filter) @include(if: $withTable) {
 			id
 			name
 			zpaId
@@ -76,13 +78,39 @@ const DemandDocument = graphql(`
 			dutyStatus(programme: $programme)
 			programmeSemester(programme: $programme)
 		}
-		courseInstances(semester: $semester, programme: $programme) @include(if: $withDemand) {
+		courseInstances(semester: $semester, programme: $programmeFilter) @include(if: $withOverview) {
 			id
 			track
 			programmeSemester
 			teachingHours
+			programme {
+				code
+				title
+			}
+			# The same fields the catalogue query asks for, on purpose and not by accident.
+			#
+			# The overview reads the module off the instance rather than off the catalogue list,
+			# because the two are not the same set: an instance may point at a module the filter
+			# does not return — one of another programme, one the term filter excludes — and a row
+			# that only exists in the list would be invisible on the very screen that could take
+			# it back. It costs nothing: the backend loads the module for the instance either way.
 			module {
 				id
+				name
+				zpaId
+				splitIsEstimated
+				plannable
+				practicalKind
+				components {
+					kind
+					teachingHours
+				}
+				proposedComponents {
+					kind
+					teachingHours
+				}
+				dutyStatus(programme: $programme)
+				programmeSemester(programme: $programme)
 			}
 			parts {
 				id
@@ -99,7 +127,7 @@ const DemandDocument = graphql(`
 				}
 			}
 		}
-		previous: courseInstances(semester: $previous, programme: $programme)
+		previous: courseInstances(semester: $previous, programme: $programmeFilter)
 			@include(if: $withPrevious) {
 			id
 			track
@@ -198,8 +226,15 @@ export const load: PageServerLoad = async ({ url }) => {
 	const term = url.searchParams.get('turnus') ?? semesterTerm(semester);
 	const onlyEstimated = url.searchParams.get('offen') === '1';
 	const onlyPlanned = url.searchParams.get('geplant') === '1';
+	// The edit mode, as a parameter rather than as browser state: two views under one address
+	// cannot be sent to a colleague, and the back button would leave the wrong one showing.
+	const editing = url.searchParams.get('bearbeiten') === '1';
 
-	const withDemand = semester !== '' && programme !== '';
+	// The overview needs a semester and nothing else — "what does the faculty offer next term" is
+	// a question somebody asks before they know which programme a module belongs to. The planning
+	// table needs a programme too, because planDemand writes exactly one.
+	const withOverview = semester !== '';
+	const withTable = editing && withOverview && programme !== '';
 	const previous = previousComparableSemester(semester);
 
 	let data;
@@ -207,11 +242,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		data = await backendRequest(DemandDocument, {
 			semester,
 			programme,
+			// Null rather than the empty string: no programme means every programme here, and the
+			// empty string would be a programme code nothing matches.
+			programmeFilter: programme === '' ? null : programme,
 			previous,
-			withDemand,
+			withTable,
+			withOverview,
 			// A previous semester is only asked for when there is one to ask about — and only
 			// when it could hold anything, which a code the backend would refuse cannot.
-			withPrevious: withDemand && previous !== '',
+			withPrevious: withOverview && previous !== '',
 			filter: {
 				programme: programme === '' ? null : programme,
 				search: search === '' ? null : search,
@@ -258,7 +297,17 @@ export const load: PageServerLoad = async ({ url }) => {
 		modules: data.modules ?? [],
 		instances: data.courseInstances ?? [],
 		previousInstances: data.previous ?? [],
-		selected: { semester, programme, previous, search, duty, term, onlyEstimated, onlyPlanned }
+		selected: {
+			semester,
+			programme,
+			previous,
+			search,
+			duty,
+			term,
+			onlyEstimated,
+			onlyPlanned,
+			editing
+		}
 	};
 };
 
