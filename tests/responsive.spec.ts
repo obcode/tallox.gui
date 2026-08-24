@@ -14,13 +14,14 @@ import { test, expect, gotoRendered, openDropdown } from './fixtures';
  * The area bar has now been moved twice for the same reason. First away from `md` (768px),
  * where its seven entries needed 883px — at exactly the width CLAUDE.md promises full
  * usability from. Then away from `lg` (1024px), where the row measured 1061px: 84px of brand,
- * 667px of areas, and 247px of identity, role switcher and theme menu on the right, which have
- * grown since and are not going to shrink. A breakpoint means *from*, so the bar appears at
- * exactly that width and has to fit there.
+ * 667px of areas, and 247px of identity, role switcher and theme menu on the right. A
+ * breakpoint means *from*, so the bar appears at exactly that width and has to fit there.
  *
- * It sits at `xl` (1280px) now, with the brand subtitle at `2xl`, which leaves around 190px of
- * slack. `laptop` below is that first width and is in this list on purpose: an eighth area or a
- * wider identity shows up here rather than on somebody's tablet.
+ * It sits at `xl` (1280px) now, with the brand subtitle at `2xl`. The role switcher and the
+ * theme menu have since moved into the footer, which frees up around 160px on the right on top
+ * of that — the breakpoint stays where it is until somebody measures again. `laptop` below is
+ * that first width and is in this list on purpose: an eighth area or a wider identity shows up
+ * here rather than on somebody's tablet.
  */
 const VIEWPORTS = [
 	{ name: 'phone', width: 375, height: 812 },

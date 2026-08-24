@@ -1,26 +1,17 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from '$lib/navigation';
-	import RoleSwitcher from './RoleSwitcher.svelte';
-	import type { ThemeChoice } from '$lib/themes';
 
 	let {
-		theme,
 		remoteUser,
 		remoteDisplayname,
-		effectiveRoles,
-		grantedRoles,
-		narrowed
+		effectiveRoles
 	}: {
-		theme: ThemeChoice;
 		remoteUser: string | null;
 		remoteDisplayname: string | null;
 		/** The roles the server judges this request by — not the ones held. */
 		effectiveRoles: readonly string[];
-		grantedRoles: readonly string[];
-		narrowed: boolean;
 	} = $props();
 
 	const pathname = $derived(page.url.pathname);
@@ -49,13 +40,15 @@
 		     tests/responsive.spec.ts rather than by looking at it. First from md (768px), where
 		     the areas needed 883px. Then from lg (1024px), where the row measured 1061px:
 		     84px of brand, 667px of areas and 247px on the right — the identity, the role
-		     switcher and the theme menu, which have grown since and are not going to shrink.
+		     switcher and the theme menu. The latter two now sit in the footer, which gives the
+		     row back about 160px; the breakpoint stays at xl until somebody measures again.
 		     Tablet-first means fully operable, not everything visible at once: up to 1280px the
 		     menu carries the navigation, and it holds the same entries in the same order. That is
 		     the trade this makes — a horizontally scrolling navigation would keep the bar at
 		     1024px and hide "Statistik" behind a scroll nobody looks for.
 		     The brand subtitle moves along, to 2xl. Slack is what keeps the next area from
-		     starting this again: at 1280 the row now needs about 1090px. -->
+		     starting this again: at 1280 the row needed about 1090px even before the two menus
+		     moved out. -->
 		<ul class="ml-4 hidden flex-1 items-center gap-1 xl:flex">
 			{#each areas as item (item.label)}
 				<li>
@@ -129,10 +122,6 @@
 					<span aria-hidden="true">🔓</span>anonym
 				</span>
 			{/if}
-
-			<RoleSwitcher {grantedRoles} {effectiveRoles} {narrowed} />
-
-			<ThemeSwitcher current={theme} />
 
 			<div class="dropdown dropdown-end xl:hidden">
 				<div tabindex="0" role="button" class="btn btn-ghost btn-sm" aria-label="Bereiche">

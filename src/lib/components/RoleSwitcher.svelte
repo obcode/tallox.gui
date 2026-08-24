@@ -38,7 +38,7 @@
 </script>
 
 {#if mayPreviewRoles(grantedRoles)}
-	<div class="dropdown dropdown-end">
+	<div class="dropdown dropdown-top dropdown-end">
 		<div
 			tabindex="0"
 			role="button"
@@ -52,7 +52,7 @@
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<ul
 			tabindex="0"
-			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 w-72 border p-2 shadow-lg"
+			class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mb-2 w-72 border p-2 shadow-lg"
 		>
 			<li class="menu-title">Ansehen als</li>
 

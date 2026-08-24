@@ -36,7 +36,7 @@
 	const dark = THEMES.filter((t) => t.dark);
 </script>
 
-<div class="dropdown dropdown-end">
+<div class="dropdown dropdown-top dropdown-end">
 	<div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-1" title="Darstellung wählen">
 		<span aria-hidden="true">🎨</span>
 		<span class="hidden sm:inline">Design</span>
@@ -45,7 +45,7 @@
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<ul
 		tabindex="0"
-		class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 max-h-[70vh] w-52 flex-nowrap overflow-y-auto border p-2 shadow-lg"
+		class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mb-2 max-h-[70vh] w-52 flex-nowrap overflow-y-auto border p-2 shadow-lg"
 	>
 		<li>
 			<button class:menu-active={selected === SYSTEM_THEME} onclick={() => choose(SYSTEM_THEME)}>

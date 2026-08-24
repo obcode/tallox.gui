@@ -22,12 +22,9 @@
 	{/if}
 
 	<NavBar
-		theme={data.theme}
 		remoteUser={data.remoteUser}
 		remoteDisplayname={data.remoteDisplayname}
 		{effectiveRoles}
-		{grantedRoles}
-		{narrowed}
 	/>
 
 	<!-- Horizontal padding comes from the layout. New pages do not set a p-8 of their own. -->
@@ -35,5 +32,5 @@
 		{@render children()}
 	</main>
 
-	<Footer server={data.serverBuild} />
+	<Footer server={data.serverBuild} theme={data.theme} {effectiveRoles} {grantedRoles} {narrowed} />
 </div>

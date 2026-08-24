@@ -147,6 +147,10 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   once the identity and the role switcher had grown). `tests/responsive.spec.ts` watches five
   widths, and 1280 is in the list because a breakpoint means _from_: the row appears at exactly
   that width, so that is where the next area will break it.
+  The **role preview and the design menu live in the footer**, not in the bar — neither is a
+  step in the planning process, both are set once and then left alone, and the bar gets their
+  width back. Both are `dropdown-top` so they unfold upwards; `tests/layout.spec.ts` pins the
+  placement, because every other test finds the buttons by name wherever they sit.
 - **Prettier:** tabs, single quotes, no trailing commas, printWidth 100.
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
 

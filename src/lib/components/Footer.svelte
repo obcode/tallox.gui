@@ -1,8 +1,24 @@
 <script lang="ts">
 	import type { ServerBuildInfo } from '$lib/buildInfo';
 	import { releaseUrl } from '$lib/release';
+	import RoleSwitcher from './RoleSwitcher.svelte';
+	import ThemeSwitcher from './ThemeSwitcher.svelte';
+	import type { ThemeChoice } from '$lib/themes';
 
-	let { server }: { server: ServerBuildInfo | null } = $props();
+	let {
+		server,
+		theme,
+		effectiveRoles,
+		grantedRoles,
+		narrowed
+	}: {
+		server: ServerBuildInfo | null;
+		theme: ThemeChoice;
+		/** The roles the server judges this request by — not the ones held. */
+		effectiveRoles: readonly string[];
+		grantedRoles: readonly string[];
+		narrowed: boolean;
+	} = $props();
 
 	type VersionTag = {
 		label: string;
@@ -82,10 +98,23 @@
 			<span class="font-medium">Tallox</span> — Teacher Allocations System
 		</p>
 
-		<p class="flex items-center gap-2 font-mono">
-			{@render versionTag(gui)}
-			<span aria-hidden="true">·</span>
-			{@render versionTag(backend)}
-		</p>
+		<!-- The two settings menus live down here, not in the nav bar. Neither is a step in the
+		     planning process, and both are set once and then left alone — the bar above carries
+		     what one navigates by, this row what one adjusts. It also gives the area bar back the
+		     width they were taking. -->
+		<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+			<p class="flex items-center gap-2 font-mono">
+				{@render versionTag(gui)}
+				<span aria-hidden="true">·</span>
+				{@render versionTag(backend)}
+			</p>
+
+			<!-- `dropdown-top`: from the footer a menu has to open upwards, or it unfolds past the
+			     end of the page and drags a scrollbar along. -->
+			<div class="flex items-center gap-1">
+				<RoleSwitcher {grantedRoles} {effectiveRoles} {narrowed} />
+				<ThemeSwitcher current={theme} />
+			</div>
+		</div>
 	</div>
 </footer>
