@@ -2,8 +2,11 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
+		ALL_COURSE_TYPES,
 		ALL_PART_KINDS,
+		COURSE_TYPE_LABELS,
 		DUTY_LABELS,
+		MODULE_KIND_LABELS,
 		PART_KIND_LABELS,
 		dutyBadge,
 		formatHours,
@@ -680,6 +683,97 @@
 				{/if}
 			{/if}
 		</details>
+
+		<!--
+			Eine Lehrveranstaltung anlegen, die es im ZPA nicht gibt — und der FWP-Platzhalter.
+
+			Beides dieselbe Form: eine `module`-Zeile, die die Fakultät selbst einträgt. Ein
+			Platzhalter ist danach ein Modul wie jedes andere; „wir brauchen drei" sind drei Züge
+			davon, gesetzt mit dem Zug-Zähler, den die Tabelle schon hat.
+
+			Angelegt *und* für dieses Semester angemeldet in einem Schritt: wer dieses Formular
+			öffnet, hat die Entscheidung getroffen. Eine Zeile, die im Katalog steht und nicht im
+			Bedarf, wäre ein zweiter, unsichtbarer Schritt.
+		-->
+		<details class="border-base-300 bg-base-100 rounded-lg border p-4">
+			<summary class="cursor-pointer text-sm font-medium">
+				Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen
+			</summary>
+
+			<form
+				method="POST"
+				action="?/createLocal"
+				use:enhance
+				class="mt-3 flex flex-wrap items-end gap-3"
+			>
+				<input type="hidden" name="semester" value={data.selected.semester} />
+				<input type="hidden" name="programme" value={data.selected.programme} />
+
+				<label class="form-control">
+					<span class="label-text text-sm">Name</span>
+					<input
+						type="text"
+						name="name"
+						required
+						placeholder="z. B. FWP-Platzhalter (technisch)"
+						class="input input-bordered input-sm w-64"
+					/>
+				</label>
+
+				<label class="form-control">
+					<!-- Nicht nur „Art": die Filterleiste hat schon eine, und die meint Pflicht
+					     oder Wahlpflicht. -->
+					<span class="label-text text-sm">Art der Lehrveranstaltung</span>
+					<select name="kind" class="select select-bordered select-sm">
+						<option value="MODULE">{MODULE_KIND_LABELS.MODULE}</option>
+						<option value="FWP_PLACEHOLDER">{MODULE_KIND_LABELS.FWP_PLACEHOLDER}</option>
+					</select>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text text-sm">Zerlegungsart</span>
+					<select name="courseType" class="select select-bordered select-sm">
+						{#each ALL_COURSE_TYPES as type (type)}
+							<option value={type} selected={type === 'SU_WITH_LAB'}>
+								{COURSE_TYPE_LABELS[type]}
+							</option>
+						{/each}
+					</select>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text text-sm">SWS gesamt</span>
+					<input
+						type="number"
+						name="hours"
+						min="1"
+						max="30"
+						value="4"
+						class="input input-bordered input-sm w-20"
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text text-sm">Übungsteil</span>
+					<select name="practical" class="select select-bordered select-sm">
+						<option value="">nur Vorlesung</option>
+						{#each ALL_PART_KINDS as kind (kind)}
+							{#if kind !== 'LECTURE'}
+								<option value={kind} selected={kind === 'LAB'}>{PART_KIND_LABELS[kind]}</option>
+							{/if}
+						{/each}
+					</select>
+				</label>
+
+				<button type="submit" class="btn btn-primary btn-sm">Anlegen und anmelden</button>
+			</form>
+
+			<p class="text-base-content/80 mt-2 text-sm">
+				Die Aufteilung folgt der Schätzregel: der Übungsteil bekommt 2 SWS, die Vorlesung den Rest.
+				Ändern lässt sie sich danach in der Zeile. Ein Platzhalter wird wie jedes andere Modul
+				geplant — <strong>drei davon sind drei Züge</strong>.
+			</p>
+		</details>
 	{/if}
 
 	{#if form && 'preview' in form && form.preview}
@@ -917,6 +1011,19 @@
 																	außerhalb des Filters
 																</span>
 															{/if}
+															<!-- Eine Zeile, die das Prüfungsamt nicht kennt. Der
+															     Unterschied ist kein Nebenschauplatz: „aktiv" und
+															     „zurückgezogen" sind Aussagen des Prüfungsamts, und über
+															     eine eigene Zeile macht es keine. -->
+															{#if row.module.kind === 'FWP_PLACEHOLDER'}
+																<span class="badge badge-accent badge-sm">
+																	{MODULE_KIND_LABELS.FWP_PLACEHOLDER}
+																</span>
+															{:else if row.module.source === 'LOCAL'}
+																<span class="badge badge-ghost badge-sm">
+																	eigene Lehrveranstaltung
+																</span>
+															{/if}
 														</span>
 													</span>
 												</label>
@@ -1023,8 +1130,12 @@
 															{/if}
 															<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
 														     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
-														     Knopf, weil ein Sabbatical die Entscheidung revidiert. -->
-															{#if mayPlan}
+														     Knopf, weil ein Sabbatical die Entscheidung revidiert.
+
+														     Für einen Platzhalter gar nicht: drei FWPs sind drei
+														     verschiedene Fächer, keine drei Kohorten desselben — da gibt
+														     es keine gemeinsame Vorlesung zusammenzulegen. -->
+															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER'}
 																{@const sharing = sharingState(row)}
 																{#if sharing.sharedPartId}
 																	<button

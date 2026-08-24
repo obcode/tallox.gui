@@ -14,6 +14,7 @@ import type {
 	DutyStatus,
 	Frequency,
 	InstancePartKind,
+	ModuleKind,
 	ZpaProjectionFinding
 } from '$lib/gql/__generated__/graphql';
 
@@ -205,6 +206,46 @@ export function teacherRole(teacher: {
  * something the type system holds to and a form's dropdown should not reshuffle itself when
  * somebody adds a label.
  */
+/**
+ * The vocabularies a form has to offer, in the order it offers them.
+ *
+ * Written out rather than derived from the label records: an object's key order is a property
+ * nobody should have to reason about, and the order these are read in is a decision — the
+ * common cases first.
+ */
+export const ALL_COURSE_TYPES: readonly CourseType[] = [
+	'SU_WITH_LAB',
+	'SU_WITH_EXERCISE',
+	'SU',
+	'SEMINAR',
+	'LAB',
+	'EXERCISE',
+	'PROJECT',
+	'SELF_STUDY',
+	'DEPENDS_ON_SUBJECT'
+];
+
+export const ALL_FREQUENCIES: readonly Frequency[] = [
+	'ON_ANNOUNCEMENT',
+	'EVERY_SEMESTER',
+	'EVERY_WINTER_SEMESTER',
+	'EVERY_SUMMER_SEMESTER',
+	'ALTERNATING_WITHIN_SUBJECT_GROUP',
+	'UNKNOWN'
+];
+
+/**
+ * What a catalogue row stands for, in words.
+ *
+ * A placeholder is a module in every mechanical respect — it has hours, a split, cohorts — so
+ * the difference is only ever a badge. Naming it matters anyway: somebody reading a plan has to
+ * be able to tell "FWP-Platzhalter (technisch)" from a subject with that name.
+ */
+export const MODULE_KIND_LABELS: Record<ModuleKind, string> = {
+	MODULE: 'Lehrveranstaltung',
+	FWP_PLACEHOLDER: 'FWP-Platzhalter'
+};
+
 export const ALL_PART_KINDS: readonly InstancePartKind[] = [
 	'LECTURE',
 	'LAB',

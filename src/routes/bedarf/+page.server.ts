@@ -3,8 +3,10 @@ import { ALL_PART_KINDS, frequenciesForTerm } from '$lib/catalogue';
 import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
+	CourseType,
 	DemandEntryInput,
 	DutyStatus,
+	Frequency,
 	InstancePartKind
 } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
@@ -64,6 +66,8 @@ const DemandDocument = graphql(`
 			id
 			name
 			zpaId
+			source
+			kind
 			active
 			contactHoursPerWeek
 			splitIsEstimated
@@ -100,6 +104,8 @@ const DemandDocument = graphql(`
 				id
 				name
 				zpaId
+				source
+				kind
 				splitIsEstimated
 				plannable
 				practicalKind
@@ -136,6 +142,8 @@ const DemandDocument = graphql(`
 			id
 			name
 			zpaId
+			source
+			kind
 			plannable
 			homeProgramme {
 				code
@@ -216,6 +224,16 @@ const SplitPartDocument = graphql(`
 	mutation SplitPartFromTable($id: ID!) {
 		splitInstancePartAcrossTracks(id: $id) {
 			id
+		}
+	}
+`);
+
+const CreateLocalDocument = graphql(`
+	mutation CreateLocalCourse($in: LocalModuleInput!) {
+		createLocalModule(input: $in) {
+			id
+			name
+			kind
 		}
 	}
 `);
@@ -494,6 +512,64 @@ export const actions: Actions = {
 				}
 			});
 			return { adopted: data.declareCourseInstance.module.name };
+		} catch (err) {
+			return fail(400, refusalFor(err));
+		}
+	},
+
+	/**
+	 * Enter a course this faculty offers and the examination office's catalogue does not list.
+	 *
+	 * Two things at once, deliberately: the course is entered *and* declared for this semester.
+	 * Somebody who opens this form has already decided to offer it — a course that appears in
+	 * the catalogue and not in the demand would be a second, invisible step to remember.
+	 *
+	 * The split is stated here rather than left to the proposal, because a placeholder with no
+	 * hours in the catalogue is refused with MODULE_NOT_DECOMPOSED when the instance is
+	 * declared, and that refusal would arrive at the second of the two calls.
+	 */
+	createLocal: async ({ request }) => {
+		const form = await request.formData();
+
+		const kind =
+			String(form.get('kind') ?? '') === 'FWP_PLACEHOLDER' ? 'FWP_PLACEHOLDER' : 'MODULE';
+		const hours = Number(String(form.get('hours') ?? '').replace(',', '.'));
+		const semester = String(form.get('semester') ?? '');
+		const programme = String(form.get('programme') ?? '');
+
+		if (!Number.isFinite(hours) || hours <= 0 || hours > 30) {
+			return fail(400, {
+				error: 'Die SWS müssen eine Zahl zwischen 0 und 30 sein.',
+				code: '',
+				generic: false
+			});
+		}
+
+		const practical = String(form.get('practical') ?? '');
+		const components: { kind: InstancePartKind; teachingHours: number }[] =
+			practical === '' || hours <= 2
+				? [{ kind: 'LECTURE', teachingHours: hours }]
+				: [
+						{ kind: 'LECTURE', teachingHours: hours - 2 },
+						{ kind: practical as InstancePartKind, teachingHours: 2 }
+					];
+
+		try {
+			const created = await backendRequest(CreateLocalDocument, {
+				in: {
+					programme,
+					name: String(form.get('name') ?? ''),
+					kind,
+					courseType: String(form.get('courseType') ?? 'SU') as CourseType,
+					frequency: 'ON_ANNOUNCEMENT' as Frequency,
+					contactHoursPerWeek: Math.round(hours),
+					components
+				}
+			});
+			await backendRequest(DeclareDocument, {
+				in: { semester, programme, moduleId: created.createLocalModule.id }
+			});
+			return { adopted: created.createLocalModule.name };
 		} catch (err) {
 			return fail(400, refusalFor(err));
 		}

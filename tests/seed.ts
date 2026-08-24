@@ -353,6 +353,13 @@ export function catalogueStatements(): string[] {
 export function demandResetSql(): string {
 	return [
 		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
+		// The local courses the "enter your own" test creates. Deleted rather than deactivated,
+		// unlike in the application: the name is their identity, so a run that left one behind
+		// would meet MODULE_NAME_TAKEN instead of the thing it asserts. Their instances go first,
+		// and both are gone by the line above.
+		`DELETE FROM module_component WHERE module_id IN
+		   (SELECT id FROM module WHERE source = 'LOCAL' AND home_programme_id = '${PROGRAMME_ID}');`,
+		`DELETE FROM module WHERE source = 'LOCAL' AND home_programme_id = '${PROGRAMME_ID}';`,
 		// The splits the confirming and the correcting tests state, so that the next run finds a
 		// guess again — including after a run that failed halfway and restored nothing.
 		`DELETE FROM module_component
