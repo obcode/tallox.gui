@@ -120,6 +120,16 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		roles: ['ADMIN']
 	},
 	{
+		// The dean's office's, like the phases: which programmes the faculty plans is a statement
+		// about its process rather than about running the installation, so ADMIN is not on the
+		// list. The page reads for everybody who reaches it; what is scoped is the button.
+		emoji: '🎓',
+		label: 'Studiengänge',
+		href: '/verwaltung/studiengaenge',
+		hint: 'Welche Studiengänge die Fakultät plant — und welche nicht mehr',
+		roles: ['DEANS_OFFICE']
+	},
+	{
 		emoji: '📥',
 		label: 'ZPA-Import',
 		href: '/verwaltung/zpa',

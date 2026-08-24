@@ -388,11 +388,9 @@
 	{#if data.selected.onlyPlanned}<input type="hidden" name="geplant" value="1" />{/if}
 {/snippet}
 
-{#snippet currentFilter(withProgramme: boolean)}
+{#snippet currentFilter()}
 	<input type="hidden" name="semester" value={data.selected.semester} />
-	{#if withProgramme}
-		<input type="hidden" name="studiengang" value={data.selected.programme} />
-	{/if}
+	<input type="hidden" name="studiengang" value={data.selected.programme} />
 	{#if data.selected.search}<input type="hidden" name="q" value={data.selected.search} />{/if}
 	{#if data.selected.duty}<input type="hidden" name="art" value={data.selected.duty} />{/if}
 	<input type="hidden" name="turnus" value={data.selected.term} />
@@ -425,7 +423,7 @@
 		-->
 		{#if mayPlan && data.selected.programme !== ''}
 			<form method="GET" class="shrink-0">
-				{@render currentFilter(true)}
+				{@render currentFilter()}
 				{#if editing}
 					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
 				{:else}
@@ -491,48 +489,56 @@
 
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Studiengang</span>
-				<div class="flex flex-wrap items-center gap-2">
-					<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
-						<!-- „alle" gibt es nur in der Lesesicht: planDemand schreibt genau einen. -->
-						{#if !data.selected.editing}
-							{@const active = data.selected.programme === ''}
-							<button
-								type="submit"
-								name="studiengang"
-								value=""
-								role="tab"
-								aria-selected={active}
-								class="tab {active ? 'tab-active' : ''}"
-							>
-								alle
-							</button>
-						{/if}
-						{#each data.myProgrammes as programme (programme.code)}
-							{@const active = programme.code === data.selected.programme}
-							<button
-								type="submit"
-								name="studiengang"
-								value={programme.code}
-								role="tab"
-								aria-selected={active}
-								title={programme.title ?? programme.code}
-								class="tab {active ? 'tab-active' : ''}"
-							>
-								{programme.code}
-							</button>
-						{/each}
-					</div>
+				<!--
+					Alle geplanten Studiengänge als Knöpfe, nicht nur die eigenen mit einer
+					Auswahlliste daneben. Die Liste ist kurz genug dafür, seit sie nur noch die
+					enthält, die die Fakultät wirklich plant: die des Prüfungsamts, die jemand
+					anderes betreibt oder die ausgelaufen sind, stehen gar nicht mehr darin.
+				-->
+				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+					<!-- „alle" gibt es nur in der Lesesicht: planDemand schreibt genau einen. -->
+					{#if !data.selected.editing}
+						{@const active = data.selected.programme === ''}
+						<button
+							type="submit"
+							name="studiengang"
+							value=""
+							role="tab"
+							aria-selected={active}
+							class="tab {active ? 'tab-active' : ''}"
+						>
+							alle
+						</button>
+					{/if}
+					{#each data.programmes as programme (programme.code)}
+						{@const active = programme.code === data.selected.programme}
+						{@const mine = data.myProgrammes.some((p) => p.code === programme.code)}
+						<button
+							type="submit"
+							name="studiengang"
+							value={programme.code}
+							role="tab"
+							aria-selected={active}
+							title={programme.title || programme.code}
+							class="tab whitespace-nowrap {active ? 'tab-active' : ''}"
+						>
+							<!-- Die eigenen fett: die Reihenfolge bleibt alphabetisch, damit ein
+							     Studiengang immer an derselben Stelle steht, und wer plant, findet
+							     seinen trotzdem sofort. -->
+							<span class={mine ? 'font-semibold' : ''}>{programme.code}</span>
+						</button>
+					{/each}
 				</div>
 			</div>
 		</form>
 
 		<!--
 			Der Rest schaltet nicht sofort — eine Suche, die nach jedem Buchstaben lädt, ist keine.
-			Eigenes Formular, weil der Studiengang hier als Auswahlliste noch einmal vorkommt und
-			zwei Bedienelemente gleichen Namens nicht in ein Formular passen.
+			Eigenes Formular, weil ein Absenden hier nicht dasselbe bedeutet wie ein Reiterklick
+			oben: dort ist der Knopf die Auswahl, hier ist er das Ende einer Eingabe.
 		-->
 		<form method="GET" class="flex flex-wrap items-end gap-3">
-			{@render currentFilter(false)}
+			{@render currentFilter()}
 			<label class="form-control">
 				<span class="label-text text-sm">Suche</span>
 				<input
@@ -588,28 +594,6 @@
 				nur geplante
 			</label>
 
-			<!--
-				Die übrigen Studiengänge — neunzehn passen in keine Reiterleiste, und „welchen
-				meiner beiden" ist ohnehin eine andere Frage als „welchen der neunzehn". Hier statt
-				bei den Reitern, weil zwei Bedienelemente gleichen Namens nicht in ein Formular
-				passen; `requestSubmit()` schaltet trotzdem sofort um.
-			-->
-			<label class="form-control w-fit max-w-full">
-				<span class="label-text text-sm">Anderer Studiengang</span>
-				<select
-					name="studiengang"
-					class="select select-bordered select-sm max-w-full"
-					onchange={(e) => e.currentTarget.form?.requestSubmit()}
-				>
-					<option value="">— wählen —</option>
-					{#each data.programmes as programme (programme.code)}
-						<option value={programme.code} selected={programme.code === data.selected.programme}>
-							{programme.code}{programme.title ? ` — ${programme.title}` : ''}
-						</option>
-					{/each}
-				</select>
-			</label>
-
 			<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
 		</form>
 	</div>
@@ -633,7 +617,7 @@
 			</summary>
 
 			<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
-				{@render currentFilter(true)}
+				{@render currentFilter()}
 				<input type="hidden" name="bearbeiten" value="1" />
 				<label class="form-control">
 					<span class="label-text text-sm">Modul suchen</span>

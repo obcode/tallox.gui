@@ -8,10 +8,15 @@ import type { PageServerLoad } from './$types';
 
 const CatalogueDocument = graphql(`
 	query Catalogue($filter: ModuleFilter, $programme: String!) {
-		programmes {
+		# Every programme, including the ones the faculty does not plan: this is the catalogue,
+		# and the catalogue holds them. Their modules are still taught and still findable, and a
+		# picker that left them out would make "the modules of IC" unaskable. What is filtered to
+		# the planned ones is the demand page, where the question is what to plan.
+		programmes(includeUnplanned: true) {
 			code
 			title
 			active
+			planningStatus
 			spos {
 				id
 				version

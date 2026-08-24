@@ -15,6 +15,7 @@ import type {
 	Frequency,
 	InstancePartKind,
 	ModuleKind,
+	ProgrammeStatus,
 	ZpaProjectionFinding
 } from '$lib/gql/__generated__/graphql';
 
@@ -206,6 +207,40 @@ export function teacherRole(teacher: {
  * something the type system holds to and a form's dropdown should not reshuffle itself when
  * somebody adds a label.
  */
+/**
+ * Whether the faculty plans a study programme, in words.
+ *
+ * Three values rather than a boolean, because the two that are not planned mean different
+ * things: one is somebody else's programme, the other was ours and has run out. On the day
+ * somebody asks what we offered in it, the two need different answers.
+ */
+export const PROGRAMME_STATUS_LABELS: Record<ProgrammeStatus, string> = {
+	PLANNED: 'wird geplant',
+	NOT_OURS: 'nicht unserer',
+	DISCONTINUED: 'ausgelaufen'
+};
+
+export const PROGRAMME_STATUS_HINTS: Record<ProgrammeStatus, string> = {
+	PLANNED: 'Die Fakultät plant diesen Studiengang. Er steht in jeder Auswahl.',
+	NOT_OURS:
+		'Ein Studiengang, den jemand anderes betreibt. Er steht im Katalog, weil seine SPO ' +
+		'Module nennt, und wird hier nicht geplant.',
+	DISCONTINUED:
+		'War unserer und ist ausgelaufen. Der bereits angemeldete Bedarf bleibt lesbar, neuer ' +
+		'kommt nicht mehr dazu.'
+};
+
+/**
+ * The badge a status gets.
+ *
+ * A background colour, never `text-*`: the semantic colours reach 1.35:1 as text on the light
+ * themes. Only the planned one is coloured — the other two are states rather than warnings, and
+ * three coloured badges in one list teach people to stop seeing the colour.
+ */
+export function programmeStatusBadge(status: ProgrammeStatus): string {
+	return status === 'PLANNED' ? 'badge-success' : 'badge-ghost';
+}
+
 /**
  * The vocabularies a form has to offer, in the order it offers them.
  *
