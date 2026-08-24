@@ -89,12 +89,14 @@ function module(id: string, overrides: Partial<ModuleLike> = {}): ModuleLike {
 	};
 }
 
+// The instance carries its whole module, the way the query hands it over: an instance may point
+// at a module the catalogue filter does not return, and then this is where the module comes from.
 function instance(
 	moduleId: string,
 	track: string,
 	groups: number,
-	overrides: Partial<InstanceLike> = {}
-): InstanceLike {
+	overrides: Partial<InstanceLike<ModuleLike>> = {}
+): InstanceLike<ModuleLike> {
 	const parts: { kind: InstancePartKind; teachingHours: number; sharedAcrossTracks: boolean }[] = [
 		{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: false }
 	];
@@ -106,7 +108,7 @@ function instance(
 		track,
 		programmeSemester: 1,
 		teachingHours: 2 + groups * 2,
-		module: { id: moduleId },
+		module: module(moduleId),
 		parts,
 		borrowedParts: [],
 		...overrides
@@ -283,6 +285,44 @@ describe('previousComparableSemester', () => {
 	});
 });
 
+describe('demandRows and the modules the filter does not return', () => {
+	// The defect this fixes: the header counted the instance and the table had no row for it,
+	// so the page said "3 Instanzen" above two lines. Worse than the arithmetic — a row that is
+	// not on the screen cannot have its tick taken away, and planDemand only touches what it is
+	// told about, so the instance could not be withdrawn at all.
+	it('makes a row for an instance whose module is not in the catalogue list', () => {
+		const rows = demandRows([module('a')], [instance('foreign', '', 2)], [], '2026-WS');
+
+		expect(rows).toHaveLength(2);
+		const extra = rows.find((r) => r.module.id === 'foreign');
+		expect(extra?.foreign).toBe(true);
+		expect(extra?.planned).toBe(true);
+		expect(extra?.tracks).toHaveLength(1);
+		// Its hours are the instance's, so the column and the header agree.
+		expect(extra?.teachingHours).toBe(6);
+	});
+
+	// The ordinary rows are not marked, or the badge would say nothing.
+	it('marks only the rows the catalogue did not produce', () => {
+		const rows = demandRows([module('a')], [instance('a', '', 1)], [], '2026-WS');
+		expect(rows).toHaveLength(1);
+		expect(rows[0].foreign).toBeUndefined();
+	});
+
+	// Two cohorts of one unlisted module are one row with two cohorts, exactly as for a listed
+	// one — the extra rows go through the same builder.
+	it('folds the cohorts of an unlisted module into one row', () => {
+		const rows = demandRows(
+			[],
+			[instance('foreign', 'A', 2), instance('foreign', 'B', 1)],
+			[],
+			'2026-WS'
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].tracks.map((t) => t.track)).toEqual(['A', 'B']);
+	});
+});
+
 describe('sharingState', () => {
 	const rowOf = (tracks: { track: string; groups: number; parts: InstanceLike['parts'] }[]) =>
 		demandRows(
@@ -292,7 +332,7 @@ describe('sharingState', () => {
 				track: t.track,
 				programmeSemester: 1,
 				teachingHours: 4,
-				module: { id: 'm' },
+				module: module('m'),
 				parts: t.parts,
 				borrowedParts: []
 			})),

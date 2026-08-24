@@ -30,6 +30,8 @@ const DemandDocument = graphql(`
 		$programmeFilter: String
 		$previous: String!
 		$filter: ModuleFilter
+		$foreignSearch: String
+		$withForeign: Boolean!
 		$withTable: Boolean!
 		$withOverview: Boolean!
 		$withPrevious: Boolean!
@@ -127,6 +129,19 @@ const DemandDocument = graphql(`
 				}
 			}
 		}
+		# The whole catalogue, searched — deliberately without a programme filter, because the
+		# point of this list is the modules the programme's own catalogue does not contain.
+		# Only asked for when somebody typed something: it is a second pass over 500 modules.
+		foreign: modules(filter: { search: $foreignSearch }) @include(if: $withForeign) {
+			id
+			name
+			zpaId
+			plannable
+			homeProgramme {
+				code
+				title
+			}
+		}
 		previous: courseInstances(semester: $previous, programme: $programmeFilter)
 			@include(if: $withPrevious) {
 			id
@@ -205,6 +220,17 @@ const SplitPartDocument = graphql(`
 	}
 `);
 
+const DeclareDocument = graphql(`
+	mutation DeclareFromSearch($in: DeclareCourseInstanceInput!) {
+		declareCourseInstance(input: $in) {
+			id
+			module {
+				name
+			}
+		}
+	}
+`);
+
 const ConfirmSplitDocument = graphql(`
 	mutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {
 		setModuleComponents(moduleId: $moduleId, components: $components) {
@@ -229,6 +255,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	// The edit mode, as a parameter rather than as browser state: two views under one address
 	// cannot be sent to a colleague, and the back button would leave the wrong one showing.
 	const editing = url.searchParams.get('bearbeiten') === '1';
+	// The search for a module outside this programme's catalogue. In the address like every
+	// other filter, so the list somebody is looking at survives a reload and a save.
+	const foreignSearch = (url.searchParams.get('fremd') ?? '').trim();
 
 	// The overview needs a semester and nothing else — "what does the faculty offer next term" is
 	// a question somebody asks before they know which programme a module belongs to. The planning
@@ -248,6 +277,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			previous,
 			withTable,
 			withOverview,
+			foreignSearch: foreignSearch === '' ? null : foreignSearch,
+			withForeign: withTable && foreignSearch !== '',
 			// A previous semester is only asked for when there is one to ask about — and only
 			// when it could hold anything, which a code the backend would refuse cannot.
 			withPrevious: withOverview && previous !== '',
@@ -295,6 +326,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		programmes: data.programmes,
 		current: data.semester ?? null,
 		modules: data.modules ?? [],
+		foreignMatches: data.foreign ?? [],
 		instances: data.courseInstances ?? [],
 		previousInstances: data.previous ?? [],
 		selected: {
@@ -306,7 +338,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			term,
 			onlyEstimated,
 			onlyPlanned,
-			editing
+			editing,
+			foreignSearch
 		}
 	};
 };
@@ -434,6 +467,33 @@ export const actions: Actions = {
 					dryRun: false
 				})
 			};
+		} catch (err) {
+			return fail(400, refusalFor(err));
+		}
+	},
+
+	/**
+	 * Take a module into this programme's demand that its own catalogue does not list.
+	 *
+	 * `declareCourseInstance` rather than a row in the big table, because there is no row yet:
+	 * the table is built from the catalogue query, and this module is precisely the one it does
+	 * not return. Once declared, the instance puts it there — every reload after this one shows
+	 * it as an ordinary row, marked, and it can be unticked like any other.
+	 *
+	 * One cohort and no letter, which is the ordinary case and what the stepper starts from.
+	 */
+	adopt: async ({ request }) => {
+		const form = await request.formData();
+
+		try {
+			const data = await backendRequest(DeclareDocument, {
+				in: {
+					semester: String(form.get('semester') ?? ''),
+					programme: String(form.get('programme') ?? ''),
+					moduleId: String(form.get('moduleId') ?? '')
+				}
+			});
+			return { adopted: data.declareCourseInstance.module.name };
 		} catch (err) {
 			return fail(400, refusalFor(err));
 		}

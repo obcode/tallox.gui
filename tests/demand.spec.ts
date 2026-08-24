@@ -281,6 +281,43 @@ test.describe('the demand table', () => {
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 	});
 
+	// The escape hatch: a module that is in no catalogue of this programme and has to be offered
+	// anyway. Allowed in the backend all along — the permission hangs off the programme of the
+	// instance, never off the home of the module — and until now there was no way to say so from
+	// the screen.
+	test('fetches in a module from another programme, and can take it back', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		// It is not in the table: the catalogue query is filtered to this programme.
+		await expect(page.getByRole('row', { name: /E2E Fremdmodul/ })).toHaveCount(0);
+
+		// Behind a disclosure: it is the exception, and an open search box beside the filters
+		// would read as a second way to filter the table.
+		await page.getByText('Fach aus einem anderen Studiengang hereinholen').click();
+		await page.getByRole('searchbox', { name: 'Modul suchen' }).fill('Fremdmodul');
+		await page.getByRole('button', { name: 'Suchen' }).click();
+
+		const hit = page.getByRole('listitem').filter({ hasText: 'E2E Fremdmodul' });
+		await expect(hit.getByText(CATALOGUE.otherProgramme)).toBeVisible();
+		await hit.getByRole('button', { name: 'in den Bedarf übernehmen' }).click();
+
+		// Now it is a row of the table like any other, marked as one the filter did not produce
+		// — which is what makes it possible to untick it again.
+		const row = page.getByRole('row', { name: /E2E Fremdmodul/ });
+		await expect(row).toBeVisible();
+		await expect(row.getByText('außerhalb des Filters')).toBeVisible();
+		await expect(row.getByRole('checkbox')).toBeChecked();
+
+		// And back out. planDemand only touches the modules on the screen, so a row that is
+		// visible is a row that can be withdrawn.
+		await row.getByRole('checkbox').uncheck();
+		await page.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
+		await expect(page.getByText('1 zurückgezogen')).toBeVisible({ timeout: 15_000 });
+	});
+
 	// The filters that switch on the click rather than on a second button. They are submit
 	// buttons of a GET form, so the address carries the choice and the back button works — the
 	// two properties a client-side filter would have cost.
