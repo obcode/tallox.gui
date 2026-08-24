@@ -33,6 +33,15 @@
 	// question, and the answer to it is the overview.
 	const chosen = $derived(data.selected.semester !== '');
 
+	/**
+	 * The semesters left to right in the order they happen.
+	 *
+	 * The backend lists them newest first, which is right for a dropdown and wrong for a bar: the
+	 * planning semester is the earliest one offered, so newest-first puts the one everybody wants
+	 * at the far right, off the edge of the strip and behind a scroll nobody knows is there.
+	 */
+	const semesterTabs = $derived([...data.semesters].reverse());
+
 	const rows = $derived(
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
 	);
@@ -379,7 +388,8 @@
 
 <div class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-start justify-between gap-3">
-		<div>
+		<!-- Begrenzt, damit der Schalter oben rechts steht und nicht unter den Absatz rutscht. -->
+		<div class="max-w-2xl">
 			<h1 class="text-2xl font-semibold">Bedarf</h1>
 			<p class="text-base-content/80 text-sm">
 				{#if editing}
@@ -446,7 +456,7 @@
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Semester</span>
 				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
-					{#each data.semesters as semester (semester.code)}
+					{#each semesterTabs as semester (semester.code)}
 						{@const active = semester.code === data.selected.semester}
 						<button
 							type="submit"
