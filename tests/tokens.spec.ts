@@ -68,7 +68,16 @@ test.describe('Personal Access Tokens', () => {
 		const row = page.getByRole('row').filter({ hasText: description });
 		await expect(row).toBeVisible();
 		await row.getByRole('button', { name: 'Widerrufen' }).click();
-		await expect(row.getByText('widerrufen')).toBeVisible();
+
+		// Wait for the button to be gone, not for the word.
+		//
+		// `getByText` is case-insensitive by default, so `getByText('widerrufen')` matched the
+		// "Widerrufen" button itself — the wait was satisfied before the click had done
+		// anything, and the request below then raced the revocation. Reported as flaky; in fact
+		// a wait for something that was already true. The same shape as the `.first()` mistake
+		// noted above, and the reason this test now names both signals.
+		await expect(row.getByRole('button', { name: 'Widerrufen' })).toHaveCount(0);
+		await expect(row.getByText('widerrufen', { exact: true })).toBeVisible();
 
 		const after = await page.request.post(endpoint, {
 			headers: { Authorization: `Bearer ${secret}` },
