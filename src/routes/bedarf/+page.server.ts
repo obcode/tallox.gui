@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm } from '$lib/catalogue';
 import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
@@ -35,6 +35,10 @@ const DemandDocument = graphql(`
 		semesters {
 			code
 			phase
+			isPlanningSemester
+		}
+		planningSemester {
+			code
 		}
 		me {
 			programmes {
@@ -198,8 +202,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	const withDemand = semester !== '' && programme !== '';
 	const previous = previousComparableSemester(semester);
 
+	let data;
 	try {
-		const data = await backendRequest(DemandDocument, {
+		data = await backendRequest(DemandDocument, {
 			semester,
 			programme,
 			previous,
@@ -214,23 +219,47 @@ export const load: PageServerLoad = async ({ url }) => {
 				frequency: frequenciesForTerm(term)
 			}
 		});
-
-		return {
-			semesters: data.semesters,
-			myProgrammes: data.me?.programmes ?? [],
-			programmes: data.programmes,
-			current: data.semester ?? null,
-			modules: data.modules ?? [],
-			instances: data.courseInstances ?? [],
-			previousInstances: data.previous ?? [],
-			selected: { semester, programme, previous, search, duty, term, onlyEstimated, onlyPlanned }
-		};
 	} catch (err) {
 		// A refusal here is "no account", which the root layout already shows as its own page, or
 		// a semester code a hand-edited URL invented. Both are worth a sentence rather than an
 		// empty table that looks like a programme with nothing to plan.
 		error(403, toRefusal(err).message);
 	}
+
+	// Arriving without a semester lands on the one the faculty is planning.
+	//
+	// A redirect rather than a quiet default, because the choice belongs in the address: this
+	// page's whole arrangement is that a view somebody is looking at is a thing they send to a
+	// colleague, and a default that lives only in the load would make two people with the same
+	// link see different screens once the mark moves. It also keeps the back button, a reload
+	// and the path without JavaScript all saying the same thing.
+	//
+	// Outside the try above on purpose — SvelteKit's redirect is thrown, and a catch that turned
+	// it into a 403 would be a very confusing bug.
+	if (semester === '' && data.planningSemester) {
+		const to = new URLSearchParams(url.searchParams);
+		to.set('semester', data.planningSemester.code);
+		// Only when there is exactly one. Two is a question this page cannot answer for
+		// somebody, and none — the dean's office, a lecturer — means "all of them", which is a
+		// view in its own right.
+		const mine = data.me?.programmes ?? [];
+		if (programme === '' && mine.length === 1) {
+			to.set('studiengang', mine[0].code);
+		}
+		redirect(303, `/bedarf?${to}`);
+	}
+
+	return {
+		semesters: data.semesters,
+		planningSemester: data.planningSemester?.code ?? '',
+		myProgrammes: data.me?.programmes ?? [],
+		programmes: data.programmes,
+		current: data.semester ?? null,
+		modules: data.modules ?? [],
+		instances: data.courseInstances ?? [],
+		previousInstances: data.previous ?? [],
+		selected: { semester, programme, previous, search, duty, term, onlyEstimated, onlyPlanned }
+	};
 };
 
 /**

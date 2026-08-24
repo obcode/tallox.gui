@@ -29,7 +29,8 @@
 			Woran jedes Semester gerade ist. Die Phase wird umgeschaltet, nicht ausgerechnet — sie hängt
 			an einer Entscheidung und nicht am Kalender. Die Semester selbst sind einfach da: angelegt
 			werden muss keines, und für jedes hier gelistete lässt sich planen — auch für die in ein paar
-			Jahren.
+			Jahren. Die Liste beginnt beim <strong>Planungssemester</strong>: dem einen, das die Fakultät
+			gerade plant und das überall vorausgewählt ist.
 		</p>
 	</div>
 
@@ -48,6 +49,9 @@
 				<h2 class="text-lg font-medium">{semesterName(semester.code)}</h2>
 				<code class="text-base-content/80 text-sm">{semester.code}</code>
 				<span class="badge badge-neutral badge-sm">{PHASE_LABELS[semester.phase]}</span>
+				{#if semester.isPlanningSemester}
+					<span class="badge badge-primary badge-sm">Planungssemester</span>
+				{/if}
 			</div>
 
 			<p class="text-base-content/80 text-sm">{PHASE_HINTS[semester.phase]}</p>
@@ -84,6 +88,20 @@
 							</button>
 						</form>
 					{/each}
+
+					{#if !semester.isPlanningSemester}
+						<!--
+							Reversible, so a plain button — no disclosure and no second sentence, unlike
+							publishing below. The mark moves off whichever semester carried it in the
+							same act, so there is nothing to clear first.
+						-->
+						<form method="POST" action="?/setPlanning" use:enhance>
+							<input type="hidden" name="code" value={semester.code} />
+							<button type="submit" class="btn btn-sm btn-outline">
+								Als Planungssemester setzen
+							</button>
+						</form>
+					{/if}
 
 					{#if mayStillPublish(semester)}
 						<!--

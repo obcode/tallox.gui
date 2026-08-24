@@ -149,7 +149,21 @@ export const SEMESTERS = {
 	 * failed halfway can leave it published — at which point the assertion would be about a card
 	 * that is no longer confidential.
 	 */
-	confidential: '2031-SS'
+	confidential: '2031-SS',
+	/**
+	 * The one the faculty is planning — the mark the migration set, and what the seed puts back.
+	 *
+	 * Every screen preselects it, so a run that left the mark somewhere else would change what
+	 * `/bedarf` opens on and break tests that never mention a semester.
+	 */
+	planning: '2027-SS',
+	/**
+	 * The semester the "move the mark" test moves it to.
+	 *
+	 * Its own, and far enough out that nothing else asserts about it: the test's whole subject
+	 * is that the mark leaves the semester it was on.
+	 */
+	settable: '2034-WS'
 } as const;
 
 export const DEMAND = {
@@ -276,6 +290,17 @@ export function catalogueStatements(): string[] {
 		 ON CONFLICT (code) DO UPDATE SET phase = 'DEMAND_PLANNING';`,
 		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.confidential)})
 		 ON CONFLICT (code) DO UPDATE SET wishes_published_at = NULL;`,
+
+		// The planning mark, back where the migration put it. Clear before mark, in that order:
+		// at most one row may carry it, and the database enforces that with a partial unique
+		// index — the two statements the other way round collide with it.
+		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.planning)}) ON CONFLICT (code) DO NOTHING;`,
+		// The one the mark is moved *to*. Recorded here rather than left to the calendar window,
+		// because the window moves through the year and this test needs a card that is there.
+		`INSERT INTO semester (code) VALUES (${quote(SEMESTERS.settable)}) ON CONFLICT (code) DO NOTHING;`,
+		`UPDATE semester SET is_planning_semester = false
+		  WHERE is_planning_semester AND code <> ${quote(SEMESTERS.planning)};`,
+		`UPDATE semester SET is_planning_semester = true WHERE code = ${quote(SEMESTERS.planning)};`,
 
 		// Everything the demand tests declared last time. Its parts go with it, and the run
 		// starts from the same state as the first one did — the alternative is a suite that

@@ -239,4 +239,14 @@ test.describe('the demand table', () => {
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(row.getByRole('checkbox')).toBeDisabled();
 	});
+
+	// Arriving without a semester lands on the one the faculty is planning, and the choice ends
+	// up in the address rather than only in the load — so the link somebody sends a colleague
+	// still means what it meant when they sent it.
+	test('opens on the planning semester when the address names none', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/bedarf');
+
+		await expect(page).toHaveURL(new RegExp(`semester=${SEMESTERS.planning}`));
+	});
 });

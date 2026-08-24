@@ -115,6 +115,43 @@ test.describe('semesters and phases', () => {
 		);
 	});
 
+	test('the planning semester is marked, and only one of them is', async ({ asPersona }) => {
+		// The mark is what every other screen preselects from, so what matters visually is that
+		// exactly one card carries it — two would make the preselection a coin toss.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/semester');
+
+		// Scoped to the cards and exact: the page's own introduction names the planning
+		// semester too, and the dean's office's button is called "Als Planungssemester setzen".
+		await expect(cards(page).getByText('Planungssemester', { exact: true })).toHaveCount(1);
+		await expect(cards(page).filter({ hasText: SEMESTERS.planning })).toContainText(
+			'Planungssemester'
+		);
+
+		// Cosmetic, and asserted as such: a lecturer is shown no control that would only ever
+		// produce a refusal.
+		await expect(page.getByRole('button', { name: 'Als Planungssemester setzen' })).toHaveCount(0);
+	});
+
+	test('the dean’s office moves the planning semester', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, '/semester');
+
+		const target = cards(page).filter({ hasText: SEMESTERS.settable });
+		await target.getByRole('button', { name: 'Als Planungssemester setzen' }).click();
+
+		await expect(target.getByText('Planungssemester', { exact: true })).toBeVisible();
+
+		// And it left the semester it was on — one act, not two, which is why there is no
+		// "clear" button anywhere on this page.
+		await expect(cards(page).getByText('Planungssemester', { exact: true })).toHaveCount(1);
+		await expect(
+			cards(page)
+				.filter({ hasText: SEMESTERS.planning })
+				.getByText('Planungssemester', { exact: true })
+		).toHaveCount(0);
+	});
+
 	test('the page is accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');
