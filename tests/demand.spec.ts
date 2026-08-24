@@ -384,6 +384,37 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('button', { name: 'Anzeigen' }).first()).toBeVisible();
 	});
 
+	// Every form on this page owns some of the filter and has to carry the rest across. It did
+	// not: a GET form submits only the clicked one of its submit buttons, so a click on a
+	// programme sent `studiengang` alone — no semester, and the page landed back in the planning
+	// semester. The mirror image lost the programme, and the third form had hidden copies of the
+	// very fields it also shows, which made its selects inert.
+	test('every filter keeps the others', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+
+		// A programme keeps the semester.
+		await page.getByRole('tab', { name: CATALOGUE.programme, exact: true }).click();
+		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.semester}`));
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+
+		// A semester keeps the programme.
+		await page.getByRole('tab', { name: 'SS 2028' }).click();
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+		await expect(page).toHaveURL(/semester=2028-SS/);
+
+		// And back, so the rest of this serial group finds the semester it expects.
+		await page.getByRole('tab', { name: new RegExp(`${DEMAND.semester.slice(0, 4)}/`) }).click();
+		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.semester}`));
+
+		// The controls the third form owns are not shadowed by a hidden copy of themselves.
+		await page.getByLabel('Turnus').selectOption('');
+		await page.getByRole('button', { name: 'Anzeigen' }).click();
+		await expect(page).toHaveURL(/turnus=(&|$)/);
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
+		await expect(page.getByLabel('Turnus')).toHaveValue('');
+	});
+
 	// The programmes this faculty does not plan are not offered anywhere on this page — neither
 	// as a tab nor, since the select is gone, in a list behind one.
 	test('offers no programme the faculty does not plan', async ({ asPersona }) => {
