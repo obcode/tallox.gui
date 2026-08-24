@@ -265,9 +265,14 @@ export const load: PageServerLoad = async ({ url }) => {
 	const programme = url.searchParams.get('studiengang') ?? '';
 	const search = url.searchParams.get('q') ?? '';
 	const duty = url.searchParams.get('art') ?? '';
-	// The term of the semester being planned, unless somebody widened it: the demand of a winter
-	// has no business proposing the modules that run only in summer.
-	const term = url.searchParams.get('turnus') ?? semesterTerm(semester);
+	// The term follows the semester, and the only choice about it is whether to widen.
+	//
+	// It used to be a three-way select — winter, summer, all — and two of the three were
+	// nonsense: with a winter semester chosen, "Sommersemester" asks for the modules that
+	// cannot run in it. What somebody actually wants is the modules of *this* term, and
+	// occasionally the ones of the other as well, so that is what it offers.
+	const bothTerms = url.searchParams.get('turnus') === 'alle';
+	const term = bothTerms ? '' : semesterTerm(semester);
 	const onlyEstimated = url.searchParams.get('offen') === '1';
 	const onlyPlanned = url.searchParams.get('geplant') === '1';
 	// The edit mode, as a parameter rather than as browser state: two views under one address
@@ -353,9 +358,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			previous,
 			search,
 			duty,
-			term,
 			onlyEstimated,
 			onlyPlanned,
+			bothTerms,
 			editing,
 			foreignSearch
 		}

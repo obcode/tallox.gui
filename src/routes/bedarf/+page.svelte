@@ -26,7 +26,13 @@
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import { hasAnyRole } from '$lib/roles';
-	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
+	import {
+		PHASE_HINTS,
+		PHASE_LABELS,
+		semesterName,
+		semesterShortName,
+		semesterTerm
+	} from '$lib/semester';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -55,19 +61,31 @@
 	 * one control silently resets another. Written once here so that "what is the filter made of"
 	 * has a single answer, and each form says which parts it provides itself.
 	 *
-	 * `always` is for `turnus` alone, and the distinction is real: an absent `turnus` means "take
-	 * the term of the semester", an empty one means "every term". Dropping it because it is empty
-	 * would turn the second into the first.
+	 * An empty value is left out rather than sent empty: for every one of these, absent and empty
+	 * mean the same thing, and a link somebody sends a colleague should not carry six equals
+	 * signs with nothing behind them.
 	 */
 	const filterFields = $derived([
-		{ name: 'semester', value: data.selected.semester, always: false },
-		{ name: 'studiengang', value: data.selected.programme, always: false },
-		{ name: 'q', value: data.selected.search, always: false },
-		{ name: 'art', value: data.selected.duty, always: false },
-		{ name: 'turnus', value: data.selected.term, always: true },
-		{ name: 'offen', value: data.selected.onlyEstimated ? '1' : '', always: false },
-		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '', always: false }
+		{ name: 'semester', value: data.selected.semester },
+		{ name: 'studiengang', value: data.selected.programme },
+		{ name: 'q', value: data.selected.search },
+		{ name: 'art', value: data.selected.duty },
+		{ name: 'turnus', value: data.selected.bothTerms ? 'alle' : '' },
+		{ name: 'offen', value: data.selected.onlyEstimated ? '1' : '' },
+		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '' }
 	]);
+
+	/**
+	 * What the switch that widens the term offers, named after the term it would add.
+	 *
+	 * Spelled out rather than "auch den anderen Turnus": the reader is looking at a winter
+	 * semester, and "die nur im Sommersemester laufen" says exactly which modules appear.
+	 */
+	const otherTermLabel = $derived(
+		semesterTerm(data.selected.semester) === 'SS'
+			? 'auch Module, die nur im Wintersemester laufen'
+			: 'auch Module, die nur im Sommersemester laufen'
+	);
 
 	const rows = $derived(
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
@@ -410,7 +428,7 @@
 -->
 {#snippet carriedOver(own: readonly string[])}
 	{#each filterFields as field (field.name)}
-		{#if !own.includes(field.name) && (field.always || field.value !== '')}
+		{#if !own.includes(field.name) && field.value !== ''}
 			<input type="hidden" name={field.name} value={field.value} />
 		{/if}
 	{/each}
@@ -563,7 +581,13 @@
 		</form>
 
 		<!--
-			Der Rest schaltet nicht sofort — eine Suche, die nach jedem Buchstaben lädt, ist keine.
+			Der Rest der Zeile gehört zur Bearbeiten-Sicht, und zwar ganz.
+
+			Suche, Art, Turnus und die beiden Häkchen filtern die *Katalogliste*, aus der die
+			Planungstabelle ihre Zeilen macht — und die wird nur beim Bearbeiten überhaupt geladen.
+			In der Lesesicht standen fünf Bedienelemente, die nichts taten.
+
+			Er schaltet nicht sofort um — eine Suche, die nach jedem Buchstaben lädt, ist keine.
 			Eigenes Formular, weil ein Absenden hier nicht dasselbe bedeutet wie ein Reiterklick
 			oben: dort ist der Knopf die Auswahl, hier ist er das Ende einer Eingabe.
 
@@ -571,65 +595,76 @@
 			Felder gleichen Namens, und `searchParams.get` nähme das erste — die Auswahllisten
 			hätten stumm den alten Wert wieder eingesetzt.
 		-->
-		<form method="GET" class="flex flex-wrap items-end gap-3">
-			{@render carriedOver(['q', 'art', 'turnus', 'offen', 'geplant'])}
-			<label class="form-control">
-				<span class="label-text text-sm">Suche</span>
-				<input
-					type="search"
-					name="q"
-					value={data.selected.search}
-					placeholder="Modulname"
-					class="input input-bordered input-sm"
-				/>
-			</label>
+		{#if editing}
+			<form method="GET" class="flex flex-wrap items-end gap-3">
+				{@render carriedOver(['q', 'art', 'turnus', 'offen', 'geplant'])}
+				<input type="hidden" name="bearbeiten" value="1" />
+				<label class="form-control">
+					<span class="label-text text-sm">Suche</span>
+					<input
+						type="search"
+						name="q"
+						value={data.selected.search}
+						placeholder="Modulname"
+						class="input input-bordered input-sm"
+					/>
+				</label>
 
-			<label class="form-control">
-				<span class="label-text text-sm">Art</span>
-				<select name="art" class="select select-bordered select-sm">
-					<option value="">alle</option>
-					<option value="COMPULSORY" selected={data.selected.duty === 'COMPULSORY'}>
-						Pflicht
-					</option>
-					<option value="ELECTIVE" selected={data.selected.duty === 'ELECTIVE'}>
-						Wahlpflicht
-					</option>
-				</select>
-			</label>
+				<label class="form-control">
+					<span class="label-text text-sm">Art</span>
+					<select name="art" class="select select-bordered select-sm">
+						<option value="">alle</option>
+						<option value="COMPULSORY" selected={data.selected.duty === 'COMPULSORY'}>
+							Pflicht
+						</option>
+						<option value="ELECTIVE" selected={data.selected.duty === 'ELECTIVE'}>
+							Wahlpflicht
+						</option>
+					</select>
+				</label>
 
-			<label class="form-control">
-				<span class="label-text text-sm">Turnus</span>
-				<select name="turnus" class="select select-bordered select-sm">
-					<option value="WS" selected={data.selected.term === 'WS'}>Wintersemester</option>
-					<option value="SS" selected={data.selected.term === 'SS'}>Sommersemester</option>
-					<option value="" selected={data.selected.term === ''}>alle</option>
-				</select>
-			</label>
+				<!--
+					Der Turnus folgt dem Semester, und die einzige Entscheidung darüber ist, ob man
+					weiter aufmacht. Vorher waren es drei Möglichkeiten, von denen zwei Unsinn
+					waren: bei einem gewählten Wintersemester fragt „Sommersemester" nach genau den
+					Modulen, die darin nicht laufen können.
+				-->
+				<label class="flex items-center gap-2 pb-1 text-sm">
+					<input
+						name="turnus"
+						type="checkbox"
+						value="alle"
+						checked={data.selected.bothTerms}
+						class="checkbox checkbox-sm"
+					/>
+					{otherTermLabel}
+				</label>
 
-			<label class="flex items-center gap-2 pb-1 text-sm">
-				<input
-					name="offen"
-					type="checkbox"
-					value="1"
-					checked={data.selected.onlyEstimated}
-					class="checkbox checkbox-sm"
-				/>
-				nur geschätzte Aufteilungen
-			</label>
+				<label class="flex items-center gap-2 pb-1 text-sm">
+					<input
+						name="offen"
+						type="checkbox"
+						value="1"
+						checked={data.selected.onlyEstimated}
+						class="checkbox checkbox-sm"
+					/>
+					nur geschätzte Aufteilungen
+				</label>
 
-			<label class="flex items-center gap-2 pb-1 text-sm">
-				<input
-					name="geplant"
-					type="checkbox"
-					value="1"
-					checked={data.selected.onlyPlanned}
-					class="checkbox checkbox-sm"
-				/>
-				nur geplante
-			</label>
+				<label class="flex items-center gap-2 pb-1 text-sm">
+					<input
+						name="geplant"
+						type="checkbox"
+						value="1"
+						checked={data.selected.onlyPlanned}
+						class="checkbox checkbox-sm"
+					/>
+					nur geplante
+				</label>
 
-			<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
-		</form>
+				<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
+			</form>
+		{/if}
 	</div>
 
 	{#if editing}
