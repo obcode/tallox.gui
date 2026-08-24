@@ -411,9 +411,9 @@
 					anhaken, Züge und Praktikumsgruppen setzen. Zugeteilt werden später die Teile — Vorlesung
 					und Praktikum können verschiedene Personen halten.
 				{:else}
-					Was in diesem Semester angeboten wird — eine Zeile je Instanz, also je Zug, denn das ist
-					die Einheit, die später zugeteilt und gewünscht wird. Vorlesung und Praktikum können
-					verschiedene Personen halten.
+					Was in diesem Semester angeboten wird — eine Zeile je Modul, mit den Zügen, in denen es
+					läuft. Zugeteilt und gewünscht wird später der einzelne Teil eines Zuges: Vorlesung und
+					Praktikum können verschiedene Personen halten.
 				{/if}
 			</p>
 		</div>
@@ -870,8 +870,9 @@
 
 		{#if !editing}
 			<!--
-				Die Lesesicht: eine Zeile je Instanz, nicht je Katalogmodul. Keine ausgegraute
-				Planungstabelle — deren Zeilen sind zum größten Teil Module, die niemand angehakt
+				Die Lesesicht: dieselbe Kornung wie die Planungstabelle — eine Zeile je Modul, die
+				Züge darin —, aber nur, was tatsächlich angemeldet ist. Keine ausgegraute
+				Planungstabelle: deren Zeilen sind zum größten Teil Module, die niemand angehakt
 				hat, also eine Arbeitsliste, und die gehört jemand anderem.
 			-->
 			<DemandOverview instances={data.instances} programme={data.selected.programme} />
