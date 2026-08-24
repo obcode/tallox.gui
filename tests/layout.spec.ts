@@ -52,3 +52,36 @@ test.describe('the settings menus', () => {
 		});
 	}
 });
+
+/**
+ * The temporary feedback entry.
+ *
+ * Its address comes from the environment and not from the source: this repository is public and
+ * the space it points at is not, and it makes "temporary" a configuration change rather than a
+ * revert. Which is exactly why it needs a test — an entry that is configured away by accident
+ * disappears silently, and nothing else here would notice.
+ */
+test.describe('the feedback entry', () => {
+	test('sits in the nav bar and leads out of the application', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+
+		const link = page.getByRole('banner').getByRole('link', { name: /Feedback/ });
+		await expect(link).toHaveAttribute('href', 'https://example.org/tallox-feedback');
+		// Out of the application, so nobody loses a half-filled demand table to it — and the
+		// pair that has to come with it.
+		await expect(link).toHaveAttribute('target', '_blank');
+		await expect(link).toHaveAttribute('rel', /noopener/);
+	});
+
+	test('is there at 375px too, where only the sign is', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await page.setViewportSize({ width: 375, height: 812 });
+		await gotoRendered(page, '/');
+
+		// The label is hidden below `sm`; the accessible name comes from the title instead.
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: /Feedback|Rückmeldungen/ })
+		).toBeVisible();
+	});
+});

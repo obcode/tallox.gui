@@ -59,7 +59,12 @@ export default defineConfig({
 		env: {
 			// The SSR process needs the backend URL. Without it backend.ts falls back to
 			// localhost:8080, which is right locally and is overridden by this value in CI.
-			TALLOX_SERVER: process.env.TALLOX_SERVER ?? 'http://localhost:8080/query'
+			TALLOX_SERVER: process.env.TALLOX_SERVER ?? 'http://localhost:8080/query',
+			// The temporary feedback entry, so the suite exercises it at every width and in
+			// every theme. A made-up address: the real one belongs in the deployment, not in a
+			// public repository, and what is being tested is that the entry appears and points
+			// where it was told to.
+			PUBLIC_TALLOX_FEEDBACK_URL: 'https://example.org/tallox-feedback'
 		}
 	}
 });
