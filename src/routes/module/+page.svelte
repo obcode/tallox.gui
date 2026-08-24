@@ -4,6 +4,7 @@
 		COURSE_TYPE_LABELS,
 		DUTY_LABELS,
 		FREQUENCY_LABELS,
+		PROGRAMME_STATUS_LABELS,
 		componentSummary,
 		dutyBadge,
 		moduleName,
@@ -44,11 +45,18 @@
 			<span class="label-text text-sm">Studiengang</span>
 			<select name="studiengang" class="select select-bordered select-sm">
 				<option value="">alle</option>
+				<!--
+					Auch die, die die Fakultät nicht plant, und markiert: das hier ist der Katalog,
+					und deren Module werden weiter gelehrt. Wonach nicht geplant werden kann, sagt
+					die Bedarfsseite — dort stehen sie gar nicht erst zur Wahl.
+				-->
 				{#each data.programmes as programme (programme.code)}
 					<option value={programme.code} selected={programme.code === data.filter.programme}>
 						{programme.code}{programme.title ? ` — ${programme.title}` : ''}{programme.active
 							? ''
-							: ' (ohne SPO)'}
+							: ' (ohne SPO)'}{programme.planningStatus === 'PLANNED'
+							? ''
+							: ` (${PROGRAMME_STATUS_LABELS[programme.planningStatus]})`}
 					</option>
 				{/each}
 			</select>

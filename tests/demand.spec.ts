@@ -365,7 +365,8 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
 
-		// The programme this persona leads is a tab of its own, above the nineteen in the select.
+		// Every programme the faculty plans is a tab. The list is short enough for that since it
+		// stopped holding the ones nobody here runs.
 		await page.getByRole('tab', { name: CATALOGUE.programme, exact: true }).click();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 		await expect(page.getByRole('tab', { name: CATALOGUE.programme, exact: true })).toHaveAttribute(
@@ -381,6 +382,34 @@ test.describe('the demand table', () => {
 			.click();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 		await expect(page.getByRole('button', { name: 'Anzeigen' }).first()).toBeVisible();
+	});
+
+	// The programmes this faculty does not plan are not offered anywhere on this page — neither
+	// as a tab nor, since the select is gone, in a list behind one.
+	test('offers no programme the faculty does not plan', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+
+		await expect(
+			page.getByRole('tab', { name: CATALOGUE.otherProgramme, exact: true })
+		).toBeVisible();
+
+		await runSql(
+			`UPDATE programme SET planning_status = 'DISCONTINUED' WHERE code = ` +
+				`'${CATALOGUE.otherProgramme}';`,
+			'retiring the second test programme'
+		);
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+		await expect(
+			page.getByRole('tab', { name: CATALOGUE.otherProgramme, exact: true })
+		).toHaveCount(0);
+
+		// Put back, because the next test in this serial group fetches a module out of it.
+		await runSql(
+			`UPDATE programme SET planning_status = 'PLANNED' WHERE code = ` +
+				`'${CATALOGUE.otherProgramme}';`,
+			'restoring the second test programme'
+		);
 	});
 
 	// A module in two cohorts is one subject offered twice, not two subjects — and the overview

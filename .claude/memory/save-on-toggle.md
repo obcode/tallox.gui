@@ -91,3 +91,14 @@ Und ein Testfallstrick derselben Runde: `boundingBox()` ist **viewport-relativ**
 seinen Knopf ins Bild scrollt, verschiebt jede Zahl auf der Seite — der Test „die Tabelle bewegt
 sich beim Speichern nicht" hing damit an der Höhe der Filterkarte. Jetzt wird gegen das Dokument
 gemessen (`+ window.scrollY`).
+
+### Nachtrag (2026-08-24): alle Studiengänge als Reiter
+
+Erst waren es „meine" als Reiter plus eine Auswahlliste für die übrigen neunzehn — zwei
+Bedienelemente gleichen Namens, also zwei Formulare. Seit die Liste nur noch die Studiengänge
+enthält, die die Fakultät wirklich plant (siehe `go/programme-planning-status`), sind es fünfzehn
+und sie passen in eine Reihe. Die Auswahlliste ist weg, das zweite Formular auch, und `#snippet
+currentFilter` braucht seinen Parameter nicht mehr.
+
+Die eigenen Studiengänge stehen **fett**, nicht vorne: alphabetisch heißt, ein Studiengang steht
+immer an derselben Stelle.
