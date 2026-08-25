@@ -129,17 +129,35 @@ test.describe('the wish phase', () => {
 		await expect(page.getByText(/Die Wünsche sind veröffentlicht/)).toBeVisible();
 	});
 
-	test('outside the wish phase the form is closed and says why', async ({ asPersona }) => {
+	test('the assignment phase still lets somebody change their mind', async ({ asPersona }) => {
+		// The rule the faculty asked for: open for as long as the semester is not finished. A
+		// correction the tool refuses happens in a mail instead, and then the list the tool holds
+		// is the wrong one.
 		runSql(
 			`UPDATE semester SET phase = 'ASSIGNMENT' WHERE code = '${WISHES.semester}';`,
-			'closing the wish phase'
+			'moving the test semester into the assignment'
 		);
 
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByText(/Die Wunschphase ist vorbei/)).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Eintragen' }).first()).toBeDisabled();
+		await expect(page.getByText(/Die Zuteilung läuft bereits/)).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Ändern' }).first()).toBeEnabled();
+	});
+
+	test('a finished semester is closed and says the semester is over', async ({ asPersona }) => {
+		runSql(
+			`UPDATE semester SET phase = 'FINAL' WHERE code = '${WISHES.semester}';`,
+			'finishing the test semester'
+		);
+
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
+
+		// The sentence says the semester is over rather than that a deadline was missed — there is
+		// nothing here the reader can repair.
+		await expect(page.getByText(/Dieses Semester ist abgeschlossen/)).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Ändern' }).first()).toBeDisabled();
 	});
 
 	test('the demand page shows nothing about wishes either', async ({ asPersona }) => {

@@ -22,6 +22,17 @@ hier gebaute Zahl wäre falsch _und_ verräterisch, weil sie davon abhinge, wer 
 Die einzige Zahl auf der Seite ist „Meine Eintragungen (3)". Die ist unbedenklich: sie sagt nichts
 über andere.
 
+## Offen, bis das Semester abgeschlossen ist
+
+Nicht nur in der Wunschphase (2026-08-25, mit der Fakultät). `wishesAreOpen()` ist „Phase ist
+nicht FINAL" — und die Seite sagt, _welche_ Art von offen es gerade ist: in der Wunschphase wird
+darum gebeten, davor und danach ist es eine erlaubte Korrektur. Ohne diesen Satz liest sich das
+offene Formular während der Zuteilung wie ein Versehen.
+
+Der geschlossene Fall sagt „dieses Semester ist abgeschlossen" und **nicht** „die Frist ist
+vorbei" — es gibt nichts, was die lesende Person reparieren könnte, und ein Satz, der etwas
+anderes nahelegt, schickt sie suchen.
+
 ## Die Fachgruppe ist Vorauswahl, keine Schranke
 
 „Meine Fachgruppen" zuerst, alles Weitere darunter und erreichbar. Das Backend verweigert nichts —

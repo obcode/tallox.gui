@@ -49,9 +49,21 @@
 <div class="flex flex-col gap-4">
 	<div>
 		<h1 class="text-2xl font-semibold">Modulkatalog</h1>
-		<p class="text-base-content/80 text-sm">
+		<p class="text-base-content/80 max-w-3xl text-sm">
 			Die Module, wie das ZPA sie führt. Geplant werden nicht Module, sondern Instanzen — hier
 			steht, woraus sich Instanzen bilden lassen.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			<strong>Die SWS-Aufteilung steht nicht im ZPA.</strong> Das ZPA nennt eine Zahl je Modul („4 SWS“)
+			und beschreibt die Lehrform als Fließtext; ob das zwei Stunden Vorlesung und zwei Stunden Praktikum
+			sind oder drei und eine, weiß nur die Fakultät. Deshalb wird die Aufteilung hier in Tallox eingetragen.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			<strong>Einmal je Modul, nicht jedes Semester neu.</strong> Sie ist eine Eigenschaft des
+			Moduls und bleibt stehen — auch über SPO-Wechsel hinweg. Aus ihr entstehen beim Anmelden des
+			Bedarfs die Teile einer Instanz; wie viele Praktikumsgruppen ein Zug bekommt, ist dann eine
+			Entscheidung je Semester und steht beim <a class="link" href={resolve('/bedarf')}>Bedarf</a>.
+			Der Import fasst die Aufteilung nie an.
 		</p>
 	</div>
 
@@ -227,12 +239,48 @@
 	{/if}
 
 	<form method="POST" action="?/assignSubjectGroup" use:enhance>
+		{#if mayAssign}
+			<!--
+				Über der Tabelle und nicht darunter. Die Kästchen stehen bei 500 Zeilen ganz oben, und
+				ein Bedienfeld, das erst nach dem Scrollen sichtbar wird, erklärt sie niemandem —
+				dann ist die Spalte eine Ankreuzmöglichkeit ohne erkennbaren Zweck.
+			-->
+			<div
+				class="border-base-300 bg-base-100 mb-2 flex flex-wrap items-end gap-2 rounded-lg border p-4"
+			>
+				<label class="form-control">
+					<span class="label-text text-sm">Ausgewählte Module zuordnen zu</span>
+					<select name="subjectGroup" class="select select-bordered select-sm">
+						{#each assignableGroups as group (group.id)}
+							<option value={group.id}>{group.code} — {group.name}</option>
+						{/each}
+						<option value="">— keiner Fachgruppe —</option>
+					</select>
+				</label>
+				<button type="submit" class="btn btn-sm btn-primary">Zuordnen</button>
+				<p class="text-base-content/80 w-full text-sm">
+					In der ersten Spalte lassen sich mehrere Module ankreuzen und gemeinsam einer Fachgruppe
+					zuordnen — der Katalog hat rund 500 Einträge, und einzeln wäre das keine Aufgabe, die
+					jemand zu Ende bringt.
+				</p>
+				<p class="text-base-content/80 w-full text-sm">
+					Ein Modul gehört zu genau einer Fachgruppe. Ein bereits zugeordnetes wird
+					<strong>verschoben</strong>, in einem Schritt — es gibt keinen Moment, in dem es zu keiner
+					gehört. Fachgruppen werden in der
+					<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a> angelegt.
+				</p>
+			</div>
+		{/if}
 		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
 			<table class="table table-sm">
 				<thead>
 					<tr>
 						{#if mayAssign}
-							<th><span class="sr-only">Auswählen</span></th>
+							<!--
+								Sichtbar beschriftet, nicht sr-only. Eine Spalte mit Kästchen und ohne
+								Überschrift ist eine Bedienmöglichkeit, deren Zweck man raten muss.
+							-->
+							<th>Auswahl</th>
 						{/if}
 						<th>Modul</th>
 						<th>Heimat</th>
@@ -346,28 +394,5 @@
 				</tbody>
 			</table>
 		</div>
-
-		{#if mayAssign}
-			<div
-				class="border-base-300 bg-base-100 mt-2 flex flex-wrap items-end gap-2 rounded-lg border p-4"
-			>
-				<label class="form-control">
-					<span class="label-text text-sm">Ausgewählte Module zuordnen zu</span>
-					<select name="subjectGroup" class="select select-bordered select-sm">
-						{#each assignableGroups as group (group.id)}
-							<option value={group.id}>{group.code} — {group.name}</option>
-						{/each}
-						<option value="">— keiner Fachgruppe —</option>
-					</select>
-				</label>
-				<button type="submit" class="btn btn-sm btn-primary">Zuordnen</button>
-				<p class="text-base-content/80 w-full text-sm">
-					Ein Modul gehört zu genau einer Fachgruppe. Ein bereits zugeordnetes wird
-					<strong>verschoben</strong>, in einem Schritt — es gibt keinen Moment, in dem es zu keiner
-					gehört. Fachgruppen werden in der
-					<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a> angelegt.
-				</p>
-			</div>
-		{/if}
 	</form>
 </div>

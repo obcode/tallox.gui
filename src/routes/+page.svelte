@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { NAV_ITEMS, visibleNavItems } from '$lib/navigation';
 	import type { PageData } from './$types';
 
@@ -57,6 +58,26 @@
 				</p>
 			{/if}
 		</div>
+	</div>
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">📖</span> Auch ohne diese Oberfläche
+		</h2>
+		<p class="text-base-content/90 max-w-3xl text-sm">
+			Fast alles, was hier zu sehen ist, steht auch über die GraphQL-API zur Verfügung — mit einem <a
+				class="link"
+				href={resolve('/konto/tokens')}>Personal Access Token</a
+			> lassen sich eigene Auswertungen schreiben, in Python, R oder was sonst gerade zur Hand ist. Die
+			API ist kein Nebenprodukt der Oberfläche, sondern derselbe Server mit denselben Regeln.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Wie das geht, mit Beispielen zum Kopieren und einer Konsole zum Ausprobieren:
+			<a class="link" href={resolve('/api-doku')}>API-Dokumentation</a>. Zwei Dinge sind dort
+			bewusst anders als hier: unveröffentlichte Wünsche anderer Personen und alles rund um Deputat
+			bleiben der angemeldeten Sitzung im Browser vorbehalten, und den Bedarf ändert man ebenfalls
+			nur hier.
+		</p>
 	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">

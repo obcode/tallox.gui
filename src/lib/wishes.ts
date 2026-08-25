@@ -162,33 +162,53 @@ export function myWishByPart(wishes: readonly WishLike[]): Map<string, WishLike>
 }
 
 /**
- * Whether the wish phase is open, from the semester's phase.
+ * Whether wishes may still be entered or changed in this semester.
  *
- * Cosmetic: the backend refuses a write outside it with WISH_PHASE_CLOSED, through both doors.
- * Worth doing so that a closed phase reads as a state of the process rather than as a form that
- * fails.
+ * Open for as long as the semester is **not finished** — through the demand planning, the wish
+ * phase and the assignment. Not only in the wish phase: somebody saying in March that they would
+ * take the second laboratory group after all is a correction, and a correction the tool refuses
+ * happens in a mail instead, after which the list the tool holds is the wrong one.
+ *
+ * Cosmetic, like every phase check here: the backend refuses a late write with WISH_PHASE_CLOSED
+ * through both doors. Worth doing so that a finished semester reads as a state of the process
+ * rather than as a form that fails.
  */
 export function wishesAreOpen(phase: string | null | undefined): boolean {
-	return phase === 'WISHES';
+	return phase != null && phase !== 'FINAL';
 }
 
 /**
- * What to say when the phase is not the wish phase.
+ * What to say when they may not.
  *
- * Each phase gets its own sentence, because "not now" is unhelpful and the three reasons are
- * genuinely different: before, there is nothing settled to want; after, the assignment is working
- * from the list.
+ * One case, because there is one closed phase — and its sentence says the semester is over rather
+ * than that the window has passed. There is nothing here the reader can repair, and pretending
+ * otherwise would send them looking for a deadline they missed.
  */
 export function closedPhaseHint(phase: string | null | undefined): string {
+	if (phase === 'FINAL') {
+		return 'Dieses Semester ist abgeschlossen — die Zuteilung ist erfolgt, Wünsche lassen sich nicht mehr ändern.';
+	}
+	return 'Wünsche lassen sich in diesem Semester gerade nicht eintragen.';
+}
+
+/**
+ * What to say while they may — which is most of the time, and worth saying, because "you may
+ * enter a wish now" is not obvious from a form that is simply not disabled.
+ *
+ * The wish phase is the one somebody is *asked* to do it in; before and after, it is a correction
+ * they are allowed to make. Saying which of the two it is stops the open form during the
+ * assignment from reading like an oversight.
+ */
+export function openPhaseHint(phase: string | null | undefined): string {
 	switch (phase) {
 		case 'DEMAND_PLANNING':
-			return 'Die Wunschphase hat noch nicht begonnen — der Bedarf wird gerade erst festgelegt.';
+			return 'Der Bedarf wird gerade erst festgelegt — was hier steht, kann sich noch ändern. Eintragen kannst Du Dich trotzdem schon.';
+		case 'WISHES':
+			return 'Die Wunschphase läuft. Jetzt ist der Zeitpunkt, sich einzutragen.';
 		case 'ASSIGNMENT':
-			return 'Die Wunschphase ist vorbei; die Fachgruppenleitungen besetzen die Instanzen.';
-		case 'FINAL':
-			return 'Dieses Semester ist abgeschlossen.';
+			return 'Die Zuteilung läuft bereits. Ändern geht weiter — sag der Fachgruppenleitung am besten Bescheid, damit es ankommt.';
 		default:
-			return 'Wünsche lassen sich in diesem Semester gerade nicht eintragen.';
+			return '';
 	}
 }
 
