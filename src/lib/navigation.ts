@@ -63,7 +63,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		href: '/bedarf',
 		hint: 'Was wird angeboten? Studiengangsleitungen legen es fest'
 	},
-	{ emoji: '✋', label: 'Wünsche', hint: 'Interesse an Instanz-Teilen bekunden' },
+	{
+		// No roles: everybody who teaches registers interest, and LECTURER is the baseline
+		// everybody in the planning holds. What is scoped is reading other people's, and that is
+		// a rule in the backend rather than a menu entry.
+		emoji: '✋',
+		label: 'Wünsche',
+		href: '/wuensche',
+		hint: 'Interesse an Instanz-Teilen bekunden'
+	},
 	{
 		emoji: '🧩',
 		label: 'Zuteilung',

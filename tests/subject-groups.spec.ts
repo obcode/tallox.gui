@@ -35,7 +35,9 @@ test.describe('subject groups', () => {
 		const page = await asPersona(PERSONAS.sechs);
 		await gotoRendered(page, '/verwaltung/fachgruppen');
 
-		await expect(page.getByRole('heading', { name: 'Fachgruppen' })).toBeVisible();
+		// Level 1: the section below carries the same word, and the wish fixture seeds a group —
+		// so without the level this matches two headings and fails in strict mode.
+		await expect(page.getByRole('heading', { name: 'Fachgruppen', level: 1 })).toBeVisible();
 
 		await page.getByLabel('Kürzel').fill(CODE);
 		await page.getByLabel('Name', { exact: true }).first().fill('E2E Mathematik');

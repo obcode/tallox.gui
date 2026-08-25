@@ -180,6 +180,38 @@ export const SEMESTERS = {
 	settable: '2034-WS'
 } as const;
 
+/**
+ * What the wish tests work on.
+ *
+ * Its own semester **and** its own study programme, and both for the same reason: the demand
+ * reset deletes every instance of the first programme, and an instance somebody has registered
+ * interest in cannot be deleted at all. Sharing either would make the wish spec and the demand
+ * spec fail each other in an order that is not in the report.
+ *
+ * The semester is seeded in the WISHES phase, because that is the only phase a wish may be
+ * written in — the first closed cell the write matrix has ever had.
+ */
+export const WISHES = {
+	semester: '2032-WS',
+	/**
+	 * A **third** study programme, and a module at home in it.
+	 *
+	 * Its own rather than the second one, and the reason is a collision this fixture caused the
+	 * first time round: the demand spec asserts that Vier does *not* lead `otherProgramme`, and
+	 * making her its lead here turned an unrelated test's "the button is disabled" into a failure
+	 * three files away. A fixture that grants somebody a permission needs a subject nobody else is
+	 * asserting about.
+	 */
+	programme: 'E2G',
+	module: '0e2e0000-0000-4000-8000-000000000045',
+	instance: '0e2e0000-0000-4000-8000-000000000041',
+	lecture: '0e2e0000-0000-4000-8000-000000000042',
+	lab: '0e2e0000-0000-4000-8000-000000000043',
+	/** The subject group the wished-for module belongs to, so a lead has something to lead. */
+	subjectGroup: '0e2e0000-0000-4000-8000-000000000044',
+	subjectGroupCode: 'E2EFG'
+} as const;
+
 export const DEMAND = {
 	semester: '2029-WS',
 	/** What the table prefills from: the same term, one year earlier. */
@@ -355,6 +387,16 @@ export function catalogueStatements(): string[] {
  */
 export function demandResetSql(): string {
 	return [
+		// The wishes first, and this line is not defensive tidying: wish.instance_part_id is
+		// ON DELETE RESTRICT, so a wish left behind by a failed run would make this reset fail —
+		// in a spec that has nothing to do with wishes, with a message about a foreign key.
+		//
+		// It is also the only place in this file that deletes somebody's wish, which is right:
+		// what a person registered is theirs, and only a fixture may take it away.
+		`DELETE FROM wish WHERE instance_part_id IN
+		   (SELECT p.id FROM instance_part p
+		      JOIN course_instance ci ON ci.id = p.course_instance_id
+		     WHERE ci.programme_id = '${PROGRAMME_ID}');`,
 		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
 		// The local courses the "enter your own" test creates. Deleted rather than deactivated,
 		// unlike in the application: the name is their identity, so a run that left one behind
@@ -435,5 +477,75 @@ export function admissionResetSql(): string {
 
 /** The complete script, exactly as it goes to psql. */
 export function seedSql(): string {
-	return [...seedStatementsFor(Object.values(PERSONAS)), ...catalogueStatements()].join('\n');
+	return [
+		...seedStatementsFor(Object.values(PERSONAS)),
+		...catalogueStatements(),
+		...wishStatements()
+	].join('\n');
+}
+
+/**
+ * The wish fixture: a semester in the wish phase, holding one instance with two parts.
+ *
+ * On the **second** study programme, so that the demand reset — which deletes every instance of
+ * the first — cannot reach it. An instance somebody has registered interest in cannot be deleted
+ * at all, so sharing a programme would make the two specs fail each other.
+ *
+ * The two leads are the point of the fixture rather than decoration: Vier leads the programme the
+ * instance belongs to, Drei leads the subject group its module is in. They are the two orthogonal
+ * ways to be responsible for a wish, and the spec asserts each of them separately.
+ */
+export function wishStatements(): string[] {
+	const programme = quote(WISHES.programme);
+
+	return [
+		// Whatever a failed run left. The wishes first — instance_part_id is ON DELETE RESTRICT,
+		// so the instance below cannot go while one stands.
+		`DELETE FROM wish WHERE instance_part_id IN
+		   ('${WISHES.lecture}', '${WISHES.lab}');`,
+		`DELETE FROM course_instance WHERE id = '${WISHES.instance}';`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(WISHES.semester)}, 'WISHES')
+		 ON CONFLICT (code) DO UPDATE SET phase = 'WISHES', wishes_published_at = NULL;`,
+
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Wunsch-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${WISHES.module}', id, 'E2E Fachmodul', 'SU_WITH_LAB',
+		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${WISHES.subjectGroup}', ${quote(WISHES.subjectGroupCode)}, 'Testfachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${WISHES.module}', '${WISHES.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${WISHES.instance}', s.id, '${WISHES.module}', pr.id, '', 3
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(WISHES.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${WISHES.lecture}', '${WISHES.instance}', 'LECTURE', 0, 2),
+		        ('${WISHES.lab}', '${WISHES.instance}', 'LAB', 1, 2);`,
+
+		// Vier leads the programme this instance belongs to; Drei leads the subject group its
+		// module is in. Two orthogonal ways to be responsible for the same wish.
+		`INSERT INTO person_programme_scope (person_id, role, programme_id)
+		 SELECT p.id, 'PROGRAMME_LEAD', pr.id FROM person p, programme pr
+		  WHERE p.mail = 'prof.vier@example.org' AND pr.code = ${programme}
+		 ON CONFLICT DO NOTHING;`,
+		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
+		 SELECT p.id, 'SUBJECT_GROUP_LEAD', '${WISHES.subjectGroup}' FROM person p
+		  WHERE p.mail = 'prof.drei@example.org'
+		 ON CONFLICT DO NOTHING;`,
+		// Eins works in that subject group, so the wish screen has something under "my subjects".
+		`INSERT INTO person_subject_group (person_id, subject_group_id)
+		 SELECT p.id, '${WISHES.subjectGroup}' FROM person p
+		  WHERE p.mail = 'prof.eins@example.org'
+		 ON CONFLICT DO NOTHING;`
+	];
 }

@@ -130,8 +130,13 @@ describe('describeScopes', () => {
 		//
 		// Each half falls back on its own: an unknown area stays raw while a known verb still
 		// translates, because half a translation is more readable than none.
-		expect(describeScopes(['WISHES:READ'])).toBe('WISHES (lesen)');
+		//
+		// WISHES stood here until the wish phase shipped and it became a real area — which is
+		// exactly what "areas arrive with the fields that need them" looks like from this side.
+		// Replaced rather than deleted: a token written by a newer server is the case this
+		// covers, and it does not stop happening.
+		expect(describeScopes(['ASSIGNMENTS:READ'])).toBe('ASSIGNMENTS (lesen)');
 		expect(describeScopes(['PLANNING:APPROVE'])).toBe('Planung (APPROVE)');
-		expect(describeScopes(['WISHES:APPROVE'])).toBe('WISHES (APPROVE)');
+		expect(describeScopes(['ASSIGNMENTS:APPROVE'])).toBe('ASSIGNMENTS (APPROVE)');
 	});
 });
