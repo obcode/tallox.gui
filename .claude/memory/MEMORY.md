@@ -12,6 +12,7 @@ Kolleg:innen.
 - [Toolchain-Stolperfallen](toolchain-gotchas.md) — pnpm allowBuilds, vitest.config, resolve() bei Links
 - [Die Bedarfsseite](demand-page.md) — zwei Sichten unter einer Adresse, und die Formularregel, an der drei Fehler an einem Tag hingen
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
+- [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, und zwei Befunde aus dem ersten E2E-Lauf
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
 
 <!-- Weitere Notizen entstehen mit dem Code. Eine Datei = ein Sachverhalt, Frontmatter mit
