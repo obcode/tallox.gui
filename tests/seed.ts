@@ -17,6 +17,9 @@ import { PERSONAS, type Persona } from './fixtures';
 const ROLES: Record<string, readonly string[]> = {
 	'prof.eins@example.org': ['LECTURER'],
 	'prof.zwei@example.org': ['LECTURER'],
+	// Drei leads a subject group — the persona a scoped permission becomes visible on, and the
+	// one a boolean role check gets wrong.
+	'prof.drei@example.org': ['LECTURER', 'SUBJECT_GROUP_LEAD'],
 	// Vier plans — she is the persona an exception becomes visible on.
 	'prof.vier@example.org': ['LECTURER', 'PROGRAMME_LEAD'],
 	// Fuenf is the dean's office — the only persona that may create a semester and switch its

@@ -130,6 +130,16 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		roles: ['DEANS_OFFICE']
 	},
 	{
+		// No roles, and that is deliberate rather than an oversight: who leads which subject group
+		// is what the faculty's organisation looks like, and a lecturer looking for the person to
+		// ask needs to be able to find it. What is administered is writing it, and the page renders
+		// its forms only for whoever `people` answers for.
+		emoji: '🗂️',
+		label: 'Fachgruppen',
+		href: '/verwaltung/fachgruppen',
+		hint: 'Wer arbeitet in welchen Fächern, und wer leitet sie'
+	},
+	{
 		emoji: '📥',
 		label: 'ZPA-Import',
 		href: '/verwaltung/zpa',

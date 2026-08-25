@@ -982,6 +982,19 @@ type Module {
   homeProgramme: Programme!
 
   """
+  The faculty's own grouping this module belongs to, or `null` while nobody has assigned one.
+  
+  Exactly one, or none. "Whose subject group fills this instance" is the sentence the assignment
+  phase is made of, and it has to have one answer.
+  
+  `null` is the ordinary state until the faculty has worked through its catalogue — see the
+  `withoutSubjectGroup` filter, which is that work list. A reference rather than the whole group:
+  the full `SubjectGroup` carries its leads and its members, and filling those in for every row of
+  a 506-module catalogue would be a statement per module.
+  """
+  subjectGroup: SubjectGroupRef
+
+  """
   Who the examination office names as responsible for this module, or `null`.
   
   Null for about one module in thirty, and for two different reasons that are not
@@ -1245,6 +1258,18 @@ input ModuleFilter {
   task rather than an open form.
   """
   withoutComponents: Boolean = false
+
+  """
+  Keep only modules that are in no subject group yet.
+  
+  The other half of the same work list, and the one October starts with: an instance can be
+  declared without a subject group, but nobody can be shown their own subjects on the wish screen
+  until the modules are in one.
+  """
+  withoutSubjectGroup: Boolean = false
+
+  """Keep only the modules of one subject group, by id."""
+  subjectGroup: ID
 }
 
 """What a catalogue row stands for."""
@@ -1754,6 +1779,86 @@ type Mutation {
   publishWishes(code: String!): Semester!
 
   """
+  Create a subject group.
+  
+  Administration, and only in a signed-in browser session — the same terms as every other act
+  that shapes who may do what here.
+  """
+  createSubjectGroup(
+    """
+    Up to sixteen characters: upper case, digits, dot, underscore or hyphen. Upper-cased and trimmed for you.
+    """
+    code: String!
+
+    """The name a person reads."""
+    name: String!
+  ): SubjectGroup!
+
+  """
+  Change a subject group's name.
+  
+  The code is not among the things this changes. It is the address — it appears in URLs and in
+  colleagues' scripts — and moving it is not a rename but a different group.
+  """
+  renameSubjectGroup(id: ID!, name: String!): SubjectGroup!
+
+  """
+  Retire a subject group, or bring it back.
+  
+  There is no delete. Splitting a group is: create the new one, move the modules and the people,
+  retire the old one — three steps, none of which loses anything.
+  """
+  setSubjectGroupActive(id: ID!, active: Boolean!): SubjectGroup!
+
+  """
+  Put a batch of modules into one subject group, or take them out of every group.
+  
+  A batch because the task this exists for is assigning 506 modules, and a screen that saves one
+  row per click is a task nobody finishes.
+  
+  A module already in another group is **moved**, in one statement, so there is no moment in which
+  it belongs to nothing. Pass `null` for `subjectGroup` to clear the assignment instead.
+  """
+  setModulesSubjectGroup(
+    """The modules to assign. Modules not named here are untouched."""
+    moduleIds: [ID!]!
+
+    """The group to put them in, or `null` to take them out of every group."""
+    subjectGroup: ID
+  ): SubjectGroupAssignmentReport!
+
+  """
+  Replace the **members** of one subject group.
+  
+  The whole set at once, like `setPersonRoles` and `setPersonProgrammes` and for the same reason: a
+  per-person mutation would let the two calls of a swap be separated, and the interval between them
+  is one in which somebody is in a group nobody meant them to be in.
+  
+  Membership grants nothing — it decides what the wish screen offers first. It is administered
+  anyway, because who works in which subject group is what the faculty's organisation looks like,
+  not a preference somebody sets for themselves.
+  """
+  setSubjectGroupMembers(id: ID!, personIds: [ID!]!): SubjectGroup!
+
+  """
+  Replace the people who **lead** one subject group.
+  
+  This one is a grant: it decides who fills the group's instances and — before publication — who
+  reads the wishes on them. Refused with `NOT_A_SUBJECT_GROUP_LEAD` for somebody who does not hold
+  the role, because a scope without the grant it scopes is a row the database refuses anyway and a
+  sentence is more use than a constraint violation.
+  
+  An empty list is allowed and means nobody leads this group, which is the state a fresh group is
+  in. It is the thing `subjectGroupsWithoutLead` counts, and the thing "keine Fachgruppe ohne
+  Person, die sich ihrer annimmt" asks somebody to finish.
+  
+  The mirror image is also true and is the reading this system takes everywhere it can: a lead with
+  no group may do **nothing**, not everything. The role that means every group is the dean's
+  office.
+  """
+  setSubjectGroupLeads(id: ID!, personIds: [ID!]!): SubjectGroup!
+
+  """
   Fetch the module master data now and apply it.
   
   Refused if a run is already going — the one in progress is returned instead of a second one
@@ -2214,6 +2319,52 @@ type Query {
   session: Session!
 
   """
+  The subject groups of the faculty.
+  
+  Readable by anybody with an account, like the catalogue and the demand: who leads mathematics is
+  not confidential inside the faculty, and a lecturer who cannot see the groups cannot be shown
+  their own subjects on the wish screen. What is administered is writing them.
+  """
+  subjectGroups(
+    """
+    Include the groups that have been retired. They are left out by default.
+    """
+    includeInactive: Boolean = false
+  ): [SubjectGroup!]!
+
+  """One subject group by its id, or `null`."""
+  subjectGroup(id: ID!): SubjectGroup
+
+  """
+  The subject groups **you** are a member of.
+  
+  Your own data, through both doors. This is what the wish screen filters by: it offers your own
+  subjects first, and it is a preselection rather than a rule — registering interest outside your
+  groups stays possible, because FWP wildcards, teaching for another programme and simply moving
+  into a new subject are all real. The repair for the last one is joining the group, not meeting a
+  refusal.
+  
+  Retired groups are left out: a wound-up group is not a subject you are currently working in.
+  """
+  mySubjectGroups: [SubjectGroup!]!
+
+  """
+  How many active modules have no subject group yet.
+  
+  The work list, on its own, so that a screen can show the number without loading the modules.
+  """
+  modulesWithoutSubjectGroup: Int!
+
+  """
+  How many active subject groups have nobody leading them.
+  
+  "Keine Fachgruppe ohne Person, die sich ihrer annimmt", as a number rather than as a constraint
+  — which is what makes it a task somebody can finish instead of a reason a group cannot be
+  created.
+  """
+  subjectGroupsWithoutLead: Int!
+
+  """
   Your own tokens. Never anybody else's.
   
   `null` through a Personal Access Token — see `@interactiveOnly`. The rest of the query still
@@ -2369,8 +2520,8 @@ enum ScopeArea {
   PROFILE
 
   """
-  The planning process: which semesters exist, where each one stands, and — as they arrive —
-  the demand, the assignments and the statistics.
+  The planning process: which semesters exist, where each one stands, the faculty's subject
+  groups, and — as they arrive — the demand, the assignments and the statistics.
   
   The first area worth narrowing a token to. `PUBLIC` and `PROFILE` are you describing
   yourself; `TOKENS` and `ADMIN` are unreachable through a token at all.
@@ -2383,7 +2534,9 @@ enum ScopeArea {
   `setProgrammePlanningStatus`, `declareCourseInstance`, `duplicateCourseInstance`,
   `changeCourseInstance`, `withdrawCourseInstance`, `addInstancePart`, `changeInstancePart`,
   `removeInstancePart`, `shareInstancePartAcrossTracks`, `splitInstancePartAcrossTracks`,
-  `copyDemandFromSemester`, `planDemand`.
+  `copyDemandFromSemester`, `planDemand`,
+  `subjectGroups`, `subjectGroup`, `mySubjectGroups`, `modulesWithoutSubjectGroup`,
+  `subjectGroupsWithoutLead`.
   """
   PLANNING
 
@@ -2409,7 +2562,9 @@ enum ScopeArea {
   Fields: `people`, `person`, `roleGrants`, `diagnoseAccess`, `teacherAccounts`,
   `createPerson`, `renamePerson`, `setPersonRoles`, `setPersonActive`, `setPersonProgrammes`,
   `setTeacherAdmitted`, `zpaSyncRuns`, `zpaSyncRun`, `zpaChanges`, `zpaCatalogueProjections`,
-  `syncZpaNow`, `projectZpaCatalogue`, `accessLog`, `accessSummary`.
+  `syncZpaNow`, `projectZpaCatalogue`, `accessLog`, `accessSummary`,
+  `createSubjectGroup`, `renameSubjectGroup`, `setSubjectGroupActive`, `setModulesSubjectGroup`,
+  `setSubjectGroupMembers`, `setSubjectGroupLeads`.
   """
   ADMIN
 }
@@ -2581,6 +2736,128 @@ type Spo {
 
   """The study programme these regulations belong to."""
   programme: Programme!
+}
+
+"""
+A subject the faculty groups modules and people by.
+
+Three things hang off it and they are not the same thing:
+
+* **Modules.** Exactly one group per module — "whose group fills this instance" is the sentence
+  the whole assignment phase is made of, and it has to have one answer.
+* **Members.** The colleagues who work in these subjects. This is **not** a permission: it decides
+  what the wish screen offers first and nothing else.
+* **Leads.** The colleagues who fill this group's instances — and, before publication, who read
+  the wishes on them. This one *is* a grant.
+"""
+type SubjectGroup {
+  id: ID!
+
+  """
+  The short name the faculty says out loud: `MATHE`, `SWE`, `TI`.
+  
+  What belongs in a URL and in a colleague's evaluation script, like a programme's code. Up to
+  sixteen characters, so that a group split off another can carry a distinguishable suffix
+  (`MATHE-ML`) instead of encoding it into the name.
+  """
+  code: String!
+
+  """The name a person reads: `Mathematik (klassisch)`."""
+  name: String!
+
+  """
+  False for a group that has been retired — split into two, or wound up.
+  
+  There is no delete and there will not be one. A retired group still has to render in the
+  planning it was part of, and its modules keep their assignment: reassigning 506 modules is
+  weeks of somebody's judgement, and a delete that took it would be silent.
+  """
+  active: Boolean!
+
+  """
+  The colleagues who lead this group, in the order a list reads.
+  
+  Empty is a real state, and the reason the faculty's "keine Fachgruppe ohne Person, die sich
+  ihrer annimmt" is a work list here rather than a constraint: a group has to be creatable before
+  its lead is decided, and a lead has to be revocable without destroying the group.
+  
+  A lead whose grant has expired is not in this list. The grant is what the scope narrows, so a
+  scope outliving it would be a permission nobody granted.
+  """
+  leads: [Person!]!
+
+  """
+  The colleagues who work in this group's subjects.
+  
+  Readable by anybody with an account, and that is a decision rather than an oversight. The
+  kickoff asks for it — "jeder in einer Fachgruppe müsste alles lesen können" — and who teaches at
+  this faculty is already answerable through `teachers`. What that sentence does **not** extend to
+  is unpublished wishes: those are read by the lead alone, because the first-come-first-served
+  race the confidentiality rule ends plays out inside a subject group, not across them.
+  
+  Membership grants nothing. `policy.AssignmentScope` deliberately does not read it.
+  """
+  members: [Person!]!
+
+  """
+  How many modules are assigned to this group.
+  
+  Safe in a way a count over wishes never is: a module assignment is catalogue data, and nobody
+  is protected from it being known.
+  """
+  moduleCount: Int!
+}
+
+"""
+What assigning a batch of modules did.
+
+Reported as a number even when it is zero, because "nothing happened" and "it failed" are
+indistinguishable to the person who pressed the button otherwise.
+"""
+type SubjectGroupAssignmentReport {
+  """
+  The group the modules were put into, or `null` where they were taken out of every group.
+  """
+  subjectGroup: SubjectGroup
+
+  """How many module assignments were written or removed."""
+  modulesAssigned: Int!
+
+  """
+  How many active modules still have no subject group at all.
+  
+  October's work list as a number: a bounded, finishable task, the same shape as "14 modules
+  without a split". Retired modules are not counted — a module the examination office stopped
+  publishing is not work anybody has to finish.
+  """
+  modulesWithoutSubjectGroup: Int!
+}
+
+"""
+A subject group as it is referred to from somewhere else: enough to label it and to link to it.
+
+Deliberately not the whole `SubjectGroup`. That one carries its leads and its members, and
+filling those in for every row of a 506-module catalogue would be a statement per module. Having
+a name for the reference is what stops a half-populated group being passed around as if it were a
+whole one.
+"""
+type SubjectGroupRef {
+  id: ID!
+
+  """The short name the faculty says out loud: `MATHE`, `SWE`, `TI`."""
+  code: String!
+
+  """The name a person reads: `Mathematik (klassisch)`."""
+  name: String!
+
+  """
+  False while this group is retired.
+  
+  Worth carrying rather than assuming: a module can sit in a retired group for as long as a split
+  takes, and a screen that called it active would hide exactly the rows somebody is in the middle
+  of moving.
+  """
+  active: Boolean!
 }
 
 """

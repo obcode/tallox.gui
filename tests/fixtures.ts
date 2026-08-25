@@ -17,6 +17,8 @@ export const PERSONAS = {
 	eins: { mail: 'prof.eins@example.org', name: 'Prof. Eins' },
 	/** An uninvolved colleague — the person wish confidentiality protects against. */
 	zwei: { mail: 'prof.zwei@example.org', name: 'Prof. Zwei' },
+	/** Leads one subject group: permitted inside it, not outside. */
+	drei: { mail: 'prof.drei@example.org', name: 'Prof. Drei' },
 	/** A planner: sees wishes before publication, because the process requires it. */
 	vier: { mail: 'prof.vier@example.org', name: 'Prof. Vier' },
 	/** The dean's office: runs the process, so switches the phases and publishes the wishes. */
