@@ -22,7 +22,7 @@ export type AreaChoice = 'none' | ScopeVerb;
  * "It is harmless" is not a reason to show a control — see CLAUDE.md. UNREACHABLE_AREAS below
  * keeps this list honest as areas are added.
  */
-export const SELECTABLE_AREAS: readonly ScopeArea[] = ['PROFILE', 'PLANNING'];
+export const SELECTABLE_AREAS: readonly ScopeArea[] = ['PROFILE', 'PLANNING', 'WISHES'];
 
 /**
  * The areas deliberately not offered, and why.
@@ -42,6 +42,7 @@ export const AREA_LABELS: Record<ScopeArea, string> = {
 	PUBLIC: 'Serverversion',
 	PROFILE: 'Eigenes Profil',
 	PLANNING: 'Planung',
+	WISHES: 'Eigene Wünsche',
 	TOKENS: 'Tokenverwaltung',
 	ADMIN: 'Verwaltung'
 };
@@ -49,7 +50,11 @@ export const AREA_LABELS: Record<ScopeArea, string> = {
 export const AREA_HINTS: Record<ScopeArea, string> = {
 	PUBLIC: 'Welche Version des Servers antwortet.',
 	PROFILE: 'Wer Du bist und welche Rollen Du hast.',
-	PLANNING: 'Semester und Phasen — und später Bedarf, Zuteilung und Statistik.',
+	PLANNING: 'Semester, Fachgruppen und Bedarf — und später Zuteilung und Statistik.',
+	// Named for what a token actually reaches here: über ein Token sieht auch eine Leitung nur
+	// die eigenen Wünsche, egal welche Rolle sie hat. Der Bereich begrenzt die Fläche, die
+	// Sichtbarkeitsregel die Zeilen.
+	WISHES: 'Eigene Interessensbekundungen lesen und eintragen.',
 	TOKENS: 'Eigene Tokens anlegen und widerrufen.',
 	ADMIN: 'Personen und Rollen.'
 };

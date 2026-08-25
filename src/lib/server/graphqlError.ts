@@ -111,7 +111,26 @@ const PASS_THROUGH = new Set([
 	// possible, because the person cannot see the list the software sent.
 	'DUPLICATE_ENTRY',
 	'TOO_MANY_TRACKS',
-	'TOO_MANY_GROUPS'
+	'TOO_MANY_GROUPS',
+	// The wish phase — the one write path where this allowlist is doing security work rather
+	// than being useful. Every sentence below was read for what it gives away before it was
+	// added here.
+	//
+	// WISH_PHASE_CLOSED and the two validation refusals say nothing about anybody: a phase is
+	// public, and a note being too long is a fact about what the caller typed.
+	//
+	// WISH_NOT_FOUND covers "there is no such wish" *and* "it is not yours", deliberately, and
+	// the backend gives both the same sentence. Passing it through is safe precisely because
+	// it cannot tell them apart — which of the two it is, is whose the wish is.
+	//
+	// What is **not** here and must not be: any refusal that would reveal that somebody else
+	// has already registered. There is no uniqueness violation on this path at all — setWish is
+	// an upsert, so registering twice is a correction rather than a collision — and if that
+	// ever changes, the refusal belongs in the generic bucket and not in this list.
+	'WISH_PHASE_CLOSED',
+	'WISH_NOT_FOUND',
+	'WISH_NOTE_TOO_LONG',
+	'WISH_PRIORITY_INVALID'
 ]);
 
 /** What is shown when the error is none of the known ones. */

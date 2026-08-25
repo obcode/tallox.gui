@@ -19,10 +19,16 @@ field that cannot be null, and on every mutation, the call is refused with the e
 `INTERACTIVE_ONLY`.
 
 Behind it: teaching load and overtime, other people's unpublished wishes, free-text notes
-about people, the audit log, and token management itself. A long-lived token in a script is a
-different risk from a login: it makes silent bulk export possible and separates "who saw this"
-from any sign-in. Token management is on the list because a leaked token that can mint its
-successors would outlive its own expiry date.
+about people, the audit log, token management itself, and every mutation that writes the demand.
+A long-lived token in a script is a different risk from a login: it makes silent bulk export
+possible and separates "who saw this" from any sign-in. Token management is on the list because a
+leaked token that can mint its successors would outlive its own expiry date.
+
+Writing the demand is on it for a less obvious reason, and it is worth reading once: a withdrawal
+refused with `INSTANCE_IN_USE` is an answer about wishes. Interactively that gives nothing away —
+whoever may write a programme's demand may already read its unpublished wishes — but through a
+token the wish rule reaches only your own, so a dry-run plan would have been a free, traceless
+enumeration of which instances somebody wants. See the note at the top of `demand.graphqls`.
 """
 directive @interactiveOnly on FIELD_DEFINITION
 
@@ -1584,6 +1590,11 @@ type Mutation {
   Runs the same reconciliation and rolls it back, so the report is what a save would do rather
   than a second computation that might disagree. It also records nothing about the semester: the
   row that says a decision was taken comes into being with the decision, not with the preview.
+  
+  It is the reason every mutation in this file is `@interactiveOnly`. A dry run is free, leaves no
+  trace and reports `INSTANCE_IN_USE` per cohort — which through a Personal Access Token would be
+  "which of this programme's instances are wished for", in one call, with no login event. See the
+  note at the top of this file.
   """
   planDemand(
     """Four digits, a hyphen and SS or WS, for example `2027-SS`."""
@@ -1653,9 +1664,13 @@ type Mutation {
   Withdraw an instance that is not needed after all. Its parts go with it.
   
   Refused with `INSTANCE_IN_USE` once anything hangs off it. That refusal deliberately says
-  nothing about *what* — no count, no kind of thing named. The first table to point at an
-  instance part will be the wish table, and "this instance has three wishes" is the confidential
-  fact with the names taken out.
+  nothing about *what* — no count, no kind of thing named. The wish table is what points at an
+  instance part, and "this instance has three wishes" is the confidential fact with the names
+  taken out.
+  
+  Only in a signed-in browser session: through a Personal Access Token this fails with
+  `INTERACTIVE_ONLY`. The refusal above is an answer about wishes, and through a token the wish
+  rule reaches only your own — see the note at the top of this file.
   
   Returns the id of the withdrawn instance, so that a list can drop it without asking again.
   """
@@ -1857,6 +1872,37 @@ type Mutation {
   office.
   """
   setSubjectGroupLeads(id: ID!, personIds: [ID!]!): SubjectGroup!
+
+  """
+  Register your interest in a part, or change it.
+  
+  Yours only: there is no argument for whose it is. Registering twice for the same part is not a
+  second wish and not an error — it is a correction, and it keeps the original `createdAt`.
+  
+  Only in the wish phase. `WISH_PHASE_CLOSED` otherwise, in either direction: a list that may be
+  added to but not corrected is worse than a closed one, so both are the same decision about when
+  the window is open.
+  
+  Reachable through both doors, unlike the demand: this is your own data.
+  """
+  setWish(
+    """The part you are interested in."""
+    instancePartId: ID!
+    priority: WishPriority! = HAPPY_TO
+
+    """Up to 500 characters, or nothing at all."""
+    note: String
+  ): Wish!
+
+  """
+  Withdraw one of your own wishes.
+  
+  A wish that is not there and a wish that is not yours answer the same way, with
+  `WISH_NOT_FOUND` — which of the two it is, is the confidential part.
+  
+  Returns the id, so that a list can drop the row without asking again.
+  """
+  withdrawWish(id: ID!): ID!
 
   """
   Fetch the module master data now and apply it.
@@ -2373,6 +2419,47 @@ type Query {
   myTokens: [PersonalAccessToken!]
 
   """
+  Your own wishes in a semester.
+  
+  The one question whose answer never depends on the confidentiality rule, through either door:
+  they are your entries. A script that keeps your wishes in step with your calendar is a use this
+  API exists for.
+  """
+  myWishes(
+    """Four digits, a hyphen and SS or WS, for example `2027-SS`."""
+    semester: String!
+  ): [Wish!]!
+
+  """
+  The wishes of a semester — as many of them as you may see.
+  
+  **Not an error when you may see none.** Asking for a colleague's wishes before publication
+  answers with an empty list rather than a refusal, and that is deliberate: the difference between
+  "refused" and "empty" is exactly the fact being protected, so a refusal would turn this field
+  into an oracle for it.
+  
+  Through a Personal Access Token this collapses to your own entries whatever your role — a
+  long-lived token in a script makes silent bulk export possible and decouples "who saw this" from
+  any login event. Your own stay readable, because they are your data.
+  """
+  wishes(
+    """Four digits, a hyphen and SS or WS, for example `2027-SS`."""
+    semester: String!
+
+    """One study programme's instances, by its short code."""
+    programme: String
+
+    """One module, across its cohorts."""
+    module: ID
+
+    """One instance part."""
+    part: ID
+
+    """One person's entries, by id."""
+    person: ID
+  ): [Wish!]!
+
+  """
   The recent import runs, newest first.
   
   The one worth looking at is the most recent **successful** one and how long ago it was. The
@@ -2539,6 +2626,23 @@ enum ScopeArea {
   `subjectGroupsWithoutLead`.
   """
   PLANNING
+
+  """
+  Registering interest in instance parts, and reading what may be read of other people's.
+  
+  Its own area rather than part of `PLANNING`, because it is the one part of the planning somebody
+  might sensibly want a token narrowed *to*: "this script keeps my wishes in step with my
+  calendar" is a sentence a colleague would say, and it should not carry the demand of the whole
+  faculty with it. The reverse matters more — an evaluation script scoped to `PLANNING` does not
+  thereby reach anybody's wishes.
+  
+  What this area does **not** do is decide what is visible. Through a token the wish rule collapses
+  to your own entries whatever the scope says: the area bounds the surface, the policy bounds the
+  rows.
+  
+  Fields: `myWishes`, `wishes`, `setWish`, `withdrawWish`.
+  """
+  WISHES
 
   """
   Personal Access Token management. Not reachable through a token at all — those fields are
@@ -2952,6 +3056,77 @@ A moment in time, as an RFC 3339 string — for example `2026-08-01T14:30:00+02:
 Always in Europe/Berlin, the timezone the planning runs in.
 """
 scalar Time
+
+"""
+One person's interest in one instance part.
+
+Points at a **part** and never at an instance: the faculty's own sentence is "one holds the
+lecture, another the laboratory", so the assignable unit is the part and so is the unit of
+interest.
+"""
+type Wish {
+  id: ID!
+
+  """
+  Who registered it.
+  
+  Always the person who made the call. There is no way to register interest on somebody's behalf
+  and no column that would record one: a wish entered by somebody else is not an expression of
+  interest but their opinion about you, and the process has a place for that — the assignment.
+  """
+  person: Person!
+
+  """The assignable unit wanted."""
+  part: InstancePart!
+
+  """
+  The cohort that part belongs to, with its module and its programme.
+  
+  Carried because a wish is unreadable without it: "Analysis, IF1B, Praktikum" is the row somebody
+  recognises, and a part id is not.
+  """
+  instance: CourseInstance!
+
+  """How much."""
+  priority: WishPriority!
+
+  """
+  The owner's own words: „lieber die Dienstagsgruppe“, „nur wenn es sonst niemand macht“.
+  
+  Read by whoever may read the wish — the same rule as the row, because it is part of the row.
+  """
+  note: String!
+
+  """When it was first registered."""
+  createdAt: Time!
+
+  """
+  When it was last changed. Changing your mind moves this and keeps `createdAt`.
+  """
+  updatedAt: Time!
+}
+
+"""
+How much somebody wants a part.
+
+Three fixed levels rather than a rank. A rank is more expressive and costs a reordering dance on
+every insert in the middle, and a number nobody can read off a list without a legend. Ties are the
+common case: somebody wants four things equally and would rather say so than invent an order.
+"""
+enum WishPriority {
+  """Unbedingt — the parts somebody is actually asking for."""
+  FIRST_CHOICE
+
+  """
+  Gerne. The default, because it is the honest answer to a form being filled in for the first time.
+  """
+  HAPPY_TO
+
+  """
+  Notfalls — held to fill a gap, and the level the assignment reads last.
+  """
+  IF_NEEDED
+}
 
 """One rebuild of the module catalogue out of the cached payloads."""
 type ZpaCatalogueProjection {
