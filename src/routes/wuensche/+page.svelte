@@ -6,6 +6,7 @@
 		closedPhaseHint,
 		groupByModule,
 		myWishByPart,
+		openPhaseHint,
 		othersHint,
 		splitByMySubjects,
 		WISH_PRIORITY_LABELS,
@@ -80,18 +81,25 @@
 		<button type="submit" class="btn btn-sm">Anzeigen</button>
 	</form>
 
-	{#if !open}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		{#if open}
+			<p class="text-base-content/90 text-sm">{openPhaseHint(phase)}</p>
+			<p class="text-base-content/80 mt-1 text-sm">
+				Eintragen und Ändern geht, solange das Semester nicht abgeschlossen ist — die Wunschphase
+				ist der Zeitpunkt, zu dem darum gebeten wird, und keine Frist, nach der nichts mehr
+				korrigierbar wäre.
+			</p>
+		{:else}
 			<p class="text-base-content/90 text-sm">
-				<span class="badge badge-ghost badge-sm align-middle">Wunschphase geschlossen</span>
+				<span class="badge badge-ghost badge-sm align-middle">abgeschlossen</span>
 				{closedPhaseHint(phase)}
 			</p>
 			<p class="text-base-content/80 mt-1 text-sm">
 				Bereits eingetragene Wünsche bleiben sichtbar. In welcher Phase ein Semester steht, steht
 				unter <a class="link" href={resolve('/semester')}>Semester</a>.
 			</p>
-		</div>
-	{/if}
+		{/if}
+	</div>
 
 	{#if refusal}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">

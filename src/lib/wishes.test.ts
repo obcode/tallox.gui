@@ -4,6 +4,7 @@ import {
 	groupByModule,
 	isWishPriority,
 	myWishByPart,
+	openPhaseHint,
 	othersHint,
 	splitByMySubjects,
 	wishRowLabel,
@@ -117,19 +118,37 @@ describe('myWishByPart', () => {
 });
 
 describe('wishesAreOpen', () => {
-	it('is open only in the wish phase', () => {
-		expect(wishesAreOpen('WISHES')).toBe(true);
-		for (const phase of ['DEMAND_PLANNING', 'ASSIGNMENT', 'FINAL', null, undefined]) {
-			expect(wishesAreOpen(phase)).toBe(false);
+	it('is open until the semester is finished', () => {
+		// Not only in the wish phase: a correction the tool refuses happens in a mail instead.
+		for (const phase of ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT']) {
+			expect(wishesAreOpen(phase), phase).toBe(true);
 		}
+		expect(wishesAreOpen('FINAL')).toBe(false);
 	});
 
-	it('says why, differently for each phase', () => {
-		const hints = ['DEMAND_PLANNING', 'ASSIGNMENT', 'FINAL'].map(closedPhaseHint);
+	it('is closed for a semester whose phase is unknown', () => {
+		// Fail closed, like the backend's own matrix: a phase this build cannot read is not one
+		// to guess the most permissive value for.
+		expect(wishesAreOpen(null)).toBe(false);
+		expect(wishesAreOpen(undefined)).toBe(false);
+	});
+
+	it('says the semester is over rather than that a deadline was missed', () => {
+		const hint = closedPhaseHint('FINAL');
+		expect(hint).toMatch(/abgeschlossen/);
+		// The sentence a reader could act on would be the wrong one — there is nothing to repair.
+		expect(hint).not.toMatch(/Frist|verpasst|zu spät/i);
+	});
+
+	it('says which kind of open it is', () => {
+		// "You may" is not obvious from a form that is merely not disabled, and the assignment
+		// phase in particular reads like an oversight without a sentence.
+		const hints = ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT'].map(openPhaseHint);
 		expect(new Set(hints).size).toBe(3);
 		for (const hint of hints) {
 			expect(hint.length).toBeGreaterThan(10);
 		}
+		expect(openPhaseHint('FINAL')).toBe('');
 	});
 });
 
