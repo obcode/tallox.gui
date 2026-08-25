@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
 import { runSql } from './psql';
 
@@ -114,6 +114,13 @@ test.describe('subject groups', () => {
 		await gotoRendered(page, '/module?ohne-fachgruppe=1');
 
 		const firstRow = page.locator('tbody tr').first();
+		// Whichever module the work list happens to offer first — and it has to be named, because
+		// the assertions below are about *that* row and the catalogue is not this test's to
+		// predict.
+		// .first(): a row without a stated split carries a second link, the one that offers to
+		// enter it.
+		const moduleName = (await firstRow.getByRole('link').first().innerText()).trim();
+
 		await firstRow.getByRole('checkbox').check();
 		await page
 			.getByLabel('Ausgewählte Module zuordnen zu')
@@ -124,9 +131,21 @@ test.describe('subject groups', () => {
 		// markup, and only string matching normalizes whitespace.
 		await expect(page.getByText(`1 Modul nach ${CODE} verschoben`)).toBeVisible();
 
-		// It is out of the work list and into the group's own filter.
-		await gotoRendered(page, '/module?fachgruppe=');
-		await expect(page.getByRole('cell', { name: CODE, exact: true }).first()).toBeVisible();
+		// It is out of the work list, and its group shows **under the Fachgruppe heading**.
+		//
+		// The assertion used to be "a cell somewhere in the table says E2EMATHE", which passed
+		// happily while the subject group sat in the column headed "Heimat" and the home programme
+		// in the one headed "Fachgruppe". A table is read by column, so a cell assertion that does
+		// not name its column is not asserting what the reader sees.
+		await gotoRendered(page, `/module?q=${encodeURIComponent(moduleName)}`);
+
+		const group = await cellUnder(page, 'Fachgruppe');
+		const home = await cellUnder(page, 'Heimat');
+		await expect(group).toHaveText(CODE);
+		// Whatever the home programme is, it is not the subject group's code — which is exactly
+		// what a swap would make it.
+		await expect(home).not.toHaveText(CODE);
+		await expect(home).not.toHaveText('');
 	});
 
 	test('a group with modules is retired rather than deleted', async ({ asPersona }) => {
@@ -156,3 +175,21 @@ test.describe('subject groups', () => {
 		await checkA11y(page);
 	});
 });
+
+/**
+ * The first row's cell in the column with this heading.
+ *
+ * By index rather than by content, because that is what "under this heading" means: a table whose
+ * cells hold the right values in the wrong columns is wrong, and every assertion that looks up a
+ * cell by its text passes anyway.
+ */
+async function cellUnder(page: Page, heading: string): Promise<Locator> {
+	const headings = (await page.locator('thead th').allTextContents()).map((h) => h.trim());
+	const column = headings.indexOf(heading);
+	expect(
+		column,
+		`no column headed "${heading}" — headings are ${headings.join(', ')}`
+	).toBeGreaterThanOrEqual(0);
+
+	return page.locator('tbody tr').first().locator('td').nth(column);
+}

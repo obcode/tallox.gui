@@ -268,16 +268,6 @@
 									<span class="badge badge-ghost badge-sm ml-1">zurückgezogen</span>
 								{/if}
 							</td>
-							<td class="text-base-content/90">
-								{#if module.subjectGroup}
-									<span class="font-mono">{module.subjectGroup.code}</span>
-									{#if !module.subjectGroup.active}
-										<span class="badge badge-ghost badge-sm ml-1">stillgelegt</span>
-									{/if}
-								{:else}
-									<span class="badge badge-warning badge-sm">fehlt</span>
-								{/if}
-							</td>
 							<td>
 								{module.homeProgramme.code}
 								{#if data.filter.programme !== '' && !module.inCatalogue}
@@ -287,6 +277,16 @@
 									>
 										nur Heimat
 									</span>
+								{/if}
+							</td>
+							<td class="text-base-content/90">
+								{#if module.subjectGroup}
+									<span class="font-mono">{module.subjectGroup.code}</span>
+									{#if !module.subjectGroup.active}
+										<span class="badge badge-ghost badge-sm ml-1">stillgelegt</span>
+									{/if}
+								{:else}
+									<span class="badge badge-warning badge-sm">fehlt</span>
 								{/if}
 							</td>
 							{#if data.filter.programme !== ''}
