@@ -69,8 +69,28 @@ Fremde Eintragungen werden gebaut, indem aus dem, was das Backend geliefert hat,
 Zeilen entfernt werden — **nie durch Zählen**. Was das Backend liefert, ist bereits gefiltert; eine
 hier gebaute Zahl wäre falsch _und_ verräterisch, weil sie davon abhinge, wer schaut.
 
-Die einzigen Zahlen auf der Seite sind „Meine Eintragungen (3)" und „2 Änderungen gespeichert".
-Beide sind unbedenklich: sie handeln von dem, was diese Person selbst getan hat.
+Die einzigen Zahlen auf der Seite sind „Meine Eintragungen (3)", „2 Änderungen gespeichert" und die
+SWS-Summe je Semester. Alle drei sind unbedenklich: sie handeln von dem, was diese Person selbst
+getan hat.
+
+Die Summe ist eine **Obergrenze und kein Versprechen** — ein Wunsch gilt dem Zug, und wer davon
+welchen Teil hält, entscheidet die Zuteilung; „nur die Vorlesung" in einer Notiz ist genau der Fall,
+in dem sie zu hoch ist. Der Satz darüber sagt das. Trotzdem zeigen: wer vier Sachen einträgt, will
+ungefähr wissen, was er angeboten hat, und die Alternative ist Kopfrechnen.
+
+→ Dass die Zahl überhaupt ankommt, war eine Backend-Lücke: `CourseInstance.TeachingHours` summiert
+die _Teile_, und die Wunsch-Projektion lädt sie nicht. Jetzt rechnet die Query dieselbe Summe,
+`HoursFromQuery` sagt, welcher der beiden Wege sie geliefert hat, und ein Store-Test vergleicht
+beide.
+
+## Semesterwahl ist eine Reiterleiste, kein Auswahlfeld mit Knopf
+
+Wie auf der Bedarfsseite: jeder Reiter ist ein `<button type="submit" name="semester">`.
+Umgeschaltet wird mit **einem** Klick, und es braucht kein JavaScript — ein Auswahlfeld, das sich
+selbst abschickt, bräuchte welches, und daneben stünde wieder ein „Anzeigen"-Knopf. Neueste zuerst,
+sonst liegt das Planungssemester am rechten Rand hinter einem Scrollbalken, von dem niemand weiß.
+
+Das `<form>` steht **um** die Leiste herum, nie dazwischen: daisyUI stylt über `.tabs > .tab`.
 
 ## „Meine Eintragungen" steht oben und geht über alle Semester
 
@@ -98,6 +118,9 @@ Stärken**, nicht drei Farben: eine Priorität ist eine Menge und kein Urteil, u
 success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls" ist nichts davon, sondern
 jemand, der eine Lücke füllen würde.
 
+Dieselbe Tönung liegt auch auf den Zeilen von „Meine Eintragungen" — man liest diese Liste, um zu
+sehen, was man wo zugesagt hat, und dort standen die drei Stufen sonst nur als Wort.
+
 Die Farbe folgt dem **gespeicherten** Wunsch, nicht der gerade getroffenen Auswahl. Seit sich die
 Tabelle selbst speichert, ist das dasselbe bis auf einen Rundlauf — und die Aussage „so steht es in
 der Tabelle" ist die, nach der jemand beim Überfliegen sucht.
@@ -110,6 +133,10 @@ manchen Themes in der Mitte liegt. Auf `dim` landet sein Grün über der dunklen
 wo der helle `base-content` bei 30 % nur 3,69:1 misst. Oberhalb von rund 24 % gibt es ein Theme,
 auf dem **weder** heller noch dunkler Vordergrund sicher ist, weil die Fläche in die Mitte
 geschoben wurde. 26 % scheitert auf `dim`, 22 % besteht überall mit einer Stufe Luft.
+
+In den Zellen der SWS-Spalte steht **nur die Zahl**, die Einheit in der Überschrift: „16 SWS" bricht
+in einer 4rem-Spalte um, und eine zweizeilige Zahl neben einem einzeiligen Modulnamen zieht die
+ganze Zeile auseinander.
 
 **Und: gedämpfter Text gehört nicht auf die Tönung.** „/80 ist die Untergrenze" ist gegen
 `base-100` gemessen — auf dem Band misst `/80` auf `winter` 3,48:1. Das Fachgruppen-Kürzel und die

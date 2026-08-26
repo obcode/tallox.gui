@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { semesterName } from '../src/lib/semester';
+import { semesterName, semesterShortName } from '../src/lib/semester';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { WISHES } from './seed';
@@ -94,7 +94,27 @@ test.describe('the wish phase', () => {
 		// semester". The picker stays, and the sentence says what is wrong.
 		await expect(page.getByRole('heading', { name: 'Wünsche' })).toBeVisible();
 		await expect(page.getByText(/zehn Jahre/)).toBeVisible();
-		await expect(page.getByLabel('Semester')).toBeVisible();
+		// The picker stays reachable: one tab per semester, each of them a submit button.
+		await expect(page.getByRole('tablist')).toBeVisible();
+		await expect(page.getByRole('tab').first()).toBeVisible();
+	});
+
+	test('the semester strip switches with one click', async ({ asPersona }) => {
+		// One click and not two: the picker used to be a select with an "Anzeigen" button beside
+		// it. Every tab is a submit button, the same control the demand page uses — so switching
+		// needs no JavaScript either, which a select that submits itself would.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
+
+		const current = page.getByRole('tab', { name: semesterShortName(WISHES.semester) });
+		await expect(current).toHaveAttribute('aria-selected', 'true');
+		await expect(page.getByRole('button', { name: 'Anzeigen' })).toHaveCount(0);
+
+		await page.getByRole('tab', { name: semesterShortName(WISHES.laterSemester) }).click();
+		await expect(page).toHaveURL(new RegExp(`semester=${WISHES.laterSemester}`));
+		await expect(
+			page.getByRole('tab', { name: semesterShortName(WISHES.laterSemester) })
+		).toHaveAttribute('aria-selected', 'true');
 	});
 
 	test('the table is one row per module with a column per cohort', async ({ asPersona }) => {
@@ -217,6 +237,12 @@ test.describe('the wish phase', () => {
 		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
 		await expect(chosenCell).toHaveClass(/bg-primary/);
 		await expect(moduleCell).toHaveClass(/bg-primary/);
+
+		// And the summary carries the same tint, so the three levels are not only a word there
+		// either — that list is read to see what one has promised where.
+		await expect(summaryFor(page, WISHES.semester).locator('tbody tr').first()).toHaveClass(
+			/bg-primary/
+		);
 
 		await cell(page).selectOption('');
 		await expect(summaryFor(page, WISHES.semester)).toHaveCount(0);

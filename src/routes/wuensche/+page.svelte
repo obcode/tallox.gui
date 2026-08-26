@@ -2,8 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import WishCell from '$lib/components/WishCell.svelte';
+	import { formatHours } from '$lib/catalogue';
 	import { hoursLabel } from '$lib/demand';
-	import { semesterName } from '$lib/semester';
+	import { semesterName, semesterShortName } from '$lib/semester';
 	import {
 		closedPhaseHint,
 		cohortIn,
@@ -51,9 +52,15 @@
 	// something for the summer term and then moved the picker has not withdrawn it.
 	const ownBySemester = $derived(ownWishesBySemester(data.myWishes));
 
-	// Somewhere to jump to. Retired semesters and ones nobody has decided anything about are both
-	// in the list, because reading last year's wishes is a legitimate thing to want.
-	const semesters = $derived(data.semesters.map((s) => s.code));
+	/**
+	 * Somewhere to jump to. Retired semesters and ones nobody has decided anything about are both
+	 * in the list, because reading last year's wishes is a legitimate thing to want.
+	 *
+	 * Newest first, like the demand page and for the same reason: the planning semester is the
+	 * earliest one offered, so oldest-first puts the one everybody wants at the far right, off the
+	 * edge of the strip and behind a scroll nobody knows is there.
+	 */
+	const semesterTabs = $derived([...data.semesters].reverse());
 
 	const sections = $derived([
 		{ title: 'Meine Fachgruppen', rows: split.mine, own: true },
@@ -156,7 +163,7 @@
 						</td>
 						<!-- Ebenfalls ungedämpft, aus demselben Grund wie das Kürzel eine Zelle weiter. -->
 						<td class="align-top text-right {rowTint}">
-							{hoursLabel(row.teachingHours)}
+							{formatHours(row.teachingHours)}
 						</td>
 						{#each tracks as track (track)}
 							{@const cohort = cohortIn(row, track)}
@@ -230,18 +237,34 @@
 		</p>
 	</div>
 
-	<form method="GET" class="flex flex-wrap items-end gap-2">
-		<label class="form-control">
-			<span class="label-text text-sm">Semester</span>
-			<select name="semester" class="select select-bordered select-sm">
-				{#each semesters as code (code)}
-					<option value={code} selected={code === data.semester?.code}>
-						{semesterName(code)}
-					</option>
-				{/each}
-			</select>
-		</label>
-		<button type="submit" class="btn btn-sm">Anzeigen</button>
+	<!--
+		Jeder Reiter ist ein Submit-Knopf, wie auf der Bedarfsseite: umgeschaltet wird mit einem
+		Klick und nicht mit zweien, und es braucht kein JavaScript dafür — ein Auswahlfeld, das sich
+		selbst abschickt, bräuchte welches, und daneben stünde wieder ein Knopf.
+
+		Das <form> steht um die Leiste herum und nie dazwischen: daisyUI stylt über `.tabs > .tab`,
+		und ein Formular in der Mitte nimmt der Leiste Rahmen, Abstände und den markierten Zustand.
+	-->
+	<form method="GET" class="flex flex-col gap-1">
+		<span class="label-text text-sm">Semester</span>
+		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+			{#each semesterTabs as semester (semester.code)}
+				{@const active = semester.code === data.semester?.code}
+				<button
+					type="submit"
+					name="semester"
+					value={semester.code}
+					role="tab"
+					aria-selected={active}
+					class="tab whitespace-nowrap {active ? 'tab-active' : ''}"
+				>
+					{semesterShortName(semester.code)}
+					{#if semester.isPlanningSemester}
+						<span class="badge badge-primary badge-xs ml-1">Planung</span>
+					{/if}
+				</button>
+			{/each}
+		</div>
 	</form>
 
 	{#if data.unusable}
@@ -317,6 +340,8 @@
 			</h2>
 			<p class="text-base-content/80 max-w-3xl text-sm">
 				Alles, was Du eingetragen hast — über alle Semester, nicht nur über das oben ausgewählte.
+				Die SWS je Semester sind das, was die eingetragenen Züge zusammen kosten; wer davon welchen
+				Teil hält, entscheidet die Zuteilung.
 			</p>
 
 			<div class="flex flex-col gap-3">
@@ -341,6 +366,13 @@
 									anzeigen
 								</a>
 							{/if}
+							<!--
+								Die eigene Summe, und deshalb sagbar: sie handelt von dem, was diese
+								Person angeboten hat, und von niemandem sonst.
+							-->
+							<span class="text-base-content/80 text-sm font-normal">
+								· {hoursLabel(group.teachingHours)}
+							</span>
 						</h3>
 						<div class="overflow-x-auto">
 							<table class="table table-sm w-full min-w-[480px]">
@@ -352,11 +384,20 @@
 									</tr>
 								</thead>
 								<tbody>
+									<!--
+										Dieselbe Tönung wie in der Wunschtabelle, damit die drei Stufen
+										hier nicht nur als Wort dastehen — man liest diese Liste, um zu
+										sehen, was man wo zugesagt hat.
+
+										Ungedämpfter Text, wie drüben und aus demselben Grund: „/80 ist
+										die Untergrenze" ist gegen `base-100` gemessen, nicht gegen die
+										getönte Fläche.
+									-->
 									{#each group.wishes as wish (wish.id)}
-										<tr>
+										<tr class={wishTint(wish.priority)}>
 											<td class="font-medium">{wishRowLabel(wish.instance)}</td>
-											<td class="text-base-content/90">{WISH_PRIORITY_LABELS[wish.priority]}</td>
-											<td class="text-base-content/80">{wish.note}</td>
+											<td>{WISH_PRIORITY_LABELS[wish.priority]}</td>
+											<td>{wish.note}</td>
 										</tr>
 									{/each}
 								</tbody>
