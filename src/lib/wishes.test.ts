@@ -18,9 +18,11 @@ import {
 	wishChanges,
 	wishRowLabel,
 	wishRows,
+	wishTint,
 	wishesAreOpen,
 	WISH_PRIORITIES,
 	WISH_PRIORITY_LABELS,
+	WISH_PRIORITY_TINTS,
 	type StoredWish,
 	type WishEntry,
 	type WishLike,
@@ -91,6 +93,32 @@ describe('the priorities', () => {
 		expect(isWishChoice('')).toBe(true);
 		expect(isWishPriority('')).toBe(false);
 		expect(isWishChoice('MAYBE')).toBe(false);
+	});
+});
+
+describe('the tint on a chosen cell', () => {
+	it('is one hue in three strengths, strongest first', () => {
+		// A priority is an amount, not a judgement: success/warning/error would read as good,
+		// careful, bad, and „notfalls" is a colleague offering to fill a gap.
+		const tints = WISH_PRIORITIES.map((p) => WISH_PRIORITY_TINTS[p]);
+		expect(tints.every((t) => t.startsWith('bg-primary/'))).toBe(true);
+
+		const strengths = tints.map((t) => Number(t.split('/')[1]));
+		expect(strengths).toEqual([...strengths].sort((a, b) => b - a));
+	});
+
+	it('is a background and never a text colour', () => {
+		// text-success and friends measure between 1.35:1 and 3.5:1 on the light themes. The rule
+		// is old enough in this repository to be worth a test rather than a comment.
+		for (const tint of Object.values(WISH_PRIORITY_TINTS)) {
+			expect(tint).not.toMatch(/^text-/);
+		}
+	});
+
+	it('gives an empty cell no class at all', () => {
+		// Nearly every cell of the table is empty; none of them should carry a class saying so.
+		expect(wishTint('')).toBe('');
+		expect(wishTint('HAPPY_TO')).toBe(WISH_PRIORITY_TINTS.HAPPY_TO);
 	});
 });
 

@@ -2,7 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
 import { THEME_COOKIE, THEMES } from '../src/lib/themes';
-import { CATALOGUE, DEMAND } from './seed';
+import { runSql } from './psql';
+import { CATALOGUE, DEMAND, WISHES } from './seed';
 
 async function expectNoContrastViolations(page: Page, theme: string): Promise<void> {
 	const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
@@ -285,6 +286,62 @@ test.describe('the admission list across all themes', () => {
 
 			await gotoRendered(page, '/verwaltung/personen');
 			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			await expectNoContrastViolations(page, theme.value);
+			await signedIn.close();
+		});
+	}
+});
+
+/**
+ * The wish table across all themes.
+ *
+ * Here for one pair nothing else measures: a chosen cell is tinted with `bg-primary` at 20, 12 and
+ * 6 per cent, and `base-content` has to stay readable on all three. A faint tint is exactly the
+ * kind of thing that is comfortable on `nord` and marginal on `winter` — and it is unusual enough
+ * that no other screen would catch a regression in it.
+ *
+ * The wish is seeded rather than clicked: without one every cell is untinted, and the sweep would
+ * measure the colours it is here for on nothing at all.
+ */
+test.describe('the wish table across all themes', () => {
+	test.beforeAll(() => {
+		runSql(
+			`INSERT INTO wish (course_instance_id, person_id, priority, note)
+			 SELECT '${WISHES.instance}', p.id, 1, 'nur die Vorlesung'
+			   FROM person p WHERE p.mail = '${PERSONAS.eins.mail}'
+			 ON CONFLICT (course_instance_id, person_id)
+			 DO UPDATE SET priority = EXCLUDED.priority, note = EXCLUDED.note;`,
+			'seeding a wish for the contrast sweep'
+		);
+	});
+
+	test.afterAll(() => {
+		runSql(
+			`DELETE FROM wish WHERE course_instance_id = '${WISHES.instance}';`,
+			'clearing the contrast sweep wish'
+		);
+	});
+
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ browser, context }) => {
+			await context.addCookies([
+				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
+			]);
+
+			const signedIn = await browser.newContext({
+				extraHTTPHeaders: { 'X-Remote-User': PERSONAS.eins.mail },
+				storageState: { cookies: await context.cookies(), origins: [] }
+			});
+			const page = await signedIn.newPage();
+
+			await gotoRendered(page, `/wuensche?semester=${WISHES.semester}`);
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			// The tinted cell is on the page, so the sweep below has something to measure.
+			await expect(page.getByRole('combobox', { name: /Wunsch für/ }).first()).toHaveValue(
+				'FIRST_CHOICE'
+			);
 
 			await expectNoContrastViolations(page, theme.value);
 			await signedIn.close();

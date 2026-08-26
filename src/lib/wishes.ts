@@ -54,6 +54,40 @@ export const WISH_PRIORITY_LABELS: Record<WishPriorityValue, string> = {
 /** What the empty option reads as. Not „nein" — nobody is refusing anything by leaving it alone. */
 export const WISH_NONE_LABEL = '—';
 
+/**
+ * How strongly a chosen cell is tinted — one hue, three strengths.
+ *
+ * **One hue and not three colours**, because a priority is an amount and not a judgement.
+ * `success`/`warning`/`error` would read as good, careful, bad, and „notfalls" is none of those —
+ * it is a colleague offering to fill a gap. Three strengths of `primary` read as more and less,
+ * which is what the scale actually is.
+ *
+ * daisyUI's semantic colour rather than a fixed one, so it follows the theme: a hard-coded green
+ * is unreadable on half of the twelve. And a *background* rather than a text colour, which is the
+ * rule this repository keeps having to relearn — `text-success` and friends measure between 1.35:1
+ * and 3.5:1 on the light themes. The tint is faint enough that `base-content` on it stays where it
+ * was; `tests/contrast.spec.ts` measures that on every theme rather than trusting this sentence.
+ *
+ * **What it may never depend on: anybody else's wishes.** The colour of a cell says what *you*
+ * chose. Tinting by what other people registered would be the heat map that
+ * [[no-wish-aggregates]] was written about — the confidential fact with the names taken out.
+ */
+export const WISH_PRIORITY_TINTS: Record<WishPriorityValue, string> = {
+	FIRST_CHOICE: 'bg-primary/20',
+	HAPPY_TO: 'bg-primary/12',
+	IF_NEEDED: 'bg-primary/6'
+};
+
+/**
+ * The tint for one cell's current choice, or nothing for a cell nobody has filled in.
+ *
+ * An empty string rather than a transparent class: the great majority of cells are empty, and the
+ * table should not carry a class per cell to say so.
+ */
+export function wishTint(choice: WishChoice): string {
+	return choice === WISH_NONE ? '' : WISH_PRIORITY_TINTS[choice];
+}
+
 /** The sentence under the picker, so nobody has to guess what the middle one means. */
 export const WISH_PRIORITY_HINTS: Record<WishPriorityValue, string> = {
 	FIRST_CHOICE: 'Darum bitte ich ausdrücklich.',

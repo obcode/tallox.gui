@@ -62,6 +62,24 @@ jetzt die Wunschtabelle. Die Übersicht wird über ihre `<article>`-Karte und `s
 der Anwendung gefunden — nicht über eine zweite Schreibweise von „Wintersemester 2032/33" im Test,
 die bei zweistelliger Endung ins Leere greift und wie eine kaputte Seite aussieht.
 
+## Gewählte Zellen sind eingefärbt — die eigenen, und nur die
+
+`bg-primary` in 20 / 12 / 6 Prozent für unbedingt / gerne / notfalls. **Ein Farbton in drei
+Stärken**, nicht drei Farben: eine Priorität ist eine Menge und kein Urteil, und
+success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls" ist nichts davon, sondern
+jemand, der eine Lücke füllen würde.
+
+Zwei Regeln, die hier zusammenkommen:
+
+- **Nie von fremden Eintragungen abhängig.** Die Farbe sagt, was _Du_ gewählt hast. Nach fremdem
+  Interesse einzufärben wäre genau die Heatmap aus [[no-wish-aggregates]].
+- **Semantische Farbe als Hintergrund, nie als Textfarbe** — die Regel aus der CLAUDE.md, hier zum
+  x-ten Mal. `text-success` und Verwandte messen auf den hellen Themes 1,35:1 bis 3,5:1.
+
+`tests/contrast.spec.ts` hat dafür einen eigenen Durchlauf über alle zwölf Themes bekommen, **mit
+einem per SQL gesetzten Wunsch** — ohne den ist jede Zelle ungefärbt und der Durchlauf misst genau
+die Paarung nicht, für die es ihn gibt.
+
 ## Offen, bis das Semester abgeschlossen ist
 
 Nicht nur in der Wunschphase (2026-08-25, mit der Fakultät). `wishesAreOpen()` ist „Phase ist

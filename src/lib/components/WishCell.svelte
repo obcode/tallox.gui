@@ -6,6 +6,7 @@
 		WISH_PRIORITIES,
 		WISH_PRIORITY_HINTS,
 		WISH_PRIORITY_LABELS,
+		wishTint,
 		type WishChoice,
 		type WishLike
 	} from '$lib/wishes';
@@ -54,7 +55,13 @@
 	let note = $state(untrack(() => wish?.note) ?? '');
 </script>
 
-<div class="flex flex-col gap-1">
+<!--
+	Die Einfärbung folgt der *eigenen* Wahl und sonst nichts. Sie darf nie von fremden
+	Eintragungen abhängen — das wäre die Heatmap, gegen die die ganze Vertraulichkeitsregel
+	geschrieben ist. Das Polster steht auch ohne Farbe da, damit die Zeile beim Auswählen nicht
+	springt.
+-->
+<div class="flex flex-col gap-1 rounded-md p-1 {wishTint(choice)}">
 	<select
 		name="wish:{instanceId}"
 		bind:value={choice}
