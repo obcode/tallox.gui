@@ -20,6 +20,14 @@ const CODE = 'E2EMATHE';
 // `E2EMATHE-ML` would match every locator looking for `E2EMATHE`.
 const SPLIT = 'E2EML';
 
+/**
+ * The module the assignment test happened to pick.
+ *
+ * Shared between the tests rather than looked up again: the catalogue is not this suite's to
+ * predict, and the tests below are about *that* module — the one that is now in a group.
+ */
+let assignedModuleId = '';
+
 test.afterAll(() => {
 	// Whatever a failed run left behind. Modules first: the assignment holds the group.
 	runSql(
@@ -173,6 +181,11 @@ test.describe('subject groups', () => {
 		// .first(): a row without a stated split carries a second link, the one that offers to
 		// enter it.
 		const moduleName = (await firstRow.getByRole('link').first().innerText()).trim();
+		// The id and not the name: the tests below go straight to the module's own page, and
+		// clicking through a filtered list to get there would make them about the list.
+		assignedModuleId = (
+			(await firstRow.getByRole('link').first().getAttribute('href')) ?? ''
+		).replace('/module/', '');
 
 		await firstRow.getByRole('checkbox').check();
 		await page
@@ -199,6 +212,52 @@ test.describe('subject groups', () => {
 		// what a swap would make it.
 		await expect(home).not.toHaveText(CODE);
 		await expect(home).not.toHaveText('');
+	});
+
+	test('one module gets its group on its own page', async ({ asPersona }) => {
+		// The catalogue's batch assignment is the October work list; this is the correction
+		// somebody makes while looking at a single module. Sending them to a filtered list to fix
+		// one row is how a correction turns into something nobody does.
+		expect(assignedModuleId, 'the assignment test has to run first').not.toBe('');
+
+		const page = await asPersona(PERSONAS.sechs);
+		await gotoRendered(page, `/module/${assignedModuleId}`);
+
+		await expect(page.getByRole('heading', { name: /Fachgruppe/ })).toBeVisible();
+
+		// Scoped to its own form: the split editor further down the page has a save button too,
+		// and a locator that found either would pass while pressing the wrong one.
+		const card = page.locator('form[action="?/subjectGroup"]');
+		const picker = () => card.getByRole('combobox', { name: 'Fachgruppe' });
+		const store = () => card.getByRole('button', { name: 'Speichern' });
+
+		// It arrives showing where the module actually is, rather than at the top of the list.
+		await expect(picker()).toHaveValue(/.+/);
+
+		await picker().selectOption({ label: `${SPLIT} — E2E Mathematik (ML)` });
+		await store().click();
+		await expect(page.getByText(`Jetzt in ${SPLIT}`)).toBeVisible();
+
+		// Taking it out is the same form's other answer, not a missing one.
+		await picker().selectOption('');
+		await store().click();
+		await expect(page.getByText('Aus der Fachgruppe herausgenommen')).toBeVisible();
+		await expect(page.getByText('noch keiner Fachgruppe zugeordnet')).toBeVisible();
+
+		// Back where the test after this one expects it.
+		await picker().selectOption({ label: `${CODE} — E2E Mathematik` });
+		await store().click();
+		await expect(page.getByText(`Jetzt in ${CODE}`)).toBeVisible();
+	});
+
+	test('a lecturer reads the group on the module page but is offered no control', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, `/module/${assignedModuleId}`);
+
+		await expect(page.getByText(`${CODE} — E2E Mathematik`)).toBeVisible();
+		await expect(page.locator('form[action="?/subjectGroup"]')).toHaveCount(0);
 	});
 
 	test('a group with modules is retired rather than deleted', async ({ asPersona }) => {

@@ -14,6 +14,14 @@ const ModuleDocument = graphql(`
 			}
 			roles
 		}
+		# The groups to choose from. Readable by anybody with an account — who leads which subject
+		# is what the faculty's organisation looks like, not something confidential.
+		subjectGroups {
+			id
+			code
+			name
+			active
+		}
 		module(id: $id) {
 			id
 			name
@@ -29,6 +37,12 @@ const ModuleDocument = graphql(`
 			homeProgramme {
 				code
 				title
+			}
+			subjectGroup {
+				id
+				code
+				name
+				active
 			}
 			responsible {
 				id
@@ -74,6 +88,19 @@ const ModuleDocument = graphql(`
 	}
 `);
 
+const SetSubjectGroupDocument = graphql(`
+	mutation SetModuleSubjectGroup($moduleIds: [ID!]!, $subjectGroup: ID) {
+		setModulesSubjectGroup(moduleIds: $moduleIds, subjectGroup: $subjectGroup) {
+			modulesAssigned
+			modulesWithoutSubjectGroup
+			subjectGroup {
+				code
+				name
+			}
+		}
+	}
+`);
+
 const SetComponentsDocument = graphql(`
 	mutation SetModuleComponents($moduleId: ID!, $components: [ModuleComponentInput!]!) {
 		setModuleComponents(moduleId: $moduleId, components: $components) {
@@ -94,7 +121,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		if (!data.module) {
 			error(404, 'Dieses Modul gibt es nicht.');
 		}
-		return { module: data.module, me: data.me };
+		return { module: data.module, me: data.me, subjectGroups: data.subjectGroups };
 	} catch (err) {
 		if (err && typeof err === 'object' && 'status' in err) throw err;
 		error(403, toRefusal(err).message);
@@ -145,5 +172,35 @@ export const actions: Actions = {
 			return fail(400, toRefusal(err));
 		}
 		return { saved: true };
+	},
+
+	/**
+	 * Put this one module into a subject group, or take it out of every group.
+	 *
+	 * The same mutation the catalogue's batch assignment uses, with a list of one. Not a second
+	 * mutation for the single case: "a module belongs to exactly one group, and moving it is one
+	 * statement" is a rule of that mutation, and a second way in is a second place for it to be
+	 * got wrong.
+	 *
+	 * Here as well as in the list because the two answer different questions. The list is the
+	 * October work list — 506 modules, tick and assign. This is somebody looking at one module and
+	 * noticing it is filed wrongly, and sending them to a filtered list to fix one row is how a
+	 * correction turns into something nobody does.
+	 */
+	subjectGroup: async ({ request, params }) => {
+		const form = await request.formData();
+		const chosen = String(form.get('subjectGroup') ?? '');
+
+		try {
+			const data = await backendRequest(SetSubjectGroupDocument, {
+				moduleIds: [params.id],
+				// The empty option is "in no group at all" — this form's other answer, not a
+				// missing one.
+				subjectGroup: chosen === '' ? null : chosen
+			});
+			return { assigned: data.setModulesSubjectGroup };
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
 	}
 };

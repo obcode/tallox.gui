@@ -13,9 +13,21 @@
 		spoLabel
 	} from '$lib/catalogue';
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+	import { hasAnyRole } from '$lib/roles';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	// Cosmetic, like every role check in this application — the backend refuses the mutation
+	// anyway, and it refuses it on the token path too. Worth doing so that a lecturer reads which
+	// subject the module belongs to without being offered a control that always fails.
+	const mayAssign = $derived(hasAnyRole(data.session?.effectiveRoles ?? [], ['ADMIN']));
+
+	// Retired groups are not somewhere to put a module. One the module already sits in still
+	// renders as such — that is what the `active` flag on the reference is for.
+	const assignableGroups = $derived(data.subjectGroups.filter((g) => g.active));
+
+	const assigned = $derived(form && 'assigned' in form ? form.assigned : null);
 
 	type Row = { kind: InstancePartKind; hours: string };
 
@@ -98,6 +110,87 @@
 			</p>
 		</div>
 	{/if}
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">🗂️</span> Fachgruppe
+		</h2>
+
+		{#if assigned}
+			<p class="text-base-content/90 mb-2 text-sm">
+				<span class="badge badge-ghost badge-sm align-middle">Gespeichert</span>
+				{#if assigned.subjectGroup}
+					Jetzt in {assigned.subjectGroup.code} — {assigned.subjectGroup.name}.
+				{:else}
+					Aus der Fachgruppe herausgenommen.
+				{/if}
+				{#if assigned.modulesWithoutSubjectGroup > 0}
+					Ohne Fachgruppe sind noch {assigned.modulesWithoutSubjectGroup} Module.
+				{/if}
+			</p>
+		{/if}
+
+		{#if data.module.subjectGroup}
+			<p class="text-base-content/90 text-sm">
+				<span class="font-mono">{data.module.subjectGroup.code}</span>
+				— {data.module.subjectGroup.name}
+				{#if !data.module.subjectGroup.active}
+					<span class="badge badge-ghost badge-sm align-middle">stillgelegt</span>
+				{/if}
+			</p>
+		{:else}
+			<p class="text-base-content/90 text-sm">
+				Dieses Modul ist noch keiner Fachgruppe zugeordnet.
+			</p>
+		{/if}
+
+		<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+			Ein Modul gehört zu genau einer Fachgruppe. Ein bereits zugeordnetes wird verschoben, in einem
+			Schritt — es gibt keinen Moment, in dem es zu keiner gehört. Die Fachgruppe entscheidet mit,
+			wer die Instanzen dieses Moduls besetzt und wer vor der Veröffentlichung die Wünsche darauf
+			sieht.
+		</p>
+
+		{#if mayAssign}
+			<!--
+				Dieselbe Mutation wie die Stapelzuordnung im Katalog, mit einer Liste von einem.
+				Keine zweite für den Einzelfall: „genau eine Fachgruppe, Verschieben in einem
+				Schritt" ist eine Regel jener Mutation, und ein zweiter Weg hinein wäre eine zweite
+				Stelle, an der sie schiefgehen kann.
+			-->
+			<form
+				method="POST"
+				action="?/subjectGroup"
+				use:enhance
+				class="mt-3 flex flex-wrap items-end gap-2"
+			>
+				<label class="form-control">
+					<span class="label-text text-sm">Fachgruppe</span>
+					<select name="subjectGroup" class="select select-bordered select-sm">
+						<option value="" selected={data.module.subjectGroup == null}>— keine —</option>
+						{#each assignableGroups as group (group.id)}
+							<option value={group.id} selected={group.id === data.module.subjectGroup?.id}>
+								{group.code} — {group.name}
+							</option>
+						{/each}
+					</select>
+				</label>
+				<button type="submit" class="btn btn-sm">Speichern</button>
+			</form>
+
+			{#if assignableGroups.length === 0}
+				<p class="text-base-content/80 mt-2 text-sm">
+					Es gibt noch keine Fachgruppe. Angelegt werden sie in der
+					<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a>.
+				</p>
+			{/if}
+		{:else}
+			<p class="text-base-content/80 mt-1 text-sm">
+				Zuordnen kann sie die Administration — welche Fachgruppen es gibt und wer sie leitet, steht
+				unter <a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppen</a>.
+			</p>
+		{/if}
+	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="mb-2 flex items-center gap-2 font-medium">
