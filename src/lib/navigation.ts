@@ -115,6 +115,14 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		hint: 'Personal Access Tokens für eigene Auswertungen'
 	},
 	{
+		// No roles: membership is not a permission, so this is the one thing about a subject group
+		// that belongs to the person rather than to the administration.
+		emoji: '🗂️',
+		label: 'Meine Fachgruppen',
+		href: '/konto/fachgruppen',
+		hint: 'In welchen Fächern Du arbeitest — Vorauswahl für die Wunschseite'
+	},
+	{
 		emoji: '📖',
 		label: 'API-Doku',
 		href: '/api-doku',

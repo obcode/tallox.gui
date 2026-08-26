@@ -23,6 +23,8 @@ type Documents = {
     "\n\tmutation CreateLocalCourse($in: LocalModuleInput!) {\n\t\tcreateLocalModule(input: $in) {\n\t\t\tid\n\t\t\tname\n\t\t\tkind\n\t\t}\n\t}\n": typeof types.CreateLocalCourseDocument,
     "\n\tmutation DeclareFromSearch($in: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $in) {\n\t\t\tid\n\t\t\tmodule {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": typeof types.DeclareFromSearchDocument,
     "\n\tmutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tsplitIsEstimated\n\t\t}\n\t}\n": typeof types.ConfirmSplitDocument,
+    "\n\tquery OwnSubjectGroups {\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tsortName\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t\tmySubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": typeof types.OwnSubjectGroupsDocument,
+    "\n\tmutation SetMySubjectGroups($subjectGroupIds: [ID!]!) {\n\t\tsetMySubjectGroups(subjectGroupIds: $subjectGroupIds) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": typeof types.SetMySubjectGroupsDocument,
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t\tscopes\n\t\t}\n\t}\n": typeof types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken(\n\t\t$description: String!\n\t\t$expiresInDays: Int\n\t\t$scopes: [ScopeGrantInput!]\n\t) {\n\t\tcreatePersonalAccessToken(\n\t\t\tdescription: $description\n\t\t\texpiresInDays: $expiresInDays\n\t\t\tscopes: $scopes\n\t\t) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t\tscopes\n\t\t\t}\n\t\t}\n\t}\n": typeof types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.RevokePersonalAccessTokenDocument,
@@ -72,6 +74,8 @@ const documents: Documents = {
     "\n\tmutation CreateLocalCourse($in: LocalModuleInput!) {\n\t\tcreateLocalModule(input: $in) {\n\t\t\tid\n\t\t\tname\n\t\t\tkind\n\t\t}\n\t}\n": types.CreateLocalCourseDocument,
     "\n\tmutation DeclareFromSearch($in: DeclareCourseInstanceInput!) {\n\t\tdeclareCourseInstance(input: $in) {\n\t\t\tid\n\t\t\tmodule {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": types.DeclareFromSearchDocument,
     "\n\tmutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tsplitIsEstimated\n\t\t}\n\t}\n": types.ConfirmSplitDocument,
+    "\n\tquery OwnSubjectGroups {\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tsortName\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t\tmySubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": types.OwnSubjectGroupsDocument,
+    "\n\tmutation SetMySubjectGroups($subjectGroupIds: [ID!]!) {\n\t\tsetMySubjectGroups(subjectGroupIds: $subjectGroupIds) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": types.SetMySubjectGroupsDocument,
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t\tscopes\n\t\t}\n\t}\n": types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken(\n\t\t$description: String!\n\t\t$expiresInDays: Int\n\t\t$scopes: [ScopeGrantInput!]\n\t) {\n\t\tcreatePersonalAccessToken(\n\t\t\tdescription: $description\n\t\t\texpiresInDays: $expiresInDays\n\t\t\tscopes: $scopes\n\t\t) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t\tscopes\n\t\t\t}\n\t\t}\n\t}\n": types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.RevokePersonalAccessTokenDocument,
@@ -162,6 +166,14 @@ export function graphql(source: "\n\tmutation DeclareFromSearch($in: DeclareCour
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tmutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tsplitIsEstimated\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation ConfirmSplit($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tsplitIsEstimated\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery OwnSubjectGroups {\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tsortName\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t\tmySubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery OwnSubjectGroups {\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tsortName\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t\tmySubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation SetMySubjectGroups($subjectGroupIds: [ID!]!) {\n\t\tsetMySubjectGroups(subjectGroupIds: $subjectGroupIds) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation SetMySubjectGroups($subjectGroupIds: [ID!]!) {\n\t\tsetMySubjectGroups(subjectGroupIds: $subjectGroupIds) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

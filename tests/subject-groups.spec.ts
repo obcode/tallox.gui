@@ -78,6 +78,57 @@ test.describe('subject groups', () => {
 		await expect(card.getByText('Mitglieder: 1')).toBeVisible();
 	});
 
+	test('the ticks show who is in the group, also after saving twice', async ({ asPersona }) => {
+		// Reported from the running installation: after saving members the ticks behave oddly.
+		//
+		// The shape of it: `use:enhance` resets the form after a successful save, and a reset
+		// restores each checkbox to its *default* — which is the state at the moment the page was
+		// rendered, not the state that was just written. Saving once looks right because the two
+		// agree; saving twice shows the first render again.
+		const page = await asPersona(PERSONAS.sechs);
+		await gotoRendered(page, '/verwaltung/fachgruppen');
+
+		const card = page.locator('article', { hasText: CODE });
+		const members = card.locator('form[action="?/setMembers"]');
+		const box = (who: RegExp) => members.getByRole('checkbox', { name: who });
+
+		// Zwei is already a member from the test above; add Eins beside them.
+		await expect(box(/Zwei/)).toBeChecked();
+		await box(/Eins/).check();
+		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
+		await expect(card.getByText('Mitglieder: 2')).toBeVisible();
+
+		// Everybody in the group is ticked — this is the assertion the report is about.
+		await expect(box(/Eins/)).toBeChecked();
+		await expect(box(/Zwei/)).toBeChecked();
+
+		// And again, because the second save is where the reset shows the first render.
+		await box(/Vier/).check();
+		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
+		await expect(card.getByText('Mitglieder: 3')).toBeVisible();
+
+		for (const who of [/Eins/, /Zwei/, /Vier/]) {
+			await expect(box(who), `${who} is in the group and has to be ticked`).toBeChecked();
+		}
+
+		// Taking somebody out is the same form and the same rule.
+		await box(/Zwei/).uncheck();
+		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
+		await expect(card.getByText('Mitglieder: 2')).toBeVisible();
+		await expect(box(/Zwei/)).not.toBeChecked();
+		await expect(box(/Eins/)).toBeChecked();
+		await expect(box(/Vier/)).toBeChecked();
+
+		// What a reload shows has to be the same thing.
+		await gotoRendered(page, '/verwaltung/fachgruppen');
+		const reloaded = page
+			.locator('article', { hasText: CODE })
+			.locator('form[action="?/setMembers"]');
+		await expect(reloaded.getByRole('checkbox', { name: /Eins/ })).toBeChecked();
+		await expect(reloaded.getByRole('checkbox', { name: /Zwei/ })).not.toBeChecked();
+		await expect(reloaded.getByRole('checkbox', { name: /Vier/ })).toBeChecked();
+	});
+
 	test('a lecturer reads the groups and is offered no form', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/verwaltung/fachgruppen');
@@ -96,7 +147,9 @@ test.describe('subject groups', () => {
 		await gotoRendered(page, '/');
 
 		await openDropdown(page, /Prof/);
-		await expect(page.getByRole('link', { name: /Fachgruppen/ })).toBeVisible();
+		// Exact: the account menu also carries "Meine Fachgruppen", which is the other half of the
+		// same subject — the faculty's organisation here, one's own membership there.
+		await expect(page.getByRole('link', { name: 'Fachgruppen', exact: true })).toBeVisible();
 		// The contrast: user administration is ADMIN-only and stays out of a lecturer's menu.
 		await expect(page.getByRole('link', { name: /Verwaltung/ })).toHaveCount(0);
 	});

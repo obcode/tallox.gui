@@ -1330,6 +1330,30 @@ type ModuleOffering {
   minProgrammeSemester: Int
 }
 
+"""
+A module as a subject group refers to it: enough to recognise, and no more.
+
+The counterpart of `SubjectGroupRef`, and it exists for the same reason: a full `Module` carries
+its split, its offerings and its regulations, and a screen asking "what is in this group" wants a
+list of names.
+"""
+type ModuleRef {
+  id: ID!
+
+  """
+  The name, which is empty for a handful of modules the examination office publishes no name for.
+  """
+  name: String!
+
+  """
+  The programme that plans it — IF, IG.
+  
+  Carried because a subject group reaches across programmes, so the code is what tells two
+  similarly named modules apart.
+  """
+  homeProgrammeCode: String!
+}
+
 """Where a catalogue row comes from."""
 enum ModuleSource {
   """Written by the import from the examination office's catalogue."""
@@ -1854,6 +1878,23 @@ type Mutation {
   not a preference somebody sets for themselves.
   """
   setSubjectGroupMembers(id: ID!, personIds: [ID!]!): SubjectGroup!
+
+  """
+  Replace the subject groups **you** are in.
+  
+  Yours only, and deliberately not administration. Membership grants nothing — it decides what the
+  wish screen offers first and nothing else — so what somebody changes here is a statement about
+  which subjects they work in, and that is theirs to make. Requiring an administrator for it would
+  turn a preselection into something a colleague has to ask for, which is how a preselection
+  becomes a barrier.
+  
+  What this does **not** touch is who *leads* a group. That one is a grant, it decides who reads
+  unpublished wishes before publication, and it stays with `setSubjectGroupLeads`.
+  
+  The whole set at once, like every other membership write: a per-group mutation would let the two
+  halves of a swap be separated.
+  """
+  setMySubjectGroups(subjectGroupIds: [ID!]!): [SubjectGroup!]!
 
   """
   Replace the people who **lead** one subject group.
@@ -2623,7 +2664,7 @@ enum ScopeArea {
   `removeInstancePart`, `shareInstancePartAcrossTracks`, `splitInstancePartAcrossTracks`,
   `copyDemandFromSemester`, `planDemand`,
   `subjectGroups`, `subjectGroup`, `mySubjectGroups`, `modulesWithoutSubjectGroup`,
-  `subjectGroupsWithoutLead`.
+  `subjectGroupsWithoutLead`, `setMySubjectGroups`.
   """
   PLANNING
 
@@ -2910,6 +2951,17 @@ type SubjectGroup {
   is protected from it being known.
   """
   moduleCount: Int!
+
+  """
+  Which modules the group holds, by name.
+  
+  Loaded only when asked for — one statement per group, and there are a handful of groups. That is
+  the trade this repository makes explicitly rather than reaching for a loader: 506 modules is why
+  the catalogue is batched, and ten groups is not.
+  
+  Retired modules are left out. A group is described by what it currently covers.
+  """
+  modules: [ModuleRef!]!
 }
 
 """

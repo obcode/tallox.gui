@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import PeoplePicker from '$lib/components/PeoplePicker.svelte';
 	import {
 		isPlausibleCode,
 		leadNames,
 		mayLead,
 		openWorkSentence,
-		personLabel,
 		splitByActivity
 	} from '$lib/subjectGroups';
 	import type { ActionData, PageData } from './$types';
@@ -182,53 +182,44 @@
 									<button type="submit" class="btn btn-sm">Umbenennen</button>
 								</form>
 
-								<form method="POST" action="?/setLeads" use:enhance class="flex flex-col gap-1">
-									<input type="hidden" name="id" value={group.id} />
-									<span class="text-base-content/90 text-sm">Leitung</span>
-									{#if possibleLeads.length === 0}
+								{#if possibleLeads.length === 0}
+									<div class="flex flex-col gap-1">
+										<span class="text-base-content/90 text-sm">Leitung</span>
 										<p class="text-base-content/80 text-sm">
 											Niemand hat die Rolle Fachgruppenleitung. Sie wird in der
-											<a class="link" href={resolve('/verwaltung/personen')}>Personenverwaltung</a> vergeben.
+											<a class="link" href={resolve('/verwaltung/personen')}>Personenverwaltung</a>
+											vergeben.
 										</p>
-									{:else}
-										<div class="flex flex-col gap-1">
-											{#each possibleLeads as person (person.id)}
-												<label class="flex items-center gap-2 text-sm">
-													<input
-														type="checkbox"
-														name="personId"
-														value={person.id}
-														checked={group.leads.some((l) => l.id === person.id)}
-														class="checkbox checkbox-sm"
-													/>
-													<span>{personLabel(person)}</span>
-												</label>
-											{/each}
-										</div>
-										<button type="submit" class="btn btn-sm self-start">Leitung speichern</button>
-									{/if}
-								</form>
-
-								<form method="POST" action="?/setMembers" use:enhance class="flex flex-col gap-1">
-									<input type="hidden" name="id" value={group.id} />
-									<span class="text-base-content/90 text-sm">Mitglieder</span>
-									<div class="max-h-56 overflow-y-auto pr-1">
-										{#each sortedPeople as person (person.id)}
-											<label class="flex items-center gap-2 text-sm">
-												<input
-													type="checkbox"
-													name="personId"
-													value={person.id}
-													checked={group.members.some((m) => m.id === person.id)}
-													class="checkbox checkbox-sm"
-												/>
-												<span>{personLabel(person)}</span>
-											</label>
-										{/each}
 									</div>
-									<button type="submit" class="btn btn-sm self-start">Mitglieder speichern</button>
-								</form>
+								{:else}
+									<!--
+										Der Schlüssel ist die gespeicherte Menge: die Komponente hält den
+										Ankreuzstand lokal und soll genau dann neu aufsetzen, wenn sich das
+										Gespeicherte geändert hat — nach dem Speichern also, und nicht währenddessen.
+									-->
+									{#key group.leads.map((l) => l.id).join(',')}
+										<PeoplePicker
+											groupId={group.id}
+											action="?/setLeads"
+											legend="Leitung"
+											people={possibleLeads}
+											selected={group.leads.map((l) => l.id)}
+											submitLabel="Leitung speichern"
+										/>
+									{/key}
+								{/if}
 
+								{#key group.members.map((m) => m.id).join(',')}
+									<PeoplePicker
+										groupId={group.id}
+										action="?/setMembers"
+										legend="Mitglieder"
+										people={sortedPeople}
+										selected={group.members.map((m) => m.id)}
+										submitLabel="Mitglieder speichern"
+										scrollable
+									/>
+								{/key}
 								<form method="POST" action="?/setActive" use:enhance>
 									<input type="hidden" name="id" value={group.id} />
 									<input type="hidden" name="active" value={group.active ? 'false' : 'true'} />
