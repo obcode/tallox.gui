@@ -11,7 +11,15 @@ die [[no-wish-aggregates]] geschrieben wurde — hier gilt die Regel zum ersten 
 ## Die Form ist die Confluence-Tabelle
 
 **Eine Zeile je Modul und Studiengang, eine Spalte je Zug.** Genau die Ansicht, in der die
-Fakultät bisher geplant hat und die alle kannten. Die erste Fassung hatte eine Zeile je
+Fakultät bisher geplant hat und die alle kannten.
+
+**Ein Modul, das einmal stattfindet, steht unter „Zug A"** und bekommt keine eigene Spalte
+(`trackColumn`). Eine Tabelle mit „Zug" neben „Zug A" und „Zug B" verlangt vom Lesenden, sich
+herzuleiten, dass die ersten beiden dasselbe sind. Umbenannt wird dabei **nur die Spalte**, nie der
+Zug: `track` bleibt leer, und das Label heißt weiter `IF3` und nicht `IF3A` — an dem Tag, an dem
+daraus zwei Züge werden, heißt der erste wirklich A, und ein Label, das das vorweggenommen hätte,
+machte diese Änderung unsichtbar. `cohortIn` nimmt deshalb den exakten Zug zuerst und den
+namenlosen nur als Rückfall. Die erste Fassung hatte eine Zeile je
 Instanz-**Teil**: ein Modul mit zwei Zügen und drei Praktikumsgruppen war acht Zeilen und acht
 Formulare — die Version, die man auf halbem Weg liegen lässt.
 

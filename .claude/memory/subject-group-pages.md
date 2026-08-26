@@ -8,6 +8,14 @@ metadata:
 Zwei Seiten für die zwei Hälften dessen, was eine Fachgruppe ist (2026-08-25):
 `/verwaltung/fachgruppen` legt sie an und besetzt sie, `/module` ordnet Module zu.
 
+**Zuordnen geht an zwei Stellen, und das ist Absicht (2026-08-26).** `/module` ist die
+Oktober-Arbeitsliste — 506 Module, ankreuzen, stapelweise zuordnen. `/module/[id]` ist die
+Korrektur, die jemand macht, während er auf _ein_ Modul schaut und merkt, dass es falsch einsortiert
+ist; ihn dafür in eine gefilterte Liste zu schicken, ist der Weg, auf dem aus einer Korrektur etwas
+wird, das niemand macht. Beide rufen **dieselbe** Mutation `setModulesSubjectGroup`, die Einzelseite
+mit einer Liste von einem: „genau eine Fachgruppe, Verschieben in einem Schritt" ist eine Regel
+jener Mutation, und ein zweiter Weg hinein wäre eine zweite Stelle, an der sie schiefgeht.
+
 ## Mitgliedschaft und Leitung müssen verschieden aussehen
 
 Beides sind zwei Listen von Kolleg:innen und bedeuten völlig Verschiedenes:

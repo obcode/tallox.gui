@@ -189,34 +189,55 @@ export function wishRows(instances: readonly ReadInstanceLike<WishModule>[]): Wi
 }
 
 /**
+ * Which column a cohort belongs in.
+ *
+ * A module that runs once has **no** track — that is the ordinary case and the one the cohort
+ * label reads best for (`IF3`, not `IF3A`). In this table it belongs in the first column all the
+ * same: a screen with a "Zug" column beside "Zug A" and "Zug B" asks the reader to work out that
+ * the first two are the same thing. The single cohort is Zug A.
+ *
+ * Only the *column* is renamed, never the cohort: `track` stays empty on the instance and in its
+ * label, because the day it becomes two cohorts the first one is named A for real — by the demand
+ * screen, in the database — and a label that had said A all along would make that a no-op nobody
+ * can see.
+ */
+export function trackColumn(track: string): string {
+	return track === '' ? 'A' : track;
+}
+
+/**
  * The cohort columns the table needs: every track that occurs, in order.
  *
  * Fixed columns rather than a list inside each row, because that is what makes the table readable
  * across rows — "who is down for Zug B" is a column somebody runs their eye down, and a ragged
- * row of chips is not. A module offered once has an empty track and gets the first column; a row
- * that does not run in a column's track shows nothing there.
+ * row of chips is not. A row that does not run in a column's track shows nothing there.
  */
 export function trackColumns(rows: readonly WishRow[]): string[] {
 	const tracks = new Set<string>();
 	for (const row of rows) {
-		for (const cohort of row.cohorts) tracks.add(cohort.track);
+		for (const cohort of row.cohorts) tracks.add(trackColumn(cohort.track));
 	}
 	return [...tracks].sort((a, b) => a.localeCompare(b, 'de'));
 }
 
-/**
- * What a track column is called.
- *
- * `Zug A`, and plain `Zug` for the modules that run once — "Zug " with nothing after it reads as a
- * missing value, and this column is not missing anything.
- */
+/** What a track column is called. */
 export function trackHeading(track: string): string {
-	return track === '' ? 'Zug' : `Zug ${track}`;
+	return `Zug ${trackColumn(track)}`;
 }
 
-/** The row's cohort in that column, or undefined when it does not run there. */
+/**
+ * The row's cohort in that column, or undefined when it does not run there.
+ *
+ * The exact track first and the unnamed one only as a fall-back. The two cannot both occur in one
+ * row — the demand screen names the cohorts A and B the moment there are two of them — but a
+ * lookup that preferred the unnamed one would hide a real cohort A rather than fail, and a cell
+ * nobody can enter a wish into is worse than an error.
+ */
 export function cohortIn(row: WishRow, track: string) {
-	return row.cohorts.find((cohort) => cohort.track === track);
+	return (
+		row.cohorts.find((cohort) => cohort.track === track) ??
+		row.cohorts.find((cohort) => trackColumn(cohort.track) === track)
+	);
 }
 
 /**
