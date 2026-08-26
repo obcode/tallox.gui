@@ -113,17 +113,23 @@
 	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published)}</p>
 
 	{#each [{ title: 'Meine Fachgruppen', rows: split.mine, own: true }, { title: 'Alle weiteren Module', rows: split.others, own: false }] as section (section.title)}
-		{#if section.rows.length > 0}
+		<!--
+			Der eigene Abschnitt wird auch dann gerendert, wenn er leer ist. Sonst ist der Satz
+			darunter unerreichbar — und wer in keiner Fachgruppe ist, sieht auf dieser Seite nur
+			„Alle weiteren Module" und erfährt nie, dass es eine Vorauswahl gäbe.
+		-->
+		{#if section.rows.length > 0 || section.own}
 			<section class="flex flex-col gap-2">
 				<h2 class="text-lg font-medium">
 					{section.title}
 					<span class="text-base-content/80 text-sm font-normal">({section.rows.length})</span>
 				</h2>
 				{#if section.own && myGroupCodes.length === 0}
-					<p class="text-base-content/80 text-sm">
-						Du bist noch keiner Fachgruppe zugeordnet — deshalb steht hier nichts. Eintragen lassen
-						kannst Du Dich in der
-						<a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppenverwaltung</a>.
+					<p class="text-base-content/80 max-w-3xl text-sm">
+						Du bist noch keiner Fachgruppe zugeordnet — deshalb steht hier nichts. Welche es gibt
+						und was in ihnen steckt, siehst Du unter
+						<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a>; eintragen
+						kannst Du Dich dort selbst.
 					</p>
 				{:else if !section.own}
 					<p class="text-base-content/80 max-w-3xl text-sm">

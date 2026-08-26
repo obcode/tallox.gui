@@ -147,7 +147,9 @@ test.describe('subject groups', () => {
 		await gotoRendered(page, '/');
 
 		await openDropdown(page, /Prof/);
-		await expect(page.getByRole('link', { name: /Fachgruppen/ })).toBeVisible();
+		// Exact: the account menu also carries "Meine Fachgruppen", which is the other half of the
+		// same subject — the faculty's organisation here, one's own membership there.
+		await expect(page.getByRole('link', { name: 'Fachgruppen', exact: true })).toBeVisible();
 		// The contrast: user administration is ADMIN-only and stays out of a lecturer's menu.
 		await expect(page.getByRole('link', { name: /Verwaltung/ })).toHaveCount(0);
 	});
