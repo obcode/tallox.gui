@@ -21,6 +21,45 @@ Leitung werden nur Personen mit der Rolle angeboten; das ist doppelt kosmetisch 
 Fremdschlüssel verweigern es ohnehin) und trotzdem richtig: eine Auswahl, die immer scheitert,
 bringt Leuten bei, Fehlermeldungen zu ignorieren.
 
+## Zwei Seiten, zwei Zuständigkeiten (2026-08-26)
+
+`/verwaltung/fachgruppen` ist die Organisation der Fakultät — anlegen, Leitung, Mitglieder.
+`/konto/fachgruppen` ist **die eigene Mitgliedschaft**, im Kontobereich, ohne Rolle: Mitgliedschaft
+berechtigt zu nichts, also ist die Aussage „in diesen Fächern arbeite ich" die der Person selbst.
+Müsste man sie beantragen, wäre die Vorauswahl auf der Wunschseite eine Schranke.
+
+Die Seite zeigt zu jeder Gruppe **ihre Module**, weil „ist das mein Fach?" am Kürzel nicht
+ablesbar ist. Die **Leitung** steht dort nur zum Lesen — sie ist ein Grant und bleibt in der
+Verwaltung; ein Test behauptet, dass die Seite keinen Weg dorthin anbietet.
+
+Zwei Menüeinträge heißen jetzt ähnlich („Fachgruppen" / „Meine Fachgruppen"): in Tests **exakt**
+benennen, sonst bricht der Strict Mode.
+
+## Formulare, die einen Zustand zeigen, dürfen nicht zurückgesetzt werden
+
+Aus der laufenden Installation gemeldet (2026-08-26): nach dem Speichern von Mitgliedern waren die
+Haken falsch.
+
+`use:enhance` ruft nach erfolgreichem Speichern `form.reset()`, und ein Reset stellt jedes Feld auf
+seinen **Default** — den Stand beim Rendern, nicht den gerade gespeicherten. Einmal speichern sieht
+richtig aus, weil beide übereinstimmen; beim zweiten Mal erscheint der erste Render wieder.
+
+Solche Formulare bekommen `update({ reset: false })`. Ein Reset heißt „Felder für die nächste
+Eingabe leeren", und ein Formular, das einen _Zustand_ zeigt, ist keine Eingabe. Dazu — wie beim
+Wunschformular, siehe [[wish-page]] — lokaler `$state` mit `bind:checked` statt `checked={…}`, und
+die Komponente hängt in einem `{#key}` auf der gespeicherten Menge.
+
+Der Test muss den gemeldeten Weg gehen: ankreuzen, speichern, **noch einmal** ankreuzen und
+speichern, abwählen, speichern, neu laden. Keine Zusicherung nach dem ersten Speichern hätte es
+gefunden.
+
+## Ein Satz, der eine leere Menge erklärt, darf nicht in dem Block stehen, den sie wegfallen lässt
+
+Der Hinweis „Du bist noch keiner Fachgruppe zugeordnet" stand auf der Wunschseite in einem
+Abschnitt, der bei leerer Menge gar nicht gerendert wurde — also genau dann nicht, wenn er galt.
+Wer in keiner Fachgruppe war, sah nur „Alle weiteren Module" und erfuhr nie, dass es eine
+Vorauswahl gäbe.
+
 ## Zwei Befunde aus dem ersten E2E-Lauf
 
 **Ein Dokument ist nur so lesbar wie sein am wenigsten lesbares Feld.** `people` **verweigert**,
