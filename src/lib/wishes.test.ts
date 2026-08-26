@@ -7,6 +7,7 @@ import {
 	isWishPriority,
 	myWishByInstance,
 	openPhaseHint,
+	ownWishesBySemester,
 	othersByInstance,
 	othersHint,
 	savedHint,
@@ -48,7 +49,13 @@ function instance(
 	};
 }
 
-function wish(id: string, instanceId: string, mail: string, name: string): WishLike {
+function wish(
+	id: string,
+	instanceId: string,
+	mail: string,
+	name: string,
+	semester?: string
+): WishLike {
 	return {
 		id,
 		priority: 'HAPPY_TO',
@@ -56,6 +63,7 @@ function wish(id: string, instanceId: string, mail: string, name: string): WishL
 		person: { mail, name },
 		instance: {
 			id: instanceId,
+			semester,
 			track: 'A',
 			programmeSemester: 3,
 			programme: { code: 'IF' },
@@ -166,6 +174,38 @@ describe('myWishByInstance', () => {
 
 		expect(byInstance.get('i1')?.id).toBe('w1');
 		expect(byInstance.get('i2')).toBeUndefined();
+	});
+});
+
+describe('ownWishesBySemester', () => {
+	const own = (id: string, semester?: string) =>
+		wish(id, `i-${id}`, 'eins@example.org', 'Eins', semester);
+
+	it('groups by semester, chronologically', () => {
+		// The code sorts as text in date order, which is what that format is for — so the list
+		// needs no date parsing to be in the order somebody expects.
+		const groups = ownWishesBySemester([
+			own('c', '2028-SS'),
+			own('a', '2027-WS'),
+			own('b', '2028-SS'),
+			own('d', '2027-SS')
+		]);
+
+		expect(groups.map((g) => g.code)).toEqual(['2027-SS', '2027-WS', '2028-SS']);
+		expect(groups[2].wishes.map((w) => w.id)).toEqual(['c', 'b']);
+	});
+
+	it('keeps an entry whose instance did not carry its semester', () => {
+		// Under an odd heading rather than dropped. Losing somebody's own entry to a missing field
+		// would be the worse of the two, and it would look like the entry was never made.
+		const groups = ownWishesBySemester([own('a'), own('b', '2027-SS')]);
+
+		expect(groups.map((g) => g.code)).toEqual(['', '2027-SS']);
+		expect(groups[0].wishes.map((w) => w.id)).toEqual(['a']);
+	});
+
+	it('is empty for somebody who has entered nothing', () => {
+		expect(ownWishesBySemester([])).toEqual([]);
 	});
 });
 

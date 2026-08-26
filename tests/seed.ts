@@ -207,6 +207,16 @@ export const WISHES = {
 	instance: '0e2e0000-0000-4000-8000-000000000041',
 	lecture: '0e2e0000-0000-4000-8000-000000000042',
 	lab: '0e2e0000-0000-4000-8000-000000000043',
+	/**
+	 * A **second** semester with the same module offered again.
+	 *
+	 * "Meine Eintragungen" spans every semester, so a fixture with one semester cannot tell a list
+	 * that spans them from a list that happens to show the semester on screen. Both belong to this
+	 * fixture's own programme, so no other spec's reset can take them away mid-run.
+	 */
+	laterSemester: '2033-SS',
+	laterInstance: '0e2e0000-0000-4000-8000-000000000046',
+	laterLecture: '0e2e0000-0000-4000-8000-000000000047',
 	/** The subject group the wished-for module belongs to, so a lead has something to lead. */
 	subjectGroup: '0e2e0000-0000-4000-8000-000000000044',
 	subjectGroupCode: 'E2EFG'
@@ -499,10 +509,14 @@ export function wishStatements(): string[] {
 	return [
 		// Whatever a failed run left. The wishes first — course_instance_id is ON DELETE RESTRICT,
 		// so the instance below cannot go while one stands.
-		`DELETE FROM wish WHERE course_instance_id = '${WISHES.instance}';`,
-		`DELETE FROM course_instance WHERE id = '${WISHES.instance}';`,
+		`DELETE FROM wish WHERE course_instance_id IN
+		   ('${WISHES.instance}', '${WISHES.laterInstance}');`,
+		`DELETE FROM course_instance WHERE id IN
+		   ('${WISHES.instance}', '${WISHES.laterInstance}');`,
 
 		`INSERT INTO semester (code, phase) VALUES (${quote(WISHES.semester)}, 'WISHES')
+		 ON CONFLICT (code) DO UPDATE SET phase = 'WISHES', wishes_published_at = NULL;`,
+		`INSERT INTO semester (code, phase) VALUES (${quote(WISHES.laterSemester)}, 'WISHES')
 		 ON CONFLICT (code) DO UPDATE SET phase = 'WISHES', wishes_published_at = NULL;`,
 
 		`INSERT INTO programme (code, title) VALUES (${programme}, 'Wunsch-Teststudiengang')
@@ -528,6 +542,15 @@ export function wishStatements(): string[] {
 		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
 		 VALUES ('${WISHES.lecture}', '${WISHES.instance}', 'LECTURE', 0, 2),
 		        ('${WISHES.lab}', '${WISHES.instance}', 'LAB', 1, 2);`,
+
+		// The same module, offered again a year later. What "über alle Semester" is about.
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${WISHES.laterInstance}', s.id, '${WISHES.module}', pr.id, '', 3
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(WISHES.laterSemester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${WISHES.laterLecture}', '${WISHES.laterInstance}', 'LECTURE', 0, 2);`,
 
 		// Vier leads the programme this instance belongs to; Drei leads the subject group its
 		// module is in. Two orthogonal ways to be responsible for the same wish.

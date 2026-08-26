@@ -11,6 +11,7 @@
 		openPhaseHint,
 		othersByInstance,
 		othersHint,
+		ownWishesBySemester,
 		savedHint,
 		splitByMySubjects,
 		studyGroupLabel,
@@ -44,6 +45,10 @@
 	const mine = $derived(myWishByInstance(data.myWishes));
 	const others = $derived(othersByInstance(data.wishes, data.me?.mail));
 
+	// Every semester, grouped by it — not only the one the picker is on. Somebody who entered
+	// something for the summer term and then moved the picker has not withdrawn it.
+	const ownBySemester = $derived(ownWishesBySemester(data.myWishes));
+
 	// Somewhere to jump to. Retired semesters and ones nobody has decided anything about are both
 	// in the list, because reading last year's wishes is a legitimate thing to want.
 	const semesters = $derived(data.semesters.map((s) => s.code));
@@ -59,12 +64,18 @@
 	<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
 		<table class="table table-sm w-full min-w-[720px]">
 			<thead>
+				<!--
+					Die drei linken Spalten sind so breit, wie ihr Inhalt sein muss — der Rest der
+					Breite gehört den Zug-Spalten, weil dort die Notiz getippt wird. Ein langer
+					Modulname bricht dafür um; das ist der richtige Tausch, denn den Namen liest
+					man, in die Notiz schreibt man.
+				-->
 				<tr>
 					<th class="w-28">Studiengruppe</th>
-					<th>Modul</th>
-					<th class="w-20 text-right" title="Was alle Züge zusammen kosten.">SWS</th>
+					<th class="w-56">Modul</th>
+					<th class="w-16 text-right" title="Was alle Züge zusammen kosten.">SWS</th>
 					{#each tracks as track (track)}
-						<th class="w-40">{trackHeading(track)}</th>
+						<th>{trackHeading(track)}</th>
 					{/each}
 				</tr>
 			</thead>
@@ -223,6 +234,69 @@
 		</div>
 	{/if}
 
+	{#if data.myWishes.length > 0}
+		<section class="flex flex-col gap-2">
+			<h2 class="text-lg font-medium">
+				Meine Eintragungen
+				<!--
+					Die eigene Zahl ist unbedenklich: sie sagt nichts über andere. Genau deshalb steht
+					sie hier und nirgends sonst auf dieser Seite.
+				-->
+				<span class="text-base-content/80 text-sm font-normal">({data.myWishes.length})</span>
+			</h2>
+			<p class="text-base-content/80 max-w-3xl text-sm">
+				Alles, was Du eingetragen hast — über alle Semester, nicht nur über das oben ausgewählte.
+			</p>
+
+			<div class="flex flex-col gap-3">
+				{#each ownBySemester as group (group.code)}
+					<article class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
+						<h3 class="text-base font-medium">
+							{group.code === '' ? 'Ohne Semester' : semesterName(group.code)}
+							{#if group.code === data.semester?.code}
+								<span class="badge badge-ghost badge-sm align-middle">angezeigt</span>
+							{:else if group.code !== ''}
+								<!--
+									resolve() baut die Route, der Query-String kommt dahinter — dieselbe
+									Route mit anderer Auswahl. Ohne resolve() schlägt
+									svelte/no-navigation-without-resolve zu, und zwar zu Recht: ein
+									href, das mit „?" beginnt, hängt an der Adresse, auf der man
+									gerade steht.
+								-->
+								<a
+									class="link text-sm font-normal"
+									href="{resolve('/wuensche')}?semester={group.code}"
+								>
+									anzeigen
+								</a>
+							{/if}
+						</h3>
+						<div class="overflow-x-auto">
+							<table class="table table-sm w-full min-w-[480px]">
+								<thead>
+									<tr>
+										<th class="w-56">Zug und Modul</th>
+										<th class="w-24">Priorität</th>
+										<th>Notiz</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each group.wishes as wish (wish.id)}
+										<tr>
+											<td class="font-medium">{wishRowLabel(wish.instance)}</td>
+											<td class="text-base-content/90">{WISH_PRIORITY_LABELS[wish.priority]}</td>
+											<td class="text-base-content/80">{wish.note}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</article>
+				{/each}
+			</div>
+		</section>
+	{/if}
+
 	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published)}</p>
 
 	{#if data.instances.length === 0}
@@ -293,38 +367,5 @@
 				</p>
 			</div>
 		</form>
-	{/if}
-
-	{#if data.myWishes.length > 0}
-		<section class="flex flex-col gap-2">
-			<h2 class="text-lg font-medium">
-				Meine Eintragungen
-				<span class="text-base-content/80 text-sm font-normal">({data.myWishes.length})</span>
-			</h2>
-			<!--
-				Die eigene Zahl ist unbedenklich: sie sagt nichts über andere. Genau deshalb steht
-				sie hier und nirgends sonst auf dieser Seite.
-			-->
-			<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-				<table class="table table-sm w-full min-w-[560px]">
-					<thead>
-						<tr>
-							<th>Zug und Modul</th>
-							<th>Priorität</th>
-							<th>Notiz</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each data.myWishes as wish (wish.id)}
-							<tr>
-								<td class="font-medium">{wishRowLabel(wish.instance)}</td>
-								<td class="text-base-content/90">{WISH_PRIORITY_LABELS[wish.priority]}</td>
-								<td class="text-base-content/80">{wish.note}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</section>
 	{/if}
 </div>
