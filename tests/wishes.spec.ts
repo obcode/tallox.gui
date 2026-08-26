@@ -31,6 +31,32 @@ test.beforeAll(reset);
 test.afterAll(reset);
 
 test.describe('the wish phase', () => {
+	test('opens on the planning semester when the address names none', async ({ asPersona }) => {
+		// Reported from the running installation: `/wuensche` without a query string answered 403.
+		//
+		// The semester argument is required, so the bare page had to invent a code — and any code
+		// it invents is one the backend judges. The placeholder was outside the ten-year window, so
+		// the whole document was refused before the redirect could put a real semester in the
+		// address. The semester-scoped fields are asked for only when there is a semester now.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/wuensche');
+
+		await expect(page.getByRole('heading', { name: 'Wünsche' })).toBeVisible();
+		// And it landed on a semester rather than on nothing: the address says which.
+		await expect(page).toHaveURL(/\?semester=\d{4}-(SS|WS)/);
+	});
+
+	test('a semester somebody typed into the address is not a broken page', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/wuensche?semester=1999-WS');
+
+		// A 403 for a query parameter reads as "you may not be here" when it means "that is not a
+		// semester". The picker stays, and the sentence says what is wrong.
+		await expect(page.getByRole('heading', { name: 'Wünsche' })).toBeVisible();
+		await expect(page.getByText(/zehn Jahre/)).toBeVisible();
+		await expect(page.getByLabel('Semester')).toBeVisible();
+	});
+
 	test('a lecturer registers interest, corrects it and withdraws it', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, URL);

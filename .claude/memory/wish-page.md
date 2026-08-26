@@ -66,6 +66,22 @@ Verwandt: `demandResetSql()` löscht jetzt zuerst die Wünsche. `wish.instance_p
 `ON DELETE RESTRICT`, ein liegengebliebener Wunsch hätte den Reset eines fremden Specs mit einer
 Fremdschlüsselmeldung scheitern lassen.
 
+## Ein Pflichtargument braucht keinen erfundenen Wert
+
+Aus der laufenden Installation gemeldet: `/wuensche` ohne `?semester=` antwortete **403**.
+
+`semester(code:)` ist ein Pflichtargument, also musste die nackte Seite einen Code erfinden — und
+jeder erfundene Code ist einer, den das Backend beurteilt. Der Platzhalter lag außerhalb des
+Zehn-Jahres-Fensters, das ganze Dokument wurde abgelehnt, und die Umleitung aufs Planungssemester
+kam nie zum Zug.
+
+Die Lösung stand längst auf der Bedarfsseite: die semesterabhängigen Felder mit
+`@include(if: $withSemester)` erst dann anfragen, wenn es ein Semester gibt.
+
+→ Und ein Semester, das jemand in die Adresse tippt, ist keine kaputte Seite: `403` liest sich als
+„Du darfst hier nicht sein", gemeint ist „das ist kein Semester". Die Seite rendert jetzt Auswahl
+plus Satz.
+
 ## Playwright-Notiz
 
 Textzusicherungen über mehrzeiliges Markup als **String**, nicht als RegExp — nur String-Matching
