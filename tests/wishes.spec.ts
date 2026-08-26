@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { WISHES } from './seed';
@@ -11,7 +11,7 @@ import { WISHES } from './seed';
  * eingetragen" — each of them gives the answer away without naming anybody, and none of them is
  * visible in a Go test. So the assertions below are mostly about what is **not** on the page.
  *
- * Serial, because they register and withdraw interest in the same part.
+ * Serial, because they register and withdraw interest in the same instance.
  */
 test.describe.configure({ mode: 'serial' });
 
@@ -20,12 +20,29 @@ const URL = `/wuensche?semester=${WISHES.semester}`;
 /** Everything these tests registered, and the publication they may have caused. */
 function reset(): void {
 	runSql(
-		`DELETE FROM wish WHERE instance_part_id IN ('${WISHES.lecture}', '${WISHES.lab}');
+		`DELETE FROM wish WHERE course_instance_id = '${WISHES.instance}';
 		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES'
 		  WHERE code = '${WISHES.semester}';`,
 		'clearing the test wishes'
 	);
 }
+
+/**
+ * The cell for the seeded module's cohort.
+ *
+ * By its accessible name rather than by position: the table has one column per cohort, and a
+ * locator that counted columns would break the day the fixture gains a second one — while still
+ * pointing at *a* select, so it would fail somewhere else entirely.
+ */
+function cell(page: Page) {
+	return page.getByRole('combobox', { name: /Wunsch für .*E2E Fachmodul/ });
+}
+
+function note(page: Page) {
+	return page.getByRole('textbox', { name: /Notiz zu .*E2E Fachmodul/ });
+}
+
+const save = (page: Page) => page.getByRole('button', { name: 'Eintragungen speichern' });
 
 test.beforeAll(reset);
 test.afterAll(reset);
@@ -57,45 +74,64 @@ test.describe('the wish phase', () => {
 		await expect(page.getByLabel('Semester')).toBeVisible();
 	});
 
-	test('a lecturer registers interest, corrects it and withdraws it', async ({ asPersona }) => {
+	test('the table is one row per module with a column per cohort', async ({ asPersona }) => {
+		// The shape the faculty planned in for years, in Confluence, as the view everybody had.
+		// At part granularity the same module is eight rows and eight forms — the version of this
+		// screen that somebody abandons halfway through.
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByRole('heading', { name: 'Wünsche' })).toBeVisible();
+		const table = page.getByRole('table').first();
+		const headers = await table.locator('thead th').allTextContents();
+		expect(headers.map((h) => h.trim())).toEqual(['Studiengruppe', 'Modul', 'SWS', 'Zug']);
+
+		// One row for the module, whatever its instance is made of. The seeded instance has a
+		// lecture and a laboratory, and neither is a row of its own.
+		const row = table.getByRole('row', { name: /E2E Fachmodul/ });
+		await expect(row).toHaveCount(1);
+		await expect(row.getByRole('combobox')).toHaveCount(1);
+	});
+
+	test('a lecturer registers interest, corrects it and withdraws it', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
 
 		// The module is in Eins's subject group, so it is under "my subjects" — a preselection,
 		// which the page says in so many words.
 		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
 
-		// Re-read on every use. The form re-mounts when what is stored changes, so a locator kept
-		// across a save points at an element that is no longer on the page.
-		const lecture = () => page.getByRole('row', { name: /Vorlesung/ }).first();
 		const summary = () => page.getByRole('heading', { name: /Meine Eintragungen/ });
 
-		await lecture().getByRole('combobox').selectOption('FIRST_CHOICE');
-		await lecture().getByRole('textbox').fill('am liebsten dienstags');
-		await lecture().getByRole('button', { name: 'Eintragen' }).click();
+		await cell(page).selectOption('FIRST_CHOICE');
+		// The note appears once something is chosen: it is where the part-level detail lives now,
+		// and an empty box in every cell would be the same table twice as tall.
+		await note(page).fill('nur die Vorlesung');
+		await save(page).click();
 
 		// Wait for the heading, which exists only once the round trip has come back and the page
-		// has reloaded its data. Asserting on the table instead would pass against the *upper*
-		// table — the one with the form in it, whose cells contain the same words — and the rest
-		// of the test would then race the reload.
+		// has reloaded its data. Asserting on the table instead would pass against the table with
+		// the form in it, whose cells contain the same words, and the rest of the test would then
+		// race the reload.
 		await expect(summary()).toHaveText(/\(1\)/);
 
 		const mine = page.getByRole('table').last();
 		await expect(mine.getByRole('cell', { name: 'unbedingt' })).toBeVisible();
-		await expect(mine.getByRole('cell', { name: 'am liebsten dienstags' })).toBeVisible();
+		await expect(mine.getByRole('cell', { name: 'nur die Vorlesung' })).toBeVisible();
 
-		// Correcting is the same form, and it is a correction rather than a second entry.
-		const picker = lecture().getByRole('combobox');
-		await expect(picker).toHaveValue('FIRST_CHOICE');
-		await picker.selectOption('IF_NEEDED');
-		await lecture().getByRole('button', { name: 'Ändern' }).click();
+		// Correcting is the same table and the same button, and it is a correction rather than a
+		// second entry.
+		await expect(cell(page)).toHaveValue('FIRST_CHOICE');
+		await cell(page).selectOption('IF_NEEDED');
+		await save(page).click();
 
-		await expect(mine.getByRole('cell', { name: 'notfalls' })).toBeVisible();
+		await expect(
+			page.getByRole('table').last().getByRole('cell', { name: 'notfalls' })
+		).toBeVisible();
 		await expect(summary()).toHaveText(/\(1\)/);
 
-		await page.getByRole('button', { name: 'Zurückziehen' }).first().click();
+		// And back to nothing: the empty option is how a wish is withdrawn.
+		await cell(page).selectOption('');
+		await save(page).click();
 		await expect(summary()).toHaveCount(0);
 	});
 
@@ -103,8 +139,8 @@ test.describe('the wish phase', () => {
 		// Eins registers.
 		const eins = await asPersona(PERSONAS.eins);
 		await gotoRendered(eins, URL);
-		const row = eins.getByRole('row', { name: /Vorlesung/ }).first();
-		await row.getByRole('button', { name: 'Eintragen' }).click();
+		await cell(eins).selectOption('HAPPY_TO');
+		await save(eins).click();
 		await expect(eins.getByRole('heading', { name: /Meine Eintragungen \(1\)/ })).toBeVisible();
 
 		// Zwei looks at the same screen.
@@ -118,7 +154,7 @@ test.describe('the wish phase', () => {
 		expect(body).not.toContain(PERSONAS.eins.mail);
 		// And the shapes a count takes. Any of these would give the whole answer away without
 		// naming anybody, which is the failure this rule exists to prevent.
-		expect(body).not.toMatch(/Außerdem eingetragen/);
+		expect(body).not.toMatch(/Außerdem:/);
 		expect(body).not.toMatch(/\b1 Interessent/);
 		expect(body).not.toMatch(/bereits Interesse/);
 		// And the sentence that is a statement about other people's wishes even when it is empty.
@@ -138,7 +174,7 @@ test.describe('the wish phase', () => {
 			const page = await asPersona(persona);
 			await gotoRendered(page, URL);
 
-			await expect(page.getByText(`Außerdem eingetragen: ${PERSONAS.eins.name}`)).toBeVisible();
+			await expect(page.getByText(`Außerdem: ${PERSONAS.eins.name}`)).toBeVisible();
 		}
 	});
 
@@ -151,7 +187,7 @@ test.describe('the wish phase', () => {
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByText(`Außerdem eingetragen: ${PERSONAS.eins.name}`)).toBeVisible();
+		await expect(page.getByText(`Außerdem: ${PERSONAS.eins.name}`)).toBeVisible();
 		await expect(page.getByText(/Die Wünsche sind veröffentlicht/)).toBeVisible();
 	});
 
@@ -168,7 +204,8 @@ test.describe('the wish phase', () => {
 		await gotoRendered(page, URL);
 
 		await expect(page.getByText(/Die Zuteilung läuft bereits/)).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Ändern' }).first()).toBeEnabled();
+		await expect(save(page)).toBeEnabled();
+		await expect(cell(page)).toBeEnabled();
 	});
 
 	test('a finished semester is closed and says the semester is over', async ({ asPersona }) => {
@@ -183,7 +220,8 @@ test.describe('the wish phase', () => {
 		// The sentence says the semester is over rather than that a deadline was missed — there is
 		// nothing here the reader can repair.
 		await expect(page.getByText(/Dieses Semester ist abgeschlossen/)).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Ändern' }).first()).toBeDisabled();
+		await expect(save(page)).toBeDisabled();
+		await expect(cell(page)).toBeDisabled();
 	});
 
 	test('the demand page shows nothing about wishes either', async ({ asPersona }) => {

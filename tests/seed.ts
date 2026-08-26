@@ -387,16 +387,14 @@ export function catalogueStatements(): string[] {
  */
 export function demandResetSql(): string {
 	return [
-		// The wishes first, and this line is not defensive tidying: wish.instance_part_id is
+		// The wishes first, and this line is not defensive tidying: wish.course_instance_id is
 		// ON DELETE RESTRICT, so a wish left behind by a failed run would make this reset fail —
 		// in a spec that has nothing to do with wishes, with a message about a foreign key.
 		//
 		// It is also the only place in this file that deletes somebody's wish, which is right:
 		// what a person registered is theirs, and only a fixture may take it away.
-		`DELETE FROM wish WHERE instance_part_id IN
-		   (SELECT p.id FROM instance_part p
-		      JOIN course_instance ci ON ci.id = p.course_instance_id
-		     WHERE ci.programme_id = '${PROGRAMME_ID}');`,
+		`DELETE FROM wish WHERE course_instance_id IN
+		   (SELECT id FROM course_instance WHERE programme_id = '${PROGRAMME_ID}');`,
 		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
 		// The local courses the "enter your own" test creates. Deleted rather than deactivated,
 		// unlike in the application: the name is their identity, so a run that left one behind
@@ -499,10 +497,9 @@ export function wishStatements(): string[] {
 	const programme = quote(WISHES.programme);
 
 	return [
-		// Whatever a failed run left. The wishes first — instance_part_id is ON DELETE RESTRICT,
+		// Whatever a failed run left. The wishes first — course_instance_id is ON DELETE RESTRICT,
 		// so the instance below cannot go while one stands.
-		`DELETE FROM wish WHERE instance_part_id IN
-		   ('${WISHES.lecture}', '${WISHES.lab}');`,
+		`DELETE FROM wish WHERE course_instance_id = '${WISHES.instance}';`,
 		`DELETE FROM course_instance WHERE id = '${WISHES.instance}';`,
 
 		`INSERT INTO semester (code, phase) VALUES (${quote(WISHES.semester)}, 'WISHES')

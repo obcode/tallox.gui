@@ -1915,10 +1915,10 @@ type Mutation {
   setSubjectGroupLeads(id: ID!, personIds: [ID!]!): SubjectGroup!
 
   """
-  Register your interest in a part, or change it.
+  Register your interest in an instance, or change it.
   
-  Yours only: there is no argument for whose it is. Registering twice for the same part is not a
-  second wish and not an error — it is a correction, and it keeps the original `createdAt`.
+  Yours only: there is no argument for whose it is. Registering twice for the same instance is not
+  a second wish and not an error — it is a correction, and it keeps the original `createdAt`.
   
   Only in the wish phase. `WISH_PHASE_CLOSED` otherwise, in either direction: a list that may be
   added to but not corrected is worse than a closed one, so both are the same decision about when
@@ -1927,8 +1927,8 @@ type Mutation {
   Reachable through both doors, unlike the demand: this is your own data.
   """
   setWish(
-    """The part you are interested in."""
-    instancePartId: ID!
+    """The instance you are interested in."""
+    courseInstanceId: ID!
     priority: WishPriority! = HAPPY_TO
 
     """Up to 500 characters, or nothing at all."""
@@ -2493,8 +2493,8 @@ type Query {
     """One module, across its cohorts."""
     module: ID
 
-    """One instance part."""
-    part: ID
+    """One cohort of one module."""
+    instance: ID
 
     """One person's entries, by id."""
     person: ID
@@ -3110,11 +3110,12 @@ Always in Europe/Berlin, the timezone the planning runs in.
 scalar Time
 
 """
-One person's interest in one instance part.
+One person's interest in one course instance.
 
-Points at a **part** and never at an instance: the faculty's own sentence is "one holds the
-lecture, another the laboratory", so the assignable unit is the part and so is the unit of
-interest.
+Points at an **instance** and never at one of its parts. "One holds the lecture, another the
+laboratory" is true and stays true — it is what the *assignment* decides, one step later. A wish
+is somebody offering to teach a subject for a cohort, and the part-level detail they have in mind
+belongs in `note` until there is somebody to agree it with.
 """
 type Wish {
   id: ID!
@@ -3128,14 +3129,12 @@ type Wish {
   """
   person: Person!
 
-  """The assignable unit wanted."""
-  part: InstancePart!
-
   """
-  The cohort that part belongs to, with its module and its programme.
+  What is wanted: one module, in one study programme, for one cohort.
   
-  Carried because a wish is unreadable without it: "Analysis, IF1B, Praktikum" is the row somebody
-  recognises, and a part id is not.
+  Carried whole because a wish is unreadable without it — "Analysis, IF1B" is the row somebody
+  recognises, and an id is not. Its `parts` are reachable from here for a screen that wants to
+  show what the instance consists of; no wish points at one of them.
   """
   instance: CourseInstance!
 
@@ -3143,7 +3142,11 @@ type Wish {
   priority: WishPriority!
 
   """
-  The owner's own words: „lieber die Dienstagsgruppe“, „nur wenn es sonst niemand macht“.
+  The owner's own words: „nur die Vorlesung“, „lieber Zug B“, „nur wenn es sonst niemand macht“.
+  
+  This is where the part-level detail lives during the wish phase, and deliberately as prose
+  rather than as structure: „ich mache die Vorlesung, das Praktikum jemand anderes“ is a proposal
+  about two people, and turning it into a field would ask one of them to decide it alone.
   
   Read by whoever may read the wish — the same rule as the row, because it is part of the row.
   """
@@ -3159,14 +3162,14 @@ type Wish {
 }
 
 """
-How much somebody wants a part.
+How much somebody wants an instance.
 
 Three fixed levels rather than a rank. A rank is more expressive and costs a reordering dance on
 every insert in the middle, and a number nobody can read off a list without a legend. Ties are the
 common case: somebody wants four things equally and would rather say so than invent an order.
 """
 enum WishPriority {
-  """Unbedingt — the parts somebody is actually asking for."""
+  """Unbedingt — what somebody is actually asking for."""
   FIRST_CHOICE
 
   """

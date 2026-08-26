@@ -3,11 +3,11 @@ import { graphql } from '$lib/gql/__generated__';
 import type { WishPriority } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import { isWishPriority } from '$lib/wishes';
+import { isWishChoice, wishChanges, type WishEntry } from '$lib/wishes';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
- * The wish phase: registering interest in an instance part.
+ * The wish phase: registering interest in a course instance.
  *
  * The screen the confidentiality rule was built for. Two things it must never do, and both are
  * easier to do here than anywhere else in this application:
@@ -46,12 +46,17 @@ const WishesDocument = graphql(`
 		# What may be wished for: the demand of the semester. Readable by anybody with an account,
 		# which is the reason the demand page is open too — somebody who cannot see the instances
 		# has nothing to register interest in.
+		#
+		# The same projection the demand overview reads, because the table is the same table: one
+		# row per module and programme, a column per cohort.
 		courseInstances(semester: $semester) @include(if: $withSemester) {
 			id
 			track
 			programmeSemester
+			teachingHours
 			programme {
 				code
+				title
 			}
 			module {
 				id
@@ -65,8 +70,11 @@ const WishesDocument = graphql(`
 				id
 				kind
 				teachingHours
+				sharedAcrossTracks
 			}
 		}
+		# Spelled out rather than shared as a fragment with the field below: the client preset
+		# masks a fragment's fields, so a page that renders them would have to unmask every row.
 		myWishes(semester: $semester) @include(if: $withSemester) {
 			id
 			priority
@@ -75,12 +83,8 @@ const WishesDocument = graphql(`
 				mail
 				name
 			}
-			part {
-				id
-				kind
-				teachingHours
-			}
 			instance {
+				id
 				track
 				programmeSemester
 				programme {
@@ -103,12 +107,8 @@ const WishesDocument = graphql(`
 				mail
 				name
 			}
-			part {
-				id
-				kind
-				teachingHours
-			}
 			instance {
+				id
 				track
 				programmeSemester
 				programme {
@@ -126,9 +126,29 @@ const WishesDocument = graphql(`
 	}
 `);
 
+/**
+ * The caller's own entries, read again on the way in to a save.
+ *
+ * The form carries the state of every cell and not what changed, so the difference is worked out
+ * here — against what is actually stored rather than against a hidden field the page rendered
+ * minutes ago. Two tabs open on the same semester is the case that makes the distinction real.
+ */
+const MyWishesDocument = graphql(`
+	query MyWishesForSaving($semester: String!) {
+		myWishes(semester: $semester) {
+			id
+			priority
+			note
+			instance {
+				id
+			}
+		}
+	}
+`);
+
 const SetWishDocument = graphql(`
-	mutation SetWish($part: ID!, $priority: WishPriority!, $note: String) {
-		setWish(instancePartId: $part, priority: $priority, note: $note) {
+	mutation SetWish($instance: ID!, $priority: WishPriority!, $note: String) {
+		setWish(courseInstanceId: $instance, priority: $priority, note: $note) {
 			id
 			priority
 			note
@@ -199,49 +219,90 @@ export const load: PageServerLoad = async ({ url }) => {
 	};
 };
 
+/** What one instance's refusal looks like on the way back, so the page can put it in its row. */
+type CellRefusal = { instanceId: string; message: string };
+
 export const actions: Actions = {
 	/**
-	 * Register interest, or change it.
+	 * Save the table.
 	 *
-	 * A form action rather than a proxy: it belongs to this page, and as a form it works without
-	 * JavaScript. There is no field for whose wish it is — the backend takes the owner from the
-	 * session, and adding one here would be the decision reversed.
+	 * One action for the whole thing rather than one per cell, because that is how the table is
+	 * used: somebody goes down the list, changes three or four things and is done. It also works
+	 * without JavaScript, which a `<select>` that submits itself does not.
+	 *
+	 * There is no field for whose wishes these are — the backend takes the owner from the session,
+	 * and adding one here would be the decision reversed.
 	 */
-	set: async ({ request }) => {
+	save: async ({ request }) => {
 		const form = await request.formData();
-		const part = String(form.get('part') ?? '');
-		const raw = String(form.get('priority') ?? '');
-		const note = String(form.get('note') ?? '');
+		const semester = String(form.get('semester') ?? '');
 
-		if (!isWishPriority(raw)) {
-			return fail(400, { message: 'Diese Priorität gibt es nicht.' });
+		const entries = new Map<string, WishEntry>();
+		const entryFor = (instanceId: string) => {
+			const existing = entries.get(instanceId);
+			if (existing) return existing;
+			const fresh: WishEntry = { instanceId, priority: '', note: '' };
+			entries.set(instanceId, fresh);
+			return fresh;
+		};
+
+		for (const [key, value] of form.entries()) {
+			const text = String(value);
+			if (key.startsWith('wish:')) {
+				if (!isWishChoice(text)) {
+					// Not a level and not the empty choice: somebody sent something this build does
+					// not know. Refusing the whole save is right — the alternative is guessing what
+					// they meant about one cell of a table they are about to stop looking at.
+					return fail(400, { message: 'Diese Priorität gibt es nicht.', refusals: [] });
+				}
+				entryFor(key.slice('wish:'.length)).priority = text;
+			} else if (key.startsWith('note:')) {
+				entryFor(key.slice('note:'.length)).note = text.trim();
+			}
 		}
 
+		let stored;
 		try {
-			await backendRequest(SetWishDocument, {
-				part,
-				priority: raw as WishPriority,
-				note: note === '' ? null : note
-			});
+			stored = await backendRequest(MyWishesDocument, { semester });
 		} catch (err) {
-			// Through toRefusal like every write path here: only the codes on its allowlist keep
-			// their wording, and everything else becomes a generic sentence. On this page that
-			// matters more than anywhere else — a passed-through uniqueness violation is exactly
-			// the leak the rule exists to prevent.
-			return fail(400, toRefusal(err));
+			return fail(400, { ...toRefusal(err), refusals: [] });
 		}
-		return { changed: part };
-	},
 
-	withdraw: async ({ request }) => {
-		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
+		const changes = wishChanges(
+			[...entries.values()],
+			stored.myWishes.map((w) => ({
+				id: w.id,
+				instanceId: w.instance.id,
+				priority: w.priority,
+				note: w.note
+			}))
+		);
 
-		try {
-			await backendRequest(WithdrawWishDocument, { id });
-		} catch (err) {
-			return fail(400, toRefusal(err));
+		// Sequentially, and deliberately: a save is at most a handful of mutations, and one refused
+		// cell must not take the ones after it with it. What did go through stays through.
+		const refusals: CellRefusal[] = [];
+		let saved = 0;
+		for (const change of changes) {
+			try {
+				if (change.kind === 'withdraw') {
+					await backendRequest(WithdrawWishDocument, { id: change.wishId });
+				} else {
+					await backendRequest(SetWishDocument, {
+						instance: change.instanceId,
+						priority: change.priority as WishPriority,
+						note: change.note === '' ? null : change.note
+					});
+				}
+				saved++;
+			} catch (err) {
+				// Through toRefusal like every write path here: only the codes on its allowlist keep
+				// their wording, and everything else becomes a generic sentence. On this page that
+				// matters more than anywhere else — a passed-through uniqueness violation is exactly
+				// the leak the rule exists to prevent.
+				refusals.push({ instanceId: change.instanceId, message: toRefusal(err).message });
+			}
 		}
-		return { changed: id };
+
+		return { saved, refusals };
 	}
 };
