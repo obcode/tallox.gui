@@ -144,6 +144,13 @@ export type WishInstanceLike = {
 	programmeSemester?: number | null;
 	/** Which semester the instance is in — carried because the own-entries list groups by it. */
 	semester?: string;
+	/**
+	 * What this cohort costs the faculty, from the backend rather than summed from its parts.
+	 *
+	 * A shared lecture counts once, at the cohort that holds it, and a sum built in the browser
+	 * would count it in both.
+	 */
+	teachingHours?: number | null;
 	programme: { code: string };
 	module: { id: string; name: string };
 };
@@ -387,6 +394,18 @@ export type OwnWishSemester = {
 	/** `2027-SS`. */
 	code: string;
 	wishes: WishLike[];
+	/**
+	 * What the entries of this semester add up to.
+	 *
+	 * **An upper bound and not a promise.** It is what the wished-for cohorts cost the faculty, and
+	 * a wish is for the cohort — which part somebody ends up holding is settled in the assignment,
+	 * and "nur die Vorlesung" in a note is exactly the case where the figure is too high. Worth
+	 * showing anyway: somebody entering four things wants to know roughly what they have offered,
+	 * and the alternative is that they add it up on paper.
+	 *
+	 * One's own number and nobody else's, which is what makes it sayable on this screen at all.
+	 */
+	teachingHours: number;
 };
 
 /**
@@ -406,12 +425,14 @@ export function ownWishesBySemester(wishes: readonly WishLike[]): OwnWishSemeste
 
 	for (const wish of wishes) {
 		const code = wish.instance.semester ?? '';
+		const hours = wish.instance.teachingHours ?? 0;
 		const existing = bySemester.get(code);
 		if (existing) {
 			existing.wishes.push(wish);
+			existing.teachingHours += hours;
 			continue;
 		}
-		bySemester.set(code, { code, wishes: [wish] });
+		bySemester.set(code, { code, wishes: [wish], teachingHours: hours });
 	}
 
 	return [...bySemester.values()].sort((a, b) => a.code.localeCompare(b.code));

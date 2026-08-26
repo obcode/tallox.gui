@@ -94,6 +94,7 @@ const WishesDocument = graphql(`
 				semester
 				track
 				programmeSemester
+				teachingHours
 				programme {
 					code
 				}
@@ -119,6 +120,7 @@ const WishesDocument = graphql(`
 				semester
 				track
 				programmeSemester
+				teachingHours
 				programme {
 					code
 				}

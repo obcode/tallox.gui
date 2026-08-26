@@ -57,7 +57,8 @@ function wish(
 	instanceId: string,
 	mail: string,
 	name: string,
-	semester?: string
+	semester?: string,
+	teachingHours = 4
 ): WishLike {
 	return {
 		id,
@@ -69,6 +70,7 @@ function wish(
 			semester,
 			track: 'A',
 			programmeSemester: 3,
+			teachingHours,
 			programme: { code: 'IF' },
 			module: { id: 'm', name: 'Analysis' }
 		}
@@ -249,8 +251,8 @@ describe('myWishByInstance', () => {
 });
 
 describe('ownWishesBySemester', () => {
-	const own = (id: string, semester?: string) =>
-		wish(id, `i-${id}`, 'eins@example.org', 'Eins', semester);
+	const own = (id: string, semester?: string, hours = 4) =>
+		wish(id, `i-${id}`, 'eins@example.org', 'Eins', semester, hours);
 
 	it('groups by semester, chronologically', () => {
 		// The code sorts as text in date order, which is what that format is for — so the list
@@ -264,6 +266,34 @@ describe('ownWishesBySemester', () => {
 
 		expect(groups.map((g) => g.code)).toEqual(['2027-SS', '2027-WS', '2028-SS']);
 		expect(groups[2].wishes.map((w) => w.id)).toEqual(['c', 'b']);
+	});
+
+	it('adds up what the entries of one semester cost', () => {
+		// An upper bound rather than a promise — a wish is for the cohort, and which part somebody
+		// holds is settled in the assignment. Worth showing anyway: the alternative is that
+		// somebody adds four numbers up on paper.
+		const groups = ownWishesBySemester([
+			own('a', '2027-SS', 6),
+			own('b', '2027-SS', 2.5),
+			own('c', '2027-WS', 4)
+		]);
+
+		expect(groups.map((g) => g.teachingHours)).toEqual([8.5, 4]);
+	});
+
+	it('counts an instance whose hours nobody has stated as nothing, not as a gap', () => {
+		// The figure is a sum of one's own entries; a missing number must not make the whole sum
+		// disappear, because a semester with four entries and one unstated is still four entries.
+		const groups = ownWishesBySemester([
+			{
+				...own('a', '2027-SS', 6),
+				instance: { ...own('a', '2027-SS').instance, teachingHours: null }
+			},
+			own('b', '2027-SS', 2)
+		]);
+
+		expect(groups[0].teachingHours).toBe(2);
+		expect(groups[0].wishes).toHaveLength(2);
 	});
 
 	it('keeps an entry whose instance did not carry its semester', () => {
