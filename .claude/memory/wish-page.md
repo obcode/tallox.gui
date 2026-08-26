@@ -1,12 +1,36 @@
 ---
 name: wish-page
-description: Die Wunschseite — was sie nie zeigen darf, und drei Fehler, die erst der E2E-Lauf sichtbar gemacht hat
+description: Die Wunschseite — die Confluence-Tabelle als Form, was sie nie zeigen darf, und die Fehler, die erst der E2E-Lauf sichtbar gemacht hat
 metadata:
   type: project
 ---
 
-`/wuensche`, gebaut am 2026-08-25. Die Seite, für die
-[[no-wish-aggregates]] geschrieben wurde — hier gilt die Regel zum ersten Mal echt.
+`/wuensche`, gebaut am 2026-08-25, am 2026-08-26 auf die Tabellenform umgestellt. Die Seite, für
+die [[no-wish-aggregates]] geschrieben wurde — hier gilt die Regel zum ersten Mal echt.
+
+## Die Form ist die Confluence-Tabelle
+
+**Eine Zeile je Modul und Studiengang, eine Spalte je Zug.** Genau die Ansicht, in der die
+Fakultät bisher geplant hat und die alle kannten. Die erste Fassung hatte eine Zeile je
+Instanz-**Teil**: ein Modul mit zwei Zügen und drei Praktikumsgruppen war acht Zeilen und acht
+Formulare — die Version, die man auf halbem Weg liegen lässt.
+
+Eine Zelle ist ein `<select>` mit vier Optionen (— / unbedingt / gerne / notfalls) und einem
+Notizfeld, das erscheint, sobald etwas gewählt ist. **Die Notiz ist die Stelle für das, wofür
+früher der Teil da war**: „nur die Vorlesung", „lieber Zug B". Wer welchen Teil hält, entscheidet
+die Zuteilung; das ist eine Absprache zwischen mehreren und nichts, was eine Person allein angibt.
+Das Backend zog am selben Tag nach — `wish` zeigt seither auf die `course_instance`.
+
+**Ein Formular für die ganze Tabelle, ein Speichern.** So wurde die Papierversion auch benutzt:
+runtergehen, drei Sachen eintragen, fertig. Die Action bekommt den Zustand _jeder_ Zelle und
+bildet die Differenz gegen das Gespeicherte selbst — nicht gegen ein verstecktes Feld, das die
+Seite vor zehn Minuten gerendert hat, denn das ist falsch, sobald zwei Tabs offen sind
+(`wishChanges` in `src/lib/wishes.ts`, mit vitest). Und es funktioniert ohne JavaScript, was ein
+Auswahlfeld, das sich selbst abschickt, nicht täte.
+
+Nebenbei: `instanceRows`/`moduleRows` in `demand.ts` sind jetzt generisch über ein kleines
+`RowModule` statt über `ModuleLike`. Sie lesen drei Felder; die größere Schranke zwang diese Seite,
+Aufteilung und Planbarkeit eines Moduls abzufragen, um an ein Zug-Label zu kommen.
 
 ## Was hier nie stehen darf
 
@@ -19,8 +43,8 @@ Fremde Eintragungen werden gebaut, indem aus dem, was das Backend geliefert hat,
 Zeilen entfernt werden — **nie durch Zählen**. Was das Backend liefert, ist bereits gefiltert; eine
 hier gebaute Zahl wäre falsch _und_ verräterisch, weil sie davon abhinge, wer schaut.
 
-Die einzige Zahl auf der Seite ist „Meine Eintragungen (3)". Die ist unbedenklich: sie sagt nichts
-über andere.
+Die einzigen Zahlen auf der Seite sind „Meine Eintragungen (3)" und „2 Änderungen gespeichert".
+Beide sind unbedenklich: sie handeln von dem, was diese Person selbst getan hat.
 
 ## Offen, bis das Semester abgeschlossen ist
 
@@ -45,7 +69,7 @@ sagt das auch so.
 **`<option selected={…}>` macht das Feld reaktiv gesteuert.** Svelte wendet den Ausdruck bei jedem
 Re-Render neu an: eine andere Priorität zu wählen sprang sofort auf den gespeicherten Wert zurück
 — das Feld war schlicht nicht bedienbar. In keinem Unit-Test sichtbar, Markup und Daten sind
-korrekt. Jetzt `WishForm.svelte` mit `bind:value` auf lokalem `$state`, per `untrack` einmalig
+korrekt. Jetzt `WishCell.svelte` mit `bind:value` auf lokalem `$state`, per `untrack` einmalig
 gesetzt, und die Komponente hängt in einem `{#key}` auf dem _gespeicherten_ Zustand: neu aufsetzen
 genau dann, wenn sich das Gespeicherte geändert hat.
 
@@ -62,7 +86,7 @@ behauptet.** Die Wunsch-Fixture machte Vier zur Leitung von `E2F` — und ein Be
 Dateien weiter behauptet, dass sie genau das _nicht_ ist. Deshalb hat sie jetzt ihren eigenen
 Studiengang `E2G`, ihr eigenes Semester und ihre eigene Instanz.
 
-Verwandt: `demandResetSql()` löscht jetzt zuerst die Wünsche. `wish.instance_part_id` ist
+Verwandt: `demandResetSql()` löscht jetzt zuerst die Wünsche. `wish.course_instance_id` ist
 `ON DELETE RESTRICT`, ein liegengebliebener Wunsch hätte den Reset eines fremden Specs mit einer
 Fremdschlüsselmeldung scheitern lassen.
 
@@ -86,3 +110,8 @@ plus Satz.
 
 Textzusicherungen über mehrzeiliges Markup als **String**, nicht als RegExp — nur String-Matching
 normalisiert Leerraum. Siehe [[subject-group-pages]], dort steht dieselbe Falle.
+
+Eine Zelle wird über ihren **zugänglichen Namen** gefunden (`Wunsch für IF2A · Modulname`), nie
+über die Spaltennummer: die Zahl der Zug-Spalten hängt an den Daten, und ein Locator, der zählt,
+zeigt nach einer Fixture-Änderung immer noch auf _ein_ Auswahlfeld — nur auf das falsche, und der
+Test scheitert woanders.

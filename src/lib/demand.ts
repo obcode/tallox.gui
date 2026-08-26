@@ -87,17 +87,29 @@ export function borrowedFromLabel(programmeCode: string, fromTrack: string): str
  * from the wrong parts, a prefill that carries a module into a semester it does not run in.
  */
 
-/** A module, as much of it as the table needs. */
-export type ModuleLike = {
+/**
+ * The little of a module the row builders below actually read.
+ *
+ * Separate from `ModuleLike` because `instanceRows` and `moduleRows` touch exactly these three
+ * fields, while `ModuleLike` describes what the *demand* screens render. Constraining the row
+ * builders to the larger shape made every caller query a module's split and plannability to get a
+ * cohort label out — the wish table is the caller that made that visible. `ModuleLike` satisfies
+ * this, so nothing else changes.
+ */
+export type RowModule = {
 	id: string;
 	name: string;
+	programmeSemester?: number | null;
+};
+
+/** A module, as much of it as the demand table needs. */
+export type ModuleLike = RowModule & {
 	zpaId?: string | null;
 	practicalKind?: InstancePartKind | null;
 	splitIsEstimated: boolean;
 	plannable: boolean;
 	components: readonly { kind: InstancePartKind; teachingHours: number }[];
 	proposedComponents: readonly { kind: InstancePartKind; teachingHours: number }[];
-	programmeSemester?: number | null;
 };
 
 /**
@@ -511,7 +523,7 @@ export function plannedHours(
  */
 
 /** An instance as the overview reads it: the module and the programme come with it. */
-export type ReadInstanceLike<M extends ModuleLike = ModuleLike> = {
+export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	id: string;
 	track: string;
 	programmeSemester?: number | null;
@@ -537,7 +549,7 @@ export type PartGroup = {
 };
 
 /** One line of the overview. */
-export type InstanceRow<M extends ModuleLike = ModuleLike> = {
+export type InstanceRow<M extends RowModule = ModuleLike> = {
 	instanceId: string;
 	module: M;
 	programme: { code: string; title?: string | null };
@@ -591,7 +603,7 @@ export function partGroupLabel(group: PartGroup): string {
  * module stand together, which is what makes a shared lecture legible: the line that borrows it
  * sits directly under the line that holds it.
  */
-export function instanceRows<M extends ModuleLike>(
+export function instanceRows<M extends RowModule>(
 	instances: readonly ReadInstanceLike<M>[]
 ): InstanceRow<M>[] {
 	return instances
@@ -640,7 +652,7 @@ function yearOrder(a: number | null, b: number | null): number {
  * The cohorts stay individually visible inside the row, because they are what differs: one may
  * run three laboratory groups and the other two, and one may borrow the lecture the other holds.
  */
-export type ModuleRow<M extends ModuleLike = ModuleLike> = {
+export type ModuleRow<M extends RowModule = ModuleLike> = {
 	module: M;
 	programme: { code: string; title?: string | null };
 	programmeSemester: number | null;
@@ -656,7 +668,7 @@ export type ModuleRow<M extends ModuleLike = ModuleLike> = {
  * programmes and those are two demands — the difference between them is what the dean's office's
  * import/export figures are about.
  */
-export function moduleRows<M extends ModuleLike>(
+export function moduleRows<M extends RowModule>(
 	instances: readonly ReadInstanceLike<M>[]
 ): ModuleRow<M>[] {
 	const rows = instanceRows(instances);
@@ -684,21 +696,21 @@ export function moduleRows<M extends ModuleLike>(
 }
 
 /** One cohort year of the overview. */
-export type InstanceYearGroup<M extends ModuleLike = ModuleLike> = {
+export type InstanceYearGroup<M extends RowModule = ModuleLike> = {
 	programmeSemester: number | null;
 	rows: ModuleRow<M>[];
 	teachingHours: number;
 };
 
 /** The overview, grouped by cohort year — the same axis the planning table uses. */
-export function instancesByYear<M extends ModuleLike>(
+export function instancesByYear<M extends RowModule>(
 	rows: readonly ModuleRow<M>[]
 ): InstanceYearGroup<M>[] {
 	return groupByYear(rows);
 }
 
 /** One study programme's part of the overview, when it shows more than one. */
-export type ProgrammeGroup<M extends ModuleLike = ModuleLike> = {
+export type ProgrammeGroup<M extends RowModule = ModuleLike> = {
 	code: string;
 	title: string;
 	rows: ModuleRow<M>[];
