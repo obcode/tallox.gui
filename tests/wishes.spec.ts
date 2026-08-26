@@ -58,7 +58,14 @@ function note(page: Page) {
 	return page.getByRole('textbox', { name: /Notiz zu .*E2E Fachmodul/ });
 }
 
-const save = (page: Page) => page.getByRole('button', { name: 'Eintragungen speichern' });
+/**
+ * The button that saves the whole table.
+ *
+ * Almost never needed: a change saves itself. It stays because without JavaScript there is no way
+ * to submit a `<select>`, and it is what these tests use to assert that the closed phase closes
+ * both paths rather than only the convenient one.
+ */
+const save = (page: Page) => page.getByRole('button', { name: 'Alles speichern' });
 
 test.beforeAll(reset);
 test.afterAll(reset);
@@ -118,30 +125,36 @@ test.describe('the wish phase', () => {
 
 		const mine = () => summaryFor(page, WISHES.semester);
 
+		// **Nothing is clicked to save.** Choosing is the save, which is the whole point of the
+		// screen: a table somebody goes down and fills in should not also need a button at the
+		// bottom that they have to remember.
 		await cell(page).selectOption('FIRST_CHOICE');
-		// The note appears once something is chosen: it is where the part-level detail lives now,
-		// and an empty box in every cell would be the same table twice as tall.
-		await note(page).fill('nur die Vorlesung');
-		await save(page).click();
 
 		// Wait for the summary card, which exists only once the round trip has come back and the
 		// page has reloaded its data. Asserting on the wish table instead would pass against the
 		// form, whose cells carry the same words, and the rest of the test would race the reload.
 		await expect(mine().getByRole('cell', { name: 'unbedingt' })).toBeVisible();
+
+		// The note appears once something is chosen: it is where the part-level detail lives now,
+		// and an empty box in every cell would be the same table twice as tall. It saves when the
+		// field is left rather than on every keystroke.
+		await note(page).fill('nur die Vorlesung');
+		// Explicitly out of the field. `fill()` dispatches `input` and stops there — it does not
+		// blur, so the browser never fires the `change` a person typing would produce. The page
+		// saves on `focusout` as well for the same reason: a value that arrives without the
+		// browser calling it input is still a value somebody meant.
+		await note(page).blur();
 		await expect(mine().getByRole('cell', { name: 'nur die Vorlesung' })).toBeVisible();
 
-		// Correcting is the same table and the same button, and it is a correction rather than a
-		// second entry.
+		// Correcting is the same cell, and it is a correction rather than a second entry.
 		await expect(cell(page)).toHaveValue('FIRST_CHOICE');
 		await cell(page).selectOption('IF_NEEDED');
-		await save(page).click();
 
 		await expect(mine().getByRole('cell', { name: 'notfalls' })).toBeVisible();
 		await expect(mine().getByRole('row')).toHaveCount(2); // the heading row and the one entry
 
 		// And back to nothing: the empty option is how a wish is withdrawn.
 		await cell(page).selectOption('');
-		await save(page).click();
 		await expect(mine()).toHaveCount(0);
 	});
 
@@ -152,12 +165,11 @@ test.describe('the wish phase', () => {
 
 		await gotoRendered(page, URL);
 		await cell(page).selectOption('HAPPY_TO');
-		await save(page).click();
 		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
 
 		await gotoRendered(page, `/wuensche?semester=${WISHES.laterSemester}`);
 		await cell(page).selectOption('FIRST_CHOICE');
-		await save(page).click();
+		await expect(summaryFor(page, WISHES.laterSemester)).toBeVisible();
 
 		// Both, while the picker is on one of them — and the one on screen says so, while the
 		// other offers the way to it.
@@ -169,11 +181,31 @@ test.describe('the wish phase', () => {
 
 		// Away again, so the tests after this one start where they expect to.
 		await cell(page).selectOption('');
-		await save(page).click();
+		await expect(summaryFor(page, WISHES.laterSemester)).toHaveCount(0);
 		await gotoRendered(page, URL);
 		await cell(page).selectOption('');
-		await save(page).click();
 		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
+	});
+
+	test('a chosen cell is marked, and unchosen ones are not', async ({ asPersona }) => {
+		// Reported as a wish after the first version: „wo habe ich etwas stehen" is what somebody
+		// scans this table for, and the answer should be readable off the surface rather than by
+		// reading every picker. The colour is redundant with the word in the picker, so it carries
+		// nothing on its own — and it follows the caller's *stored* entry and never anybody
+		// else's, which is the line this screen must not cross.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
+
+		const chosenCell = page.locator('td').filter({ has: cell(page) });
+		await expect(chosenCell).not.toHaveClass(/bg-primary/);
+
+		await cell(page).selectOption('FIRST_CHOICE');
+		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
+		await expect(chosenCell).toHaveClass(/bg-primary/);
+
+		await cell(page).selectOption('');
+		await expect(summaryFor(page, WISHES.semester)).toHaveCount(0);
+		await expect(chosenCell).not.toHaveClass(/bg-primary/);
 	});
 
 	test('a colleague sees nothing of it — no name, no number, no mark', async ({ asPersona }) => {
@@ -181,7 +213,6 @@ test.describe('the wish phase', () => {
 		const eins = await asPersona(PERSONAS.eins);
 		await gotoRendered(eins, URL);
 		await cell(eins).selectOption('HAPPY_TO');
-		await save(eins).click();
 		await expect(summaryFor(eins, WISHES.semester)).toBeVisible();
 
 		// Zwei looks at the same screen.

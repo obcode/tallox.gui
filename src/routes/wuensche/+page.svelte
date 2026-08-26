@@ -21,6 +21,7 @@
 		wishesAreOpen,
 		wishRowLabel,
 		wishRows,
+		wishTint,
 		type WishRow
 	} from '$lib/wishes';
 	import type { ActionData, PageData } from './$types';
@@ -57,6 +58,54 @@
 		{ title: 'Meine Fachgruppen', rows: split.mine, own: true },
 		{ title: 'Alle weiteren Module', rows: split.others, own: false }
 	]);
+
+	/**
+	 * Speichern passiert beim Auswählen und beim Verlassen des Notizfeldes.
+	 *
+	 * Drei Ereignisse, und jedes hat seinen Grund:
+	 *
+	 * - `change` ist der Auslöser. Beim Auswahlfeld heißt es „ausgewählt", beim Textfeld „fertig
+	 *   getippt" — beides ist genau der Moment. **Nicht `input`:** das feuert je Tastendruck, und
+	 *   ein Rundlauf je Buchstabe wäre für eine Notiz das Falsche.
+	 * - `input` merkt sich nur, dass etwas offen ist.
+	 * - `focusout` fängt das Verlassen des Feldes auf jedem Weg ab. Der Browser feuert `change`
+	 *   beim Textfeld nur, wenn *er* die Änderung als Eingabe gesehen hat; alles andere (eine
+	 *   Erweiterung, ein Passwortmanager, ein Test, der den Wert setzt) käme sonst nie an. Deshalb
+	 *   das Merken oben — sonst schickte jedes Verlassen einer Zelle ein zweites Mal ab.
+	 *
+	 * Alle drei blubbern, deshalb hängen die Zuhörer am Formular und nicht an jeder der mehreren
+	 * hundert Zellen.
+	 */
+	let formElement = $state<HTMLFormElement | null>(null);
+	let saving = $state(false);
+	let savedOnce = $state(false);
+	/** Etwas wurde getippt und ist noch nicht abgeschickt. Nicht `$state`: nichts rendert es. */
+	let dirty = false;
+	/**
+	 * Eine Änderung, die während eines laufenden Speicherns kam.
+	 *
+	 * Nicht `$state`, weil nichts davon gerendert wird — und der Grund, dass es das überhaupt
+	 * gibt: zwei gleichzeitige Abschickungen tragen beide den *ganzen* Formularzustand, und
+	 * käme die ältere als zweite an, überschriebe sie die neuere Zelle wieder mit ihrem alten
+	 * Wert. Also immer nur eines unterwegs, und danach bei Bedarf noch einmal.
+	 */
+	let queued = false;
+
+	function saveNow() {
+		if (!open) return;
+		if (saving) {
+			queued = true;
+			return;
+		}
+		// Synchron zurückgesetzt und nicht erst nach der Antwort: sonst sähe das `focusout`, das
+		// unmittelbar auf ein `change` folgt, noch das offene Flag und schickte gleich noch einmal.
+		dirty = false;
+		formElement?.requestSubmit();
+	}
+
+	function saveIfDirty() {
+		if (dirty) saveNow();
+	}
 </script>
 
 {#snippet wishTable(sectionRows: WishRow[])}
@@ -99,9 +148,18 @@
 						</td>
 						{#each tracks as track (track)}
 							{@const cohort = cohortIn(row, track)}
-							<td class="align-top">
+							{@const wish = cohort ? mine.get(cohort.instanceId) : undefined}
+							<!--
+								Die ganze Zelle wird hinterlegt, nicht nur das Bedienelement darin: was
+								man in dieser Tabelle sucht, ist „wo habe ich etwas stehen", und das
+								liest sich an der Fläche ab.
+
+								Die Farbe folgt dem **gespeicherten** Wunsch und sonst nichts. Nie
+								fremden Eintragungen — das wäre die Heatmap, gegen die die ganze
+								Vertraulichkeitsregel geschrieben ist.
+							-->
+							<td class="align-top {wishTint(wish?.priority ?? '')}">
 								{#if cohort}
-									{@const wish = mine.get(cohort.instanceId)}
 									<!--
 										Der Schlüssel ist der gespeicherte Zustand, nicht die Kennung der
 										Instanz: die Zelle hält den Eingabestand lokal und soll genau dann
@@ -315,9 +373,22 @@
 		<form
 			method="POST"
 			action="?/save"
-			use:enhance={() =>
-				({ update }) =>
-					update({ reset: false })}
+			bind:this={formElement}
+			onchange={saveNow}
+			oninput={() => (dirty = true)}
+			onfocusout={saveIfDirty}
+			use:enhance={() => {
+				saving = true;
+				return async ({ update }) => {
+					await update({ reset: false });
+					saving = false;
+					savedOnce = true;
+					if (queued) {
+						queued = false;
+						saveNow();
+					}
+				};
+			}}
 			class="flex flex-col gap-4"
 		>
 			<input type="hidden" name="semester" value={data.semester?.code ?? ''} />
@@ -359,13 +430,27 @@
 			<div
 				class="border-base-300 bg-base-100 sticky bottom-0 flex flex-wrap items-center gap-3 rounded-lg border p-3"
 			>
-				<button type="submit" class="btn btn-primary btn-sm" disabled={!open}>
-					Eintragungen speichern
-				</button>
-				<p class="text-base-content/80 text-sm">
-					Speichert die ganze Tabelle auf einmal. Eine Zeile auf „—“ zu stellen zieht die Eintragung
-					zurück.
+				<p class="text-base-content/90 grow text-sm" aria-live="polite">
+					{#if saving}
+						<span class="loading loading-spinner loading-xs align-middle"></span>
+						wird gespeichert …
+					{:else if savedOnce}
+						<span class="badge badge-ghost badge-sm align-middle">gespeichert</span>
+						Änderungen werden sofort übernommen. Eine Zelle auf „—“ zu stellen zieht die Eintragung zurück.
+					{:else}
+						Änderungen werden beim Auswählen gespeichert — bei der Notiz, sobald Du das Feld
+						verlässt. Eine Zelle auf „—“ zu stellen zieht die Eintragung zurück.
+					{/if}
 				</p>
+				<!--
+					Bleibt, obwohl er im Normalfall nichts tut: ohne JavaScript ist er der einzige
+					Weg, ein Auswahlfeld abzuschicken. Deshalb unauffällig statt als Hauptaktion —
+					und weil er die ganze Tabelle schickt, ist ein Druck darauf folgenlos, wenn
+					ohnehin schon alles gespeichert ist.
+				-->
+				<button type="submit" class="btn btn-ghost btn-sm" disabled={!open || saving}>
+					Alles speichern
+				</button>
 			</div>
 		</form>
 	{/if}

@@ -73,13 +73,18 @@ export const WISH_NONE_LABEL = '—';
  * [[no-wish-aggregates]] was written about — the confidential fact with the names taken out.
  */
 export const WISH_PRIORITY_TINTS: Record<WishPriorityValue, string> = {
-	FIRST_CHOICE: 'bg-primary/20',
-	HAPPY_TO: 'bg-primary/12',
-	IF_NEEDED: 'bg-primary/6'
+	FIRST_CHOICE: 'bg-primary/35',
+	HAPPY_TO: 'bg-primary/22',
+	IF_NEEDED: 'bg-primary/12'
 };
 
 /**
- * The tint for one cell's current choice, or nothing for a cell nobody has filled in.
+ * The tint for one cell, from the wish that is **stored** for it.
+ *
+ * The stored one and not the one currently picked, now that a change saves itself: the colour then
+ * means "this is what the table holds", which is the question somebody scanning it is asking. The
+ * gap between picking and saving is one round trip, and during it the picker already shows the new
+ * value — so nothing is unanswered, it just is not coloured in yet.
  *
  * An empty string rather than a transparent class: the great majority of cells are empty, and the
  * table should not carry a class per cell to say so.

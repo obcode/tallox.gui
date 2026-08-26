@@ -21,12 +21,30 @@ früher der Teil da war**: „nur die Vorlesung", „lieber Zug B". Wer welchen 
 die Zuteilung; das ist eine Absprache zwischen mehreren und nichts, was eine Person allein angibt.
 Das Backend zog am selben Tag nach — `wish` zeigt seither auf die `course_instance`.
 
-**Ein Formular für die ganze Tabelle, ein Speichern.** So wurde die Papierversion auch benutzt:
-runtergehen, drei Sachen eintragen, fertig. Die Action bekommt den Zustand _jeder_ Zelle und
-bildet die Differenz gegen das Gespeicherte selbst — nicht gegen ein verstecktes Feld, das die
-Seite vor zehn Minuten gerendert hat, denn das ist falsch, sobald zwei Tabs offen sind
-(`wishChanges` in `src/lib/wishes.ts`, mit vitest). Und es funktioniert ohne JavaScript, was ein
-Auswahlfeld, das sich selbst abschickt, nicht täte.
+**Ein Formular für die ganze Tabelle — und es speichert sich beim Auswählen selbst.** Die Action
+bekommt den Zustand _jeder_ Zelle und bildet die Differenz gegen das Gespeicherte selbst — nicht
+gegen ein verstecktes Feld, das die Seite vor zehn Minuten gerendert hat, denn das ist falsch,
+sobald zwei Tabs offen sind (`wishChanges` in `src/lib/wishes.ts`, mit vitest).
+
+Drei Ereignisse am `<form>`, alle blubbernd, damit nicht jede der mehreren hundert Zellen einen
+Zuhörer braucht:
+
+- **`change`** löst aus. Beim Auswahlfeld „ausgewählt", beim Textfeld „fertig getippt".
+  Nicht `input` — ein Rundlauf je Tastendruck wäre für eine Notiz das Falsche.
+- **`input`** merkt sich nur, dass etwas offen ist.
+- **`focusout`** fängt das Verlassen auf jedem anderen Weg ab. Der Browser feuert `change` beim
+  Textfeld nur, wenn _er_ die Änderung als Eingabe gesehen hat — Playwrights `fill()` zum Beispiel
+  schickt `input` und blurt nicht, und derselbe Fall sind Passwortmanager und Erweiterungen. Das
+  Merk-Flag verhindert, dass jedes Verlassen ein zweites Mal abschickt, und wird **synchron** beim
+  Abschicken zurückgesetzt: sonst sähe das `focusout` direkt nach einem `change` es noch offen.
+
+**Immer nur eine Abschickung unterwegs.** Zwei gleichzeitige tragen beide den _ganzen_
+Formularzustand — käme die ältere als zweite an, überschriebe sie die neuere Zelle wieder mit
+ihrem alten Wert. Also `queued` und danach bei Bedarf noch einmal.
+
+Der Knopf „Alles speichern" bleibt trotzdem, unauffällig: ohne JavaScript gibt es keinen Weg, ein
+`<select>` abzuschicken. Weil er die ganze Tabelle schickt, ist ein Druck darauf folgenlos, wenn
+schon alles gespeichert ist.
 
 Nebenbei: `instanceRows`/`moduleRows` in `demand.ts` sind jetzt generisch über ein kleines
 `RowModule` statt über `ModuleLike`. Sie lesen drei Felder; die größere Schranke zwang diese Seite,
@@ -64,10 +82,15 @@ die bei zweistelliger Endung ins Leere greift und wie eine kaputte Seite aussieh
 
 ## Gewählte Zellen sind eingefärbt — die eigenen, und nur die
 
-`bg-primary` in 20 / 12 / 6 Prozent für unbedingt / gerne / notfalls. **Ein Farbton in drei
-Stärken**, nicht drei Farben: eine Priorität ist eine Menge und kein Urteil, und
-success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls" ist nichts davon, sondern
-jemand, der eine Lücke füllen würde.
+`bg-primary` in 35 / 22 / 12 Prozent für unbedingt / gerne / notfalls, auf der **ganzen `<td>`**
+und nicht nur auf dem Bedienelement darin: gesucht wird „wo habe ich etwas stehen", und das liest
+sich an der Fläche ab. **Ein Farbton in drei Stärken**, nicht drei Farben: eine Priorität ist eine
+Menge und kein Urteil, und success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls"
+ist nichts davon, sondern jemand, der eine Lücke füllen würde.
+
+Die Farbe folgt dem **gespeicherten** Wunsch, nicht der gerade getroffenen Auswahl. Seit sich die
+Tabelle selbst speichert, ist das dasselbe bis auf einen Rundlauf — und die Aussage „so steht es in
+der Tabelle" ist die, nach der jemand beim Überfliegen sucht.
 
 Zwei Regeln, die hier zusammenkommen:
 
