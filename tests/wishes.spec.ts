@@ -197,15 +197,29 @@ test.describe('the wish phase', () => {
 		await gotoRendered(page, URL);
 
 		const chosenCell = page.locator('td').filter({ has: cell(page) });
+		// The band runs across the whole row, so the module's own cell carries it too — that is
+		// what makes a filled-in row findable at a glance rather than by reading every picker.
+		// Scoped by the row that *has the picker in it*, not by its text: the summary above the
+		// table carries the same module name, and matching on that resolved to a cell of the
+		// summary — which is never tinted, so the test failed for the wrong reason.
+		const moduleCell = page
+			.locator('tbody tr')
+			.filter({ has: cell(page) })
+			.locator('td')
+			.nth(1);
+
 		await expect(chosenCell).not.toHaveClass(/bg-primary/);
+		await expect(moduleCell).not.toHaveClass(/bg-primary/);
 
 		await cell(page).selectOption('FIRST_CHOICE');
 		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
 		await expect(chosenCell).toHaveClass(/bg-primary/);
+		await expect(moduleCell).toHaveClass(/bg-primary/);
 
 		await cell(page).selectOption('');
 		await expect(summaryFor(page, WISHES.semester)).toHaveCount(0);
 		await expect(chosenCell).not.toHaveClass(/bg-primary/);
+		await expect(moduleCell).not.toHaveClass(/bg-primary/);
 	});
 
 	test('a colleague sees nothing of it — no name, no number, no mark', async ({ asPersona }) => {

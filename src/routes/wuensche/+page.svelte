@@ -14,6 +14,7 @@
 		ownWishesBySemester,
 		savedHint,
 		splitByMySubjects,
+		strongestPriority,
 		studyGroupLabel,
 		trackColumns,
 		trackHeading,
@@ -131,19 +132,30 @@
 			</thead>
 			<tbody>
 				{#each sectionRows as row (row.programme.code + row.module.id)}
+					{@const rowTint = wishTint(
+						strongestPriority(row.cohorts.map((c) => mine.get(c.instanceId)?.priority))
+					)}
 					<tr>
-						<td class="align-top font-mono text-xs">{studyGroupLabel(row)}</td>
-						<td class="align-top">
+						<td class="align-top font-mono text-xs {rowTint}">{studyGroupLabel(row)}</td>
+						<td class="align-top {rowTint}">
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
 								{row.module.name}
 							</a>
 							{#if row.module.subjectGroup}
-								<span class="text-base-content/80 block font-mono text-xs">
+								<!--
+									Ungedämpft, anders als sonst in einer Tabelle — und das ist keine
+									Ausnahme von der Regel, sondern sie richtig gelesen: „/80 ist die
+									Untergrenze" ist gegen `base-100` gemessen. Diese Zelle steht auf
+									der getönten Fläche der Zeile, und dort misst `/80` auf `winter`
+									3,48:1. Eine andere Fläche braucht ihre eigene Messung.
+								-->
+								<span class="block font-mono text-xs">
 									{row.module.subjectGroup.code}
 								</span>
 							{/if}
 						</td>
-						<td class="text-base-content/90 align-top text-right">
+						<!-- Ebenfalls ungedämpft, aus demselben Grund wie das Kürzel eine Zelle weiter. -->
+						<td class="align-top text-right {rowTint}">
 							{hoursLabel(row.teachingHours)}
 						</td>
 						{#each tracks as track (track)}

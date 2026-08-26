@@ -12,6 +12,7 @@ import {
 	othersHint,
 	savedHint,
 	splitByMySubjects,
+	strongestPriority,
 	studyGroupLabel,
 	trackColumns,
 	trackHeading,
@@ -113,6 +114,21 @@ describe('the tint on a chosen cell', () => {
 		for (const tint of Object.values(WISH_PRIORITY_TINTS)) {
 			expect(tint).not.toMatch(/^text-/);
 		}
+	});
+
+	it('takes the strongest of a row for the band across it', () => {
+		// A row can hold two cohorts wanted differently. The band has to be one colour, and the
+		// question it answers is "is there something of mine here, and how much" — so the
+		// strongest wins, while the weaker cell still says its own thing in its own tint.
+		expect(strongestPriority(['IF_NEEDED', 'FIRST_CHOICE'])).toBe('FIRST_CHOICE');
+		expect(strongestPriority([undefined, 'HAPPY_TO', 'IF_NEEDED'])).toBe('HAPPY_TO');
+		expect(strongestPriority(['IF_NEEDED'])).toBe('IF_NEEDED');
+	});
+
+	it('leaves a row with no entry at all untinted', () => {
+		expect(strongestPriority([])).toBe('');
+		expect(strongestPriority([undefined, undefined])).toBe('');
+		expect(wishTint(strongestPriority([undefined]))).toBe('');
 	});
 
 	it('gives an empty cell no class at all', () => {

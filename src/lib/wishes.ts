@@ -55,7 +55,7 @@ export const WISH_PRIORITY_LABELS: Record<WishPriorityValue, string> = {
 export const WISH_NONE_LABEL = '—';
 
 /**
- * How strongly a chosen cell is tinted — one hue, three strengths.
+ * How strongly a chosen row is tinted — one hue, three strengths.
  *
  * **One hue and not three colours**, because a priority is an amount and not a judgement.
  * `success`/`warning`/`error` would read as good, careful, bad, and „notfalls" is none of those —
@@ -65,17 +65,28 @@ export const WISH_NONE_LABEL = '—';
  * daisyUI's semantic colour rather than a fixed one, so it follows the theme: a hard-coded green
  * is unreadable on half of the twelve. And a *background* rather than a text colour, which is the
  * rule this repository keeps having to relearn — `text-success` and friends measure between 1.35:1
- * and 3.5:1 on the light themes. The tint is faint enough that `base-content` on it stays where it
- * was; `tests/contrast.spec.ts` measures that on every theme rather than trusting this sentence.
+ * and 3.5:1 on the light themes.
+ *
+ * # Why 22 and not 35
+ *
+ * These numbers are a measured ceiling and not a taste. The band runs behind the module name, the
+ * cohort label and the hours, so `base-content` has to stay readable on it in all twelve themes —
+ * and `primary` is an accent whose own luminance sits mid-way on some of them. On `dim` its green
+ * over the dark surface lands at #4d6754, where the theme's light `base-content` measures 3.69:1
+ * at 30 %. Above roughly 24 % there is a theme on which *neither* a light nor a dark foreground is
+ * safe, because the surface has been pushed into the middle.
+ *
+ * `tests/contrast.spec.ts` measures this on every theme rather than trusting the sentence, and it
+ * is what found the ceiling: 26 % fails on `dim`, 22 % passes everywhere with a step to spare.
  *
  * **What it may never depend on: anybody else's wishes.** The colour of a cell says what *you*
  * chose. Tinting by what other people registered would be the heat map that
  * [[no-wish-aggregates]] was written about — the confidential fact with the names taken out.
  */
 export const WISH_PRIORITY_TINTS: Record<WishPriorityValue, string> = {
-	FIRST_CHOICE: 'bg-primary/35',
-	HAPPY_TO: 'bg-primary/22',
-	IF_NEEDED: 'bg-primary/12'
+	FIRST_CHOICE: 'bg-primary/22',
+	HAPPY_TO: 'bg-primary/14',
+	IF_NEEDED: 'bg-primary/8'
 };
 
 /**
@@ -91,6 +102,23 @@ export const WISH_PRIORITY_TINTS: Record<WishPriorityValue, string> = {
  */
 export function wishTint(choice: WishChoice): string {
 	return choice === WISH_NONE ? '' : WISH_PRIORITY_TINTS[choice];
+}
+
+/**
+ * The strongest of a row's entries, for tinting the row itself.
+ *
+ * A row can hold two cohorts wanted differently — unbedingt for Zug A, notfalls for Zug B — and a
+ * band across the whole row has to be one colour. The strongest wins, because what the band
+ * answers is "is there something of mine in this row, and how much", and the weaker cell still
+ * says its own thing in its own tint.
+ */
+export function strongestPriority(
+	priorities: readonly (WishPriorityValue | undefined)[]
+): WishChoice {
+	for (const level of WISH_PRIORITIES) {
+		if (priorities.includes(level)) return level;
+	}
+	return WISH_NONE;
 }
 
 /** The sentence under the picker, so nobody has to guess what the middle one means. */

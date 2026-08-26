@@ -82,15 +82,31 @@ die bei zweistelliger Endung ins Leere greift und wie eine kaputte Seite aussieh
 
 ## Gewählte Zellen sind eingefärbt — die eigenen, und nur die
 
-`bg-primary` in 35 / 22 / 12 Prozent für unbedingt / gerne / notfalls, auf der **ganzen `<td>`**
-und nicht nur auf dem Bedienelement darin: gesucht wird „wo habe ich etwas stehen", und das liest
-sich an der Fläche ab. **Ein Farbton in drei Stärken**, nicht drei Farben: eine Priorität ist eine
-Menge und kein Urteil, und success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls"
-ist nichts davon, sondern jemand, der eine Lücke füllen würde.
+`bg-primary` in 22 / 14 / 8 Prozent für unbedingt / gerne / notfalls, **über die ganze Zeile**:
+Studiengruppe, Modul und SWS bekommen die stärkste Eintragung der Zeile (`strongestPriority`),
+jede Zug-Zelle behält ihre eigene. Gesucht wird „wo habe ich etwas stehen", und das liest sich an
+der Fläche ab; welcher Zug welche Stufe hat, steht daneben trotzdem. **Ein Farbton in drei
+Stärken**, nicht drei Farben: eine Priorität ist eine Menge und kein Urteil, und
+success/warning/error läse sich als gut, Vorsicht, schlecht — „notfalls" ist nichts davon, sondern
+jemand, der eine Lücke füllen würde.
 
 Die Farbe folgt dem **gespeicherten** Wunsch, nicht der gerade getroffenen Auswahl. Seit sich die
 Tabelle selbst speichert, ist das dasselbe bis auf einen Rundlauf — und die Aussage „so steht es in
 der Tabelle" ist die, nach der jemand beim Überfliegen sucht.
+
+### Die 22 Prozent sind gemessen, nicht gewählt
+
+Erst standen 35 dort. Sobald das Band hinter dem Modulnamen liegt, muss `base-content` darauf in
+**allen zwölf** Themes lesbar bleiben — und `primary` ist ein Akzent, dessen eigene Helligkeit auf
+manchen Themes in der Mitte liegt. Auf `dim` landet sein Grün über der dunklen Fläche bei #4d6754,
+wo der helle `base-content` bei 30 % nur 3,69:1 misst. Oberhalb von rund 24 % gibt es ein Theme,
+auf dem **weder** heller noch dunkler Vordergrund sicher ist, weil die Fläche in die Mitte
+geschoben wurde. 26 % scheitert auf `dim`, 22 % besteht überall mit einer Stufe Luft.
+
+**Und: gedämpfter Text gehört nicht auf die Tönung.** „/80 ist die Untergrenze" ist gegen
+`base-100` gemessen — auf dem Band misst `/80` auf `winter` 3,48:1. Das Fachgruppen-Kürzel und die
+SWS stehen in der Zeile deshalb ungedämpft. Eine andere Fläche braucht ihre eigene Messung; das ist
+die Regel richtig gelesen und keine Ausnahme von ihr.
 
 Zwei Regeln, die hier zusammenkommen:
 
