@@ -65,14 +65,15 @@
 		<table class="table table-sm w-full min-w-[720px]">
 			<thead>
 				<!--
-					Die drei linken Spalten sind so breit, wie ihr Inhalt sein muss — der Rest der
-					Breite gehört den Zug-Spalten, weil dort die Notiz getippt wird. Ein langer
-					Modulname bricht dafür um; das ist der richtige Tausch, denn den Namen liest
-					man, in die Notiz schreibt man.
+					Die drei linken Spalten sind fest, den Rest teilen sich die Zug-Spalten — dort
+					wird die Notiz getippt. Der Modulname bekommt genug, um in aller Regel in zwei
+					Zeilen zu passen; enger war es zwar noch lesbar, aber die Namen im Katalog sind
+					lang („Advanced Data Modeling and Analysis with R"), und eine Spalte, in der
+					jeder zweite Titel vierzeilig umbricht, kostet mehr, als die Notiz gewinnt.
 				-->
 				<tr>
 					<th class="w-28">Studiengruppe</th>
-					<th class="w-56">Modul</th>
+					<th class="w-72">Modul</th>
 					<th class="w-16 text-right" title="Was alle Züge zusammen kosten.">SWS</th>
 					{#each tracks as track (track)}
 						<th>{trackHeading(track)}</th>
