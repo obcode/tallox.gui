@@ -73,9 +73,15 @@ const WishesDocument = graphql(`
 				sharedAcrossTracks
 			}
 		}
+		# **Every semester, not the one on screen.** Somebody who entered something for the summer
+		# term and then moved the picker to the winter term has not withdrawn it, and a list that
+		# showed nothing would say they had. Asking without the argument is allowed here and
+		# nowhere else: own entries never go through the confidentiality rule, so there is no
+		# publication date to pick.
+		#
 		# Spelled out rather than shared as a fragment with the field below: the client preset
 		# masks a fragment's fields, so a page that renders them would have to unmask every row.
-		myWishes(semester: $semester) @include(if: $withSemester) {
+		myWishes {
 			id
 			priority
 			note
@@ -85,6 +91,7 @@ const WishesDocument = graphql(`
 			}
 			instance {
 				id
+				semester
 				track
 				programmeSemester
 				programme {
@@ -109,6 +116,7 @@ const WishesDocument = graphql(`
 			}
 			instance {
 				id
+				semester
 				track
 				programmeSemester
 				programme {
@@ -212,7 +220,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		planningSemester: data.planningSemester,
 		mySubjectGroups: data.mySubjectGroups,
 		instances: data.courseInstances ?? [],
-		myWishes: data.myWishes ?? [],
+		// Every semester, so the summary above the table is the whole picture. The cells pick
+		// their own row out of it by instance id, which is semester-specific anyway.
+		myWishes: data.myWishes,
 		wishes: data.wishes ?? [],
 		me: data.me,
 		unusable

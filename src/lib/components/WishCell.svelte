@@ -59,7 +59,7 @@
 		name="wish:{instanceId}"
 		bind:value={choice}
 		aria-label="Wunsch für {label}"
-		class="select select-bordered select-xs w-full min-w-24"
+		class="select select-bordered select-xs w-full min-w-28"
 		disabled={!open}
 	>
 		<option value={WISH_NONE}>{WISH_NONE_LABEL}</option>
@@ -83,7 +83,7 @@
 			maxlength="500"
 			placeholder="Notiz, z. B. „nur die Vorlesung“"
 			aria-label="Notiz zu {label}"
-			class="input input-bordered input-xs w-full min-w-24"
+			class="input input-bordered input-xs w-full min-w-40"
 			disabled={!open}
 		/>
 	{/if}

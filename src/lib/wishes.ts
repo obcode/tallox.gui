@@ -75,6 +75,8 @@ export type WishInstanceLike = {
 	id: string;
 	track: string;
 	programmeSemester?: number | null;
+	/** Which semester the instance is in — carried because the own-entries list groups by it. */
+	semester?: string;
 	programme: { code: string };
 	module: { id: string; name: string };
 };
@@ -290,6 +292,41 @@ export function othersHint(publishedAt: string | null | undefined): string {
 		'Anzahl. Das ist Absicht: niemand soll sich fragen müssen, ob ein Fach schon „besetzt" ist, ' +
 		'bevor er sich einträgt.'
 	);
+}
+
+/** One semester's worth of somebody's own entries. */
+export type OwnWishSemester = {
+	/** `2027-SS`. */
+	code: string;
+	wishes: WishLike[];
+};
+
+/**
+ * The caller's own entries, grouped by the semester they are in.
+ *
+ * Across every semester and not only the one on screen: somebody who entered something for the
+ * summer term and then moved the picker to the winter term has not withdrawn it, and a list that
+ * showed nothing would say they had. The backend answers this without a semester argument, which
+ * it may because own entries do not go through the confidentiality rule at all.
+ *
+ * Chronological, which is what sorting the codes as text gives — that is what the format is for.
+ * A wish whose instance did not carry its semester lands under an empty heading rather than being
+ * dropped; losing somebody's own entry to a missing field would be worse than an odd heading.
+ */
+export function ownWishesBySemester(wishes: readonly WishLike[]): OwnWishSemester[] {
+	const bySemester = new Map<string, OwnWishSemester>();
+
+	for (const wish of wishes) {
+		const code = wish.instance.semester ?? '';
+		const existing = bySemester.get(code);
+		if (existing) {
+			existing.wishes.push(wish);
+			continue;
+		}
+		bySemester.set(code, { code, wishes: [wish] });
+	}
+
+	return [...bySemester.values()].sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /** One cell as it comes back out of the form. */

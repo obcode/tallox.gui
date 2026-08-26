@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { semesterName } from '../src/lib/semester';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { WISHES } from './seed';
@@ -20,11 +21,26 @@ const URL = `/wuensche?semester=${WISHES.semester}`;
 /** Everything these tests registered, and the publication they may have caused. */
 function reset(): void {
 	runSql(
-		`DELETE FROM wish WHERE course_instance_id = '${WISHES.instance}';
+		`DELETE FROM wish WHERE course_instance_id IN
+		   ('${WISHES.instance}', '${WISHES.laterInstance}');
 		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES'
-		  WHERE code = '${WISHES.semester}';`,
+		  WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}');`,
 		'clearing the test wishes'
 	);
+}
+
+/**
+ * The caller's own entries, as the summary above the table shows them.
+ *
+ * One `<article>` per semester, and the wish table is not one — so this finds the summary and
+ * never the form. By content rather than by a count of tables: "Meine Eintragungen" now sits
+ * *above* the table, so `getByRole('table').last()` means the opposite of what it used to.
+ */
+function summaryFor(page: Page, semester: string) {
+	// semesterName from the application rather than a second spelling of it here: "Wintersemester
+	// 2032/33" has a two-digit tail, and a locator that guessed "2032/2033" would find nothing and
+	// read as a broken page.
+	return page.locator('article').filter({ hasText: semesterName(semester) });
 }
 
 /**
@@ -100,7 +116,7 @@ test.describe('the wish phase', () => {
 		// which the page says in so many words.
 		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
 
-		const summary = () => page.getByRole('heading', { name: /Meine Eintragungen/ });
+		const mine = () => summaryFor(page, WISHES.semester);
 
 		await cell(page).selectOption('FIRST_CHOICE');
 		// The note appears once something is chosen: it is where the part-level detail lives now,
@@ -108,15 +124,11 @@ test.describe('the wish phase', () => {
 		await note(page).fill('nur die Vorlesung');
 		await save(page).click();
 
-		// Wait for the heading, which exists only once the round trip has come back and the page
-		// has reloaded its data. Asserting on the table instead would pass against the table with
-		// the form in it, whose cells contain the same words, and the rest of the test would then
-		// race the reload.
-		await expect(summary()).toHaveText(/\(1\)/);
-
-		const mine = page.getByRole('table').last();
-		await expect(mine.getByRole('cell', { name: 'unbedingt' })).toBeVisible();
-		await expect(mine.getByRole('cell', { name: 'nur die Vorlesung' })).toBeVisible();
+		// Wait for the summary card, which exists only once the round trip has come back and the
+		// page has reloaded its data. Asserting on the wish table instead would pass against the
+		// form, whose cells carry the same words, and the rest of the test would race the reload.
+		await expect(mine().getByRole('cell', { name: 'unbedingt' })).toBeVisible();
+		await expect(mine().getByRole('cell', { name: 'nur die Vorlesung' })).toBeVisible();
 
 		// Correcting is the same table and the same button, and it is a correction rather than a
 		// second entry.
@@ -124,15 +136,44 @@ test.describe('the wish phase', () => {
 		await cell(page).selectOption('IF_NEEDED');
 		await save(page).click();
 
-		await expect(
-			page.getByRole('table').last().getByRole('cell', { name: 'notfalls' })
-		).toBeVisible();
-		await expect(summary()).toHaveText(/\(1\)/);
+		await expect(mine().getByRole('cell', { name: 'notfalls' })).toBeVisible();
+		await expect(mine().getByRole('row')).toHaveCount(2); // the heading row and the one entry
 
 		// And back to nothing: the empty option is how a wish is withdrawn.
 		await cell(page).selectOption('');
 		await save(page).click();
-		await expect(summary()).toHaveCount(0);
+		await expect(mine()).toHaveCount(0);
+	});
+
+	test('my own entries span every semester, grouped by it', async ({ asPersona }) => {
+		// Somebody who enters something for one semester and then moves the picker has not
+		// withdrawn it. A summary that showed only the semester on screen would say they had.
+		const page = await asPersona(PERSONAS.eins);
+
+		await gotoRendered(page, URL);
+		await cell(page).selectOption('HAPPY_TO');
+		await save(page).click();
+		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
+
+		await gotoRendered(page, `/wuensche?semester=${WISHES.laterSemester}`);
+		await cell(page).selectOption('FIRST_CHOICE');
+		await save(page).click();
+
+		// Both, while the picker is on one of them — and the one on screen says so, while the
+		// other offers the way to it.
+		await expect(summaryFor(page, WISHES.laterSemester).getByText('angezeigt')).toBeVisible();
+		await expect(
+			summaryFor(page, WISHES.semester).getByRole('link', { name: 'anzeigen' })
+		).toBeVisible();
+		await expect(page.getByRole('heading', { name: /Meine Eintragungen \(2\)/ })).toBeVisible();
+
+		// Away again, so the tests after this one start where they expect to.
+		await cell(page).selectOption('');
+		await save(page).click();
+		await gotoRendered(page, URL);
+		await cell(page).selectOption('');
+		await save(page).click();
+		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
 	});
 
 	test('a colleague sees nothing of it — no name, no number, no mark', async ({ asPersona }) => {
@@ -141,7 +182,7 @@ test.describe('the wish phase', () => {
 		await gotoRendered(eins, URL);
 		await cell(eins).selectOption('HAPPY_TO');
 		await save(eins).click();
-		await expect(eins.getByRole('heading', { name: /Meine Eintragungen \(1\)/ })).toBeVisible();
+		await expect(summaryFor(eins, WISHES.semester)).toBeVisible();
 
 		// Zwei looks at the same screen.
 		const zwei = await asPersona(PERSONAS.zwei);

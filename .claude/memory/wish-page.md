@@ -46,6 +46,22 @@ hier gebaute Zahl wäre falsch _und_ verräterisch, weil sie davon abhinge, wer 
 Die einzigen Zahlen auf der Seite sind „Meine Eintragungen (3)" und „2 Änderungen gespeichert".
 Beide sind unbedenklich: sie handeln von dem, was diese Person selbst getan hat.
 
+## „Meine Eintragungen" steht oben und geht über alle Semester
+
+Nach Semester gruppiert, chronologisch, mit „angezeigt" am aktuellen und einem „anzeigen"-Link an
+den anderen. Wer im Sommersemester etwas einträgt und dann die Auswahl aufs Wintersemester
+stellt, hat nichts zurückgezogen — eine Liste, die nur das gewählte Semester zeigt, behauptet
+genau das.
+
+Dafür darf `myWishes` das Semester weglassen (`myWishes { … }`), `wishes(semester:)` nicht: der
+Vertraulichkeitsfilter wird aus **einem** Veröffentlichungsdatum gebaut. Eigene Zeilen haben
+diesen Zustand nicht, fremde schon. Steht als Regel im Schema-Kommentar des Feldes.
+
+Folge für Playwright: `getByRole('table').last()` traf früher die eigene Übersicht und trifft
+jetzt die Wunschtabelle. Die Übersicht wird über ihre `<article>`-Karte und `semesterName()` aus
+der Anwendung gefunden — nicht über eine zweite Schreibweise von „Wintersemester 2032/33" im Test,
+die bei zweistelliger Endung ins Leere greift und wie eine kaputte Seite aussieht.
+
 ## Offen, bis das Semester abgeschlossen ist
 
 Nicht nur in der Wunschphase (2026-08-25, mit der Fakultät). `wishesAreOpen()` ist „Phase ist
