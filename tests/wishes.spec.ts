@@ -106,7 +106,9 @@ test.describe('the wish phase', () => {
 
 		const table = page.getByRole('table').first();
 		const headers = await table.locator('thead th').allTextContents();
-		expect(headers.map((h) => h.trim())).toEqual(['Studiengruppe', 'Modul', 'SWS', 'Zug']);
+		// The seeded module runs once, and its column is "Zug A" rather than a "Zug" column of its
+		// own: a table with both would ask the reader to work out that they are the same thing.
+		expect(headers.map((h) => h.trim())).toEqual(['Studiengruppe', 'Modul', 'SWS', 'Zug A']);
 
 		// One row for the module, whatever its instance is made of. The seeded instance has a
 		// lecture and a laboratory, and neither is a row of its own.

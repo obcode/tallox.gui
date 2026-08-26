@@ -158,17 +158,29 @@ describe('the table', () => {
 		expect(rows[0].cohorts.map((c) => c.track)).toEqual(['A', 'B']);
 	});
 
-	it('has a column for every track that occurs, and a heading for the single-cohort one', () => {
+	it('puts a module that runs once in the first column, not in one of its own', () => {
+		// A "Zug" column beside "Zug A" and "Zug B" asks the reader to work out that the first two
+		// are the same thing. The single cohort is Zug A.
 		const rows = wishRows([
 			instance('1', 'm1', 'Analysis', 'B'),
 			instance('2', 'm1', 'Analysis', 'A'),
 			instance('3', 'm2', 'Projektstudium', '')
 		]);
 
-		expect(trackColumns(rows)).toEqual(['', 'A', 'B']);
+		expect(trackColumns(rows)).toEqual(['A', 'B']);
 		expect(trackHeading('A')).toBe('Zug A');
-		// Not "Zug " with nothing after it — that reads as a missing value, and it is not missing.
-		expect(trackHeading('')).toBe('Zug');
+		expect(trackHeading('')).toBe('Zug A');
+	});
+
+	it('renames the column and never the cohort', () => {
+		// The instance keeps its empty track, and so does its label: the day it becomes two
+		// cohorts the first is named A for real, and a label that had said A all along would make
+		// that a change nobody can see.
+		const [row] = wishRows([instance('3', 'm2', 'Projektstudium', '')]);
+
+		expect(row.cohorts[0].track).toBe('');
+		expect(row.cohorts[0].label).toBe('IF3');
+		expect(studyGroupLabel(row)).toBe('IF3');
 	});
 
 	it('finds the cohort in a column, and nothing where the module does not run', () => {
@@ -176,6 +188,21 @@ describe('the table', () => {
 
 		expect(cohortIn(row, 'A')?.instanceId).toBe('1');
 		expect(cohortIn(row, 'B')).toBeUndefined();
+
+		const [single] = wishRows([instance('2', 'm2', 'Projektstudium', '')]);
+		expect(cohortIn(single, 'A')?.instanceId).toBe('2');
+	});
+
+	it('prefers a real cohort A over the unnamed one', () => {
+		// The two cannot both occur in one row — the demand screen names the cohorts the moment
+		// there are two — but a lookup that preferred the unnamed one would hide a real A rather
+		// than fail, and a cell nobody can enter a wish into is worse than an error.
+		const [row] = wishRows([
+			instance('unnamed', 'm1', 'Analysis', ''),
+			instance('real-a', 'm1', 'Analysis', 'A')
+		]);
+
+		expect(cohortIn(row, 'A')?.instanceId).toBe('real-a');
 	});
 
 	it('names the cohorts of a row the way the old table did', () => {
