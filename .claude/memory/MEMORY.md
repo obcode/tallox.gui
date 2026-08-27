@@ -13,6 +13,7 @@ Kolleg:innen.
 - [Die Bedarfsseite](demand-page.md) — zwei Sichten unter einer Adresse, und die Formularregel, an der drei Fehler an einem Tag hingen
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
+- [Die Zuteilungsseite](assignment-page.md) — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, und zwei Fallen
 - [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, und zwei Befunde aus dem ersten E2E-Lauf
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
 

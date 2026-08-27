@@ -130,7 +130,30 @@ const PASS_THROUGH = new Set([
 	'WISH_PHASE_CLOSED',
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
-	'WISH_PRIORITY_INVALID'
+	'WISH_PRIORITY_INVALID',
+	// The assignment phase, read the same way and with one entry that needed arguing.
+	//
+	// ASSIGNMENT_NOT_FOUND covers "there is no such assignment" *and* "not yours to see", and the
+	// backend gives both the same sentence — safe for the same reason WISH_NOT_FOUND is.
+	//
+	// PART_ALREADY_ASSIGNED and PART_ASSIGNED both say that somebody holds a part, which sounds
+	// like exactly what this list is supposed to keep out. They are here because of who can reach
+	// them: both are produced only for a caller who may write in that subject or programme, and
+	// anybody who may write there may read the assignment they collided with. The backend asserts
+	// that rather than assuming it — see TestPartAssignedTellsNobodySomethingNew. If the write
+	// rule ever widens, these two move to the generic bucket in the same commit.
+	//
+	// ASSIGNMENT_MOVED_ON says a decision changed under the caller, and that is the point of it:
+	// they are about to overwrite something they never saw.
+	'ASSIGNMENT_PHASE_CLOSED',
+	'ASSIGNMENT_NOT_FOUND',
+	'ASSIGNMENT_MOVED_ON',
+	'ASSIGNMENT_NOTE_TOO_LONG',
+	'NOT_YOUR_SUBJECT',
+	'PART_ALREADY_ASSIGNED',
+	'PART_ASSIGNED',
+	'ASSIGNEE_INVALID',
+	'ASSIGNEE_NOT_FOUND'
 ]);
 
 /** What is shown when the error is none of the known ones. */

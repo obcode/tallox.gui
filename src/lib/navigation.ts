@@ -75,6 +75,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	{
 		emoji: '🧩',
 		label: 'Zuteilung',
+		href: '/zuteilung',
 		hint: 'Instanzen besetzen',
 		roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE']
 	},
