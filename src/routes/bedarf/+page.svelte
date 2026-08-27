@@ -20,6 +20,8 @@
 		effectiveComponents,
 		hoursLabel,
 		plannedHours,
+		coverageLabel,
+		coversLabel,
 		sharingState,
 		splitSummary,
 		trackLetters
@@ -169,6 +171,42 @@
 		hasAnyRole(data.session?.effectiveRoles ?? [], ['PROGRAMME_LEAD']) &&
 			data.myProgrammes.length === 0 &&
 			!hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE'])
+	);
+
+	/**
+	 * The unanswered requests this programme has to answer.
+	 *
+	 * Read off `covers` on this programme's own instances, which is where an unanswered request
+	 * sits: the row that shows it in the asking programme's table is a row this lead does not see
+	 * in their own selection. Without collecting them here the request would be invisible on the
+	 * only screen that can answer it.
+	 */
+	const openCoverageRequests = $derived(
+		data.instances.flatMap((instance) =>
+			(instance.covers ?? [])
+				.filter((c) => !c.acceptedAt)
+				.map((c) => ({
+					guestId: c.instance.id,
+					guest: cohortLabel(
+						c.instance.programme.code,
+						c.instance.programmeSemester,
+						c.instance.track
+					),
+					host: cohortLabel(instance.programme.code, instance.programmeSemester, instance.track),
+					module: instance.module.name
+				}))
+		)
+	);
+
+	/**
+	 * The cohort a picker was opened for, and what it may point at.
+	 *
+	 * Both come from the load: the candidates are the schema's own four conditions, so the menu
+	 * offers exactly what a request would be allowed to name rather than a list that fails on
+	 * click.
+	 */
+	const coverageSubject = $derived(
+		data.instances.find((i) => i.id === data.selected.coverageFor) ?? null
 	);
 
 	/**
@@ -1028,6 +1066,122 @@
 			{/if}
 		</div>
 
+		<!--
+			Anfragen anderer Studiengänge, ganz oben und außerhalb der Tabelle.
+
+			Ohne diesen Abschnitt ist eine Anfrage auf dem einzigen Schirm unsichtbar, auf dem sie
+			beantwortet werden kann: sie steht in der Zeile des *fragenden* Studiengangs, und den
+			sieht die haltende Leitung in ihrer eigenen Auswahl gar nicht. Sie hängt an den
+			Instanzen dieses Studiengangs — `covers` —, also genau da, wo die Zusage hingehört.
+		-->
+		{#if mayPlan && openCoverageRequests.length > 0}
+			<form method="POST" action="?/coverage" use:enhance class="flex flex-col gap-2">
+				<div class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
+					<h2 class="font-medium">Anfragen anderer Studiengänge</h2>
+					<p class="text-base-content/80 text-sm">
+						Ein anderer Studiengang möchte seinen Bedarf durch eine Ihrer Lehrveranstaltungen
+						mitdecken lassen. Bestätigen heißt: die Veranstaltung findet einmal statt, Sie halten
+						sie, und ihre SWS zählen einmal — bei Ihnen.
+					</p>
+					{#each openCoverageRequests as request (request.guestId)}
+						<div class="flex flex-wrap items-center gap-2">
+							<span class="badge badge-neutral badge-sm">{request.host}</span>
+							<span class="text-sm">
+								angefragt von <strong>{request.guest}</strong> für {request.module}
+							</span>
+							<button
+								type="submit"
+								name="accept"
+								value={request.guestId}
+								class="btn btn-primary btn-xs"
+							>
+								bestätigen
+							</button>
+							<!-- Ablehnen und Lösen sind dieselbe Sache: der Bedarf ist nicht gedeckt. -->
+							<button type="submit" name="release" value={request.guestId} class="btn btn-xs">
+								ablehnen
+							</button>
+						</div>
+					{/each}
+				</div>
+			</form>
+		{/if}
+
+		<!--
+			Der Picker: welche Instanz eines anderen Studiengangs diesen Bedarf mitdecken soll.
+
+			Ein Abschnitt an der Adresse statt eines Dialogs, wie die Bearbeiten-Ansicht auch:
+			nachladbar, weitergebbar, und mit dem Zurück-Knopf zu schließen. Die Liste kommt aus
+			dem Load und ist genau das, was der Fremdschlüssel akzeptieren würde — ein Menü mit
+			Einträgen, die beim Klick scheitern, wäre schlimmer als ein kurzes Menü.
+		-->
+		{#if mayPlan && coverageSubject}
+			<div class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
+				<h2 class="font-medium">
+					{cohortLabel(
+						coverageSubject.programme.code,
+						coverageSubject.programmeSemester,
+						coverageSubject.track
+					)} — {coverageSubject.module.name} mitdecken lassen
+				</h2>
+				<p class="text-base-content/80 text-sm">
+					Der Bedarf bleibt bestehen und zählt weiter für Ihren Studiengang. Was sich ändert: die
+					Veranstaltung findet einmal statt, der andere Studiengang hält sie, und ihre SWS zählen
+					dort. Wirksam wird das erst, wenn die dortige Leitung zustimmt.
+				</p>
+
+				{#if data.coverageCandidates.length === 0}
+					<p class="text-base-content/80 text-sm">
+						Kein anderer Studiengang hat dieses Modul in diesem Semester angemeldet — oder die
+						vorhandenen sind selbst schon gedeckt. Ohne eine Instanz dort gibt es nichts, worauf
+						sich dieser Bedarf beziehen könnte.
+					</p>
+				{:else}
+					<form method="POST" action="?/coverage" use:enhance class="flex flex-col gap-2">
+						{#each data.coverageCandidates as candidate (candidate.id)}
+							<div class="flex flex-wrap items-center gap-2">
+								<span class="badge badge-neutral badge-sm">
+									{cohortLabel(
+										candidate.programme.code,
+										candidate.programmeSemester,
+										candidate.track
+									)}
+								</span>
+								<span class="text-base-content/80 text-sm">
+									{hoursLabel(candidate.teachingHours)}
+									{#if (candidate.covers ?? []).length > 0}
+										· deckt schon {(candidate.covers ?? []).length} weitere(n) Bedarf
+									{/if}
+								</span>
+								<!--
+									Die Kandidaten-Id sitzt auf dem Knopf, nicht in einem versteckten Feld:
+									ein Formular mit einem versteckten Feld je Kandidat schickt alle mit,
+									und `coveredBy` wäre immer der erste der Liste statt der angeklickte.
+								-->
+								<button
+									type="submit"
+									name="coveredBy"
+									value={candidate.id}
+									class="btn btn-primary btn-xs"
+								>
+									anfragen
+								</button>
+							</div>
+						{/each}
+						<input type="hidden" name="ask" value={coverageSubject.id} />
+					</form>
+				{/if}
+
+				<form method="GET" class="self-start">
+					<!-- `deckung` gehört nicht zu den Filtern und reist deshalb nicht mit: genau
+					     das schließt den Picker. -->
+					{@render carriedOver([])}
+					<input type="hidden" name="bearbeiten" value="1" />
+					<button type="submit" class="btn btn-ghost btn-xs">schließen</button>
+				</form>
+			</div>
+		{/if}
+
 		{#if !editing}
 			<!--
 				Die Lesesicht: dieselbe Kornung wie die Planungstabelle — eine Zeile je Modul, die
@@ -1323,6 +1477,58 @@
 																	</button>
 																{/if}
 															{/if}
+															<!--
+																Die Deckung, je Zug statt je Modul — anders als die geteilte
+																Vorlesung, denn welcher Zug seinen Bedarf woanders decken
+																lässt, ist eine Aussage über genau diesen Zug.
+
+																Immer nur ein Knopf: ohne Verweis „decken lassen", bei
+																offener Anfrage „zurückziehen", bei stehender Deckung
+																„lösen". Die Gegenseite bestätigt in ihrer eigenen Zeile,
+																weiter unten — sie ist der einzige Schirm, auf dem das
+																beantwortet werden kann.
+															-->
+															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER'}
+																{#each row.tracks as cohortTrack, i (i)}
+																	{#if cohortTrack.instanceId}
+																		{#if cohortTrack.coveredBy}
+																			<button
+																				type="submit"
+																				formaction="?/coverage"
+																				name="release"
+																				value={cohortTrack.instanceId}
+																				class="btn btn-xs"
+																				title={cohortTrack.coveredBy.acceptedAt
+																					? 'Dieser Zug hält seine Lehre wieder selbst'
+																					: 'Die Anfrage zurückziehen'}
+																			>
+																				{cohortTrack.coveredBy.acceptedAt
+																					? 'Deckung lösen'
+																					: 'Anfrage zurückziehen'}
+																			</button>
+																		{:else}
+																			<!--
+																				Ein GET-Formular statt eines Links, aus demselben
+																				Grund wie überall sonst hier: `resolve()` kennt nur
+																				den Pfad, die Auswahl steht in Query-Parametern,
+																				und ein handgeschriebener Link mit beidem ist genau
+																				das, was die Lint-Regel verhindert.
+																			-->
+																			<button
+																				type="submit"
+																				formmethod="GET"
+																				formaction={resolve('/bedarf')}
+																				name="deckung"
+																				value={cohortTrack.instanceId}
+																				class="btn btn-xs"
+																				title="Diesen Bedarf von einem anderen Studiengang mitdecken lassen"
+																			>
+																				decken lassen
+																			</button>
+																		{/if}
+																	{/if}
+																{/each}
+															{/if}
 														</span>
 													</div>
 													{#if row.module.splitIsEstimated}
@@ -1380,6 +1586,15 @@
 												{:else}
 													<div class="flex flex-col gap-1">
 														{#each letters as letter, i (i)}
+															<!--
+																Ein gedeckter Zug hält gar keine eigene Lehre — ein anderer
+																Studiengang hält sie. Seine Gruppenzahl ist deshalb nicht
+																seine, und der Stepper ist abgeschaltet statt nur auf 0 zu
+																stehen: der erste Klick schickte sonst `groups: 1` und
+																holte sich ein INSTANCE_COVERED, das der Schirm hätte
+																vermeiden können.
+															-->
+															{@const covered = !!row.tracks[i]?.coveredBy?.acceptedAt}
 															<div class="flex items-center gap-1">
 																{#if letters.length > 1}
 																	<span class="badge badge-neutral badge-sm">
@@ -1391,7 +1606,7 @@
 																		type="button"
 																		class="btn btn-xs join-item"
 																		onclick={() => setGroups(row, i, draft(row).groups[i] - 1)}
-																		disabled={!mayPlan}
+																		disabled={!mayPlan || covered}
 																		aria-label={groupLabel(row, letters, letter, 'weniger')}
 																		>−</button
 																	>
@@ -1402,21 +1617,33 @@
 																		name="groups:{row.module.id}:{i}"
 																		value={draft(row).groups[i]}
 																		oninput={(e) => setGroups(row, i, numberOf(e.currentTarget))}
-																		disabled={!mayPlan}
+																		disabled={!mayPlan || covered}
 																		class="input input-bordered input-xs join-item w-12 text-center"
 																		aria-label={groupLabel(row, letters, letter)}
+																		title={covered
+																			? 'Deckung lösen, um wieder eigene Teile zu planen'
+																			: undefined}
 																	/>
 																	<button
 																		type="button"
 																		class="btn btn-xs join-item"
 																		onclick={() => setGroups(row, i, draft(row).groups[i] + 1)}
-																		disabled={!mayPlan}
+																		disabled={!mayPlan || covered}
 																		aria-label={groupLabel(row, letters, letter, 'mehr')}>+</button
 																	>
 																</div>
-																{#if row.tracks[i]?.borrowedKinds.length}
+																{#if row.tracks[i]?.coveredBy}
+																	<span class="badge badge-outline badge-sm">
+																		{coverageLabel(row.tracks[i].coveredBy!)}
+																	</span>
+																{:else if row.tracks[i]?.borrowedKinds.length}
 																	<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
 																{/if}
+																{#each row.tracks[i]?.covers ?? [] as covers, c (c)}
+																	<span class="badge badge-outline badge-sm"
+																		>{coversLabel(covers)}</span
+																	>
+																{/each}
 															</div>
 														{/each}
 													</div>

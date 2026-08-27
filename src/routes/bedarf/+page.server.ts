@@ -825,23 +825,29 @@ export const actions: Actions = {
 	 */
 	coverage: async ({ request }) => {
 		const form = await request.formData();
-		const id = String(form.get('instanceId') ?? '');
+
+		// The button that was pressed carries both which of the three this is and which cohort it
+		// is about, because a submit button sends only its own name. A shared hidden field plus a
+		// click handler would work with JavaScript and silently do the wrong thing without it.
+		const accept = form.get('accept');
+		const release = form.get('release');
+		const ask = form.get('ask');
 
 		try {
-			if (form.has('release')) {
-				await backendRequest(ReleaseCoverageDocument, { id });
-			} else if (form.has('accept')) {
-				await backendRequest(AcceptCoverageDocument, { id });
+			if (release) {
+				await backendRequest(ReleaseCoverageDocument, { id: String(release) });
+			} else if (accept) {
+				await backendRequest(AcceptCoverageDocument, { id: String(accept) });
 			} else {
 				await backendRequest(RequestCoverageDocument, {
-					id,
+					id: String(ask ?? ''),
 					coveredBy: String(form.get('coveredBy') ?? '')
 				});
 			}
 		} catch (err) {
 			return fail(400, refusalFor(err));
 		}
-		return { coverage: id };
+		return { coverage: String(accept ?? release ?? ask ?? '') };
 	},
 
 	/**
