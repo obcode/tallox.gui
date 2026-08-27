@@ -431,7 +431,11 @@
 		const tracks = Array.from({ length: current.tracks }, (_, i) => ({
 			groups: current.groups[i] ?? 0,
 			// Only the cohorts that exist can be borrowing anything.
-			borrowedKinds: row.tracks[i]?.borrowedKinds ?? []
+			borrowedKinds: row.tracks[i]?.borrowedKinds ?? [],
+			// A cohort another study programme holds costs nothing. Without this the live figure
+			// would charge it the whole split while the stored figure says zero — the two numbers
+			// side by side, disagreeing, on the screen whose job is to show what a change costs.
+			covered: !!row.tracks[i]?.coveredBy?.acceptedAt
 		}));
 		return plannedHours(effectiveComponents(row.module), row.module.practicalKind, tracks);
 	}
@@ -1108,6 +1112,21 @@
 		{/if}
 
 		<!--
+			Das Formular, das den Picker öffnet, steht hier — außerhalb der Planungstabelle.
+
+			Ein Knopf mit `formmethod="GET"` *innerhalb* des Planungsformulars schickte dessen
+			gesamten Inhalt als Query-String ab, also jedes Häkchen und jede Gruppenzahl der Tabelle.
+			Formulare lassen sich nicht schachteln, also verweisen die Zeilenknöpfe per `form`-Attribut
+			hierher: sie senden dann nur ihren eigenen Namen und die Filter, die hier drinstehen.
+		-->
+		{#if editing}
+			<form method="GET" id="coverage-picker" class="hidden">
+				{@render carriedOver([])}
+				<input type="hidden" name="bearbeiten" value="1" />
+			</form>
+		{/if}
+
+		<!--
 			Der Picker: welche Instanz eines anderen Studiengangs diesen Bedarf mitdecken soll.
 
 			Ein Abschnitt an der Adresse statt eines Dialogs, wie die Bearbeiten-Ansicht auch:
@@ -1516,8 +1535,7 @@
 																			-->
 																			<button
 																				type="submit"
-																				formmethod="GET"
-																				formaction={resolve('/bedarf')}
+																				form="coverage-picker"
 																				name="deckung"
 																				value={cohortTrack.instanceId}
 																				class="btn btn-xs"

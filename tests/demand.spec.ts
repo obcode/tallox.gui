@@ -23,6 +23,26 @@ test.beforeAll(() => {
 // table is what these tests are about — so they ask for it the same way the toggle does.
 const DEMAND_URL = `/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}&bearbeiten=1`;
 
+/** A programme that exists only to be retired, so that no other spec's row moves under it. */
+const RETIRABLE = 'E2R';
+
+/**
+ * The study programme that holds the shared event, and its instance of the split module.
+ *
+ * Its own, so that no other spec's arrangements and this one's can meet.
+ */
+const COVERAGE = {
+	// Ids in the 90s: everything below is taken by seed.ts, and the first attempt at this fixture
+	// picked one the assignment spec already owns.
+	programme: 'E2H',
+	instance: '0e2e0000-0000-4000-8000-000000000091'
+} as const;
+
+/** A SQL string literal. The fixture codes are ours, but building SQL by hand deserves the habit. */
+function quoted(value: string): string {
+	return `'${value.replaceAll("'", "''")}'`;
+}
+
 test.describe('the demand table', () => {
 	test('arrives prefilled from the previous comparable semester', async ({
 		asPersona,
@@ -508,30 +528,30 @@ test.describe('the demand table', () => {
 
 	// The programmes this faculty does not plan are not offered anywhere on this page — neither
 	// as a tab nor, since the select is gone, in a list behind one.
+	//
+	// On a programme of its own rather than on CATALOGUE.otherProgramme, and that is a fix rather
+	// than a preference: programmes.spec.ts retires and restores exactly that one, the two files
+	// run in parallel, and this test's DISCONTINUED window is a moment in which the other spec
+	// finds its row already retired and waits for a button that is not there. The race was always
+	// here; it began failing when this file grew and the two windows started to overlap.
 	test('offers no programme the faculty does not plan', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.vier);
-		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
-
-		await expect(
-			page.getByRole('tab', { name: CATALOGUE.otherProgramme, exact: true })
-		).toBeVisible();
 
 		await runSql(
-			`UPDATE programme SET planning_status = 'DISCONTINUED' WHERE code = ` +
-				`'${CATALOGUE.otherProgramme}';`,
-			'retiring the second test programme'
+			`INSERT INTO programme (code, title) VALUES (${quoted(RETIRABLE)}, 'Auslaufender Test')
+			 ON CONFLICT (code) DO UPDATE SET planning_status = 'PLANNED';`,
+			'declaring a programme this test may retire'
+		);
+
+		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
+		await expect(page.getByRole('tab', { name: RETIRABLE, exact: true })).toBeVisible();
+
+		await runSql(
+			`UPDATE programme SET planning_status = 'DISCONTINUED' WHERE code = ${quoted(RETIRABLE)};`,
+			'retiring it'
 		);
 		await gotoRendered(page, `/bedarf?semester=${DEMAND.semester}`);
-		await expect(
-			page.getByRole('tab', { name: CATALOGUE.otherProgramme, exact: true })
-		).toHaveCount(0);
-
-		// Put back, because the next test in this serial group fetches a module out of it.
-		await runSql(
-			`UPDATE programme SET planning_status = 'PLANNED' WHERE code = ` +
-				`'${CATALOGUE.otherProgramme}';`,
-			'restoring the second test programme'
-		);
+		await expect(page.getByRole('tab', { name: RETIRABLE, exact: true })).toHaveCount(0);
 	});
 
 	// A module in two cohorts is one subject offered twice, not two subjects — and the overview
@@ -561,5 +581,129 @@ test.describe('the demand table', () => {
 		await gotoRendered(page, '/bedarf');
 
 		await expect(page).toHaveURL(new RegExp(`semester=${SEMESTERS.planning}`));
+	});
+});
+
+/**
+ * One event held for two study programmes.
+ *
+ * The case the faculty describes as "echter Bedarf in DE und eine Art Import in GS": both
+ * programmes need the module and hold it **once**. Both declarations stay — the difference between
+ * them is what the import/export figures are about — but only one of them has parts, so the event
+ * costs the faculty once.
+ *
+ * Serial with the group above, and for the same reason: it plans the same programme and semester.
+ */
+test.describe('coverage across study programmes', () => {
+	// The other programme's instance of the same module, which is what the asking cohort points
+	// at. Made here rather than through the interface: Vier deliberately does not lead E2F — that
+	// is the whole point of the handshake — so she could not declare it, and a test that signed in
+	// as somebody else to arrange its own preconditions would be testing the arrangement.
+	// Its own study programme, and that is not tidiness.
+	//
+	// The obvious candidate was CATALOGUE.otherProgramme, which already exists — but
+	// programmes.spec.ts retires and restores exactly that one, the specs run in parallel, and a
+	// programme being discontinued underneath this test (or an instance appearing underneath that
+	// one) is a flake neither file could be read to predict. A programme nobody else touches costs
+	// four statements and removes the question.
+	test.beforeAll(() => {
+		runSql(
+			[
+				`INSERT INTO programme (code, title) VALUES (${quoted(COVERAGE.programme)},
+				        'Teststudiengang Deckung')
+				 ON CONFLICT (code) DO NOTHING;`,
+				`DELETE FROM course_instance ci
+				  USING programme p
+				  WHERE ci.programme_id = p.id AND p.code = ${quoted(COVERAGE.programme)};`,
+				`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+				                              programme_semester)
+				 SELECT '${COVERAGE.instance}', s.id, '${CATALOGUE.split}', p.id, '', 1
+				   FROM semester s, programme p
+				  WHERE s.code = ${quoted(DEMAND.semester)}
+				    AND p.code = ${quoted(COVERAGE.programme)};`,
+				`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+				 VALUES ('${COVERAGE.instance}', 'LECTURE', 0, 4),
+				        ('${COVERAGE.instance}', 'LAB', 1, 2);`
+			].join('\n'),
+			'declaring the covering programme’s instance of the shared module'
+		);
+	});
+
+	test('is asked for by one programme and agreed to by the other', async ({ asPersona }) => {
+		// Vier leads E2E and not E2F, which is what makes this a handshake rather than one lead
+		// arranging both halves.
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await row.getByRole('button', { name: 'decken lassen' }).first().click();
+
+		// The picker offers what the schema would accept and nothing else.
+		await expect(page.getByRole('heading', { name: /mitdecken lassen/ })).toBeVisible();
+		await page.getByRole('button', { name: 'anfragen' }).first().click();
+
+		// Asking changes nothing until the other side agrees — that is the whole of the two-sided
+		// rule, and the badge says which of the two states this is.
+		await expect(page.getByText(/Anfrage an .* läuft/).first()).toBeVisible();
+
+		// Vier cannot answer her own request: agreeing is a statement about the *other*
+		// programme's teaching. She does not even get the section that would let her.
+		await expect(page.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })).toHaveCount(
+			0
+		);
+
+		// The dean's office reaches both programmes, which is what it is for.
+		const dean = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(
+			dean,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${COVERAGE.programme}&bearbeiten=1`
+		);
+		await expect(
+			dean.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })
+		).toBeVisible();
+		await dean.getByRole('button', { name: 'bestätigen' }).first().click();
+
+		// Waited for on the dean's own screen before looking at the other one. The agreement is an
+		// enhanced POST in a second browser context, and switching back without waiting reads the
+		// asking programme's page while it is still being written — which then passes on a retry,
+		// against what the first attempt saved, and is exactly the flake this file's reset warns
+		// about.
+		//
+		// It is also worth asserting for itself: the section is the holding programme's inbox, and
+		// an answered request has to leave it, or the same agreement gets offered twice.
+		await expect(dean.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })).toHaveCount(
+			0
+		);
+
+		// And now the asking cohort says why it holds nothing — which is the difference between
+		// this and a cohort somebody forgot to finish.
+		await gotoRendered(page, DEMAND_URL);
+		const covered = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(covered.getByText(/gedeckt durch/)).toBeVisible();
+
+		// Only cohort A is covered, and the two steppers say so: A's number is not this
+		// programme's to set any more, B's still is. Shut off rather than merely showing nothing,
+		// because a click would otherwise collect a refusal the screen could have avoided.
+		await expect(covered.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeDisabled();
+		await expect(covered.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toBeEnabled();
+
+		// What this costs the faculty is asserted where it can be asserted exactly:
+		// store.TestAcceptingCoverageTakesTheGuestsParts, which watches two cohorts of a 4-hour
+		// module go from 8 hours to 4. Reading it off this cell would be re-asserting that
+		// through a column which deliberately shows two numbers at once — the live figure and the
+		// stored one — whenever they differ.
+	});
+
+	test('is ended from either side, and the cohort holds its own again', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByRole('button', { name: 'Deckung lösen' }).first().click();
+
+		const freed = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(freed.getByText(/gedeckt durch/)).toHaveCount(0);
+		// Its teaching comes back from the module's split. What does not come back is the number
+		// of laboratory groups — that was a planning decision that went with the parts.
+		await expect(freed.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeEnabled();
 	});
 });
