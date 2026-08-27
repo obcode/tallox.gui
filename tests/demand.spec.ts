@@ -359,6 +359,46 @@ test.describe('the demand table', () => {
 		await expect(row.getByText('E2E?C')).toBeVisible();
 	});
 
+	// The cohort year, said where the course is entered rather than looked for afterwards.
+	//
+	// The test above is the other half of this one: a local course counts in no set of
+	// regulations, so nothing seeds the year and the row lands under "Ohne Fachsemester" — at the
+	// bottom of the table, below every block somebody was working in. The field costs one number
+	// at the moment somebody already knows it.
+	test('files an own course under the cohort year it was entered with', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('E2E Eigenes Fach');
+		// Exact: every row of the table has one of these too, named after its module.
+		await page.getByRole('spinbutton', { name: 'Fachsemester', exact: true }).fill('5');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+
+		const row = page.getByRole('row', { name: /E2E Eigenes Fach/ });
+		await expect(row).toBeVisible();
+		await expect(row.getByRole('spinbutton', { name: /^Fachsemester von/ })).toHaveValue('5');
+		// And that is the axis the table is grouped by, so the row is in the block a person was
+		// working in rather than below every one of them.
+		await expect(page.getByRole('heading', { name: /5\. Fachsemester/ })).toBeVisible();
+	});
+
+	// Empty stays empty. The field is optional in the sense that matters: "nobody has said" is a
+	// state the rest of the page already renders, and it is the honest one while nobody has.
+	test('leaves the cohort year open when the field is left empty', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('E2E Eigenes Fach ohne Jahr');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+
+		const row = page.getByRole('row', { name: /E2E Eigenes Fach ohne Jahr/ });
+		await expect(row).toBeVisible();
+		await expect(row.getByRole('spinbutton', { name: /^Fachsemester von/ })).toHaveValue('');
+		await expect(page.getByRole('heading', { name: /Ohne Fachsemester/ })).toBeVisible();
+	});
+
 	// The filters that switch on the click rather than on a second button. They are submit
 	// buttons of a GET form, so the address carries the choice and the back button works — the
 	// two properties a client-side filter would have cost.
