@@ -4,11 +4,15 @@ import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
 	CourseType,
+	CoverageCandidatesQuery,
 	DemandEntryInput,
 	DutyStatus,
 	Frequency,
 	InstancePartKind
 } from '$lib/gql/__generated__/graphql';
+
+/** One instance the picker may offer as the holder of somebody else's demand. */
+type CoverageCandidate = CoverageCandidatesQuery['courseInstances'][number];
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
 import { semesterTerm } from '$lib/semester';
@@ -136,10 +140,38 @@ const DemandDocument = graphql(`
 			}
 			borrowedParts {
 				fromTrack
+				fromProgramme {
+					code
+				}
 				part {
 					id
 					kind
 					teachingHours
+				}
+			}
+			# Who holds this cohort's teaching, and whose this one holds. Asked for on the
+			# previous semester's block too: the prefill is built from it, and a covered cohort
+			# proposed as an ordinary one would silently offer to plan teaching twice.
+			coveredBy {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+			}
+			covers {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
 				}
 			}
 		}
@@ -175,10 +207,38 @@ const DemandDocument = graphql(`
 			}
 			borrowedParts {
 				fromTrack
+				fromProgramme {
+					code
+				}
 				part {
 					id
 					kind
 					teachingHours
+				}
+			}
+			# Who holds this cohort's teaching, and whose this one holds. Asked for on the
+			# previous semester's block too: the prefill is built from it, and a covered cohort
+			# proposed as an ordinary one would silently offer to plan teaching twice.
+			coveredBy {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+			}
+			covers {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
 				}
 			}
 		}
@@ -232,6 +292,56 @@ const SharePartDocument = graphql(`
 	mutation SharePartFromTable($id: ID!) {
 		shareInstancePartAcrossTracks(id: $id) {
 			id
+		}
+	}
+`);
+
+const RequestCoverageDocument = graphql(`
+	mutation RequestCoverageFromTable($id: ID!, $coveredBy: ID!) {
+		requestInstanceCoverage(id: $id, coveredBy: $coveredBy) {
+			id
+		}
+	}
+`);
+
+const AcceptCoverageDocument = graphql(`
+	mutation AcceptCoverageFromTable($id: ID!) {
+		acceptInstanceCoverage(id: $id) {
+			id
+		}
+	}
+`);
+
+const ReleaseCoverageDocument = graphql(`
+	mutation ReleaseCoverageFromTable($id: ID!) {
+		releaseInstanceCoverage(id: $id) {
+			id
+		}
+	}
+`);
+
+// The instances another programme could hold this one's demand with.
+//
+// A separate query behind a URL parameter rather than part of the page load: it is only ever
+// wanted for the one cohort somebody is pointing at, and asking for every row's candidates would
+// be one join per line of a table that is mostly untouched catalogue.
+const CoverageCandidatesDocument = graphql(`
+	query CoverageCandidates($semester: String!, $module: ID!) {
+		courseInstances(semester: $semester, module: $module) {
+			id
+			track
+			programmeSemester
+			teachingHours
+			programme {
+				code
+				title
+			}
+			coveredBy {
+				acceptedAt
+			}
+			covers {
+				acceptedAt
+			}
 		}
 	}
 `);
@@ -297,6 +407,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	// The search for a module outside this programme's catalogue. In the address like every
 	// other filter, so the list somebody is looking at survives a reload and a save.
 	const foreignSearch = (url.searchParams.get('fremd') ?? '').trim();
+	// Which cohort is looking for somebody to hold its teaching. In the address like the edit mode
+	// and the foreign search, and for the same reason: the picker is a view, and a view somebody
+	// is looking at is a thing they can reload, send on, and back out of.
+	const coverageFor = (url.searchParams.get('deckung') ?? '').trim();
 
 	// The overview needs a semester and nothing else — "what does the faculty offer next term" is
 	// a question somebody asks before they know which programme a module belongs to. The planning
@@ -358,10 +472,41 @@ export const load: PageServerLoad = async ({ url }) => {
 		redirect(303, `/bedarf?${to}`);
 	}
 
+	// The candidates for the one cohort somebody is pointing at.
+	//
+	// After the main load rather than beside it: the module is read off the instance the parameter
+	// names, so there is nothing to ask until that instance is in hand. One extra round trip on
+	// the one screen that opened a picker, and none on every other.
+	let coverageCandidates: CoverageCandidate[] = [];
+	const coverageSubject = (data.courseInstances ?? []).find((i) => i.id === coverageFor);
+	if (coverageSubject) {
+		try {
+			const found = await backendRequest(CoverageCandidatesDocument, {
+				semester,
+				module: coverageSubject.module.id
+			});
+			// The cohort itself and anything already spoken for are dropped here rather than in
+			// the query: "not itself covered" is the schema's condition, and "not me" is this
+			// screen's. A menu whose entries fail on click is worse than a short menu.
+			coverageCandidates = found.courseInstances.filter(
+				(c) =>
+					c.id !== coverageSubject.id &&
+					c.programme.code !== coverageSubject.programme.code &&
+					!c.coveredBy
+			);
+		} catch {
+			// A picker that cannot be filled is an empty picker, not a broken page: the demand
+			// behind it is still readable and still worth showing.
+			coverageCandidates = [];
+		}
+	}
+
 	return {
 		semesters: data.semesters,
 		planningSemester: data.planningSemester?.code ?? '',
 		myProgrammes: data.me?.programmes ?? [],
+		coverageFor,
+		coverageCandidates,
 		programmes: data.programmes,
 		current: data.semester ?? null,
 		modules: data.modules ?? [],
@@ -379,7 +524,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			onlyPlanned,
 			bothTerms,
 			editing,
-			foreignSearch
+			foreignSearch,
+			coverageFor
 		}
 	};
 };
@@ -664,6 +810,38 @@ export const actions: Actions = {
 			return fail(400, refusalFor(err));
 		}
 		return { shared: id };
+	},
+
+	/**
+	 * The coverage handshake, from the row it is about.
+	 *
+	 * Three mutations and one action, because the row shows exactly one of the three at a time —
+	 * a cohort with no link offers "ask", a cohort with an unanswered one offers "withdraw", and
+	 * the holding cohort offers "agree" or "decline". Which button was pressed is a field.
+	 *
+	 * The refusal comes back through refusalFor like every other write here, so a
+	 * COVERAGE_WOULD_CHAIN reaches the screen as its own sentence rather than as "es hat nicht
+	 * geklappt".
+	 */
+	coverage: async ({ request }) => {
+		const form = await request.formData();
+		const id = String(form.get('instanceId') ?? '');
+
+		try {
+			if (form.has('release')) {
+				await backendRequest(ReleaseCoverageDocument, { id });
+			} else if (form.has('accept')) {
+				await backendRequest(AcceptCoverageDocument, { id });
+			} else {
+				await backendRequest(RequestCoverageDocument, {
+					id,
+					coveredBy: String(form.get('coveredBy') ?? '')
+				});
+			}
+		} catch (err) {
+			return fail(400, refusalFor(err));
+		}
+		return { coverage: id };
 	},
 
 	/**
