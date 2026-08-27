@@ -33,6 +33,17 @@ export type InstanceLike = {
 	programme: { code: string; title?: string };
 	module: { id: string; name: string; subjectGroup?: { id: string; code: string } | null };
 	parts: PartLike[];
+	/**
+	 * The other study programmes' demands this cohort meets, where any are agreed.
+	 *
+	 * The event is held once, so the interest registered for those cohorts is interest in *this*
+	 * teaching. It is read where the decision is taken rather than left on a screen the person
+	 * filling the part never opens.
+	 */
+	covers?: readonly {
+		acceptedAt?: string | null;
+		instance: { id: string; programme: { code: string } };
+	}[];
 };
 
 /** An assignment as the page reads it. */
@@ -159,6 +170,30 @@ const WISH_WORDS: Record<string, string> = {
 };
 
 /**
+ * One cohort plus the cohorts whose demand it covers, as the candidate list reads them.
+ *
+ * The event is held once, so the interest registered for a covered cohort is interest in this
+ * teaching. Only agreed coverage: an unanswered request has changed nothing yet, and the cohort
+ * that asked still holds its own parts and fills them itself.
+ *
+ * The holding cohort is always first, which is what lets the list tell "registered here" from
+ * "registered over there" without carrying a second flag per candidate.
+ */
+export function pooledInstances(instance: InstanceLike): {
+	ids: string[];
+	programmes: Map<string, string>;
+} {
+	const ids = [instance.id];
+	const programmes = new Map<string, string>();
+	for (const covered of instance.covers ?? []) {
+		if (!covered.acceptedAt) continue;
+		ids.push(covered.instance.id);
+		programmes.set(covered.instance.id, covered.instance.programme.code);
+	}
+	return { ids, programmes };
+}
+
+/**
  * The list a part's dropdown offers, in the order it offers it.
  *
  * Whoever registered interest in this cohort comes first and carries how much they want it. That
@@ -174,11 +209,18 @@ const WISH_WORDS: Record<string, string> = {
  * part; it means the page did not think to offer them, which is what the search field is for.
  */
 export function candidatesFor(
-	instanceId: string,
+	instanceIds: readonly string[],
 	wishes: WishLike[],
 	members: { id: string; name: string }[],
 	found: { id: string; name: string }[],
-	current: AssignmentLike | null
+	current: AssignmentLike | null,
+	/**
+	 * Which programme a wish's own cohort belongs to, for the cohorts that are not the first.
+	 *
+	 * Only consulted for pooled ids, so an ordinary part — one cohort, one id — renders exactly
+	 * as it did.
+	 */
+	programmeOf: ReadonlyMap<string, string> = new Map()
 ): Candidate[] {
 	const out: Candidate[] = [];
 	const seen = new Set<string>();
@@ -191,13 +233,18 @@ export function candidatesFor(
 	};
 
 	for (const wish of wishes) {
-		if (wish.instance.id !== instanceId) continue;
+		if (!instanceIds.includes(wish.instance.id)) continue;
+
+		// Where the interest was registered, named when it was not this cohort. That prefix is the
+		// whole reason to pool rather than to merge silently: the person deciding is choosing
+		// between two programmes' colleagues for one event, and they should know it.
+		const from = wish.instance.id === instanceIds[0] ? '' : programmeOf.get(wish.instance.id);
+		const words = WISH_WORDS[wish.priority] ?? '';
+		const base = wish.note ? `${words} · ${wish.note}` : words;
 		add({
 			personId: wish.person.id,
 			name: wish.person.name,
-			hint: wish.note
-				? `${WISH_WORDS[wish.priority] ?? ''} · ${wish.note}`
-				: WISH_WORDS[wish.priority]
+			hint: from ? `Wunsch aus ${from} · ${base}` : base
 		});
 	}
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	assignmentChanges,
 	candidatesFor,
+	pooledInstances,
 	cohortGroups,
 	currentValue,
 	partHours,
@@ -86,32 +87,88 @@ describe('candidatesFor', () => {
 	];
 
 	it('offers whoever registered interest in this cohort, first, with how much', () => {
-		const out = candidatesFor('i1', wishes, [], [], null);
+		const out = candidatesFor(['i1'], wishes, [], [], null);
 		expect(out.map((c) => c.name)).toEqual(['Prof. Eins', 'Prof. Zwei']);
 		expect(out[0].hint).toBe('unbedingt');
 		expect(out[1].hint).toContain('nur die Vorlesung');
 	});
 
 	it('does not offer somebody who wished for a different cohort', () => {
-		const out = candidatesFor('i1', wishes, [], [], null);
+		const out = candidatesFor(['i1'], wishes, [], [], null);
 		expect(out.map((c) => c.personId)).not.toContain('per9');
 	});
 
 	it('lists somebody once, with the reason that says more', () => {
-		const out = candidatesFor('i1', wishes, [{ id: 'per1', name: 'Prof. Eins' }], [], null);
+		const out = candidatesFor(['i1'], wishes, [{ id: 'per1', name: 'Prof. Eins' }], [], null);
 		expect(out.filter((c) => c.personId === 'per1')).toHaveLength(1);
 		expect(out[0].hint).toBe('unbedingt');
 	});
 
 	it('offers a search result by its teacher id and lets the backend canonicalise', () => {
-		const out = candidatesFor('i1', [], [], [{ id: 't7', name: 'Lehrbeauftragte' }], null);
+		const out = candidatesFor(['i1'], [], [], [{ id: 't7', name: 'Lehrbeauftragte' }], null);
 		expect(out).toEqual([{ teacherId: 't7', name: 'Lehrbeauftragte', hint: 'Suche' }]);
 	});
 
 	it('always offers whoever currently holds the part, even if nothing else names them', () => {
 		const current = held({ assignee: { personId: 'per5', name: 'Prof. Fünf' } });
-		const out = candidatesFor('i1', [], [], [], current);
+		const out = candidatesFor(['i1'], [], [], [], current);
 		expect(out.at(-1)).toMatchObject({ personId: 'per5', hint: 'zugeteilt' });
+	});
+
+	// The event is held once for two study programmes, so the interest registered for the covered
+	// cohort is interest in this teaching. Leaving it out would hide a willing colleague from the
+	// only screen that decides who holds it.
+	it('offers the interest registered for a covered cohort, and says where it came from', () => {
+		const out = candidatesFor(['i1', 'other'], wishes, [], [], null, new Map([['other', 'GS']]));
+		const pooled = out.find((c) => c.personId === 'per9');
+		expect(pooled).toBeDefined();
+		// The prefix is the whole reason to pool rather than merge silently: the person deciding
+		// is choosing between two programmes' colleagues for one event.
+		expect(pooled!.hint).toContain('Wunsch aus GS');
+	});
+
+	// The holding cohort's own interest is not labelled: it is the cohort being filled, and a
+	// prefix on every line would be noise on the majority of them.
+	it('does not label the interest registered for the cohort being filled', () => {
+		const out = candidatesFor(['i1', 'other'], wishes, [], [], null, new Map([['other', 'GS']]));
+		const own = out.find((c) => c.personId === 'per1');
+		expect(own!.hint).not.toContain('Wunsch aus');
+	});
+});
+
+describe('pooledInstances', () => {
+	const base = {
+		id: 'host',
+		track: '',
+		teachingHours: 4,
+		programme: { code: 'DE' },
+		module: { id: 'm', name: 'Betriebssysteme I' },
+		parts: []
+	};
+
+	it('is just the cohort itself where nothing is covered', () => {
+		expect(pooledInstances(base).ids).toEqual(['host']);
+	});
+
+	// An unanswered request has changed nothing: the cohort that asked still holds its own parts
+	// and fills them itself, so its interest belongs to its own screen and not to this one.
+	it('leaves out a request nobody has agreed to', () => {
+		const out = pooledInstances({
+			...base,
+			covers: [{ acceptedAt: null, instance: { id: 'guest', programme: { code: 'GS' } } }]
+		});
+		expect(out.ids).toEqual(['host']);
+	});
+
+	it('takes in an agreed one, with the programme it belongs to', () => {
+		const out = pooledInstances({
+			...base,
+			covers: [
+				{ acceptedAt: '2026-08-27T10:00:00Z', instance: { id: 'guest', programme: { code: 'GS' } } }
+			]
+		});
+		expect(out.ids).toEqual(['host', 'guest']);
+		expect(out.programmes.get('guest')).toBe('GS');
 	});
 });
 

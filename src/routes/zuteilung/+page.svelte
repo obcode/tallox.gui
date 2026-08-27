@@ -4,6 +4,7 @@
 	import {
 		candidateValue,
 		candidatesFor,
+		pooledInstances,
 		cohortGroups,
 		currentValue,
 		partHours,
@@ -329,12 +330,14 @@
 								</thead>
 								<tbody>
 									{#each group.rows as row (row.part.id)}
+										{@const pooled = pooledInstances(group.instance)}
 										{@const candidates = candidatesFor(
-											group.instance.id,
+											pooled.ids,
 											wishesHere,
 											members,
 											data.found,
-											row.assignment
+											row.assignment,
+											pooled.programmes
 										)}
 										{@const refusal = refusalFor.get(row.part.id)}
 										<tr>
