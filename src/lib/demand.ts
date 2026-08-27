@@ -69,10 +69,57 @@ export function hoursLabel(teachingHours: number): string {
  * looking at. A sibling with no letter yet is described as "einem anderen Zug" — it happens
  * while somebody is halfway through splitting one cohort into two, and inventing a letter for
  * it would be worse than saying less.
+ *
+ * `fromProgramme` is the cross-programme case: this cohort's demand is covered by another study
+ * programme's event, and the part is held over there. It has to be named, because the first
+ * argument is the *reading* cohort's programme code and rendering "PA…B" for a part held by PB
+ * would be a confident lie.
  */
-export function borrowedFromLabel(programmeCode: string, fromTrack: string): string {
+export function borrowedFromLabel(
+	programmeCode: string,
+	fromTrack: string,
+	fromProgramme?: string | null
+): string {
+	if (fromProgramme) return fromTrack === '' ? fromProgramme : `${fromProgramme}…${fromTrack}`;
 	if (fromTrack === '') return 'einem anderen Zug';
 	return `${programmeCode}…${fromTrack}`;
+}
+
+/**
+ * One side of a coverage link, as much of it as a label needs.
+ *
+ * The cohort year is carried even though nothing computes with it: without it the label falls back
+ * to the "nobody has said" marker and reads "gedeckt durch DE?A", which looks like a fault in the
+ * badge rather than a fact about the other programme.
+ */
+export type CoverageLike = {
+	acceptedAt?: string | null;
+	instance: {
+		id: string;
+		track: string;
+		programmeSemester?: number | null;
+		programme: { code: string };
+	};
+};
+
+function coverageCohort(coverage: CoverageLike): string {
+	return cohortLabel(
+		coverage.instance.programme.code,
+		coverage.instance.programmeSemester,
+		coverage.instance.track
+	);
+}
+
+/** The badge on a cohort whose teaching another study programme holds. */
+export function coverageLabel(coverage: CoverageLike): string {
+	const who = coverageCohort(coverage);
+	return coverage.acceptedAt ? `gedeckt durch ${who}` : `Anfrage an ${who} läuft`;
+}
+
+/** The badge on the cohort that holds the event for somebody else. */
+export function coversLabel(coverage: CoverageLike): string {
+	const who = coverageCohort(coverage);
+	return coverage.acceptedAt ? `hält auch für ${who}` : `Anfrage von ${who}`;
 }
 
 /**
@@ -127,7 +174,13 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	teachingHours: number;
 	module: M;
 	parts: readonly PartLike[];
-	borrowedParts?: readonly { fromTrack: string; part: PartLike }[];
+	borrowedParts?: readonly {
+		fromTrack: string;
+		fromProgramme?: { code: string } | null;
+		part: PartLike;
+	}[];
+	coveredBy?: CoverageLike | null;
+	covers?: readonly CoverageLike[];
 };
 
 /** One cohort in a row of the table. */
@@ -148,6 +201,16 @@ export type RowTrack = {
 	lecturePartId?: string;
 	/** The part this cohort holds for everybody, where it holds one. */
 	sharedPartId?: string;
+	/**
+	 * Another study programme's event that meets this cohort's demand, asked or agreed.
+	 *
+	 * Where it is agreed the cohort holds nothing of its own: it costs nothing, its group count
+	 * is not its own to set, and the controls that would change either have to be shut off — or
+	 * the first click sends a number the backend refuses.
+	 */
+	coveredBy?: CoverageLike | null;
+	/** Other programmes' demands this cohort meets, asked or agreed. */
+	covers?: readonly CoverageLike[];
 };
 
 /**
@@ -256,7 +319,9 @@ function rowFor<M extends ModuleLike>(
 				instanceId: instance.id,
 				borrowedKinds: (instance.borrowedParts ?? []).map((b) => b.part.kind),
 				lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
-				sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id
+				sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id,
+				coveredBy: instance.coveredBy ?? null,
+				covers: instance.covers ?? []
 			})),
 			planned: true,
 			teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
@@ -437,6 +502,11 @@ export function previousComparableSemester(code: string): string {
 export function sharingState(row: DemandRow): { sharedPartId?: string; mergeablePartId?: string } {
 	if (row.tracks.length < 2) return {};
 
+	// A cohort another programme holds has no lecture of its own to merge, and merging across
+	// programmes is coverage rather than a shared lecture — a different mechanism with a
+	// different mutation.
+	if (row.tracks.some((t) => t.coveredBy?.acceptedAt)) return {};
+
 	const shared = row.tracks.find((t) => t.sharedPartId);
 	if (shared) return { sharedPartId: shared.sharedPartId };
 
@@ -473,6 +543,8 @@ export function splitSummary(
 export type TrackHours = {
 	groups: number;
 	borrowedKinds?: readonly InstancePartKind[];
+	/** True where another study programme holds this cohort's teaching. */
+	covered?: boolean;
 };
 
 /**
@@ -494,6 +566,15 @@ export function plannedHours(
 ): number {
 	let total = 0;
 	for (const track of tracks) {
+		// A cohort whose demand another programme covers holds nothing at all: it costs nothing,
+		// and the event it attends is counted once at the programme that holds it.
+		//
+		// Its own flag rather than trusting borrowedKinds to cover every unit of the split. The
+		// borrowed list is what the holding cohort actually holds, and a split naming a unit that
+		// cohort does not run — an exercise nobody made a part for — would otherwise be charged
+		// here, to a cohort that holds no teaching whatsoever.
+		if (track.covered) continue;
+
 		for (const component of components) {
 			if (track.borrowedKinds?.includes(component.kind)) continue;
 			total +=
@@ -531,7 +612,13 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	module: M;
 	programme: { code: string; title?: string | null };
 	parts: readonly PartLike[];
-	borrowedParts?: readonly { fromTrack: string; part: PartLike }[];
+	borrowedParts?: readonly {
+		fromTrack: string;
+		fromProgramme?: { code: string } | null;
+		part: PartLike;
+	}[];
+	coveredBy?: CoverageLike | null;
+	covers?: readonly CoverageLike[];
 };
 
 /**
@@ -558,9 +645,22 @@ export type InstanceRow<M extends RowModule = ModuleLike> = {
 	/** `IF3A`, assembled from the three facts it is made of. */
 	label: string;
 	parts: PartGroup[];
-	/** What a sibling cohort holds for this one, with the cohort it is held by. */
-	borrowed: { fromTrack: string; kind: InstancePartKind }[];
+	/** What another cohort holds for this one, with who holds it. */
+	borrowed: {
+		fromTrack: string;
+		fromProgramme?: string | null;
+		kind: InstancePartKind;
+	}[];
 	teachingHours: number;
+	/**
+	 * The other study programme's event that meets this cohort's demand, or null.
+	 *
+	 * A covered line has no parts of its own and 0 SWS, and without this it reads as a cohort
+	 * somebody forgot to finish. It is the whole reason the line can say what it is.
+	 */
+	coveredBy?: CoverageLike | null;
+	/** Other programmes' demands this cohort meets. */
+	covers?: readonly CoverageLike[];
 };
 
 /**
@@ -620,9 +720,12 @@ export function instanceRows<M extends RowModule>(
 				parts: groupParts(instance.parts),
 				borrowed: (instance.borrowedParts ?? []).map((b) => ({
 					fromTrack: b.fromTrack,
+					fromProgramme: b.fromProgramme?.code ?? null,
 					kind: b.part.kind
 				})),
-				teachingHours: instance.teachingHours
+				teachingHours: instance.teachingHours,
+				coveredBy: instance.coveredBy ?? null,
+				covers: instance.covers ?? []
 			};
 		})
 		.sort(
