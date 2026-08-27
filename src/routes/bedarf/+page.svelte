@@ -905,13 +905,34 @@
 					</select>
 				</label>
 
+				<label class="form-control">
+					<!-- Das einzige Feld dieser Form, das nicht das Modul beschreibt, sondern die
+					     Instanz, die im selben Schritt angemeldet wird. Es steht trotzdem hier: eine
+					     lokale Zeile steht in keiner SPO, also gibt es nichts, woraus sich das
+					     Fachsemester vorbelegen ließe — leer bliebe es sonst bis jemand die Zeile in
+					     der Tabelle sucht, und dort steht sie unter „Ohne Fachsemester" ganz unten.
+
+					     Leer ist erlaubt und heißt genau das: niemand hat es gesagt. Nachtragen geht
+					     in der Zeile, wie bei jeder anderen Instanz auch. -->
+					<span class="label-text text-sm">Fachsemester</span>
+					<input
+						type="number"
+						name="year"
+						min="1"
+						max="12"
+						placeholder="optional"
+						class="input input-bordered input-sm w-24"
+					/>
+				</label>
+
 				<button type="submit" class="btn btn-primary btn-sm">Anlegen und anmelden</button>
 			</form>
 
 			<p class="text-base-content/80 mt-2 text-sm">
 				Die Aufteilung folgt der Schätzregel: der Übungsteil bekommt 2 SWS, die Vorlesung den Rest.
-				Ändern lässt sie sich danach in der Zeile. Ein Platzhalter wird wie jedes andere Modul
-				geplant — <strong>drei davon sind drei Züge</strong>.
+				Ändern lässt sie sich danach in der Zeile — das Fachsemester ebenso, das hier leer bleiben
+				darf. Ein Platzhalter wird wie jedes andere Modul geplant —
+				<strong>drei davon sind drei Züge</strong>.
 			</p>
 		</details>
 	{/if}

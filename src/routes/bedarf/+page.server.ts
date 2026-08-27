@@ -591,6 +591,26 @@ export const actions: Actions = {
 			});
 		}
 
+		// The cohort year, and the one field of this form that belongs to the instance rather than
+		// to the course. Empty is a value and means nobody has said — a local course is in no set
+		// of regulations, so there is nothing to seed it from either way.
+		//
+		// Checked here rather than left to the backend, which refuses the same range: the refusal
+		// would arrive at the *second* of the two calls, and the course would already exist. A
+		// form that is rejected has to leave nothing behind.
+		const year = String(form.get('year') ?? '').trim();
+		const programmeSemester = year === '' ? null : Number(year);
+		if (
+			programmeSemester !== null &&
+			(!Number.isInteger(programmeSemester) || programmeSemester < 1 || programmeSemester > 12)
+		) {
+			return fail(400, {
+				error: 'Das Fachsemester muss eine ganze Zahl zwischen 1 und 12 sein — oder leer bleiben.',
+				code: '',
+				generic: false
+			});
+		}
+
 		const practical = String(form.get('practical') ?? '');
 		const components: { kind: InstancePartKind; teachingHours: number }[] =
 			practical === '' || hours <= 2
@@ -613,7 +633,7 @@ export const actions: Actions = {
 				}
 			});
 			await backendRequest(DeclareDocument, {
-				in: { semester, programme, moduleId: created.createLocalModule.id }
+				in: { semester, programme, moduleId: created.createLocalModule.id, programmeSemester }
 			});
 			return { adopted: created.createLocalModule.name };
 		} catch (err) {
