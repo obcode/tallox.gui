@@ -14,6 +14,8 @@ import {
 	instancesByYear,
 	moduleRows,
 	cohortCount,
+	coverageLabel,
+	coversLabel,
 	partGroupLabel,
 	partLabel,
 	plannedHours,
@@ -69,6 +71,37 @@ describe('borrowedFromLabel', () => {
 	// would be worse than saying less.
 	it('says less when the sibling has no letter yet', () => {
 		expect(borrowedFromLabel('IF', '')).toBe('einem anderen Zug');
+	});
+
+	// The first argument is the *reading* cohort's programme. Where the part is held by another
+	// programme entirely, rendering it would be a confident lie: "DE…A" for a part held by GS.
+	it('names the other study programme where one holds the part', () => {
+		expect(borrowedFromLabel('GS', 'A', 'DE')).toBe('DE…A');
+		expect(borrowedFromLabel('GS', '', 'DE')).toBe('DE');
+	});
+});
+
+describe('coverageLabel and coversLabel', () => {
+	const asked = {
+		acceptedAt: null,
+		instance: { id: 'i', track: 'A', programmeSemester: 3, programme: { code: 'DE' } }
+	};
+	const agreed = {
+		acceptedAt: '2026-08-27T10:00:00Z',
+		instance: { id: 'i', track: 'A', programmeSemester: 3, programme: { code: 'DE' } }
+	};
+
+	// An unanswered request and a standing agreement are different states, and the cohort looks
+	// the same in both — no parts either way while the request is pending is *not* true, but the
+	// badge is what tells the two apart at a glance.
+	it('tells an unanswered request from an agreement', () => {
+		expect(coverageLabel(agreed)).toBe('gedeckt durch DE3A');
+		expect(coverageLabel(asked)).toBe('Anfrage an DE3A läuft');
+	});
+
+	it('says it the other way round on the side that holds the event', () => {
+		expect(coversLabel(agreed)).toBe('hält auch für DE3A');
+		expect(coversLabel(asked)).toBe('Anfrage von DE3A');
 	});
 });
 
@@ -153,7 +186,9 @@ describe('demandRows', () => {
 				instanceId: 'm-A',
 				borrowedKinds: [],
 				lecturePartId: undefined,
-				sharedPartId: undefined
+				sharedPartId: undefined,
+				coveredBy: null,
+				covers: []
 			},
 			{
 				track: 'B',
@@ -161,7 +196,9 @@ describe('demandRows', () => {
 				instanceId: 'm-B',
 				borrowedKinds: [],
 				lecturePartId: undefined,
-				sharedPartId: undefined
+				sharedPartId: undefined,
+				coveredBy: null,
+				covers: []
 			}
 		]);
 		expect(rows[0].teachingHours).toBe(14);
@@ -406,6 +443,25 @@ describe('plannedHours', () => {
 		expect(plannedHours([], 'LAB', [{ groups: 2 }])).toBe(0);
 	});
 
+	// A cohort another study programme holds costs nothing at all: the event happens once and is
+	// counted at the programme that holds it.
+	it('counts nothing for a cohort another programme holds', () => {
+		expect(plannedHours(split, 'LAB', [{ groups: 1 }, { groups: 1, covered: true }])).toBe(6);
+	});
+
+	// Its own flag rather than trusting the borrowed list to name every unit of the split. The
+	// borrowed list is what the holding cohort actually holds; a split naming a unit that cohort
+	// does not run would otherwise be charged to a cohort holding no teaching whatsoever — which
+	// is how a covered cohort ends up with a plausible-looking non-zero number.
+	it('counts nothing even where the split names a unit the holder does not run', () => {
+		const withExercise = [...split, { kind: 'EXERCISE' as const, teachingHours: 1 }];
+		expect(
+			plannedHours(withExercise, 'LAB', [
+				{ groups: 1, covered: true, borrowedKinds: ['LECTURE', 'LAB'] }
+			])
+		).toBe(0);
+	});
+
 	// A module that is nothing but a lecture has no practical unit, so the figure multiplies
 	// nothing and the lecture is counted once.
 	it('ignores the groups where there is no practical unit', () => {
@@ -581,7 +637,34 @@ describe('instanceRows', () => {
 				borrowedParts: [{ fromTrack: 'A', part: { kind: 'LECTURE', teachingHours: 2 } }]
 			})
 		]);
-		expect(rows[0].borrowed).toEqual([{ fromTrack: 'A', kind: 'LECTURE' }]);
+		expect(rows[0].borrowed).toEqual([{ fromTrack: 'A', fromProgramme: null, kind: 'LECTURE' }]);
+	});
+
+	// The cross-programme case: the line has no parts and 0 SWS, and without saying who holds its
+	// teaching it reads as a cohort somebody forgot to finish.
+	it('says who holds the teaching of a covered cohort', () => {
+		const coverage = {
+			acceptedAt: '2026-08-27T10:00:00Z',
+			instance: { id: 'host', track: '', programme: { code: 'DE' } }
+		};
+		const rows = instanceRows([
+			readInstance('m', '', 2, {
+				parts: [],
+				teachingHours: 0,
+				borrowedParts: [
+					{
+						fromTrack: '',
+						fromProgramme: { code: 'DE' },
+						part: { kind: 'LECTURE', teachingHours: 2 }
+					}
+				],
+				coveredBy: coverage
+			})
+		]);
+		expect(rows[0].teachingHours).toBe(0);
+		expect(rows[0].parts).toEqual([]);
+		expect(rows[0].coveredBy).toEqual(coverage);
+		expect(rows[0].borrowed).toEqual([{ fromTrack: '', fromProgramme: 'DE', kind: 'LECTURE' }]);
 	});
 });
 

@@ -9,6 +9,8 @@
 	} from '$lib/catalogue';
 	import {
 		borrowedFromLabel,
+		coverageLabel,
+		coversLabel,
 		byProgramme,
 		cohortCount,
 		hoursLabel,
@@ -121,9 +123,25 @@
 											<span class="text-base-content/80">
 												{PART_KIND_LABELS[borrowed.kind]} mit {borrowedFromLabel(
 													code || row.programme.code,
-													borrowed.fromTrack
+													borrowed.fromTrack,
+													borrowed.fromProgramme
 												)} zusammen
 											</span>
+										{/each}
+										<!--
+											Der studiengangsübergreifende Fall, und der Grund, warum er
+											überhaupt eine eigene Beschriftung braucht: eine gedeckte Zeile
+											hat gar keine eigenen Teile und 0 SWS. Ohne diesen Satz liest
+											sie sich als Zug, den jemand anzulegen vergessen hat — und genau
+											das ist der Zustand, den die ganze Mechanik vermeiden soll.
+										-->
+										{#if cohort.coveredBy}
+											<span class="badge badge-outline badge-sm">
+												{coverageLabel(cohort.coveredBy)}
+											</span>
+										{/if}
+										{#each cohort.covers ?? [] as covered, i (i)}
+											<span class="badge badge-outline badge-sm">{coversLabel(covered)}</span>
 										{/each}
 									</span>
 								{/each}

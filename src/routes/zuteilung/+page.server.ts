@@ -83,6 +83,18 @@ const AssignmentDocument = graphql(`
 				teachingHours
 				sharedAcrossTracks
 			}
+			# The demands this cohort meets for other study programmes. The event is held once, so
+			# the interest registered for those cohorts is interest in this teaching — and this is
+			# the screen where who holds it is decided.
+			covers {
+				acceptedAt
+				instance {
+					id
+					programme {
+						code
+					}
+				}
+			}
 		}
 		assignments(semester: $semester) @include(if: $withSemester) {
 			id
