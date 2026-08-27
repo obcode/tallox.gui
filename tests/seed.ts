@@ -488,8 +488,103 @@ export function seedSql(): string {
 	return [
 		...seedStatementsFor(Object.values(PERSONAS)),
 		...catalogueStatements(),
-		...wishStatements()
+		...wishStatements(),
+		...assignmentStatements()
 	].join('\n');
+}
+
+/**
+ * The assignment fixture: a semester in the assignment phase, one cohort with three parts.
+ *
+ * Its own programme, subject group, semester and module — not the wish fixture's. The reason is
+ * the collision the wish fixture ran into and wrote down: a fixture that grants somebody a
+ * permission needs a subject nobody else is asserting about. Here it is doubly so, because the
+ * *phase* is part of what this fixture asserts: the wish screen needs its semester in WISHES and
+ * this one needs its own in ASSIGNMENT, and one semester cannot be both.
+ *
+ * Three parts rather than two, so that "Praktikum 1" and "Praktikum 2" exist and the numbering
+ * rule has something to be right about.
+ *
+ * The dean's office has registered interest, so the candidate list has the thing that makes this screen
+ * worth having: the wish is next to the row it is about. Why that persona and not Eins is argued
+ * at the statement itself.
+ */
+export const ASSIGNMENTS = {
+	semester: '2033-SS',
+	programme: 'E2Z',
+	subjectGroup: '0e2e0000-0000-4000-8000-000000000051',
+	subjectGroupCode: 'E2EZFG',
+	module: '0e2e0000-0000-4000-8000-000000000052',
+	instance: '0e2e0000-0000-4000-8000-000000000053',
+	lecture: '0e2e0000-0000-4000-8000-000000000054',
+	labOne: '0e2e0000-0000-4000-8000-000000000055',
+	labTwo: '0e2e0000-0000-4000-8000-000000000056',
+	moduleName: 'E2E Zuteilungsmodul'
+} as const;
+
+export function assignmentStatements(): string[] {
+	const programme = quote(ASSIGNMENTS.programme);
+
+	return [
+		// Whatever a failed run left, innermost first: an assignment holds its part with
+		// ON DELETE RESTRICT and a wish holds its instance the same way.
+		`DELETE FROM assignment WHERE instance_part_id IN
+		   ('${ASSIGNMENTS.lecture}', '${ASSIGNMENTS.labOne}', '${ASSIGNMENTS.labTwo}');`,
+		`DELETE FROM wish WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+		`DELETE FROM course_instance WHERE id = '${ASSIGNMENTS.instance}';`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(ASSIGNMENTS.semester)}, 'ASSIGNMENT')
+		 ON CONFLICT (code) DO UPDATE
+		    SET phase = 'ASSIGNMENT', assignments_published_at = NULL, wishes_published_at = NULL;`,
+
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Zuteilungs-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${ASSIGNMENTS.module}', id, ${quote(ASSIGNMENTS.moduleName)}, 'SU_WITH_LAB',
+		        'EVERY_SEMESTER', 6, 5 FROM programme WHERE code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${ASSIGNMENTS.subjectGroup}', ${quote(ASSIGNMENTS.subjectGroupCode)},
+		         'Zuteilungs-Testfachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${ASSIGNMENTS.module}', '${ASSIGNMENTS.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${ASSIGNMENTS.instance}', s.id, '${ASSIGNMENTS.module}', pr.id, 'A', 2
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(ASSIGNMENTS.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${ASSIGNMENTS.lecture}', '${ASSIGNMENTS.instance}', 'LECTURE', 0, 4),
+		        ('${ASSIGNMENTS.labOne}', '${ASSIGNMENTS.instance}', 'LAB', 1, 2),
+		        ('${ASSIGNMENTS.labTwo}', '${ASSIGNMENTS.instance}', 'LAB', 2, 2);`,
+
+		// Drei leads this subject group and is the persona this screen is for: permitted inside
+		// it, and nowhere else.
+		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
+		 SELECT p.id, 'SUBJECT_GROUP_LEAD', '${ASSIGNMENTS.subjectGroup}' FROM person p
+		  WHERE p.mail = 'prof.drei@example.org'
+		 ON CONFLICT DO NOTHING;`,
+
+		// Somebody would like to teach it. The candidate list reads this, which is the point of
+		// the screen: the decision is taken from the wishes rather than beside them.
+		//
+		// **Fuenf and not Eins**, and that is a collision this fixture caused the first time
+		// round. "Meine Eintragungen" on the wish screen spans *every* semester, so a wish given
+		// to Eins here added a summary block to a page three files away and moved the table the
+		// wish spec locates by position. The rule the wish fixture already wrote down — a fixture
+		// that grants a permission needs a subject nobody else asserts about — turns out to hold
+		// for wishes as well: a fixture that gives somebody a row changes every page that lists
+		// their rows.
+		`INSERT INTO wish (course_instance_id, person_id, priority, note)
+		 SELECT '${ASSIGNMENTS.instance}', p.id, 1, 'gerne die Vorlesung' FROM person p
+		  WHERE p.mail = 'dekanat@example.org'
+		 ON CONFLICT DO NOTHING;`
+	];
 }
 
 /**
