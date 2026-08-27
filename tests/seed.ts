@@ -532,6 +532,12 @@ export function assignmentStatements(): string[] {
 		   ('${ASSIGNMENTS.lecture}', '${ASSIGNMENTS.labOne}', '${ASSIGNMENTS.labTwo}');`,
 		`DELETE FROM wish WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
 		`DELETE FROM course_instance WHERE id = '${ASSIGNMENTS.instance}';`,
+		// The wish window too, and it is easy to forget because it is not reachable from the
+		// instance: it hangs off the semester and the subject group, so nothing above cascades to
+		// it. A run that shut the round and stopped left every later run starting from shut.
+		`DELETE FROM wish_window WHERE subject_group_id = '${ASSIGNMENTS.subjectGroup}';`,
+		`DELETE FROM demand_completion WHERE programme_id IN
+		   (SELECT id FROM programme WHERE code = ${quote(ASSIGNMENTS.programme)});`,
 
 		`INSERT INTO semester (code, phase) VALUES (${quote(ASSIGNMENTS.semester)}, 'ASSIGNMENT')
 		 ON CONFLICT (code) DO UPDATE

@@ -759,6 +759,26 @@ type DemandChange {
   groupsAfter: Int
 }
 
+"""
+One study programme announcing that its demand for a semester is settled.
+"""
+type DemandCompletion {
+  """The semester it is about."""
+  semester: String!
+
+  """The study programme whose demand is settled."""
+  programme: Programme!
+
+  """
+  When it was last said.
+  
+  Moves when somebody re-announces after adding a late instance, because what a reader wants to
+  know is how fresh the statement is. Unlike a publication mark, which keeps its first timestamp
+  because it records something that cannot be walked back.
+  """
+  completedAt: Time!
+}
+
 """One row of a demand table: this module, in these cohorts."""
 input DemandEntryInput {
   """The module this row is about."""
@@ -1913,6 +1933,53 @@ type Mutation {
   ): CopyDemandReport!
 
   """
+  Announce this study programme's demand as settled for a semester, or withdraw the announcement.
+  
+  Blocks nothing either way. Declaring another instance afterwards stays possible and is the
+  ordinary case; re-announcing then refreshes the timestamp.
+  
+  `complete: false` withdraws and answers `null` — there is no "withdrawn" state to return, because
+  it is the same state as never having announced.
+  
+  Only the lead of that study programme and the dean's office. Not bound by the phase: announcing
+  is a statement about work somebody did, not a change to the plan.
+  """
+  setDemandComplete(
+    """Four digits, a hyphen and SS or WS."""
+    semester: String!
+
+    """The study programme's code."""
+    programme: String!
+
+    """True to announce or refresh, false to withdraw."""
+    complete: Boolean!
+  ): DemandCompletion
+
+  """
+  Open or shut one subject group's wish round for a semester.
+  
+  In either direction and at any time: a round that was shut can be opened again, which is what
+  makes this a door rather than a phase.
+  
+  Only the lead of that subject group and the dean's office — the same reach as filling that
+  subject's instances, which is the point: the person who shuts the round is the one who then works
+  from what it collected.
+  
+  Reachable through both doors. Shutting a round is ordinary process work and reversible, the same
+  reading `advanceSemesterPhase` takes.
+  """
+  setWishWindow(
+    """Four digits, a hyphen and SS or WS."""
+    semester: String!
+
+    """The subject group whose round this is."""
+    subjectGroupId: ID!
+
+    """True to take entries, false to stop."""
+    open: Boolean!
+  ): WishWindow!
+
+  """
   Move a semester one step through the process, forwards or backwards.
   
   Only to an adjacent phase — see `reachablePhases`. A semester nobody has touched is in
@@ -2548,6 +2615,28 @@ type Query {
   me: Person
 
   """
+  Which study programmes have announced their demand as settled, for one semester.
+  
+  Programmes that have not are simply absent. There is no "in Arbeit" row, because not announcing
+  and withdrawing an announcement are the same state: the demand is not settled.
+  """
+  demandCompletions(
+    """Four digits, a hyphen and SS or WS, for example `2029-SS`."""
+    semester: String!
+  ): [DemandCompletion!]!
+
+  """
+  The subject groups whose wish round somebody has switched, for one semester.
+  
+  The exceptions and not the whole list: a group that is not here is open. Reading it as "these are
+  the open ones" is the mistake this field's shape invites, and the reason the sentence is here.
+  """
+  wishWindows(
+    """Four digits, a hyphen and SS or WS."""
+    semester: String!
+  ): [WishWindow!]!
+
+  """
   The semesters worth showing, newest first.
   
   Three sources, and each covers what the others get wrong:
@@ -2877,6 +2966,7 @@ enum ScopeArea {
   `changeCourseInstance`, `withdrawCourseInstance`, `addInstancePart`, `changeInstancePart`,
   `removeInstancePart`, `shareInstancePartAcrossTracks`, `splitInstancePartAcrossTracks`,
   `copyDemandFromSemester`, `planDemand`,
+  `demandCompletions`, `wishWindows`, `setDemandComplete`, `setWishWindow`,
   `subjectGroups`, `subjectGroup`, `mySubjectGroups`, `modulesWithoutSubjectGroup`,
   `subjectGroupsWithoutLead`, `setMySubjectGroups`.
   """
@@ -3408,6 +3498,30 @@ enum WishPriority {
   Notfalls — held to fill a gap, and the level the assignment reads last.
   """
   IF_NEEDED
+}
+
+"""
+One subject group's wish round, for one semester.
+
+Only groups somebody has decided something about appear. Absent means open.
+"""
+type WishWindow {
+  """The semester it is about."""
+  semester: String!
+
+  """The subject group whose wish round this is."""
+  subjectGroup: SubjectGroupRef!
+
+  """
+  Whether entries are being taken.
+  
+  A row that says `true` is one that was shut and opened again — kept rather than deleted, so that
+  the second decision is visible.
+  """
+  open: Boolean!
+
+  """When it was last switched."""
+  changedAt: Time!
 }
 
 """One rebuild of the module catalogue out of the cached payloads."""

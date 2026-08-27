@@ -21,6 +21,10 @@
 		trackHeading,
 		WISH_PRIORITY_LABELS,
 		wishesAreOpen,
+		closedSubjectGroups,
+		settledProgrammes,
+		rowClosedReason,
+		demandStateHint,
 		wishRowLabel,
 		wishRows,
 		wishTint,
@@ -39,6 +43,18 @@
 
 	const phase = $derived(data.semester?.phase ?? null);
 	const open = $derived(wishesAreOpen(phase));
+
+	/**
+	 * Which subject groups have shut their round, and which programmes have settled their demand.
+	 *
+	 * Both are public facts about the process. What they do here is let a row say *why* it takes no
+	 * entries before somebody types into it — a field that accepts input and then refuses it is a
+	 * worse way to learn the same thing.
+	 *
+	 * The window list is the exceptions: a group that is not in it is open.
+	 */
+	const closed = $derived(closedSubjectGroups(data.windows));
+	const settled = $derived(settledProgrammes(data.completions));
 	const published = $derived(data.semester?.wishesPublishedAt ?? null);
 
 	const rows = $derived(wishRows(data.instances));
@@ -142,12 +158,23 @@
 					{@const rowTint = wishTint(
 						strongestPriority(row.cohorts.map((c) => mine.get(c.instanceId)?.priority))
 					)}
+					{@const closedReason = rowClosedReason(row, closed)}
+					{@const demandHint = demandStateHint(row, settled)}
 					<tr>
 						<td class="align-top font-mono text-xs {rowTint}">{studyGroupLabel(row)}</td>
 						<td class="align-top {rowTint}">
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
 								{row.module.name}
 							</a>
+							{#if demandHint}
+								<!--
+									Eine Orientierung, keine Warnung: sich in einen Studiengang einzutragen,
+									der seinen Bedarf noch bearbeitet, ist erlaubt und oft sinnvoll. Der
+									Hinweis fehlt, sobald gemeldet ist — eine Marke auf jeder Zeile wäre
+									Rauschen genau auf den Zeilen, die zählen.
+								-->
+								<span class="badge badge-ghost badge-xs ml-1 align-middle">{demandHint}</span>
+							{/if}
 							{#if row.module.subjectGroup}
 								<!--
 									Ungedämpft, anders als sonst in einer Tabelle — und das ist keine
@@ -191,9 +218,12 @@
 											label="{cohort.label} · {row.module.name}"
 											{wish}
 											others={others[cohort.instanceId] ?? []}
-											{open}
+											open={open && closedReason === null}
 										/>
 									{/key}
+									{#if closedReason}
+										<p class="text-base-content/80 mt-1 text-xs">{closedReason}</p>
+									{/if}
 									{#if refusalsByInstance[cohort.instanceId]}
 										<!--
 											Farbe als Hintergrund, nie als Textfarbe: text-error liegt auf den

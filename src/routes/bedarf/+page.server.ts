@@ -62,6 +62,14 @@ const DemandDocument = graphql(`
 			phase
 			wishesPublishedAt
 		}
+		# Which programmes have announced their demand as settled. An announcement and not a lock:
+		# what it does is tell the colleagues that registering interest here is worth the effort.
+		demandCompletions(semester: $semester) @include(if: $withOverview) {
+			completedAt
+			programme {
+				code
+			}
+		}
 		modules(filter: $filter) @include(if: $withTable) {
 			id
 			name
@@ -212,6 +220,14 @@ const PlanDocument = graphql(`
 	}
 `);
 
+const SetDemandCompleteDocument = graphql(`
+	mutation SetDemandComplete($semester: String!, $programme: String!, $complete: Boolean!) {
+		setDemandComplete(semester: $semester, programme: $programme, complete: $complete) {
+			completedAt
+		}
+	}
+`);
+
 const SharePartDocument = graphql(`
 	mutation SharePartFromTable($id: ID!) {
 		shareInstancePartAcrossTracks(id: $id) {
@@ -352,6 +368,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		foreignMatches: data.foreign ?? [],
 		instances: data.courseInstances ?? [],
 		previousInstances: data.previous ?? [],
+		completions: data.demandCompletions ?? [],
 		selected: {
 			semester,
 			programme,
@@ -440,6 +457,30 @@ export const actions: Actions = {
 	 * confirmation instead: a tick taken away is a statement, and from the wish phase onwards
 	 * somebody's entry may be behind it.
 	 */
+	/**
+	 * Announce this programme's demand as settled for the semester, or withdraw the announcement.
+	 *
+	 * Blocks nothing either way — declaring another instance afterwards stays possible and is the
+	 * ordinary case. What it changes is what the wish screen can say about this programme.
+	 */
+	complete: async ({ request }) => {
+		const form = await request.formData();
+		const semester = String(form.get('semester') ?? '');
+		const programme = String(form.get('programme') ?? '');
+		const complete = String(form.get('complete') ?? '') === 'true';
+
+		if (semester === '' || programme === '') {
+			return fail(400, { error: 'Kein Semester oder kein Studiengang gewählt.' });
+		}
+
+		try {
+			await backendRequest(SetDemandCompleteDocument, { semester, programme, complete });
+		} catch (err) {
+			return fail(403, refusalFor(err));
+		}
+		return { announced: complete };
+	},
+
 	plan: async ({ request }) => {
 		const form = await request.formData();
 		const variables: PlanVariables = {

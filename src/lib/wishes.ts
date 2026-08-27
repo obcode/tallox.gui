@@ -511,3 +511,70 @@ export function savedHint(changes: number): string {
 	if (changes === 1) return 'Eine Änderung gespeichert.';
 	return `${changes} Änderungen gespeichert.`;
 }
+
+/**
+ * Which subject groups have shut their wish round.
+ *
+ * Built from the exceptions the backend answers with, so the reading that matters is the one that
+ * is not in the data: **a group that is not in this set is open**, and so is a module in no subject
+ * group at all. Taking the list as "the open ones" is the mistake its shape invites, and it would
+ * shut the whole faculty.
+ */
+export function closedSubjectGroups(
+	windows: { open: boolean; subjectGroup: { id: string } }[]
+): Set<string> {
+	const closed = new Set<string>();
+	for (const window of windows) {
+		if (!window.open) closed.add(window.subjectGroup.id);
+	}
+	return closed;
+}
+
+/** Which study programmes have announced their demand as settled, by code. */
+export function settledProgrammes(completions: { programme: { code: string } }[]): Set<string> {
+	return new Set(completions.map((c) => c.programme.code));
+}
+
+/**
+ * Why this row takes no entries, or null when it does.
+ *
+ * Only the subject group's own door. A finished semester closes the whole page and is said once at
+ * the top — repeating it on every row would be noise, and it was: the sentence appeared twice and
+ * an end-to-end test found it as two elements.
+ *
+ * That is the rule this follows rather than an exception to it. What holds for the whole screen
+ * belongs at its head; what differs per row belongs in the row. The wish window differs per row,
+ * because two modules in the table can be in different subject groups.
+ *
+ * A sentence rather than a boolean, because the repair is a person: this subject group's lead, and
+ * not whoever runs the process. The backend refuses either way; saying so *before* somebody types
+ * is what this is for.
+ */
+export function rowClosedReason(
+	row: { module: { subjectGroup?: { id: string; code: string } | null } },
+	closed: Set<string>
+): string | null {
+	const group = row.module.subjectGroup;
+	if (group && closed.has(group.id)) {
+		return `Die Wunschphase der Fachgruppe ${group.code} ist derzeit geschlossen. Die Fachgruppenleitung kann sie wieder öffnen.`;
+	}
+	return null;
+}
+
+/**
+ * What a row says about the state of its programme's demand.
+ *
+ * Null when the programme has announced it as settled, because at that point the ordinary state
+ * needs no label — a mark on every row would be noise on the rows that matter most.
+ *
+ * The sentence deliberately does not say "warte noch": registering interest in a programme that is
+ * still working on its demand is allowed and often sensible, and this is an orientation rather
+ * than a warning.
+ */
+export function demandStateHint(
+	row: { programme: { code: string } },
+	settled: Set<string>
+): string | null {
+	if (settled.has(row.programme.code)) return null;
+	return 'Bedarf noch in Arbeit';
+}

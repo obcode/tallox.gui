@@ -114,6 +114,17 @@
 	 * this page to see what is offered, and a screen full of controls that all answer "not your
 	 * programme" teaches people to ignore refusals.
 	 */
+	/**
+	 * Whether this programme has announced its demand as settled, and when.
+	 *
+	 * An announcement rather than a lock: declaring another instance afterwards stays possible and
+	 * is the ordinary case. What it does is tell the colleagues on the wish screen that registering
+	 * interest here is worth the effort.
+	 */
+	const announced = $derived(
+		data.completions.find((c) => c.programme.code === data.selected.programme) ?? null
+	);
+
 	const mayPlan = $derived(
 		hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE']) ||
 			data.myProgrammes.some((p) => p.code === data.selected.programme)
@@ -496,6 +507,30 @@
 			Client-Zustand wären zwei Ansichten unter einer Adresse — nicht verschickbar, und der
 			Zurück-Knopf zeigte die falsche.
 		-->
+		{#if plansAtAll && data.selected.programme !== '' && data.current}
+			<!--
+				Die Fertigmeldung. Eigenes Formular und eigene Action, weil sie eine Aussage über den
+				Stand ist und keine Änderung an der Planung — und weil sie auch dann gilt, wenn
+				gerade niemand bearbeitet.
+			-->
+			<form
+				method="POST"
+				action="?/complete&semester={data.current.code}&studiengang={data.selected.programme}"
+				class="shrink-0"
+			>
+				<input type="hidden" name="semester" value={data.current.code} />
+				<input type="hidden" name="programme" value={data.selected.programme} />
+				<input type="hidden" name="complete" value={announced ? 'false' : 'true'} />
+				<button
+					type="submit"
+					class="btn btn-sm {announced ? 'btn-ghost' : ''}"
+					disabled={!mayPlan}
+					title={mayPlan ? undefined : editingBlocked || undefined}
+				>
+					{announced ? 'Meldung zurücknehmen' : 'Bedarf ist fertig'}
+				</button>
+			</form>
+		{/if}
 		{#if plansAtAll}
 			<form method="GET" class="shrink-0">
 				{@render carriedOver([])}

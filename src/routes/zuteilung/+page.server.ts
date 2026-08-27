@@ -121,6 +121,17 @@ const AssignmentDocument = graphql(`
 				name
 			}
 		}
+		# The wish round of the group being filled. The lead switches it here because this is where
+		# they are when they decide the round is over — and because filling and shutting are the
+		# same person's two acts, in that order more often than not.
+		#
+		# The exceptions, not the state of every group: absent means open.
+		wishWindows(semester: $semester) @include(if: $withSemester) {
+			open
+			subjectGroup {
+				id
+			}
+		}
 		teachers(search: $search) @include(if: $withSearch) {
 			id
 			name
@@ -177,6 +188,14 @@ const ClearDocument = graphql(`
 	}
 `);
 
+const SetWindowDocument = graphql(`
+	mutation SetWishWindow($semester: String!, $group: ID!, $open: Boolean!) {
+		setWishWindow(semester: $semester, subjectGroupId: $group, open: $open) {
+			open
+		}
+	}
+`);
+
 export const load: PageServerLoad = async ({ url }) => {
 	const wanted = url.searchParams.get('semester') ?? '';
 	const group = url.searchParams.get('fachgruppe') ?? '';
@@ -230,6 +249,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		assignments: data.assignments ?? [],
 		wishes: data.wishes ?? [],
 		found: data.teachers ?? [],
+		windows: data.wishWindows ?? [],
 		me: data.me,
 		selected: { semester: wanted, group, search },
 		unusable
@@ -305,5 +325,31 @@ export const actions: Actions = {
 		}
 
 		return { saved, refusals };
+	},
+
+	/**
+	 * Open or shut this subject group's wish round.
+	 *
+	 * Its own action rather than part of the save, because it is a different kind of act: saving
+	 * the table is a batch of small decisions, and this is one decision about the round itself.
+	 * Sharing an action would also mean a stray click on the switch travelling with every
+	 * autosave.
+	 */
+	window: async ({ request }) => {
+		const form = await request.formData();
+		const semester = String(form.get('semester') ?? '');
+		const group = String(form.get('fachgruppe') ?? '');
+		const open = String(form.get('open') ?? '') === 'true';
+
+		if (semester === '' || group === '') {
+			return fail(400, { message: 'Kein Semester oder keine Fachgruppe gewählt.', refusals: [] });
+		}
+
+		try {
+			await backendRequest(SetWindowDocument, { semester, group, open });
+		} catch (err) {
+			return fail(403, { message: toRefusal(err).message, refusals: [] });
+		}
+		return { saved: 0, refusals: [] };
 	}
 };
