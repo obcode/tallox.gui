@@ -128,6 +128,11 @@ const PASS_THROUGH = new Set([
 	// an upsert, so registering twice is a correction rather than a collision — and if that
 	// ever changes, the refusal belongs in the generic bucket and not in this list.
 	'WISH_PHASE_CLOSED',
+	// The subject group's own door, which since 2026-08-28 is what actually ends a wish round.
+	// Safe to pass through and worth passing through: the sentence names who can open it again,
+	// which is the repair, and a generic message would send somebody to the dean's office about a
+	// switch their own subject group lead holds.
+	'WISH_WINDOW_CLOSED',
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
 	'WISH_PRIORITY_INVALID',
@@ -153,7 +158,13 @@ const PASS_THROUGH = new Set([
 	'PART_ALREADY_ASSIGNED',
 	'PART_ASSIGNED',
 	'ASSIGNEE_INVALID',
-	'ASSIGNEE_NOT_FOUND'
+	'ASSIGNEE_NOT_FOUND',
+	// The two planning marks. Nothing confidential on this path at all: which programmes have
+	// settled their demand and which subjects take entries is public to anybody with an account,
+	// and the refusals name which lead to go and see.
+	'NOT_YOUR_SUBJECT_GROUP',
+	'SUBJECT_GROUP_SCOPE_MISSING',
+	'SUBJECT_GROUP_NOT_FOUND'
 ]);
 
 /** What is shown when the error is none of the known ones. */

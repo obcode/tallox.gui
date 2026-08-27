@@ -1,33 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import type { ReadInstanceLike } from './demand';
 import {
+	WISH_PRIORITIES,
+	WISH_PRIORITY_LABELS,
+	WISH_PRIORITY_TINTS,
 	closedPhaseHint,
+	closedSubjectGroups,
 	cohortIn,
+	demandStateHint,
 	isWishChoice,
 	isWishPriority,
 	myWishByInstance,
 	openPhaseHint,
-	ownWishesBySemester,
 	othersByInstance,
 	othersHint,
+	ownWishesBySemester,
+	rowClosedReason,
 	savedHint,
 	splitByMySubjects,
 	strongestPriority,
 	studyGroupLabel,
 	trackColumns,
 	trackHeading,
+	type StoredWish,
+	type WishEntry,
+	type WishLike,
+	type WishModule,
 	wishChanges,
 	wishRowLabel,
 	wishRows,
 	wishTint,
-	wishesAreOpen,
-	WISH_PRIORITIES,
-	WISH_PRIORITY_LABELS,
-	WISH_PRIORITY_TINTS,
-	type StoredWish,
-	type WishEntry,
-	type WishLike,
-	type WishModule
+	wishesAreOpen
 } from './wishes';
 
 function instance(
@@ -459,5 +462,63 @@ describe('othersHint', () => {
 		expect(before).toMatch(/Anzahl/);
 
 		expect(othersHint('2026-10-27T12:00:00Z')).toMatch(/veröffentlicht/);
+	});
+});
+
+describe('closedSubjectGroups', () => {
+	it('reads the list as the exceptions and not as the open ones', () => {
+		// The mistake this shape invites, and it would shut the whole faculty: a group that is not
+		// in the list is open.
+		const closed = closedSubjectGroups([
+			{ open: false, subjectGroup: { id: 'g1' } },
+			{ open: true, subjectGroup: { id: 'g2' } }
+		]);
+		expect(closed.has('g1')).toBe(true);
+		expect(closed.has('g2')).toBe(false);
+		expect(closed.has('never-switched')).toBe(false);
+	});
+});
+
+describe('rowClosedReason', () => {
+	const row = (group: { id: string; code: string } | null) => ({ module: { subjectGroup: group } });
+
+	it('says nothing when the round is open', () => {
+		expect(rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set())).toBeNull();
+	});
+
+	it('names the subject group lead as the repair for a shut round', () => {
+		// The point of separating this from the phase: a shut window is one switch held by that
+		// group's lead, and a sentence about the process would send somebody to the wrong person.
+		const reason = rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set(['g1']));
+		expect(reason).toContain('MATHE');
+		expect(reason).toContain('Fachgruppenleitung');
+	});
+
+	it('leaves the finished semester to the page head, which says it once', () => {
+		// It said it per row as well, and an end-to-end test found the sentence as two elements.
+		// What holds for the whole screen belongs at its head.
+		expect(rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set())).toBeNull();
+	});
+
+	it('leaves a module in no subject group open', () => {
+		// It cannot be reached by any window, which is the fail-open default the backend takes too.
+		expect(rowClosedReason(row(null), new Set(['g1']))).toBeNull();
+	});
+});
+
+describe('demandStateHint', () => {
+	it('marks a programme that has not announced its demand', () => {
+		expect(demandStateHint({ programme: { code: 'IF' } }, new Set())).toBe('Bedarf noch in Arbeit');
+	});
+
+	it('says nothing once it has, because the ordinary state needs no label', () => {
+		expect(demandStateHint({ programme: { code: 'IF' } }, new Set(['IF']))).toBeNull();
+	});
+
+	it('is an orientation and not a warning', () => {
+		// Registering interest in a programme still working on its demand is allowed and often
+		// sensible. A sentence that told somebody to wait would be wrong about the process.
+		const hint = demandStateHint({ programme: { code: 'IF' } }, new Set()) ?? '';
+		expect(hint).not.toMatch(/warte|noch nicht möglich|gesperrt/i);
 	});
 });

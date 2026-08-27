@@ -130,6 +130,28 @@ const WishesDocument = graphql(`
 				}
 			}
 		}
+		# Which subject groups have shut their round, and which programmes have settled their demand.
+		#
+		# Both are public and neither is confidential — they are facts about the process. What they
+		# change on this page is what it can explain: a cell that refuses can say that the round is
+		# shut and who opens it, instead of refusing and leaving somebody to guess.
+		#
+		# The window list is the **exceptions**: a subject group that is not in it is open, and so
+		# is a module in no subject group at all.
+		wishWindows(semester: $semester) @include(if: $withSemester) {
+			open
+			subjectGroup {
+				id
+				code
+				name
+			}
+		}
+		demandCompletions(semester: $semester) @include(if: $withSemester) {
+			completedAt
+			programme {
+				code
+			}
+		}
 		me {
 			mail
 		}
@@ -226,6 +248,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		// their own row out of it by instance id, which is semester-specific anyway.
 		myWishes: data.myWishes,
 		wishes: data.wishes ?? [],
+		windows: data.wishWindows ?? [],
+		completions: data.demandCompletions ?? [],
 		me: data.me,
 		unusable
 	};

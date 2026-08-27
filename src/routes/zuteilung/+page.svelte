@@ -50,10 +50,29 @@
 
 	const members = $derived(data.group?.members ?? []);
 
+	/**
+	 * Whether this subject group is still taking wishes.
+	 *
+	 * The list is the exceptions: a group nobody has switched is open. Read the other way round it
+	 * would shut every group in the faculty, which is why it is derived here once and not inline.
+	 */
+	const roundOpen = $derived(
+		data.group === null ||
+			!data.windows.some((w) => w.subjectGroup.id === data.group?.id && !w.open)
+	);
+
 	/** Which row a refusal belongs to, so it can be rendered in that row and nowhere else. */
 	const refusalFor = $derived(new Map((form?.refusals ?? []).map((r) => [r.partId, r.message])));
 
-	const open = $derived(data.semester !== null && data.semester.phase !== 'DEMAND_PLANNING');
+	/**
+	 * Whether anything may be filled at all.
+	 *
+	 * Since 2026-08-28 that is one question with one answer: until the semester is finished.
+	 * Filling used to wait for the assignment phase; the wish round turned out to belong to the
+	 * subject group rather than to the faculty, and its lead — the same person who fills the
+	 * instances — shuts it with the switch below.
+	 */
+	const open = $derived(data.semester !== null && data.semester.phase !== 'FINAL');
 	const published = $derived(data.semester?.assignmentsPublishedAt != null);
 
 	// Saving, the same arrangement the wish screen uses: three events on the form itself, because
@@ -143,10 +162,7 @@
 
 	{#if !open}
 		<div class="alert alert-info mt-3 max-w-prose">
-			<span>
-				Zugeteilt wird ab der Zuteilungsphase. Solange die Wunschphase läuft, bleiben die Instanzen
-				offen — sonst wäre die Wunschphase eine Formsache.
-			</span>
+			<span> Dieses Semester ist abgeschlossen. Zuteilungen lassen sich nicht mehr ändern. </span>
 		</div>
 	{/if}
 
@@ -191,6 +207,41 @@
 			</div>
 		</div>
 	{:else}
+		<!--
+			Der Schalter für die Wunschphase dieser Fachgruppe. Ein eigenes Formular und eine eigene
+			Action: das Speichern der Tabelle ist ein Bündel kleiner Entscheidungen, dies ist eine
+			Entscheidung über die Runde selbst — und ein versehentlicher Klick soll nicht bei jedem
+			automatischen Speichern mitreisen.
+		-->
+		<!--
+			Die Parameter stehen in der Action-URL, nicht nur im Rumpf. Ohne `use:enhance` navigiert
+			der Browser wirklich nach `?/window` — und der ersetzt den Query-String der Seite, also
+			landet man danach ohne Semester und ohne Fachgruppe auf dem Planungssemester. Der Rumpf
+			trägt sie trotzdem, weil die Action sie von dort liest.
+		-->
+		<form
+			method="POST"
+			action="?/window&semester={data.semester.code}&fachgruppe={data.group.id}"
+			class="mt-5"
+		>
+			<input type="hidden" name="semester" value={data.semester.code} />
+			<input type="hidden" name="fachgruppe" value={data.group.id} />
+			<input type="hidden" name="open" value={roundOpen ? 'false' : 'true'} />
+			<div class="alert {roundOpen ? 'alert-info' : 'alert-warning'} max-w-3xl">
+				<span>
+					{#if roundOpen}
+						Die Wunschphase von <strong>{data.group.name}</strong> ist offen — es können noch Eintragungen
+						dazukommen.
+					{:else}
+						Die Wunschphase von <strong>{data.group.name}</strong> ist geschlossen.
+					{/if}
+				</span>
+				<button type="submit" class="btn btn-sm">
+					{roundOpen ? 'Wunschphase schließen' : 'Wunschphase öffnen'}
+				</button>
+			</div>
+		</form>
+
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-2">
 			<input type="hidden" name="semester" value={data.semester.code} />
 			<input type="hidden" name="fachgruppe" value={data.group.id} />

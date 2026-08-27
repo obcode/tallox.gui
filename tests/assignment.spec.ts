@@ -114,3 +114,67 @@ test.describe('the assignment screen', () => {
 		await checkA11y(page);
 	});
 });
+
+test.describe('the wish round switch', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	test('the lead shuts the round from the screen they fill it on', async ({ asPersona }) => {
+		// Filling and shutting are the same person's two acts, in that order more often than not,
+		// so the switch is where they already are.
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		// The button carries the state unambiguously, and by its accessible name — the sentence
+		// beside it is split across elements by its <strong>, which makes it the wrong thing to
+		// locate by.
+		await page.getByRole('button', { name: 'Wunschphase schließen' }).click();
+		await expect(page.getByRole('button', { name: 'Wunschphase öffnen' })).toBeVisible();
+
+		// A door and not a phase: it opens again.
+		await page.getByRole('button', { name: 'Wunschphase öffnen' }).click();
+		await expect(page.getByRole('button', { name: 'Wunschphase schließen' })).toBeVisible();
+	});
+
+	test('a shut round stops the wish screen from taking entries, and says who opens it', async ({
+		asPersona
+	}) => {
+		const lead = await asPersona(PERSONAS.drei);
+		await gotoRendered(lead, URL);
+		await lead.getByRole('button', { name: 'Wunschphase schließen' }).click();
+		await expect(lead.getByRole('button', { name: 'Wunschphase öffnen' })).toBeVisible();
+
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, `/wuensche?semester=${ASSIGNMENTS.semester}`);
+
+		// The cell is there and refuses, and the sentence names the repair — which is this subject
+		// group's lead and not the dean's office.
+		const cell = page.getByRole('combobox', {
+			name: new RegExp(`Wunsch für .*${ASSIGNMENTS.moduleName}`)
+		});
+		await expect(cell).toBeDisabled();
+		await expect(
+			page.getByText(/Wunschphase der Fachgruppe .* ist derzeit geschlossen/)
+		).toBeVisible();
+		await expect(page.getByText(/Fachgruppenleitung kann sie wieder öffnen/)).toBeVisible();
+
+		// Reopened, and the cell takes entries again.
+		await gotoRendered(lead, URL);
+		await lead.getByRole('button', { name: 'Wunschphase öffnen' }).click();
+		await expect(lead.getByRole('button', { name: 'Wunschphase schließen' })).toBeVisible();
+
+		await gotoRendered(page, `/wuensche?semester=${ASSIGNMENTS.semester}`);
+		await expect(cell).toBeEnabled();
+	});
+
+	test('a programme still working on its demand is marked on the wish screen', async ({
+		asPersona
+	}) => {
+		// An orientation and not a warning: registering interest here stays possible, and the mark
+		// disappears once the lead announces the demand as settled.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, `/wuensche?semester=${ASSIGNMENTS.semester}`);
+
+		await expect(page.getByText('Bedarf noch in Arbeit').first()).toBeVisible();
+	});
+});
