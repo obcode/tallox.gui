@@ -10,7 +10,7 @@ Kolleg:innen.
 - [Keine Aggregate über unveröffentlichte Wünsche](no-wish-aggregates.md) — der Leckkanal, den Zeilenfilterung nicht schließt
 - [Themewahl im Cookie](theme-cookie.md) — warum nicht localStorage, und warum die Allowlist eine Sicherheitsgrenze ist
 - [Toolchain-Stolperfallen](toolchain-gotchas.md) — pnpm allowBuilds, vitest.config, resolve() bei Links
-- [Die Bedarfsseite](demand-page.md) — zwei Sichten unter einer Adresse, und die Formularregel, an der drei Fehler an einem Tag hingen
+- [Die Bedarfsseite](demand-page.md) — zwei Sichten unter einer Adresse, die Formularregel, an der drei Fehler an einem Tag hingen, und die Deckung über Studiengänge
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
 - [Planungsmarken in der GUI](planning-marks-ui.md) — wo Fertigmeldung und Wunschphase geschaltet werden, und die Action-URL-Falle

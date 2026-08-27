@@ -81,3 +81,39 @@ gab — und schlimmer: `planDemand` fasst nur an, was auf dem Bildschirm stand, 
 Zeile ließ sich also nie wieder abwählen.
 
 Siehe [[save-on-toggle]], [[no-wish-aggregates]], `go/programme-planning-status`.
+
+## Deckung über Studiengänge (2026-08-27)
+
+Zwei Studiengänge halten dasselbe Modul **einmal gemeinsam**. Der gedeckte Zug hält keine Teile,
+leiht die des haltenden und kostet 0 SWS. Das Backend-Wissen dazu steht in
+`tallox.go/.claude/memory/instance-coverage.md`; hier stehen die drei Dinge, die in der GUI
+schiefgingen.
+
+**Ein Knopf mit `formmethod="GET"` in der Planungstabelle schickt die ganze Tabelle ab.**
+Formulare lassen sich nicht schachteln, also lag der Picker-Knopf im großen POST-Formular und
+verwandelte beim Klick jedes Häkchen und jede Gruppenzahl in Query-Parameter. Lösung: ein
+eigenständiges `<form method="GET" id="coverage-picker">` außerhalb der Tabelle, und die
+Zeilenknöpfe verweisen per `form`-Attribut darauf. Dieselbe Regel wie beim Link-vs-GET-Formular
+eine Ebene tiefer — und die dritte Variante desselben Fehlers auf dieser Seite.
+
+**`plannedHours` braucht ein eigenes `covered`-Flag, nicht `borrowedKinds`.** Die geliehene Liste
+ist, was der _haltende_ Zug tatsächlich hält. Nennt die Modul-Zerlegung eine Einheit, für die
+dort kein Teil existiert — eine Übung, die niemand angelegt hat —, würde sie einem Zug berechnet,
+der überhaupt keine Lehre hält. Genau so bekommt ein gedeckter Zug eine plausibel aussehende Zahl
+über null.
+
+**`liveHours` musste dasselbe Flag durchreichen.** Sonst zeigte die Planungstabelle die volle
+Aufteilung, während die gespeicherte Zahl daneben 0 sagt — zwei widersprüchliche Zahlen
+nebeneinander, auf dem Schirm, dessen Aufgabe es ist zu zeigen, was eine Änderung kostet.
+
+**Ein Nebenfund, der älter ist als diese Funktion:** `demand.spec.ts` setzte
+`CATALOGUE.otherProgramme` kurzzeitig auf `DISCONTINUED`, während `programmes.spec.ts` genau diese
+Zeile für plannbar hält — parallel. Das Rennen lag immer da und fiel erst um, als diese Datei lang
+genug wurde, dass sich die Fenster überlappten. Beide benutzen jetzt einen Studiengang, den sonst
+niemand anfasst. **Merksatz: ein Test, der eine Zeile mutiert, die eine andere Datei besitzt, ist
+ein Flake mit Verzögerung.**
+
+**Die Anfragen-Sektion ist kein Schmuck.** Eine offene Anfrage steht in der Zeile des _fragenden_
+Studiengangs, und die sieht die haltende Leitung in ihrer eigenen Auswahl nie. Ohne den Abschnitt
+„Anfragen anderer Studiengänge" ist die Anfrage auf dem einzigen Schirm unsichtbar, der sie
+beantworten kann.
