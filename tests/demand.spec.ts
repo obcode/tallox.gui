@@ -498,9 +498,16 @@ test.describe('the demand table', () => {
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
 
 		// A semester keeps the programme.
-		await page.getByRole('tab', { name: 'SS 2028' }).click();
+		//
+		// The previous semester, which the seed records, rather than an arbitrary one from the
+		// calendar window. A recorded semester is listed whatever else is true; a window one is
+		// dropped when the planning mark sits after it — SemesterService.List skips
+		// `code < planning.Code` — and the mark is moved by semester.spec.ts, which runs in
+		// parallel. This test used to click 'SS 2028' and pass locally only because a leftover row
+		// kept that tab alive; in CI, where the database is fresh, the tab was simply gone.
+		await page.getByRole('tab', { name: semesterShortName(DEMAND.previous) }).click();
 		await expect(page).toHaveURL(new RegExp(`studiengang=${CATALOGUE.programme}`));
-		await expect(page).toHaveURL(/semester=2028-SS/);
+		await expect(page).toHaveURL(new RegExp(`semester=${DEMAND.previous}`));
 
 		// And back, so the rest of this serial group finds the semester it expects.
 		await page.getByRole('tab', { name: semesterShortName(DEMAND.semester) }).click();

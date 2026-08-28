@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
+import { runSql } from './psql';
 import { SEMESTERS } from './seed';
 
 /**
@@ -150,6 +151,34 @@ test.describe('semesters and phases', () => {
 				.filter({ hasText: SEMESTERS.planning })
 				.getByText('Planungssemester', { exact: true })
 		).toHaveCount(0);
+	});
+
+	// Put the planning mark back, whatever happened above.
+	//
+	// It is a singleton the whole application reads: while it sits on the moved semester, every
+	// other screen answers a different question. /bedarf opens on it, and its semester list drops
+	// every calendar semester *before* it — SemesterService.List skips `code < planning.Code`. The
+	// demand spec runs in parallel and clicked a tab that had quietly stopped existing, which is
+	// why the end-to-end run was red for days while it passed locally, where a leftover row
+	// happened to keep that tab alive.
+	//
+	// In an afterAll rather than at the end of the test, and the first attempt at this taught the
+	// difference: a restore in the test body does not run when an assertion above it fails, and
+	// the mark then stays moved for every run after this one. That is how it came to be sitting on
+	// the moved semester in the developer database in the first place.
+	//
+	// Two statements, because semester_one_planning_semester_idx is a partial unique index: a
+	// single UPDATE that clears one row and sets another can collide with itself halfway through,
+	// depending on the order the rows are visited.
+	test.afterAll(() => {
+		runSql(
+			[
+				`UPDATE semester SET is_planning_semester = false WHERE is_planning_semester;`,
+				`UPDATE semester SET is_planning_semester = true
+				  WHERE code = '${SEMESTERS.planning}';`
+			].join('\n'),
+			'putting the planning mark back where the seed left it'
+		);
 	});
 
 	test('the page is accessible', async ({ asPersona, checkA11y }) => {
