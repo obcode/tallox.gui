@@ -4,6 +4,7 @@ import {
 	candidatesFor,
 	commonNote,
 	commonValue,
+	moduleBlocks,
 	mergeCombined,
 	pooledInstances,
 	cohortGroups,
@@ -434,5 +435,39 @@ describe('the cohort as one unit', () => {
 				}
 			]);
 		});
+	});
+});
+
+describe('moduleBlocks', () => {
+	const cohort = (module: string, name: string, programme: string, track: string) =>
+		cohortGroups(
+			[
+				instance({
+					id: `${module}-${programme}-${track}`,
+					track,
+					programme: { code: programme },
+					module: { id: module, name }
+				})
+			],
+			[]
+		)[0];
+
+	it('gathers the cohorts of a module so the name can be written once', () => {
+		const blocks = moduleBlocks([
+			cohort('m2', 'Betriebssysteme', 'IF', 'A'),
+			cohort('m1', 'Analysis', 'IF', 'B'),
+			cohort('m2', 'Betriebssysteme', 'IF', 'B')
+		]);
+		expect(blocks.map((b) => b.name)).toEqual(['Analysis', 'Betriebssysteme']);
+		expect(blocks[1].cohorts.map((c) => c.label)).toEqual(['IF1A', 'IF1B']);
+	});
+
+	// By name and not by id: the first column is read down, looking for a module.
+	it('orders the modules the way somebody reads the first column', () => {
+		const blocks = moduleBlocks([
+			cohort('m1', 'Übersetzerbau', 'IF', 'A'),
+			cohort('m2', 'Algorithmen', 'IF', 'A')
+		]);
+		expect(blocks.map((b) => b.name)).toEqual(['Algorithmen', 'Übersetzerbau']);
 	});
 });

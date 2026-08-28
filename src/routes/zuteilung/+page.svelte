@@ -6,6 +6,7 @@
 		candidatesFor,
 		commonNote,
 		commonValue,
+		moduleBlocks,
 		pooledInstances,
 		cohortGroups,
 		currentValue,
@@ -133,7 +134,7 @@
 	function harmonise(target: EventTarget | null) {
 		if (!(target instanceof HTMLSelectElement)) return;
 
-		const section = target.closest('section[data-cohort]');
+		const section = target.closest('[data-cohort]');
 		if (section === null) return;
 
 		const all = section.querySelector<HTMLSelectElement>('select[name^="all:"]');
@@ -357,120 +358,161 @@
 				     saved nothing. -->
 				<input type="hidden" name="semester" value={data.semester.code} />
 
-				{#each groups as group (group.instance.id)}
-					{@const wishesHere = data.wishes.filter((w) => w.instance.id === group.instance.id)}
-					{@const pooled = pooledInstances(group.instance)}
-					{@const held = group.rows
-						.map((row) => row.assignment)
-						.filter((a): a is AssignmentLike => a !== null)}
-					<!-- One candidate list for the whole cohort, so that a name offered for the lecture is
-					     offered for its laboratories too. The cohort is filled by one dropdown; a list that
-					     differed between the rows could not be written down onto them. -->
-					{@const candidates = candidatesFor(
-						pooled.ids,
-						wishesHere,
-						members,
-						data.found,
-						held,
-						pooled.programmes
-					)}
-					{@const shared = commonValue(group.rows)}
-					{@const sharedNote = commonNote(group.rows)}
-					{@const refused = group.rows.some((row) => refusalFor.has(row.part.id))}
-					<section class="mt-6" data-cohort={group.instance.id}>
-						<h2 class="text-lg font-semibold">
-							{group.instance.module.name}
-							<span class="badge badge-neutral ml-2">{group.label}</span>
-							<span class="text-base-content/70 ml-2 text-sm font-normal">
-								{hoursLabel(group.instance.teachingHours)} gesamt
-							</span>
-						</h2>
+				<!--
+					One table for the whole subject group, not one per cohort.
 
-						<!-- Which parts the cohort's dropdown stands for. The server writes one choice onto
-						     all of them, and reading them out of the form is what lets it do that without any
-						     JavaScript on this page. -->
-						<input
-							type="hidden"
-							name="parts:{group.instance.id}"
-							value={group.rows.map((row) => row.part.id).join(',')}
-						/>
-
-						<div class="mt-2 flex flex-wrap items-end gap-3">
-							<div class="flex flex-col gap-1">
-								<span class="label-text text-sm">Wer hält {group.label}?</span>
-								<select
-									name="all:{group.instance.id}"
-									class="select select-bordered select-sm w-72"
-									aria-label="Wer hält alle Teile von {group.instance.module.name} in {group.label}"
-									disabled={!open}
-									value={shared ?? MIXED_CHOICE}
+					The module is written once at the head of its cohorts and the rows underneath carry only
+					the cohort — "Softwareentwicklung II" three times over is three chances to read it as
+					three different things. The parts are rows too, hidden until somebody asks for them.
+				-->
+				<div class="mt-6 overflow-x-auto">
+					<table class="table">
+						<thead>
+							<tr>
+								<th class="w-64">Modul</th>
+								<th class="w-24">Zug</th>
+								<th class="w-20 text-right">SWS</th>
+								<th class="w-80">Wer</th>
+								<th>Notiz</th>
+								<th class="w-24 text-right">Teile</th>
+							</tr>
+						</thead>
+						{#each moduleBlocks(groups) as block (block.id)}
+							{#each block.cohorts as group, position (group.instance.id)}
+								{@const wishesHere = data.wishes.filter((w) => w.instance.id === group.instance.id)}
+								{@const pooled = pooledInstances(group.instance)}
+								{@const held = group.rows
+									.map((row) => row.assignment)
+									.filter((a): a is AssignmentLike => a !== null)}
+								<!-- One candidate list for the whole cohort, so that a name offered for the
+								     lecture is offered for its laboratories too. The cohort is filled by one
+								     dropdown; a list that differed between the rows could not be written down
+								     onto them. -->
+								{@const candidates = candidatesFor(
+									pooled.ids,
+									wishesHere,
+									members,
+									data.found,
+									held,
+									pooled.programmes
+								)}
+								{@const shared = commonValue(group.rows)}
+								{@const sharedNote = commonNote(group.rows)}
+								{@const refusals = group.rows
+									.map((row) => refusalFor.get(row.part.id))
+									.filter((message) => message !== undefined)}
+								{@const divisible = group.rows.length > 1}
+								{@const split = expandedFor(
+									group.instance.id,
+									shared === null || refusals.length > 0
+								)}
+								<!--
+									A tbody per cohort, which is what scopes the disclosure below: the part rows
+									are shown by `tbody:has(.split-toggle:checked)`, so the checkbox reaches its own
+									parts and no others. A checkbox rather than a <details> because <details> cannot
+									hold table rows — and rather than a button, because this way the fold works with
+									no JavaScript, exactly like the rest of the screen.
+								-->
+								<tbody
+									data-cohort={group.instance.id}
+									class="border-base-300 {position === 0 ? 'border-t-2' : 'border-t'}"
 								>
-									<option value="">— nicht besetzt —</option>
-									<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
-									     dropdown has to be able to *show* it: a cohort whose parts are held by
-									     different people has no one name to put here. -->
-									<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
-									{#each candidates as candidate (candidateValue(candidate))}
-										<option value={candidateValue(candidate)}>
-											{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
-										</option>
-									{/each}
-								</select>
-							</div>
-							<!-- Only where the parts carry the same note: where they do not, there is no one
-							     note to edit, and a field showing an empty one would claim otherwise. -->
-							{#if sharedNote !== null}
-								<div class="flex flex-col gap-1">
-									<span class="label-text text-sm">Notiz</span>
-									<input
-										type="text"
-										name="allnote:{group.instance.id}"
-										value={sharedNote}
-										maxlength="500"
-										placeholder="z. B. vertretungsweise"
-										class="input input-bordered input-sm w-64"
-										aria-label="Notiz zu allen Teilen von {group.instance.module
-											.name} in {group.label}"
-										disabled={!open}
-									/>
-								</div>
-							{/if}
-							<span class="text-base-content/80 pb-2 text-sm">{partsSummary(group.rows)}</span>
-						</div>
+									<tr>
+										<td class="align-top font-medium">
+											{position === 0 ? block.name : ''}
+											<!-- Which parts the cohort's dropdown stands for. The server writes one
+											     choice onto all of them, and reading them out of the form is what lets
+											     it do that without any JavaScript on this page. -->
+											<input
+												type="hidden"
+												name="parts:{group.instance.id}"
+												value={group.rows.map((row) => row.part.id).join(',')}
+											/>
+										</td>
+										<td class="align-top font-medium whitespace-nowrap">{group.label}</td>
+										<td class="align-top text-right whitespace-nowrap">
+											{hoursLabel(group.instance.teachingHours)}
+										</td>
+										<td>
+											<select
+												name="all:{group.instance.id}"
+												class="select select-bordered select-sm w-full"
+												aria-label="Wer hält alle Teile von {block.name} in {group.label}"
+												disabled={!open}
+												value={shared ?? MIXED_CHOICE}
+											>
+												<option value="">— nicht besetzt —</option>
+												<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
+												     dropdown has to be able to *show* it: a cohort whose parts are held
+												     by different people has no one name to put here. -->
+												<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
+												{#each candidates as candidate (candidateValue(candidate))}
+													<option value={candidateValue(candidate)}>
+														{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
+													</option>
+												{/each}
+											</select>
+											{#if wishesHere.length > 0}
+												<p class="text-base-content/80 mt-1 text-xs">
+													Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
+												</p>
+											{/if}
+											<!-- A refusal belongs to a part, and the parts may be folded away. Where
+											     they are, it is said here instead of nowhere. -->
+											{#if !split}
+												{#each [...new Set(refusals)] as message (message)}
+													<span class="badge badge-error mt-1 whitespace-normal">{message}</span>
+												{/each}
+											{/if}
+										</td>
+										<td>
+											<!-- Only where the parts carry the same note: where they do not, there is
+											     no one note to edit, and a field showing an empty one would claim
+											     otherwise. -->
+											{#if sharedNote !== null}
+												<input
+													type="text"
+													name="allnote:{group.instance.id}"
+													value={sharedNote}
+													maxlength="500"
+													placeholder="z. B. vertretungsweise"
+													class="input input-bordered input-sm w-full"
+													aria-label="Notiz zu allen Teilen von {block.name} in {group.label}"
+													disabled={!open}
+												/>
+											{:else}
+												<span class="text-base-content/80 text-xs">Notizen stehen je Teil.</span>
+											{/if}
+										</td>
+										<td class="align-top text-right">
+											{#if divisible}
+												<label
+													class="flex items-center justify-end gap-1 text-xs whitespace-nowrap"
+													title={partsSummary(group.rows)}
+												>
+													<input
+														type="checkbox"
+														class="split-toggle checkbox checkbox-xs"
+														aria-label="Die {group.rows
+															.length} Teile von {group.label} einzeln besetzen"
+														checked={split}
+														onchange={(event) =>
+															(expanded[group.instance.id] = event.currentTarget.checked)}
+													/>
+													{group.rows.length} Teile
+												</label>
+											{/if}
+										</td>
+									</tr>
 
-						{#if wishesHere.length > 0}
-							<p class="text-base-content/80 mt-1 text-sm">
-								Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
-							</p>
-						{/if}
-
-						<!-- The exception, folded away. A <details> keeps its fields in the form even while
-						     it is shut, which is what lets the two controls be ranked by what they say rather
-						     than by which one the person could reach. -->
-						<details
-							class="mt-2"
-							open={expandedFor(group.instance.id, shared === null || refused)}
-							ontoggle={(event) => (expanded[group.instance.id] = event.currentTarget.open)}
-						>
-							<summary class="text-base-content/80 cursor-pointer text-sm">
-								Teile einzeln besetzen
-							</summary>
-
-							<div class="overflow-x-auto">
-								<table class="table-zebra table mt-2">
-									<thead>
-										<tr>
-											<th class="w-40">Teil</th>
-											<th class="w-20 text-right">SWS</th>
-											<th class="w-72">Wer</th>
-											<th>Notiz</th>
-										</tr>
-									</thead>
-									<tbody>
+									{#if divisible}
 										{#each group.rows as row (row.part.id)}
 											{@const refusal = refusalFor.get(row.part.id)}
-											<tr>
-												<td>
+											<!-- Rendered whether or not they are shown: the save carries every field,
+											     and it is that which lets the cohort's dropdown and the parts be
+											     ranked by what they say. -->
+											<tr class="hidden [tbody:has(.split-toggle:checked)_&]:table-row">
+												<td class="text-base-content/80 pl-8 align-top text-sm">
 													{row.heading}
 													{#if row.part.sharedAcrossTracks}
 														<span
@@ -481,15 +523,17 @@
 														</span>
 													{/if}
 												</td>
-												<td class="text-right">{partHours(row.part)}</td>
+												<td></td>
+												<td class="align-top text-right text-sm whitespace-nowrap">
+													{partHours(row.part)}
+												</td>
 												<td>
-													<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly
-													     one of the two and canonicalises a teacher who has an account. -->
+													<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly one
+													     of the two and canonicalises a teacher who has an account. -->
 													<select
 														name="who:{row.part.id}"
 														class="select select-bordered select-sm w-full"
-														aria-label="Wer hält {row.heading} in {group.label}, {group.instance
-															.module.name}"
+														aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
 														disabled={!open}
 														value={currentValue(row.assignment)}
 													>
@@ -516,14 +560,15 @@
 														disabled={!open}
 													/>
 												</td>
+												<td></td>
 											</tr>
 										{/each}
-									</tbody>
-								</table>
-							</div>
-						</details>
-					</section>
-				{/each}
+									{/if}
+								</tbody>
+							{/each}
+						{/each}
+					</table>
+				</div>
 
 				<div
 					class="bg-base-100 border-base-300 sticky bottom-0 mt-6 flex items-center gap-3 border-t py-3"

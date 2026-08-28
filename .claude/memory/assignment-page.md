@@ -15,12 +15,26 @@ gemacht — und damit den Regelfall zur Fleißarbeit und die Ausnahme zum billig
 2026-08-28: **eine Kohorte hält im Regelfall eine Person**, Vorlesung und Praktika zusammen;
 getrennt wird, wo es abgesprochen ist.
 
-Also je Kohorte ein Auswahlfeld („Wer hält IF2A?"), eine Notiz und daneben die Aufzählung
-`Vorlesung · Praktikum 1 · Praktikum 2` — sonst ist der eine Regler ein Versprechen, dessen Umfang
-niemand gezeigt bekommt. Die Teile-Tabelle liegt in einem `<details>` darunter.
+## Eine Tabelle, Modul einmal
 
-Nummeriert wird dort nur, wo die Zahl etwas unterscheidet: ein einzelnes „Praktikum 1" wirft die
-Frage auf, welches andere es gibt.
+Die ganze Fachgruppe steht in **einer** Tabelle: `Modul · Zug · SWS · Wer · Notiz · Teile`, eine
+Zeile je Kohorte. Das Modul steht **einmal** am Kopf seiner Kohorten, die Zeilen darunter tragen nur
+noch den Zug — „Softwareentwicklung II" dreimal untereinander sind drei Gelegenheiten, ein Modul für
+drei zu halten, und das Auge muss die Strings vergleichen, um das auszuschließen. `moduleBlocks`
+gruppiert und sortiert dafür (Modul nach Name, Kohorten nach Label).
+
+Die **Teile sind ebenfalls Zeilen**, eingerückt in der Modulspalte, und normalerweise ausgeblendet.
+Der Schalter dafür sitzt in der Spalte „Teile" (`☐ 3 Teile`, die Aufzählung im `title`) und ist eine
+**Checkbox**, kein `<details>`: `<details>` kann keine Tabellenzeilen enthalten. Sichtbar werden sie
+über `tbody:has(.split-toggle:checked)` — deshalb **ein `<tbody>` je Kohorte**, sonst griffe der
+Schalter auf fremde Teile durch. Das ist auch der Grund für die Checkbox statt eines Buttons: so
+faltet es **ohne JavaScript**, wie der Rest des Bildschirms.
+
+Nummeriert wird nur, wo die Zahl etwas unterscheidet: ein einzelnes „Praktikum 1" wirft die Frage
+auf, welches andere es gibt.
+
+Eine Ablehnung gehört zu einem Teil und der kann zugeklappt sein — dann steht sie in der
+Kohortenzeile, sonst stünde sie nirgends.
 
 ### Wie die beiden Regler geordnet werden
 
