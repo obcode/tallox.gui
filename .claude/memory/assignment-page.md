@@ -7,14 +7,44 @@ metadata:
 
 Gebaut am 2026-08-27, `src/routes/zuteilung/`. Die dritte Prozessseite: wer hält welchen Teil.
 
-## Zeile je **Teil**, gruppiert nach Kohorte
+## Die Kohorte führt, die Teile stehen darunter
 
-Der Unterschied zur Wunschseite, und er folgt aus dem Datenmodell: **gewünscht wird die Instanz,
-zugeteilt der Teil** (siehe `go/assignments`). Also eine Überschrift je Kohorte (Modul · Zug) und
-darunter eine Zeile je Teil — Vorlesung, Praktikum 1, Praktikum 2.
+Der Unterschied zur Wunschseite folgt aus dem Datenmodell: **gewünscht wird die Instanz, zugeteilt
+der Teil** (siehe `go/assignments`). Die Seite hat daraus zuerst _drei Auswahlfelder je Kohorte_
+gemacht — und damit den Regelfall zur Fleißarbeit und die Ausnahme zum billigen Fall. Korrigiert am
+2026-08-28: **eine Kohorte hält im Regelfall eine Person**, Vorlesung und Praktika zusammen;
+getrennt wird, wo es abgesprochen ist.
 
-Nummeriert wird nur, wo die Zahl etwas unterscheidet: ein einzelnes „Praktikum 1" wirft die Frage
-auf, welches andere es gibt.
+Also je Kohorte ein Auswahlfeld („Wer hält IF2A?"), eine Notiz und daneben die Aufzählung
+`Vorlesung · Praktikum 1 · Praktikum 2` — sonst ist der eine Regler ein Versprechen, dessen Umfang
+niemand gezeigt bekommt. Die Teile-Tabelle liegt in einem `<details>` darunter.
+
+Nummeriert wird dort nur, wo die Zahl etwas unterscheidet: ein einzelnes „Praktikum 1" wirft die
+Frage auf, welches andere es gibt.
+
+### Wie die beiden Regler geordnet werden
+
+Beide werden **immer** abgeschickt — ein zugeklapptes `<details>` trägt seine Felder weiterhin im
+Formular. Es gibt also kein verstecktes Feld, das sagt, welchen jemand benutzt hat. Stattdessen:
+
+> Der Kohorten-Regler wirkt nur, wenn er etwas anderes sagt, als die Teile gemeinsam schon halten.
+
+Wer in der aufgeklappten Tabelle arbeitet, lässt ihn genau auf diesem gemeinsamen Wert stehen — er
+schweigt, die Teile entscheiden. Wer oben einen Namen wählt, ändert ihn — er gewinnt. Die Notiz
+wird getrennt geordnet, weil Leeren eine Änderung ist und `''` ihr Wert; angeboten wird sie nur, wo
+die Teile dieselbe Notiz tragen. Das Ganze steckt in `mergeCombined` und **funktioniert ohne
+JavaScript**, weil der Server dieselbe Differenz aus denselben Feldern bildet.
+
+`MIXED_CHOICE` (`'*'`) ist der Sentinel „lass jeden Teil bei dem, der ihn hat" — nötig, weil `''`
+schon „niemand" heißt. Das `<details>` klappt von selbst auf, wo die Teile verschieden besetzt sind
+oder wo eine Zeile abgelehnt wurde; danach gilt, was jemand selbst auf- oder zugeklappt hat, sonst
+faltete es sich beim nächsten Speichern unter ihm zusammen.
+
+**Eine Kandidatenliste je Kohorte, nicht je Zeile.** Sonst ließe sich eine Wahl von oben nicht auf
+alle Teile schreiben: eine Option, die es in der Zeile nicht gibt, kann dort nicht gesetzt werden.
+
+**E2E, das einen einzelnen Teil anspricht, muss vorher aufklappen** (`openParts`) — Playwright
+handelt nur auf Sichtbarem.
 
 ## Warum die Seite nach Fachgruppe filtert
 
@@ -94,5 +124,9 @@ vergibt, braucht ein eigenes Subjekt") — sie gilt für Datenzeilen genauso.
 | E2E                | `tests/assignment.spec.ts`, Fixture `ASSIGNMENTS` in `tests/seed.ts` |
 | Fehlercodes        | Allowlist in `src/lib/server/graphqlError.ts`                        |
 | Menüeintrag        | `src/lib/navigation.ts`                                              |
+
+Namen stehen hier in einer Schreibweise, ohne Titel — die Seite zeigt beide Arten von Zugeteilten
+untereinander und war deshalb die Stelle, an der das aufgefallen ist. Siehe `name-register` im
+geteilten Memory.
 
 Siehe auch [[wish-page]], [[demand-page]], [[no-wish-aggregates]].
