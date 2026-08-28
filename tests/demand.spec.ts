@@ -694,7 +694,10 @@ test.describe('coverage across study programmes', () => {
 		await expect(freed.getByText(/gedeckt durch/)).toHaveCount(0);
 		await expect(freed.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeEnabled();
 		// And the pair is now visibly a duplicate, which is the badge that makes a coupling
-		// findable at all.
-		await expect(freed.getByText(/geplant \(getrennt\)/)).toBeVisible();
+		// findable at all. Short in this table — the long sentence wrapped to five lines beside a
+		// stepper — with the whole of it in the title.
+		const duplicate = freed.getByText(/^auch: /);
+		await expect(duplicate).toBeVisible();
+		await expect(duplicate).toHaveAttribute('title', /geplant \(getrennt\)/);
 	});
 });

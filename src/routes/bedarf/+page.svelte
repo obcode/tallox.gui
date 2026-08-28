@@ -21,9 +21,11 @@
 		hoursLabel,
 		plannedHours,
 		alsoPlannedLabel,
+		alsoPlannedShort,
 		coverageLabel,
 		coversLabel,
 		sharingState,
+		separatelyPlannedIn,
 		splitSummary,
 		trackLetters
 	} from '$lib/demand';
@@ -1687,6 +1689,26 @@
 																	{/if}
 																{/each}
 															{/if}
+															<!--
+																Der Fall, für den es bisher gar keine Anzeige gab: dasselbe
+																Modul, zweimal geplant, weil keiner vom anderen wusste. Als
+																Angebot formuliert und nicht als Fehler.
+
+																Einmal je Zeile und hier statt bei den Gruppen: es ist eine
+																Aussage über das Modul, nicht über einen Zug — in der
+																Zug-Schleife stand derselbe Satz bei zwei Zügen zweimal, und
+																in der schmalen Spalte brach er über fünf Zeilen um. Kurz,
+																weil davon ohnehin nur die Liste in der Mitte etwas trägt;
+																der ganze Satz steht im `title`.
+															-->
+															{#if separatelyPlannedIn(row).length > 0}
+																<span
+																	class="badge badge-ghost badge-sm whitespace-nowrap"
+																	title={alsoPlannedLabel(separatelyPlannedIn(row))}
+																>
+																	{alsoPlannedShort(separatelyPlannedIn(row))}
+																</span>
+															{/if}
 														</span>
 													</div>
 													{#if row.module.splitIsEstimated}
@@ -1802,16 +1824,6 @@
 																		>{coversLabel(covers)}</span
 																	>
 																{/each}
-																<!--
-																	Und der Fall, für den es bisher gar keine Anzeige gab:
-																	dasselbe Modul, zweimal geplant, weil keiner vom anderen
-																	wusste. Als Angebot formuliert und nicht als Fehler.
-																-->
-																{#if (row.tracks[i]?.alsoPlannedSeparately ?? []).length > 0}
-																	<span class="badge badge-ghost badge-sm">
-																		{alsoPlannedLabel(row.tracks[i].alsoPlannedSeparately ?? [])}
-																	</span>
-																{/if}
 															</div>
 														{/each}
 													</div>

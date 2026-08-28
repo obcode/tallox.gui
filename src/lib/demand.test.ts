@@ -14,6 +14,7 @@ import {
 	instancesByYear,
 	moduleRows,
 	alsoPlannedLabel,
+	alsoPlannedShort,
 	cohortCount,
 	coverageLabel,
 	coversLabel,
@@ -21,9 +22,11 @@ import {
 	partLabel,
 	plannedHours,
 	previousComparableSemester,
+	separatelyPlannedIn,
 	splitSummary,
 	sharingState,
 	trackLetters,
+	type DemandRow,
 	type InstanceLike,
 	type ModuleLike,
 	type ReadInstanceLike
@@ -102,6 +105,62 @@ describe('alsoPlannedLabel', () => {
 				{ id: 'b', track: 'A', programmeSemester: 3, programme: { code: 'ID' } }
 			])
 		).toBe('auch in GS5, ID3A geplant (getrennt)');
+	});
+
+	// The planning table's columns are narrow. The long form wrapped to five lines beside a
+	// stepper, and the only part carrying anything is the list in the middle.
+	it('drops the sentence where there is no room for one', () => {
+		const others = [
+			{ id: 'a', track: '', programmeSemester: 5, programme: { code: 'GS' } },
+			{ id: 'b', track: 'A', programmeSemester: 3, programme: { code: 'ID' } }
+		];
+		expect(alsoPlannedShort(others)).toBe('auch: GS5, ID3A');
+		expect(alsoPlannedShort([])).toBe('');
+	});
+});
+
+describe('separatelyPlannedIn', () => {
+	const other = (id: string, code: string) => ({
+		id,
+		track: '',
+		programmeSemester: 5,
+		programme: { code }
+	});
+	const rowWith = (...tracks: { alsoPlannedSeparately: ReturnType<typeof other>[] }[]) =>
+		({
+			module: module('m'),
+			programmeSemester: 1,
+			planned: true,
+			teachingHours: 0,
+			tracks: tracks.map((t, i) => ({
+				track: String.fromCharCode(65 + i),
+				groups: 1,
+				borrowedKinds: [],
+				...t
+			}))
+		}) as unknown as DemandRow;
+
+	// The backend answers per instance, because that is what it has. "Somebody else also offers
+	// this" is true of the module, so the row asks once — rendering it per cohort said the same
+	// sentence twice for a module with two of them.
+	it('folds the cohorts into one list', () => {
+		const row = rowWith(
+			{ alsoPlannedSeparately: [other('x', 'GS')] },
+			{ alsoPlannedSeparately: [other('x', 'GS')] }
+		);
+		expect(separatelyPlannedIn(row).map((o) => o.id)).toEqual(['x']);
+	});
+
+	it('keeps what only one cohort names', () => {
+		const row = rowWith(
+			{ alsoPlannedSeparately: [other('x', 'GS')] },
+			{ alsoPlannedSeparately: [other('y', 'ID')] }
+		);
+		expect(separatelyPlannedIn(row).map((o) => o.id)).toEqual(['x', 'y']);
+	});
+
+	it('is empty where nobody else offers it', () => {
+		expect(separatelyPlannedIn(rowWith({ alsoPlannedSeparately: [] }))).toEqual([]);
 	});
 });
 

@@ -142,10 +142,44 @@ export type SeparateLike = {
  */
 export function alsoPlannedLabel(others: readonly SeparateLike[]): string {
 	if (others.length === 0) return '';
-	const who = others
-		.map((o) => cohortLabel(o.programme.code, o.programmeSemester, o.track))
-		.join(', ');
-	return `auch in ${who} geplant (getrennt)`;
+	return `auch in ${separateCohorts(others)} geplant (getrennt)`;
+}
+
+/**
+ * The same fact where there is no room for a sentence.
+ *
+ * The planning table's columns are narrow, and the long form wraps to five lines beside a stepper
+ * — where the only part carrying anything is the list in the middle. So the list is what is shown,
+ * and the sentence moves into the `title`.
+ */
+export function alsoPlannedShort(others: readonly SeparateLike[]): string {
+	if (others.length === 0) return '';
+	return `auch: ${separateCohorts(others)}`;
+}
+
+function separateCohorts(others: readonly SeparateLike[]): string {
+	return others.map((o) => cohortLabel(o.programme.code, o.programmeSemester, o.track)).join(', ');
+}
+
+/**
+ * Who else offers this module, for the row rather than for one of its cohorts.
+ *
+ * The backend answers per instance, because that is what it has. A row is one module in one
+ * programme, and "somebody else also offers this" is true of the module — so the cohorts' answers
+ * are one list, deduplicated. Rendering it per cohort said the same sentence twice for a module
+ * with two of them.
+ */
+export function separatelyPlannedIn(row: DemandRow): SeparateLike[] {
+	const seen = new Set<string>();
+	const out: SeparateLike[] = [];
+	for (const track of row.tracks) {
+		for (const other of track.alsoPlannedSeparately ?? []) {
+			if (seen.has(other.id)) continue;
+			seen.add(other.id);
+			out.push(other);
+		}
+	}
+	return out;
 }
 
 /**
