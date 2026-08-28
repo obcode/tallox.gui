@@ -404,8 +404,25 @@ export function demandResetSql(): string {
 		// It is also the only place in this file that deletes somebody's wish, which is right:
 		// what a person registered is theirs, and only a fixture may take it away.
 		`DELETE FROM wish WHERE course_instance_id IN
-		   (SELECT id FROM course_instance WHERE programme_id = '${PROGRAMME_ID}');`,
-		`DELETE FROM course_instance WHERE programme_id = '${PROGRAMME_ID}';`,
+		   (SELECT id FROM course_instance WHERE programme_id = '${PROGRAMME_ID}'
+		       OR module_id IN ('${CATALOGUE.split}', '${CATALOGUE.confirmable}',
+		                        '${CATALOGUE.correctable}', '${CATALOGUE.otherModule}'));`,
+		// Every declaration of this fixture's modules, whichever programme made it — not only this
+		// programme's.
+		//
+		// That used to be the same set. It stopped being one when declaring a module another
+		// programme already declared began holding the two together: a leftover row in E2F or E2H
+		// now reaches into this fixture and turns "2 angelegt" into one creation and one coupling.
+		// The reset has to own every declaration of the modules it plans with, or the assertions
+		// depend on what the last run left behind.
+		//
+		// Deleted holder-first is not needed: instances of one module go in one statement, and the
+		// composite key only refuses a delete that would strand a guest — which cannot happen when
+		// the guest goes too.
+		`DELETE FROM course_instance
+		  WHERE programme_id = '${PROGRAMME_ID}'
+		     OR module_id IN ('${CATALOGUE.split}', '${CATALOGUE.confirmable}',
+		                      '${CATALOGUE.correctable}', '${CATALOGUE.otherModule}');`,
 		// The local courses the "enter your own" test creates. Deleted rather than deactivated,
 		// unlike in the application: the name is their identity, so a run that left one behind
 		// would meet MODULE_NAME_TAKEN instead of the thing it asserts. Their instances go first,
