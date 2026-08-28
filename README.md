@@ -65,6 +65,11 @@ against that backend's schema and has no persistence of its own, so a breaking A
 breaking change here too. When the server's major moves, a commit with a `BREAKING CHANGE:`
 footer moves this one with it.
 
+The two majors are meant to be **equal**, not merely to move together: the number answers "which
+server does this GUI belong to". A gap between them is a bug in the pairing rather than a
+difference of opinion about what changed — so the alignment commit is made as soon as the gap
+appears, even when nothing in this app needs editing.
+
 ## License
 
 BSD 3-Clause. See [LICENSE](LICENSE).
