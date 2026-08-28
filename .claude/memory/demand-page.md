@@ -117,3 +117,28 @@ ein Flake mit Verzögerung.**
 Studiengangs, und die sieht die haltende Leitung in ihrer eigenen Auswahl nie. Ohne den Abschnitt
 „Anfragen anderer Studiengänge" ist die Anfrage auf dem einzigen Schirm unsichtbar, der sie
 beantworten kann.
+
+## Die Rückzugsfrage als Modal (2026-08-28)
+
+Enthaken speichert nicht sofort: der Probelauf meldet einen Rückzug, die Antwort kommt als
+Vorschau zurück, und `edits` bleibt absichtlich stehen — die Marke sagt dann „noch nicht
+gespeichert". Das war korrekt und wurde trotzdem als Fehler gelesen: die Frage stand als Kasten
+**oben**, die Marke steht **unten rechts**, und die Marke ist lauter.
+
+**Das Modal muss ohne JavaScript dastehen.** Diese Seite kommt ohne aus, und die Vorschau ist eine
+servergerenderte Antwort. Ein `<dialog>`, das nur per `showModal()` aufgeht, verlöre die Rückfrage
+genau dort. Deshalb steht `open` als **Attribut** am Element — daisyUI zeigt `.modal[open]` —, und
+ein Effekt hebt es mit JavaScript zum echten Modal (Backdrop, Fokusfalle, ESC).
+
+**`showModal()` wirft auf einem bereits offenen Dialog.** Also erst `close()`, dann `showModal()`.
+Und `close()` feuert ein `close`-Event — ohne Wächter verwirft sich der Dialog in dem Moment, in
+dem er entsteht. Der Wächter ist ein Flag, das per `setTimeout(…, 0)` zurückgesetzt wird: das
+Event wird als Task eingereiht und läuft davor, egal ob synchron oder asynchron gefeuert.
+
+**Abbrechen muss `edits` leeren.** Eine Navigation auf dieselbe Route baut die Komponente _nicht_
+neu — ein zurückgelassenes Enthaken überlebte den Reload und hielte das Häkchen aus, während die
+Datenbank die Instanz noch hat. Genau der Zustand, über den die Marke sich beschwert hatte.
+
+**Zwei Knöpfe dürfen nicht denselben zugänglichen Namen tragen.** Der Backdrop-Knopf hieß per
+`aria-label` ebenfalls „Abbrechen" — Playwrights Strict Mode fand zwei und brach ab. Er heißt
+jetzt „Dialog schließen".
