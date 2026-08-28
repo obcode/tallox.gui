@@ -2,7 +2,13 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import { assignmentChanges, type AssignmentEntry, type AssignmentLike } from '$lib/assignment';
+import {
+	assignmentChanges,
+	mergeCombined,
+	type AssignmentEntry,
+	type AssignmentLike,
+	type CombinedEntry
+} from '$lib/assignment';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -301,6 +307,28 @@ export const actions: Actions = {
 			});
 		}
 
+		// And the cohorts' own controls, which stand for every part at once. A cohort is normally
+		// held by one person, so that is the control the screen leads with; the parts underneath are
+		// the exception, and `mergeCombined` decides which of the two said something new. The note
+		// is absent rather than empty where the page did not offer the field — the two are
+		// different, and only one of them is an instruction to clear it.
+		const combined: CombinedEntry[] = [];
+		for (const [key, value] of form) {
+			if (!key.startsWith('all:')) continue;
+			const instanceId = key.slice('all:'.length);
+			const partIds = String(form.get(`parts:${instanceId}`) ?? '')
+				.split(',')
+				.filter((id) => id !== '');
+			if (partIds.length === 0) continue;
+
+			const note = form.get(`allnote:${instanceId}`);
+			combined.push({
+				partIds,
+				choice: String(value),
+				note: note === null ? null : String(note)
+			});
+		}
+
 		let stored;
 		try {
 			stored = await backendRequest(StoredDocument, { semester });
@@ -313,7 +341,7 @@ export const actions: Actions = {
 			if (a.part?.id) byPart.set(a.part.id, a as AssignmentLike);
 		}
 
-		const changes = assignmentChanges(entries, byPart);
+		const changes = assignmentChanges(mergeCombined(combined, entries, byPart), byPart);
 		const refusals: RowRefusal[] = [];
 		let saved = 0;
 

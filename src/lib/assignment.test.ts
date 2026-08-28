@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
 	assignmentChanges,
 	candidatesFor,
+	commonNote,
+	commonValue,
+	mergeCombined,
 	pooledInstances,
 	cohortGroups,
 	currentValue,
 	partHours,
+	partsSummary,
 	savedHint,
+	MIXED_CHOICE,
+	type AssignmentEntry,
 	type AssignmentLike,
 	type InstanceLike,
 	type WishLike
@@ -87,31 +93,31 @@ describe('candidatesFor', () => {
 	];
 
 	it('offers whoever registered interest in this cohort, first, with how much', () => {
-		const out = candidatesFor(['i1'], wishes, [], [], null);
+		const out = candidatesFor(['i1'], wishes, [], [], []);
 		expect(out.map((c) => c.name)).toEqual(['Prof. Eins', 'Prof. Zwei']);
 		expect(out[0].hint).toBe('unbedingt');
 		expect(out[1].hint).toContain('nur die Vorlesung');
 	});
 
 	it('does not offer somebody who wished for a different cohort', () => {
-		const out = candidatesFor(['i1'], wishes, [], [], null);
+		const out = candidatesFor(['i1'], wishes, [], [], []);
 		expect(out.map((c) => c.personId)).not.toContain('per9');
 	});
 
 	it('lists somebody once, with the reason that says more', () => {
-		const out = candidatesFor(['i1'], wishes, [{ id: 'per1', name: 'Prof. Eins' }], [], null);
+		const out = candidatesFor(['i1'], wishes, [{ id: 'per1', name: 'Prof. Eins' }], [], []);
 		expect(out.filter((c) => c.personId === 'per1')).toHaveLength(1);
 		expect(out[0].hint).toBe('unbedingt');
 	});
 
 	it('offers a search result by its teacher id and lets the backend canonicalise', () => {
-		const out = candidatesFor(['i1'], [], [], [{ id: 't7', name: 'Lehrbeauftragte' }], null);
+		const out = candidatesFor(['i1'], [], [], [{ id: 't7', name: 'Lehrbeauftragte' }], []);
 		expect(out).toEqual([{ teacherId: 't7', name: 'Lehrbeauftragte', hint: 'Suche' }]);
 	});
 
 	it('always offers whoever currently holds the part, even if nothing else names them', () => {
 		const current = held({ assignee: { personId: 'per5', name: 'Prof. Fünf' } });
-		const out = candidatesFor(['i1'], [], [], [], current);
+		const out = candidatesFor(['i1'], [], [], [], [current]);
 		expect(out.at(-1)).toMatchObject({ personId: 'per5', hint: 'zugeteilt' });
 	});
 
@@ -119,7 +125,7 @@ describe('candidatesFor', () => {
 	// cohort is interest in this teaching. Leaving it out would hide a willing colleague from the
 	// only screen that decides who holds it.
 	it('offers the interest registered for a covered cohort, and says where it came from', () => {
-		const out = candidatesFor(['i1', 'other'], wishes, [], [], null, new Map([['other', 'GS']]));
+		const out = candidatesFor(['i1', 'other'], wishes, [], [], [], new Map([['other', 'GS']]));
 		const pooled = out.find((c) => c.personId === 'per9');
 		expect(pooled).toBeDefined();
 		// The prefix is the whole reason to pool rather than merge silently: the person deciding
@@ -130,7 +136,7 @@ describe('candidatesFor', () => {
 	// The holding cohort's own interest is not labelled: it is the cohort being filled, and a
 	// prefix on every line would be noise on the majority of them.
 	it('does not label the interest registered for the cohort being filled', () => {
-		const out = candidatesFor(['i1', 'other'], wishes, [], [], null, new Map([['other', 'GS']]));
+		const out = candidatesFor(['i1', 'other'], wishes, [], [], [], new Map([['other', 'GS']]));
 		const own = out.find((c) => c.personId === 'per1');
 		expect(own!.hint).not.toContain('Wunsch aus');
 	});
@@ -246,5 +252,187 @@ describe('savedHint', () => {
 		for (const n of [0, 1, 4]) {
 			expect(savedHint(n)).not.toMatch(/besetzt|vergeben|frei|offen/);
 		}
+	});
+});
+
+describe('the cohort as one unit', () => {
+	// A cohort is normally held by one person: the same colleague takes the lecture and its
+	// laboratories, and splitting them is an arrangement somebody makes on purpose. These four
+	// describe the control that follows from that, and the rule that ranks it against the parts.
+
+	const rows = (...held: (AssignmentLike | null)[]) =>
+		cohortGroups(
+			[instance()],
+			held.filter((a) => a !== null)
+		)[0].rows;
+
+	const eins = (part: string, note = ''): AssignmentLike =>
+		held({
+			id: `a-${part}`,
+			note,
+			assignee: { personId: 'per1', name: 'Prof. Eins' },
+			part: { id: part }
+		});
+
+	const zwei = (part: string, note = ''): AssignmentLike =>
+		held({
+			id: `a-${part}`,
+			note,
+			assignee: { personId: 'per2', name: 'Prof. Zwei' },
+			part: { id: part }
+		});
+
+	describe('commonValue', () => {
+		it('is the one name where every part holds it', () => {
+			expect(commonValue(rows(eins('p1'), eins('p2'), eins('p3')))).toBe('p:per1');
+		});
+
+		it('is the empty choice where nobody holds anything', () => {
+			expect(commonValue(rows())).toBe('');
+		});
+
+		// The value the cohort's dropdown cannot show, and the reason it needs a sentinel at all.
+		it('is null where the parts disagree', () => {
+			expect(commonValue(rows(eins('p1'), zwei('p2')))).toBeNull();
+		});
+	});
+
+	describe('commonNote', () => {
+		it('is null where the parts carry different notes, so no field claims to edit them', () => {
+			expect(
+				commonNote(rows(eins('p1', 'hier'), eins('p2', 'dort'), eins('p3', 'dort')))
+			).toBeNull();
+		});
+
+		it('is the shared note where they agree', () => {
+			const all = rows(eins('p1', 'gemeinsam'), eins('p2', 'gemeinsam'), eins('p3', 'gemeinsam'));
+			expect(commonNote(all)).toBe('gemeinsam');
+		});
+	});
+
+	describe('partsSummary', () => {
+		it('names what "all of them" is, next to the one control that fills them', () => {
+			expect(partsSummary(rows())).toBe('Vorlesung · Praktikum 1 · Praktikum 2');
+		});
+	});
+
+	describe('mergeCombined', () => {
+		const parts = ['p1', 'p2', 'p3'];
+		const stored = (...held: AssignmentLike[]) =>
+			new Map(held.map((a) => [a.part.id as string, a]));
+		// What the rows underneath submit: their rendered defaults, which are what is stored.
+		const perPart = (...cells: (string | [string, string])[]) =>
+			new Map<string, AssignmentEntry>(
+				cells.map((cell, i) => {
+					const [choice, note] = typeof cell === 'string' ? [cell, ''] : cell;
+					return [parts[i], { choice, note }];
+				})
+			);
+
+		it('writes one name onto every part of the cohort', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: 'p:per1', note: '' }],
+				perPart('', '', ''),
+				stored()
+			);
+			expect([...out.values()].map((e) => e.choice)).toEqual(['p:per1', 'p:per1', 'p:per1']);
+		});
+
+		// The rule that makes both controls submittable at once: the cohort acts only when it says
+		// something the parts do not already say in common. Somebody working in the open detail view
+		// leaves it showing exactly that common value, so the parts decide.
+		it('keeps quiet where it repeats what the parts already hold', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: 'p:per1', note: '' }],
+				perPart('p:per1', 'p:per2', 'p:per1'),
+				stored(eins('p1'), eins('p2'), eins('p3'))
+			);
+			expect([...out.values()].map((e) => e.choice)).toEqual(['p:per1', 'p:per2', 'p:per1']);
+		});
+
+		it('keeps quiet while it says "leave every part as it is"', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: MIXED_CHOICE, note: null }],
+				perPart('p:per1', 'p:per2', ''),
+				stored(eins('p1'), zwei('p2'))
+			);
+			expect([...out.values()].map((e) => e.choice)).toEqual(['p:per1', 'p:per2', '']);
+		});
+
+		it('empties the whole cohort where it names nobody and the parts were held', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: '', note: '' }],
+				perPart('p:per1', 'p:per1', 'p:per1'),
+				stored(eins('p1'), eins('p2'), eins('p3'))
+			);
+			expect([...out.values()].map((e) => e.choice)).toEqual(['', '', '']);
+		});
+
+		// Clearing a note is a change and '' is its value, so the note is ranked on its own — a
+		// cohort whose person did not change can still have its note rewritten.
+		it('writes a note onto every part without touching who holds them', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: 'p:per1', note: 'vertretungsweise' }],
+				perPart('p:per1', 'p:per1', 'p:per1'),
+				stored(eins('p1'), eins('p2'), eins('p3'))
+			);
+			expect([...out.values()]).toEqual([
+				{ choice: 'p:per1', note: 'vertretungsweise' },
+				{ choice: 'p:per1', note: 'vertretungsweise' },
+				{ choice: 'p:per1', note: 'vertretungsweise' }
+			]);
+		});
+
+		// Absent is not empty: the page leaves the field out where the parts carry different notes,
+		// and that must not read as an instruction to clear them.
+		it('leaves the notes alone where the page offered no field for them', () => {
+			const out = mergeCombined(
+				[{ partIds: parts, choice: 'p:per2', note: null }],
+				perPart(['p:per1', 'hier'], ['p:per1', 'dort'], ['p:per1', 'dort']),
+				stored(eins('p1', 'hier'), eins('p2', 'dort'), eins('p3', 'dort'))
+			);
+			expect([...out.values()].map((e) => e.note)).toEqual(['hier', 'dort', 'dort']);
+			expect([...out.values()].map((e) => e.choice)).toEqual(['p:per2', 'p:per2', 'p:per2']);
+		});
+
+		// End to end through the difference: the cohort control has to produce the same three
+		// writes somebody filling three rows by hand would.
+		it('turns one choice into one write per part, with the id each replaces', () => {
+			const stock = stored(eins('p1'), eins('p2'), eins('p3'));
+			const changes = assignmentChanges(
+				mergeCombined(
+					[{ partIds: parts, choice: 'p:per2', note: '' }],
+					perPart('p:per1', 'p:per1', 'p:per1'),
+					stock
+				),
+				stock
+			);
+			expect(changes).toEqual([
+				{
+					kind: 'set',
+					partId: 'p1',
+					personId: 'per2',
+					teacherId: undefined,
+					note: '',
+					replacing: 'a-p1'
+				},
+				{
+					kind: 'set',
+					partId: 'p2',
+					personId: 'per2',
+					teacherId: undefined,
+					note: '',
+					replacing: 'a-p2'
+				},
+				{
+					kind: 'set',
+					partId: 'p3',
+					personId: 'per2',
+					teacherId: undefined,
+					note: '',
+					replacing: 'a-p3'
+				}
+			]);
+		});
 	});
 });

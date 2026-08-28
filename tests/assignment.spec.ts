@@ -34,6 +34,32 @@ function chooser(page: Page, part: string) {
 	});
 }
 
+/** The cohort's own dropdown — the one control that fills every part at once. */
+function cohortChooser(page: Page) {
+	return page.getByRole('combobox', {
+		name: new RegExp(`^Wer hält alle Teile von ${ASSIGNMENTS.moduleName}`)
+	});
+}
+
+/** The cohort's parts, folded away because splitting them is the exception. */
+function parts(page: Page) {
+	return page.locator('details').filter({ hasText: 'Teile einzeln besetzen' }).first();
+}
+
+/**
+ * Unfold the per-part view.
+ *
+ * Every test below that names a single part has to do this first, and that is the screen saying
+ * what it is for: a cohort is normally held by one person, so the parts are behind a disclosure
+ * and the cohort is not.
+ */
+async function openParts(page: Page) {
+	const details = parts(page);
+	if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) {
+		await details.getByText('Teile einzeln besetzen').click();
+	}
+}
+
 test.describe('the assignment screen', () => {
 	test.beforeAll(reset);
 	test.afterAll(reset);
@@ -46,6 +72,8 @@ test.describe('the assignment screen', () => {
 
 		// The wish is next to the row it is about, which is the whole reason for this layout.
 		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name}`)).toBeVisible();
+
+		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toContainText(PERSONAS.fuenf.name);
 
 		await chooser(page, 'Vorlesung').selectOption({ index: 1 });
@@ -54,17 +82,20 @@ test.describe('the assignment screen', () => {
 		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
 
 		await gotoRendered(page, URL);
+		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toHaveValue(/^p:/);
 	});
 
 	test('a part is given back by choosing nobody', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
+		await openParts(page);
 
 		await chooser(page, 'Vorlesung').selectOption('');
 		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
 
 		await gotoRendered(page, URL);
+		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toHaveValue('');
 	});
 
@@ -73,6 +104,7 @@ test.describe('the assignment screen', () => {
 		// number mean something.
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
+		await openParts(page);
 
 		await expect(chooser(page, 'Vorlesung')).toBeVisible();
 		await expect(chooser(page, 'Praktikum 1')).toBeVisible();
@@ -82,6 +114,7 @@ test.describe('the assignment screen', () => {
 	test('an uninvolved colleague is told nothing about who holds what', async ({ asPersona }) => {
 		const lead = await asPersona(PERSONAS.drei);
 		await gotoRendered(lead, URL);
+		await openParts(lead);
 		await chooser(lead, 'Praktikum 1').selectOption({ index: 1 });
 		await expect(lead.getByText(/gespeichert/)).toBeVisible();
 
@@ -112,6 +145,58 @@ test.describe('the assignment screen', () => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
 		await checkA11y(page);
+	});
+});
+
+test.describe('a cohort held by one person', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	// The case the screen is arranged around: the same colleague takes the lecture and both
+	// laboratories. Asking for each of them separately made the ordinary arrangement the laborious
+	// one and the exception the cheap one, which is the wrong way round.
+	test('one choice fills every part of the cohort', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		// Which parts "alle Teile" means is on the page, next to the control — a single dropdown is
+		// otherwise a promise whose extent nobody has been shown.
+		await expect(page.getByText('Vorlesung · Praktikum 1 · Praktikum 2')).toBeVisible();
+
+		// The first candidate: whoever registered interest, which is what the list leads with.
+		await cohortChooser(page).selectOption({ index: 2 });
+		await expect(page.getByText(/3 Änderungen gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(cohortChooser(page)).toHaveValue(/^p:/);
+
+		await openParts(page);
+		for (const part of ['Vorlesung', 'Praktikum 1', 'Praktikum 2']) {
+			await expect(chooser(page, part)).toHaveValue(/^p:/);
+		}
+	});
+
+	// The exception, and the state the one dropdown above cannot describe. It has to say so rather
+	// than name one of the two people, and the parts have to be open when it does — otherwise the
+	// screen hides the very thing that makes it disagree with itself.
+	test('a part given to somebody else makes the cohort read as split', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		await openParts(page);
+		await chooser(page, 'Praktikum 2').selectOption('');
+		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(cohortChooser(page)).toHaveValue('*');
+		await expect(parts(page)).toHaveJSProperty('open', true);
+
+		// And the two controls do not fight: a save that touched nothing must not write the
+		// cohort's "verschieden" back over the part that differs.
+		await chooser(page, 'Vorlesung').selectOption(await chooser(page, 'Vorlesung').inputValue());
+		await page.getByRole('button', { name: 'Alles speichern' }).click();
+		await expect(page.getByText(/Nichts zu speichern/)).toBeVisible();
+		await expect(chooser(page, 'Praktikum 2')).toHaveValue('');
 	});
 });
 
