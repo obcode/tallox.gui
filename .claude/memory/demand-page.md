@@ -142,3 +142,40 @@ Datenbank die Instanz noch hat. Genau der Zustand, über den die Marke sich besc
 **Zwei Knöpfe dürfen nicht denselben zugänglichen Namen tragen.** Der Backdrop-Knopf hieß per
 `aria-label` ebenfalls „Abbrechen" — Playwrights Strict Mode fand zwei und brach ab. Er heißt
 jetzt „Dialog schließen".
+
+## Kopplung als Regelfall (2026-08-28)
+
+Aus dem Sonderfall mit Handschlag ist die Voreinstellung geworden: wer ein Modul plant, das ein
+anderer Studiengang schon geplant hat, hält es **sofort mit ihm zusammen**. Backend-Wissen in
+`tallox.go/.claude/memory/instance-coverage.md`; hier steht, was die GUI davon trägt.
+
+**„Deckung lösen" heißt jetzt „getrennt planen".** Der Knopf ist nicht mehr das Rückgängig einer
+Ausnahme, sondern die ausdrückliche Wahl — und soll sich so lesen.
+
+**Die dritte Badge ist die wichtigste.** `alsoPlannedSeparately` sagt „auch in DC2, DE3, ID5
+geplant (getrennt)" — dasselbe Modul, zweimal geplant, weil keiner vom anderen wusste. Als Angebot
+formuliert und nicht als Fehler: es kann genau richtig sein, und der Schirm kann das nicht wissen.
+Sie ist außerdem das einzige, was das eine Rennen der Automatik je sichtbar macht (zwei Leitungen
+planen gleichzeitig, keine sieht die andere).
+
+**Der Toast muss sagen, was in fremden Studiengängen passiert ist.** „1 angelegt" verschweigt, dass
+die Zeile nichts hält. Und ein zurückgezogener Gastgeber hat seine Lehre an einen anderen
+Studiengang weitergegeben — das ist das Einzige, was ein Speichern außerhalb des eigenen
+Studiengangs tut, und darf deshalb nicht fehlen.
+
+**Der Rückzugs-Dialog nennt die Folge im Konjunktiv.** „GS übernähme" — nicht „übernimmt": an der
+Instanz kann ein Wunsch hängen (`ON DELETE RESTRICT`), die Übergabe liegt in derselben Transaktion
+und rollt dann mit zurück. Eine Zusage, die das Backend nicht halten muss, wäre schlimmer als keine.
+
+### Zwei Fallen im E2E, beide teuer
+
+**`demandResetSql` musste breiter werden.** Es räumte nur die Instanzen _dieses_ Studiengangs weg.
+Das war dieselbe Menge — bis die Automatik kam: eine Zeile, die ein früherer Lauf in E2F oder E2H
+hinterlassen hat, greift jetzt in die Fixture und macht aus „2 angelegt" eine Anlage und eine
+Kopplung. **Merksatz: ein Reset muss alles besitzen, was seine Assertions erreichen kann** — sonst
+hängt die Suite am letzten Lauf.
+
+**Ein Häkchen zu setzen, das schon gesetzt ist, speichert nicht.** Die Zeile kommt aus dem
+Vorsemester vorbelegt und angehakt; `check()` ist dann ein No-op, und der Test wartete auf einen
+Toast, den nie jemand ausgelöst hat. Irgendeine echte Änderung an der Zeile — der Gruppen-Stepper —
+übernimmt den Vorschlag mit.

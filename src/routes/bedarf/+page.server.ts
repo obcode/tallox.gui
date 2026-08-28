@@ -174,6 +174,16 @@ const DemandDocument = graphql(`
 					}
 				}
 			}
+			# The same module, offered by somebody else and held there. The case a coupling was
+			# possible and nobody noticed — and the only thing that ever surfaces it.
+			alsoPlannedSeparately {
+				id
+				track
+				programmeSemester
+				programme {
+					code
+				}
+			}
 		}
 		# The whole catalogue, searched — deliberately without a programme filter, because the
 		# point of this list is the modules the programme's own catalogue does not contain.
@@ -241,6 +251,16 @@ const DemandDocument = graphql(`
 					}
 				}
 			}
+			# The same module, offered by somebody else and held there. The case a coupling was
+			# possible and nobody noticed — and the only thing that ever surfaces it.
+			alsoPlannedSeparately {
+				id
+				track
+				programmeSemester
+				programme {
+					code
+				}
+			}
 		}
 	}
 `);
@@ -262,6 +282,21 @@ const PlanDocument = graphql(`
 			withdrawn {
 				moduleName
 				track
+			}
+			# Cohorts that arrived already held with another programme's event, and cohorts of
+			# *other* programmes that took a withdrawn event over. The second is the only thing a
+			# save does outside the programme it was called for, so it is the one thing the report
+			# cannot leave out.
+			coupled {
+				moduleName
+				track
+			}
+			promoted {
+				moduleName
+				track
+				programme {
+					code
+				}
 			}
 			changed {
 				moduleName

@@ -9,6 +9,7 @@
 	} from '$lib/catalogue';
 	import {
 		borrowedFromLabel,
+		alsoPlannedLabel,
 		coverageLabel,
 		coversLabel,
 		byProgramme,
@@ -143,6 +144,17 @@
 										{#each cohort.covers ?? [] as covered, i (i)}
 											<span class="badge badge-outline badge-sm">{coversLabel(covered)}</span>
 										{/each}
+										<!--
+											Und der Fall, für den es bisher gar keine Anzeige gab: dasselbe Modul,
+											zweimal geplant, weil keiner vom anderen wusste. Als Angebot formuliert
+											und nicht als Fehler — es kann genau richtig sein, und dieser Schirm
+											kann das nicht wissen. Sagen kann er es.
+										-->
+										{#if (cohort.alsoPlannedSeparately ?? []).length > 0}
+											<span class="badge badge-ghost badge-sm">
+												{alsoPlannedLabel(cohort.alsoPlannedSeparately ?? [])}
+											</span>
+										{/if}
 									</span>
 								{/each}
 							</span>

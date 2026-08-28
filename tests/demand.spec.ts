@@ -614,7 +614,7 @@ test.describe('the demand table', () => {
 });
 
 /**
- * One event held for two study programmes.
+ * One event held for two study programmes, which is now what happens by default.
  *
  * The case the faculty describes as "echter Bedarf in DE und eine Art Import in GS": both
  * programmes need the module and hold it **once**. Both declarations stay — the difference between
@@ -624,26 +624,24 @@ test.describe('the demand table', () => {
  * Serial with the group above, and for the same reason: it plans the same programme and semester.
  */
 test.describe('coverage across study programmes', () => {
-	// The other programme's instance of the same module, which is what the asking cohort points
-	// at. Made here rather than through the interface: Vier deliberately does not lead E2F — that
-	// is the whole point of the handshake — so she could not declare it, and a test that signed in
-	// as somebody else to arrange its own preconditions would be testing the arrangement.
-	// Its own study programme, and that is not tidiness.
+	// A study programme of its own that holds the module before this programme plans it.
 	//
-	// The obvious candidate was CATALOGUE.otherProgramme, which already exists — but
-	// programmes.spec.ts retires and restores exactly that one, the specs run in parallel, and a
-	// programme being discontinued underneath this test (or an instance appearing underneath that
-	// one) is a flake neither file could be read to predict. A programme nobody else touches costs
-	// four statements and removes the question.
+	// Its own rather than CATALOGUE.otherProgramme, and that is a fix rather than a preference:
+	// programmes.spec.ts retires and restores that one, the files run in parallel, and a programme
+	// being discontinued underneath this test is a flake neither file could be read to predict.
+	//
+	// This programme's own declarations of the module go first, so that what follows is a fresh
+	// declaration meeting an existing one — which is the whole case.
 	test.beforeAll(() => {
 		runSql(
 			[
 				`INSERT INTO programme (code, title) VALUES (${quoted(COVERAGE.programme)},
 				        'Teststudiengang Deckung')
-				 ON CONFLICT (code) DO NOTHING;`,
-				`DELETE FROM course_instance ci
-				  USING programme p
-				  WHERE ci.programme_id = p.id AND p.code = ${quoted(COVERAGE.programme)};`,
+				 ON CONFLICT (code) DO UPDATE SET planning_status = 'PLANNED';`,
+				`DELETE FROM wish WHERE course_instance_id IN
+				   (SELECT id FROM course_instance WHERE module_id = '${CATALOGUE.split}');`,
+				`DELETE FROM course_instance WHERE module_id = '${CATALOGUE.split}'
+				   AND semester_id = (SELECT id FROM semester WHERE code = ${quoted(DEMAND.semester)});`,
 				`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
 				                              programme_semester)
 				 SELECT '${COVERAGE.instance}', s.id, '${CATALOGUE.split}', p.id, '', 1
@@ -654,85 +652,49 @@ test.describe('coverage across study programmes', () => {
 				 VALUES ('${COVERAGE.instance}', 'LECTURE', 0, 4),
 				        ('${COVERAGE.instance}', 'LAB', 1, 2);`
 			].join('\n'),
-			'declaring the covering programme’s instance of the shared module'
+			"declaring the holding programme's instance of the shared module"
 		);
 	});
 
-	test('is asked for by one programme and agreed to by the other', async ({ asPersona }) => {
-		// Vier leads E2E and not E2F, which is what makes this a handshake rather than one lead
-		// arranging both halves.
+	// The rule: ticking a module another programme already planned holds the two together, with
+	// nobody arranging it.
+	test('a module another programme planned is held with it, without being asked', async ({
+		asPersona
+	}) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
+		// The row arrives prefilled from the previous semester and already ticked, so ticking it is
+		// a no-op that saves nothing. Any edit adopts the proposal — the group stepper is still its
+		// own to set at this point, which is exactly what the coupling is about to change.
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await row.getByRole('button', { name: 'decken lassen' }).first().click();
+		await row.getByRole('button', { name: /Eine Gruppe mehr/ }).click();
 
-		// The picker offers what the schema would accept and nothing else.
-		await expect(page.getByRole('heading', { name: /mitdecken lassen/ })).toBeVisible();
-		await page.getByRole('button', { name: 'anfragen' }).first().click();
+		// The save says what it did, and "angelegt" alone would not: the cohort arrives holding
+		// nothing, which is the row this whole mechanism exists to explain.
+		await expect(page.getByText(/gemeinsam mit einem anderen Studiengang geplant/)).toBeVisible({
+			timeout: 15_000
+		});
 
-		// Asking changes nothing until the other side agrees — that is the whole of the two-sided
-		// rule, and the badge says which of the two states this is.
-		await expect(page.getByText(/Anfrage an .* läuft/).first()).toBeVisible();
-
-		// Vier cannot answer her own request: agreeing is a statement about the *other*
-		// programme's teaching. She does not even get the section that would let her.
-		await expect(page.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })).toHaveCount(
-			0
-		);
-
-		// The dean's office reaches both programmes, which is what it is for.
-		const dean = await asPersona(PERSONAS.fuenf);
-		await gotoRendered(
-			dean,
-			`/bedarf?semester=${DEMAND.semester}&studiengang=${COVERAGE.programme}&bearbeiten=1`
-		);
-		await expect(
-			dean.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })
-		).toBeVisible();
-		await dean.getByRole('button', { name: 'bestätigen' }).first().click();
-
-		// Waited for on the dean's own screen before looking at the other one. The agreement is an
-		// enhanced POST in a second browser context, and switching back without waiting reads the
-		// asking programme's page while it is still being written — which then passes on a retry,
-		// against what the first attempt saved, and is exactly the flake this file's reset warns
-		// about.
-		//
-		// It is also worth asserting for itself: the section is the holding programme's inbox, and
-		// an answered request has to leave it, or the same agreement gets offered twice.
-		await expect(dean.getByRole('heading', { name: 'Anfragen anderer Studiengänge' })).toHaveCount(
-			0
-		);
-
-		// And now the asking cohort says why it holds nothing — which is the difference between
-		// this and a cohort somebody forgot to finish.
-		await gotoRendered(page, DEMAND_URL);
-		const covered = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await expect(covered.getByText(/gedeckt durch/)).toBeVisible();
-
-		// Only cohort A is covered, and the two steppers say so: A's number is not this
-		// programme's to set any more, B's still is. Shut off rather than merely showing nothing,
-		// because a click would otherwise collect a refusal the screen could have avoided.
-		await expect(covered.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeDisabled();
-		await expect(covered.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toBeEnabled();
-
-		// What this costs the faculty is asserted where it can be asserted exactly:
-		// store.TestAcceptingCoverageTakesTheGuestsParts, which watches two cohorts of a 4-hour
-		// module go from 8 hours to 4. Reading it off this cell would be re-asserting that
-		// through a column which deliberately shows two numbers at once — the live figure and the
-		// stored one — whenever they differ.
+		const held = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(held.getByText(/gedeckt durch/)).toBeVisible();
+		// Its group count is not its own to set any more.
+		await expect(held.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeDisabled();
 	});
 
-	test('is ended from either side, and the cohort holds its own again', async ({ asPersona }) => {
+	// And the way out, which is what makes one-sided coupling fair: nobody is held to a state they
+	// cannot leave.
+	test('planning separately is one click, and gives the teaching back', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
-		await page.getByRole('button', { name: 'Deckung lösen' }).first().click();
+		await page.getByRole('button', { name: 'getrennt planen' }).first().click();
 
 		const freed = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(freed.getByText(/gedeckt durch/)).toHaveCount(0);
-		// Its teaching comes back from the module's split. What does not come back is the number
-		// of laboratory groups — that was a planning decision that went with the parts.
-		await expect(freed.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeEnabled();
+		await expect(freed.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeEnabled();
+		// And the pair is now visibly a duplicate, which is the badge that makes a coupling
+		// findable at all.
+		await expect(freed.getByText(/geplant \(getrennt\)/)).toBeVisible();
 	});
 });
