@@ -87,7 +87,11 @@ test.describe('one module', () => {
 		await gotoRendered(page, `/module/${CATALOGUE.split}`);
 
 		await expect(page.getByRole('heading', { name: 'Modulverantwortung' })).toBeVisible();
-		await expect(page.getByText('Prof. Dr. Zwei')).toBeVisible();
+		// The plain spelling, not the written-out one the fixture's teacher row carries. Everybody
+		// is shown in one register here — the examination office's titles are dropped rather than
+		// invented for the colleagues who have an account and no title in this system.
+		await expect(page.getByText(PERSONAS.zwei.name)).toBeVisible();
+		await expect(page.getByText('Prof. Dr. Zwei')).toHaveCount(0);
 		await expect(page.getByText('Professur')).toBeVisible();
 		// Zwei is in the cast and therefore has a person row; a teacher who is not would read
 		// the other way.
