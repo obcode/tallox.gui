@@ -3,9 +3,10 @@
 	import { resolve } from '$app/paths';
 	import WishCell from '$lib/components/WishCell.svelte';
 	import { formatHours } from '$lib/catalogue';
-	import { hoursLabel } from '$lib/demand';
+	import { heldForLabel, hoursLabel } from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
 	import {
+		heldForOthers,
 		closedPhaseHint,
 		cohortIn,
 		myWishByInstance,
@@ -57,7 +58,9 @@
 	const settled = $derived(settledProgrammes(data.completions));
 	const published = $derived(data.semester?.wishesPublishedAt ?? null);
 
-	const rows = $derived(wishRows(data.instances));
+	// The reader's own entries keep their line even where the cohort is held elsewhere — otherwise
+	// an entry made before the coupling would have nowhere to be withdrawn.
+	const rows = $derived(wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id))));
 	const myGroupCodes = $derived(data.mySubjectGroups.map((g) => g.code));
 	const split = $derived(splitByMySubjects(rows, myGroupCodes));
 
@@ -166,6 +169,18 @@
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
 								{row.module.name}
 							</a>
+							{#if heldForOthers(row).length > 0}
+								<!--
+									Eine Veranstaltung, mehrere Studiengänge. Der gedeckte Zug steht nicht
+									mehr als eigene Zeile da — er wäre dasselbe Angebot ein zweites Mal,
+									einmal mit seinen echten SWS und einmal mit null. Wofür er gehalten
+									wird, gehört trotzdem hierher: wer sich einträgt, trägt sich für alle
+									ein.
+								-->
+								<span class="badge badge-outline badge-xs ml-1 align-middle">
+									{heldForLabel(heldForOthers(row))}
+								</span>
+							{/if}
 							{#if demandHint}
 								<!--
 									Eine Orientierung, keine Warnung: sich in einen Studiengang einzutragen,

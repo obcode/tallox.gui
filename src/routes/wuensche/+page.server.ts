@@ -72,6 +72,32 @@ const WishesDocument = graphql(`
 				teachingHours
 				sharedAcrossTracks
 			}
+			# Whether this cohort is the event or is held by another programme's, and which
+			# programmes it is held for. One joint event is one thing to want, so the covered
+			# cohort does not get a line of its own — it would be the same offer twice, once at
+			# its real hours and once at zero.
+			coveredBy {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+			}
+			covers {
+				acceptedAt
+				instance {
+					id
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+			}
 		}
 		# **Every semester, not the one on screen.** Somebody who entered something for the summer
 		# term and then moved the picker to the winter term has not withdrawn it, and a list that

@@ -19,6 +19,7 @@ import {
 	savedHint,
 	splitByMySubjects,
 	strongestPriority,
+	heldForOthers,
 	studyGroupLabel,
 	trackColumns,
 	trackHeading,
@@ -148,6 +149,60 @@ describe('wishRowLabel', () => {
 		expect(wishRowLabel(wish('w', 'i', 'eins@example.org', 'Eins').instance)).toBe(
 			'IF3A · Analysis'
 		);
+	});
+});
+
+describe('a cohort another programme holds', () => {
+	const held = (id: string, programme: string): ReadInstanceLike<WishModule> => ({
+		...instance(id, 'm1', 'IT-Sicherheit', ''),
+		programme: { code: programme },
+		teachingHours: 0,
+		parts: [],
+		coveredBy: {
+			acceptedAt: '2026-08-28T10:00:00Z',
+			instance: { id: 'holder', track: '', programmeSemester: 2, programme: { code: 'DC' } }
+		}
+	});
+	const holder = (id: string): ReadInstanceLike<WishModule> => ({
+		...instance(id, 'm1', 'IT-Sicherheit', ''),
+		programme: { code: 'DC' },
+		covers: [
+			{
+				acceptedAt: '2026-08-28T10:00:00Z',
+				instance: { id: 'guest', track: '', programmeSemester: 5, programme: { code: 'GS' } }
+			}
+		]
+	});
+
+	// One joint event is one thing to want. The covered cohort used to arrive as a second line for
+	// the same teaching — once at its real hours, once at zero.
+	it('does not get a line of its own', () => {
+		const rows = wishRows([holder('holder'), held('guest', 'GS')]);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].programme.code).toBe('DC');
+	});
+
+	it('is named on the line of the cohort that holds it', () => {
+		const rows = wishRows([holder('holder'), held('guest', 'GS')]);
+		expect(heldForOthers(rows[0]).map((o) => o.programme.code)).toEqual(['GS']);
+	});
+
+	// Coupling leaves wishes alone — they point at the instance, and the instance survives. An
+	// entry made before it would otherwise have nowhere left to be withdrawn: "Meine Eintragungen"
+	// lists entries, and the only control for one is the cell in this table.
+	it('keeps its line where the reader has an entry on it', () => {
+		const rows = wishRows([holder('holder'), held('guest', 'GS')], new Set(['guest']));
+		expect(rows.map((r) => r.programme.code).sort()).toEqual(['DC', 'GS']);
+	});
+
+	// A programme that planned the module for itself is a second event, and stays a second row.
+	it('leaves a separately planned cohort alone', () => {
+		const separate: ReadInstanceLike<WishModule> = {
+			...instance('own', 'm1', 'IT-Sicherheit', ''),
+			programme: { code: 'DE' }
+		};
+		const rows = wishRows([holder('holder'), held('guest', 'GS'), separate]);
+		expect(rows.map((r) => r.programme.code).sort()).toEqual(['DC', 'DE']);
 	});
 });
 

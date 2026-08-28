@@ -122,6 +122,17 @@ export function coversLabel(coverage: CoverageLike): string {
 	return coverage.acceptedAt ? `hält auch für ${who}` : `Anfrage von ${who}`;
 }
 
+/**
+ * The badge on a cohort that holds one event for several study programmes.
+ *
+ * `coversLabel` says it for one link at a time, which is what the demand screens have. Where the
+ * whole list belongs on one line — the wish table, which shows the event once — this says it once.
+ */
+export function heldForLabel(others: readonly SeparateLike[]): string {
+	if (others.length === 0) return '';
+	return `hält auch für ${separateCohorts(others)}`;
+}
+
 /** A cohort of another study programme that offers the same module and holds it itself. */
 export type SeparateLike = {
 	id: string;

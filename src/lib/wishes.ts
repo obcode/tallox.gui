@@ -1,4 +1,10 @@
-import { cohortLabel, moduleRows, type ModuleRow, type ReadInstanceLike } from './demand';
+import {
+	cohortLabel,
+	moduleRows,
+	type ModuleRow,
+	type ReadInstanceLike,
+	type SeparateLike
+} from './demand';
 
 /**
  * The wish phase — registering interest in a course instance.
@@ -191,8 +197,52 @@ export type WishRow = ModuleRow<WishModule>;
  * shows, and somebody reading both screens has to find the same list on each. What differs is the
  * columns — there, what the cohort consists of; here, whether you want it.
  */
-export function wishRows(instances: readonly ReadInstanceLike<WishModule>[]): WishRow[] {
-	return moduleRows(instances);
+export function wishRows(
+	instances: readonly ReadInstanceLike<WishModule>[],
+	/** The instances the reader has an entry on, which keep their line whatever else is true. */
+	entered: ReadonlySet<string> = new Set()
+): WishRow[] {
+	// A cohort another programme holds is not a second thing to want.
+	//
+	// It is the same event, seen from the programme whose demand it meets, and it holds no parts —
+	// so it arrived here as a second line for the same teaching, at zero hours beside the real
+	// figure. Whoever wants to teach it wants the event, and the event is the holder's row: that is
+	// also where the part is, and where filling it will happen.
+	//
+	// The wish therefore lands on the holding cohort. Its subject group is the module's, so the
+	// lead who fills the part sees it either way — see the note in tallox.go about what a covered
+	// cohort's wishes are visible to.
+	//
+	// WITH ONE EXCEPTION, AND IT IS NOT A DECORATION
+	//
+	// A cohort somebody already entered something for keeps its line. Coupling leaves wishes alone
+	// — they point at the instance, and the instance survives — so an entry made before the
+	// coupling would otherwise be left with nowhere to change or withdraw it: "Meine Eintragungen"
+	// lists entries, and the only control for one is the cell in this table. Hiding the row would
+	// take somebody's own entry out of their hands, which is the one thing this screen may never
+	// do.
+	return moduleRows(
+		instances.filter((instance) => !instance.coveredBy?.acceptedAt || entered.has(instance.id))
+	);
+}
+
+/**
+ * The other programmes a row's teaching is held for, as one deduplicated list.
+ *
+ * Read off the cohorts' `covers`, which is per instance because that is what the backend has.
+ * "This event also serves GS" is true of the row.
+ */
+export function heldForOthers(row: WishRow): SeparateLike[] {
+	const seen = new Set<string>();
+	const out: SeparateLike[] = [];
+	for (const cohort of row.cohorts) {
+		for (const covered of cohort.covers ?? []) {
+			if (!covered.acceptedAt || seen.has(covered.instance.id)) continue;
+			seen.add(covered.instance.id);
+			out.push(covered.instance);
+		}
+	}
+	return out;
 }
 
 /**
