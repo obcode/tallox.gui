@@ -41,23 +41,25 @@ function cohortChooser(page: Page) {
 	});
 }
 
-/** The cohort's parts, folded away because splitting them is the exception. */
-function parts(page: Page) {
-	return page.locator('details').filter({ hasText: 'Teile einzeln besetzen' }).first();
+/**
+ * The switch that folds a cohort's parts out.
+ *
+ * A checkbox and not a <details>, because the rows it shows are table rows and <details> cannot
+ * hold those — the fold is a `tbody:has(…:checked)` rule, so it still works with no JavaScript.
+ */
+function partsSwitch(page: Page) {
+	return page.getByRole('checkbox', { name: /Teile von .* einzeln besetzen/ }).first();
 }
 
 /**
- * Unfold the per-part view.
+ * Fold the per-part rows out.
  *
  * Every test below that names a single part has to do this first, and that is the screen saying
- * what it is for: a cohort is normally held by one person, so the parts are behind a disclosure
- * and the cohort is not.
+ * what it is for: a cohort is normally held by one person, so the parts are folded away and the
+ * cohort is not.
  */
 async function openParts(page: Page) {
-	const details = parts(page);
-	if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) {
-		await details.getByText('Teile einzeln besetzen').click();
-	}
+	if (!(await partsSwitch(page).isChecked())) await partsSwitch(page).check();
 }
 
 test.describe('the assignment screen', () => {
@@ -68,7 +70,9 @@ test.describe('the assignment screen', () => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByRole('heading', { name: ASSIGNMENTS.moduleName })).toBeVisible();
+		await expect(
+			page.getByRole('cell', { name: ASSIGNMENTS.moduleName, exact: true })
+		).toBeVisible();
 
 		// The wish is next to the row it is about, which is the whole reason for this layout.
 		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name}`)).toBeVisible();
@@ -97,6 +101,22 @@ test.describe('the assignment screen', () => {
 		await gotoRendered(page, URL);
 		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toHaveValue('');
+	});
+
+	// The module stands once at the head of its cohorts. Repeating it on every row is three
+	// chances to read one module as three, and the eye has to compare the strings to find out
+	// that it is not.
+	test('the module is named once and the cohorts are rows under it', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		const table = page.getByRole('table');
+		await expect(table.getByRole('columnheader', { name: 'Modul' })).toBeVisible();
+		await expect(table.getByRole('columnheader', { name: 'Zug' })).toBeVisible();
+		await expect(
+			table.getByRole('cell', { name: ASSIGNMENTS.moduleName, exact: true })
+		).toHaveCount(1);
+		await expect(table.getByRole('cell', { name: 'E2Z2A', exact: true })).toHaveCount(1);
 	});
 
 	test('the two laboratories are numbered and the lecture is not', async ({ asPersona }) => {
@@ -159,9 +179,11 @@ test.describe('a cohort held by one person', () => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
 
-		// Which parts "alle Teile" means is on the page, next to the control — a single dropdown is
-		// otherwise a promise whose extent nobody has been shown.
-		await expect(page.getByText('Vorlesung · Praktikum 1 · Praktikum 2')).toBeVisible();
+		// How many parts "alle Teile" means is on the row, next to the switch — a single dropdown is
+		// otherwise a promise whose extent nobody has been shown. Which ones they are is the
+		// switch's own title, and the rows it folds out.
+		await expect(page.getByText('3 Teile')).toBeVisible();
+		await expect(partsSwitch(page)).toHaveAttribute('aria-label', /3 Teile/);
 
 		// The first candidate: whoever registered interest, which is what the list leads with.
 		await cohortChooser(page).selectOption({ index: 2 });
@@ -189,7 +211,7 @@ test.describe('a cohort held by one person', () => {
 
 		await gotoRendered(page, URL);
 		await expect(cohortChooser(page)).toHaveValue('*');
-		await expect(parts(page)).toHaveJSProperty('open', true);
+		await expect(partsSwitch(page)).toBeChecked();
 
 		// And the two controls do not fight: a save that touched nothing must not write the
 		// cohort's "verschieden" back over the part that differs.

@@ -152,6 +152,44 @@ export function cohortGroups(
 	return groups;
 }
 
+/** One module and every cohort of it this subject group has to fill. */
+export type ModuleBlock = {
+	id: string;
+	name: string;
+	cohorts: CohortGroup[];
+};
+
+/**
+ * The cohorts of one subject group, gathered under their modules.
+ *
+ * The screen is one table: a row per cohort, and the module written once at the head of its
+ * cohorts rather than again on every row. "Softwareentwicklung II" three times over is three
+ * chances to read it as three different things, and the eye has to compare the strings to find
+ * out that it is not.
+ *
+ * Sorted here rather than left in whatever order the demand answered in, because the grouping
+ * only works if the cohorts of a module are next to each other — and by name rather than by id,
+ * because that is the order somebody reads down the first column looking for a module.
+ */
+export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
+	const blocks = new Map<string, ModuleBlock>();
+
+	for (const group of groups) {
+		const module = group.instance.module;
+		const block = blocks.get(module.id) ?? { id: module.id, name: module.name, cohorts: [] };
+		block.cohorts.push(group);
+		blocks.set(module.id, block);
+	}
+
+	for (const block of blocks.values()) {
+		// Inside a module: the study programme, then the cohort year, then the track letter — the
+		// order the label itself reads in, so the column runs IF2A, IF2B and not IF2B, IF2A.
+		block.cohorts.sort((a, b) => a.label.localeCompare(b.label, 'de', { numeric: true }));
+	}
+
+	return [...blocks.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
 /** Somebody who can be put on a part. */
 export type Candidate = {
 	/** Exactly one of these is set, which is what the mutation takes. */
