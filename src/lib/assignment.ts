@@ -194,6 +194,35 @@ export function pooledInstances(instance: InstanceLike): {
 }
 
 /**
+ * What a cohort's parts are called, as one line: `Vorlesung · Praktikum 1 · Praktikum 2`.
+ *
+ * It stands next to the one dropdown that fills all of them, and it is there to say what "all of
+ * them" is. Without it the single control is a promise the page has not shown the extent of.
+ */
+export function partsSummary(rows: readonly PartRow[]): string {
+	return rows.map((row) => row.heading).join(' · ');
+}
+
+/**
+ * What every part of a cohort holds, or null where they do not all hold the same.
+ *
+ * Null is the interesting value: it is the exception this screen is built to keep exceptional,
+ * and it is what the cohort's own dropdown shows instead of a name.
+ */
+export function commonValue(rows: readonly PartRow[]): string | null {
+	if (rows.length === 0) return null;
+	const first = currentValue(rows[0].assignment);
+	return rows.every((row) => currentValue(row.assignment) === first) ? first : null;
+}
+
+/** The note every part of a cohort carries, or null where they do not all carry the same. */
+export function commonNote(rows: readonly PartRow[]): string | null {
+	if (rows.length === 0) return null;
+	const first = rows[0].assignment?.note ?? '';
+	return rows.every((row) => (row.assignment?.note ?? '') === first) ? first : null;
+}
+
+/**
  * The list a part's dropdown offers, in the order it offers it.
  *
  * Whoever registered interest in this cohort comes first and carries how much they want it. That
@@ -213,7 +242,14 @@ export function candidatesFor(
 	wishes: WishLike[],
 	members: { id: string; name: string }[],
 	found: { id: string; name: string }[],
-	current: AssignmentLike | null,
+	/**
+	 * Whoever already holds something here.
+	 *
+	 * The whole cohort's assignments and not just this part's: the cohort is filled by one
+	 * dropdown, and a list that offered somebody for the lecture but not for the laboratory could
+	 * not be copied down onto both.
+	 */
+	current: readonly AssignmentLike[],
 	/**
 	 * Which programme a wish's own cohort belongs to, for the cohorts that are not the first.
 	 *
@@ -256,11 +292,11 @@ export function candidatesFor(
 	// something that was true when it rendered.
 	for (const teacher of found) add({ teacherId: teacher.id, name: teacher.name, hint: 'Suche' });
 
-	if (current) {
+	for (const held of current) {
 		add({
-			personId: current.assignee.personId ?? undefined,
-			teacherId: current.assignee.teacherId ?? undefined,
-			name: current.assignee.name,
+			personId: held.assignee.personId ?? undefined,
+			teacherId: held.assignee.teacherId ?? undefined,
+			name: held.assignee.name,
 			hint: 'zugeteilt'
 		});
 	}
@@ -286,6 +322,84 @@ export type AssignmentEntry = {
 	choice: string;
 	note: string;
 };
+
+/**
+ * What a cohort's own dropdown says when its parts do not all hold the same person.
+ *
+ * A sentinel and not an absence, because the value space is already full: `''` means "nobody",
+ * and this has to mean "leave each part with whoever it has". Chosen so that it can never
+ * collide with `p:<uuid>` or `t:<uuid>`.
+ */
+export const MIXED_CHOICE = '*';
+
+/** What the cohort's own two controls submit. */
+export type CombinedEntry = {
+	/** The parts it stands for, in the order the page rendered them. */
+	partIds: string[];
+	/** `p:<id>`, `t:<id>`, `''` for nobody, or MIXED_CHOICE. */
+	choice: string;
+	/** The note for every part, or null where the page did not offer the field. */
+	note: string | null;
+};
+
+/**
+ * The cohort's dropdown written down onto its parts, where it says something new.
+ *
+ * # Why the cohort has a control at all
+ *
+ * A cohort is normally held by one person: the same colleague takes the lecture and its
+ * laboratories, and splitting them is the arrangement somebody makes on purpose. A screen that
+ * asks for every part separately makes the ordinary case the laborious one and the exception the
+ * cheap one, which is the wrong way round.
+ *
+ * # Why "where it says something new"
+ *
+ * Both controls are always submitted — the parts live in a `<details>`, and a closed one still
+ * carries its fields — so the two have to be ranked without a hidden flag saying which the person
+ * used. The rule is that the cohort's dropdown acts only when it differs from what its parts
+ * already hold in common. Somebody working in the open detail view leaves it showing exactly that
+ * common value, so it stays silent and the parts decide; somebody choosing a name at the top
+ * changes it, so it wins.
+ *
+ * That also makes the control work with no JavaScript at all, which the autosave does not: the
+ * form posts, and the server works out the same thing from the same fields.
+ *
+ * The note is ranked separately, because clearing a note is a change and `''` is its value. It is
+ * only offered where the parts agree — where they do not, there is no common note to edit, and
+ * the field is not rendered rather than rendered lying.
+ */
+export function mergeCombined(
+	combined: readonly CombinedEntry[],
+	entries: Map<string, AssignmentEntry>,
+	stored: ReadonlyMap<string, AssignmentLike>
+): Map<string, AssignmentEntry> {
+	const merged = new Map(entries);
+
+	for (const block of combined) {
+		const held = block.partIds.map((id) => stored.get(id) ?? null);
+		const values = new Set(held.map(currentValue));
+		const notes = new Set(held.map((a) => a?.note ?? ''));
+		const common = values.size === 1 ? [...values][0] : null;
+		const commonNote = notes.size === 1 ? [...notes][0] : null;
+
+		const setsChoice = block.choice !== MIXED_CHOICE && block.choice !== common;
+		const setsNote = block.note !== null && block.note !== commonNote;
+		if (!setsChoice && !setsNote) continue;
+
+		for (const partId of block.partIds) {
+			const row = stored.get(partId) ?? null;
+			const entry = merged.get(partId) ?? {
+				choice: currentValue(row),
+				note: row?.note ?? ''
+			};
+			merged.set(partId, {
+				choice: setsChoice ? block.choice : entry.choice,
+				note: setsNote ? (block.note ?? '') : entry.note
+			});
+		}
+	}
+	return merged;
+}
 
 /** What the save has to do to one part. */
 export type AssignmentChange =
