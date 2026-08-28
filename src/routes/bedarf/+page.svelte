@@ -310,6 +310,68 @@
 	});
 
 	/**
+	 * The withdrawal confirmation, and the two things a modal needs that a banner did not.
+	 *
+	 * `showConfirm` is dismissal: a preview lives in `form` until the next action, so without a
+	 * local flag the dialog would come back the moment anything re-rendered.
+	 *
+	 * `confirmEl` is the upgrade. The element is rendered with `open`, which daisyUI shows and
+	 * which is what carries the question without JavaScript — but `open` alone is a *non-modal*
+	 * dialog: no backdrop, no focus trap, ESC does nothing. `showModal()` gives all three, and it
+	 * throws on an already-open dialog, hence the close-then-open.
+	 */
+	let showConfirm = $state(true);
+	let confirmEl = $state<HTMLDialogElement | null>(null);
+	/**
+	 * True while the close-then-open of the upgrade is in flight.
+	 *
+	 * `close()` fires a `close` event, and without this the dialog would dismiss itself the
+	 * instant it was upgraded. Cleared in a `setTimeout` rather than inline or in a microtask:
+	 * the event is queued as a task, so it runs before this one either way — and if a browser
+	 * ever fired it synchronously instead, the flag is already set by then.
+	 */
+	let upgradingConfirm = false;
+
+	$effect(() => {
+		const el = confirmEl;
+		if (!el || el.matches(':modal')) return;
+		upgradingConfirm = true;
+		el.close();
+		el.showModal();
+		setTimeout(() => (upgradingConfirm = false), 0);
+	});
+
+	// A new preview is a new question, so a dismissal does not carry over to it.
+	$effect(() => {
+		if (form && 'preview' in form && form.preview) showConfirm = true;
+	});
+
+	/**
+	 * Abandoning the withdrawal, from the button, from ESC and from the backdrop alike.
+	 *
+	 * The pending edit goes with it. Leaving the tick off while nothing was saved is the state
+	 * that reads as a fault — it is what the badge was complaining about in the first place.
+	 */
+	function dismissWithdrawal() {
+		showConfirm = false;
+		// The pending edit goes with it. A same-route navigation reuses this component, so an
+		// untick left in `edits` would survive the reload and keep the tick off against a
+		// database that still has the instance — the very state the badge was complaining about.
+		edits = {};
+	}
+
+	/**
+	 * ESC and the backdrop, which reach us as a `close` event — and the upgrade, which does too.
+	 *
+	 * Ignored while the close-then-open is in flight, and ignored if the dialog is open again by
+	 * the time the queued event arrives. What is left is a real dismissal.
+	 */
+	function onConfirmClose() {
+		if (upgradingConfirm || confirmEl?.open) return;
+		dismissWithdrawal();
+	}
+
+	/**
 	 * Whether the result of the last save is still worth showing.
 	 *
 	 * It says what happened, and what happened stops being news. Five seconds is long enough to
@@ -979,44 +1041,86 @@
 		</details>
 	{/if}
 
-	{#if form && 'preview' in form && form.preview}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<h2 class="mb-2 font-medium">
-				<span aria-hidden="true">⚠️</span> Bitte bestätigen
-			</h2>
-			<p class="text-base-content/90 text-sm">
-				Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit;
-				sobald etwas daran hängt, wird die Instanz einzeln abgelehnt und bleibt.
-			</p>
-			<ul class="mt-2 flex flex-col gap-1">
-				{#each form.preview.withdrawn as change, i (i)}
-					<li class="text-base-content/90 text-sm">
-						{change.moduleName}{change.track ? ` — Zug ${change.track}` : ''}
-					</li>
-				{/each}
-			</ul>
-			{#if form.preview.created.length > 0 || form.preview.changed.length > 0}
-				<p class="text-base-content/80 mt-2 text-sm">
-					Außerdem: {form.preview.created.length} neu, {form.preview.changed.length} geändert.
+	<!--
+		Der Rückzug fragt in einem Modal nach, nicht in einem Kasten über der Tabelle.
+
+		Der Kasten stand oben, die Marke „noch nicht gespeichert" unten rechts — und die Marke ist
+		auffälliger. Wer ein Häkchen wegnimmt und die Seite nicht gerade ganz oben hat, sieht die
+		Frage nicht und liest den Entwurfszustand als Fehler.
+
+		OHNE JAVASCRIPT MUSS ES TROTZDEM DASTEHEN
+
+		Diese Seite kommt ohne JavaScript aus — das Formular hat einen Speichern-Knopf, und die
+		Vorschau ist eine servergerenderte Antwort. Ein `<dialog>`, das nur `showModal()` öffnet,
+		verlöre die Rückfrage genau dort. Deshalb steht `open` als Attribut am Element: daisyUI
+		zeigt `.modal[open]` an, also ist die Frage auch ohne JavaScript sichtbar und bedienbar.
+		Mit JavaScript wird daraus im Effekt ein echtes Modal — Backdrop, Fokusfalle, ESC.
+	-->
+	{#if showConfirm && form && 'preview' in form && form.preview}
+		<dialog
+			bind:this={confirmEl}
+			open
+			class="modal"
+			aria-labelledby="withdraw-confirm-title"
+			onclose={onConfirmClose}
+		>
+			<div class="modal-box">
+				<h2 id="withdraw-confirm-title" class="mb-2 font-medium">
+					<span aria-hidden="true">⚠️</span> Bitte bestätigen
+				</h2>
+				<p class="text-base-content/90 text-sm">
+					Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit;
+					sobald etwas daran hängt, wird die Instanz einzeln abgelehnt und bleibt.
 				</p>
-			{/if}
-			<form
-				method="POST"
-				action="?/apply"
-				use:enhance={() =>
-					async ({ update }) => {
-						// Die Entscheidung ist gefallen, also gilt wieder, was der Server sagt.
-						edits = {};
-						await update({ reset: false });
-					}}
-				class="mt-3 flex flex-wrap gap-2"
-			>
-				<input type="hidden" name="semester" value={data.selected.semester} />
-				<input type="hidden" name="programme" value={data.selected.programme} />
-				<input type="hidden" name="payload" value={form.payload} />
-				<button type="submit" class="btn btn-primary btn-sm">Zurückziehen und speichern</button>
+				<ul class="mt-2 flex flex-col gap-1">
+					{#each form.preview.withdrawn as change, i (i)}
+						<li class="text-base-content/90 text-sm">
+							{change.moduleName}{change.track ? ` — Zug ${change.track}` : ''}
+						</li>
+					{/each}
+				</ul>
+				{#if form.preview.created.length > 0 || form.preview.changed.length > 0}
+					<p class="text-base-content/80 mt-2 text-sm">
+						Außerdem: {form.preview.created.length} neu, {form.preview.changed.length} geändert.
+					</p>
+				{/if}
+				<div class="modal-action">
+					<!--
+						Der Weg hinaus, den der Kasten nicht hatte. Ein Modal ohne Abbruch ist eine
+						Sackgasse — und ohne JavaScript ist ein `type="button"` gar nichts, also ist
+						es ein GET auf dieselbe Adresse: das lädt die Seite neu und damit den
+						gespeicherten Stand, was genau das ist, was „abbrechen" hier heißt.
+					-->
+					<form method="GET" onsubmit={dismissWithdrawal}>
+						{@render carriedOver([])}
+						<input type="hidden" name="bearbeiten" value="1" />
+						<button type="submit" class="btn btn-sm">Abbrechen</button>
+					</form>
+					<form
+						method="POST"
+						action="?/apply"
+						use:enhance={() =>
+							async ({ update }) => {
+								// Die Entscheidung ist gefallen, also gilt wieder, was der Server sagt.
+								edits = {};
+								await update({ reset: false });
+							}}
+					>
+						<input type="hidden" name="semester" value={data.selected.semester} />
+						<input type="hidden" name="programme" value={data.selected.programme} />
+						<input type="hidden" name="payload" value={form.payload} />
+						<button type="submit" class="btn btn-primary btn-sm">Zurückziehen und speichern</button>
+					</form>
+				</div>
+			</div>
+			<!--
+				Klick daneben schließt, wie bei jedem Modal. Ein `form method="dialog"` braucht kein
+				JavaScript und ist genau dafür da.
+			-->
+			<form method="dialog" class="modal-backdrop">
+				<button type="submit" aria-label="Dialog schließen">schließen</button>
 			</form>
-		</div>
+		</dialog>
 	{/if}
 
 	{#if !chosen}

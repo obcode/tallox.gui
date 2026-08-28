@@ -526,6 +526,35 @@ test.describe('the demand table', () => {
 		await expect(page.getByText('auch Module, die nur im Sommersemester laufen')).toBeVisible();
 	});
 
+	// The confirmation is a modal, and that is the point of it: the badge that says "noch nicht
+	// gespeichert" sits bottom right, the question used to sit top left, and the badge is louder.
+	// Somebody who takes a tick away without the page scrolled to the top reads a draft state as a
+	// fault.
+	test('asks in a modal, and putting the tick back is one click', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await row.getByRole('checkbox').uncheck();
+
+		const dialog = page.getByRole('dialog');
+		await expect(dialog).toBeVisible({ timeout: 15_000 });
+		// A real modal rather than a box that happens to be a <dialog>: the ::backdrop and the
+		// focus trap are what `:modal` reports, and `open` alone gives neither.
+		await expect(dialog).toHaveJSProperty('open', true);
+		expect(await dialog.evaluate((el) => el.matches(':modal'))).toBe(true);
+
+		// The way out the box never had. Abandoning puts the tick back, because a tick left off
+		// while nothing was saved is the state that reads as a fault.
+		await dialog.getByRole('button', { name: 'Abbrechen' }).click();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+
+		const restored = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(restored.getByRole('checkbox')).toBeChecked();
+		// And nothing was withdrawn on the way through.
+		await expect(restored.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeVisible();
+	});
+
 	// The programmes this faculty does not plan are not offered anywhere on this page — neither
 	// as a tab nor, since the select is gone, in a list behind one.
 	//
