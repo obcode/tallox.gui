@@ -122,6 +122,32 @@ export function coversLabel(coverage: CoverageLike): string {
 	return coverage.acceptedAt ? `hält auch für ${who}` : `Anfrage von ${who}`;
 }
 
+/** A cohort of another study programme that offers the same module and holds it itself. */
+export type SeparateLike = {
+	id: string;
+	track: string;
+	programmeSemester?: number | null;
+	programme: { code: string };
+};
+
+/**
+ * The badge that says the same module is being offered twice.
+ *
+ * Neither the holder nor the cohorts held with this one — those have their own two labels. What is
+ * left is the case this whole area exists to make avoidable and which nothing said out loud: two
+ * programmes running the same event separately because neither knew about the other.
+ *
+ * Named as an offer rather than as a problem. It may be exactly right — different cohorts, different
+ * rooms, different terms — and the screen is not in a position to know. What it can do is say it.
+ */
+export function alsoPlannedLabel(others: readonly SeparateLike[]): string {
+	if (others.length === 0) return '';
+	const who = others
+		.map((o) => cohortLabel(o.programme.code, o.programmeSemester, o.track))
+		.join(', ');
+	return `auch in ${who} geplant (getrennt)`;
+}
+
 /**
  * The table.
  *
@@ -181,6 +207,7 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	}[];
 	coveredBy?: CoverageLike | null;
 	covers?: readonly CoverageLike[];
+	alsoPlannedSeparately?: readonly SeparateLike[];
 };
 
 /** One cohort in a row of the table. */
@@ -211,6 +238,8 @@ export type RowTrack = {
 	coveredBy?: CoverageLike | null;
 	/** Other programmes' demands this cohort meets, asked or agreed. */
 	covers?: readonly CoverageLike[];
+	/** Other programmes offering the same module and holding it themselves. */
+	alsoPlannedSeparately?: readonly SeparateLike[];
 };
 
 /**
@@ -321,7 +350,8 @@ function rowFor<M extends ModuleLike>(
 				lecturePartId: instance.parts.find((p) => p.kind === 'LECTURE')?.id,
 				sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id,
 				coveredBy: instance.coveredBy ?? null,
-				covers: instance.covers ?? []
+				covers: instance.covers ?? [],
+				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? []
 			})),
 			planned: true,
 			teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
@@ -619,6 +649,7 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	}[];
 	coveredBy?: CoverageLike | null;
 	covers?: readonly CoverageLike[];
+	alsoPlannedSeparately?: readonly SeparateLike[];
 };
 
 /**
@@ -661,6 +692,8 @@ export type InstanceRow<M extends RowModule = ModuleLike> = {
 	coveredBy?: CoverageLike | null;
 	/** Other programmes' demands this cohort meets. */
 	covers?: readonly CoverageLike[];
+	/** Other programmes offering the same module and holding it themselves. */
+	alsoPlannedSeparately?: readonly SeparateLike[];
 };
 
 /**
@@ -725,7 +758,8 @@ export function instanceRows<M extends RowModule>(
 				})),
 				teachingHours: instance.teachingHours,
 				coveredBy: instance.coveredBy ?? null,
-				covers: instance.covers ?? []
+				covers: instance.covers ?? [],
+				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? []
 			};
 		})
 		.sort(

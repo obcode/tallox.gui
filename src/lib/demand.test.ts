@@ -13,6 +13,7 @@ import {
 	instanceRows,
 	instancesByYear,
 	moduleRows,
+	alsoPlannedLabel,
 	cohortCount,
 	coverageLabel,
 	coversLabel,
@@ -78,6 +79,29 @@ describe('borrowedFromLabel', () => {
 	it('names the other study programme where one holds the part', () => {
 		expect(borrowedFromLabel('GS', 'A', 'DE')).toBe('DE…A');
 		expect(borrowedFromLabel('GS', '', 'DE')).toBe('DE');
+	});
+});
+
+describe('alsoPlannedLabel', () => {
+	it('says nothing when nobody else offers it', () => {
+		expect(alsoPlannedLabel([])).toBe('');
+	});
+
+	// The case the whole area exists to make avoidable, and which nothing said out loud until now:
+	// two programmes running the same event separately because neither knew about the other.
+	it('names who else is offering the module separately', () => {
+		expect(
+			alsoPlannedLabel([{ id: 'a', track: '', programmeSemester: 5, programme: { code: 'GS' } }])
+		).toBe('auch in GS5 geplant (getrennt)');
+	});
+
+	it('names all of them where there are several', () => {
+		expect(
+			alsoPlannedLabel([
+				{ id: 'a', track: '', programmeSemester: 5, programme: { code: 'GS' } },
+				{ id: 'b', track: 'A', programmeSemester: 3, programme: { code: 'ID' } }
+			])
+		).toBe('auch in GS5, ID3A geplant (getrennt)');
 	});
 });
 
@@ -188,7 +212,8 @@ describe('demandRows', () => {
 				lecturePartId: undefined,
 				sharedPartId: undefined,
 				coveredBy: null,
-				covers: []
+				covers: [],
+				alsoPlannedSeparately: []
 			},
 			{
 				track: 'B',
@@ -198,7 +223,8 @@ describe('demandRows', () => {
 				lecturePartId: undefined,
 				sharedPartId: undefined,
 				coveredBy: null,
-				covers: []
+				covers: [],
+				alsoPlannedSeparately: []
 			}
 		]);
 		expect(rows[0].teachingHours).toBe(14);

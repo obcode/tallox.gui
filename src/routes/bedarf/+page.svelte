@@ -20,6 +20,7 @@
 		effectiveComponents,
 		hoursLabel,
 		plannedHours,
+		alsoPlannedLabel,
 		coverageLabel,
 		coversLabel,
 		sharingState,
@@ -287,12 +288,26 @@
 		if (showResult && form && 'report' in form && form.report) {
 			const r = form.report;
 			const refused = r.refused.length > 0 ? ` ${r.refused.length} nicht möglich.` : '';
+			// Was in *fremden* Studiengängen passiert ist, steht dahinter und nicht in der Summe:
+			// eine Zeile, die neben einem anderen Studiengang entstand, hält nichts, und ein
+			// zurückgezogener Gastgeber hat seine Lehre weitergegeben. Beides ist unsichtbar,
+			// wenn es nur „1 angelegt" heißt.
+			const coupled =
+				r.coupled.length > 0
+					? ` ${r.coupled.length} gemeinsam mit einem anderen Studiengang geplant.`
+					: '';
+			const promoted = r.promoted
+				.map(
+					(p) => ` ${p.programme?.code ?? 'Ein anderer Studiengang'} hält jetzt ${p.moduleName}.`
+				)
+				.join('');
 			return {
 				badge: 'success',
 				label: 'Gespeichert',
 				text:
 					`${r.created.length} angelegt, ${r.changed.length} geändert, ` +
-					`${r.withdrawn.length} zurückgezogen — ${hoursLabel(r.teachingHours)} geplant.${refused}`,
+					`${r.withdrawn.length} zurückgezogen — ${hoursLabel(r.teachingHours)} geplant.` +
+					`${coupled}${promoted}${refused}`,
 				code: ''
 			};
 		}
@@ -1079,6 +1094,27 @@
 						</li>
 					{/each}
 				</ul>
+				<!--
+					Was in einem *fremden* Studiengang passieren würde, und zwar als Konjunktiv.
+
+					Der Probelauf sagt, wer die Veranstaltung übernähme — aber das Speichern kann
+					danach immer noch scheitern: an einer Instanz hängt womöglich ein Wunsch, und
+					`wish.course_instance_id` ist ON DELETE RESTRICT. Die Übergabe liegt in
+					derselben Transaktion und rollt dann mit zurück. „GS5 übernimmt" zu versprechen
+					wäre also eine Zusage, die das Backend nicht halten muss.
+				-->
+				{#if form.preview.promoted.length > 0}
+					<p class="text-base-content/90 mt-2 text-sm">
+						Ein anderer Studiengang übernähme die Lehre — mitsamt Gruppen und Zuteilung:
+					</p>
+					<ul class="mt-1 flex flex-col gap-1">
+						{#each form.preview.promoted as change, i (i)}
+							<li class="text-base-content/90 text-sm">
+								{change.programme?.code ?? 'Ein anderer Studiengang'} → {change.moduleName}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				{#if form.preview.created.length > 0 || form.preview.changed.length > 0}
 					<p class="text-base-content/80 mt-2 text-sm">
 						Außerdem: {form.preview.created.length} neu, {form.preview.changed.length} geändert.
@@ -1605,11 +1641,11 @@
 																Vorlesung, denn welcher Zug seinen Bedarf woanders decken
 																lässt, ist eine Aussage über genau diesen Zug.
 
-																Immer nur ein Knopf: ohne Verweis „decken lassen", bei
-																offener Anfrage „zurückziehen", bei stehender Deckung
-																„lösen". Die Gegenseite bestätigt in ihrer eigenen Zeile,
-																weiter unten — sie ist der einzige Schirm, auf dem das
-																beantwortet werden kann.
+																Immer nur ein Knopf. Der Regelfall braucht keinen: wer neben
+																einem anderen Studiengang plant, ist sofort mit ihm zusammen
+																— hier steht dann „getrennt planen", und das ist die
+																ausdrückliche Trennung. „decken lassen" ist der nachträgliche
+																Weg, und den bestätigt die Gegenseite in ihrer eigenen Zeile.
 															-->
 															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER'}
 																{#each row.tracks as cohortTrack, i (i)}
@@ -1626,7 +1662,7 @@
 																					: 'Die Anfrage zurückziehen'}
 																			>
 																				{cohortTrack.coveredBy.acceptedAt
-																					? 'Deckung lösen'
+																					? 'getrennt planen'
 																					: 'Anfrage zurückziehen'}
 																			</button>
 																		{:else}
@@ -1743,7 +1779,7 @@
 																		class="input input-bordered input-xs join-item w-12 text-center"
 																		aria-label={groupLabel(row, letters, letter)}
 																		title={covered
-																			? 'Deckung lösen, um wieder eigene Teile zu planen'
+																			? 'Getrennt planen, um wieder eigene Teile zu setzen'
 																			: undefined}
 																	/>
 																	<button
@@ -1766,6 +1802,16 @@
 																		>{coversLabel(covers)}</span
 																	>
 																{/each}
+																<!--
+																	Und der Fall, für den es bisher gar keine Anzeige gab:
+																	dasselbe Modul, zweimal geplant, weil keiner vom anderen
+																	wusste. Als Angebot formuliert und nicht als Fehler.
+																-->
+																{#if (row.tracks[i]?.alsoPlannedSeparately ?? []).length > 0}
+																	<span class="badge badge-ghost badge-sm">
+																		{alsoPlannedLabel(row.tracks[i].alsoPlannedSeparately ?? [])}
+																	</span>
+																{/if}
 															</div>
 														{/each}
 													</div>
