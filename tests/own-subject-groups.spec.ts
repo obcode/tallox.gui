@@ -32,7 +32,11 @@ test.describe('my subject groups', () => {
 		await gotoRendered(page, '/');
 
 		await openDropdown(page, /Prof/);
-		await expect(page.getByRole('link', { name: 'Meine Fachgruppen', exact: true })).toBeVisible();
+		// In the bar: the start page's walk-through links the same screen in its text, and this
+		// test is about the menu.
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: 'Meine Fachgruppen', exact: true })
+		).toBeVisible();
 	});
 
 	test('a lecturer joins one and it sticks, also after saving twice', async ({ asPersona }) => {
