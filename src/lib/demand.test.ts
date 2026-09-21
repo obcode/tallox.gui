@@ -178,7 +178,7 @@ describe('coverageLabel and coversLabel', () => {
 	// the same in both — no parts either way while the request is pending is *not* true, but the
 	// badge is what tells the two apart at a glance.
 	it('tells an unanswered request from an agreement', () => {
-		expect(coverageLabel(agreed)).toBe('gedeckt durch DE3A');
+		expect(coverageLabel(agreed)).toBe('gemeinsam mit DE3A, dort gehalten');
 		expect(coverageLabel(asked)).toBe('Anfrage an DE3A läuft');
 	});
 

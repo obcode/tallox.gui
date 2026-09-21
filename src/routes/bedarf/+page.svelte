@@ -1254,9 +1254,9 @@
 				<div class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
 					<h2 class="font-medium">Anfragen anderer Studiengänge</h2>
 					<p class="text-base-content/80 text-sm">
-						Ein anderer Studiengang möchte seinen Bedarf durch eine Ihrer Lehrveranstaltungen
-						mitdecken lassen. Bestätigen heißt: die Veranstaltung findet einmal statt, Sie halten
-						sie, und ihre SWS zählen einmal — bei Ihnen.
+						Ein anderer Studiengang möchte ein Modul gemeinsam mit Ihnen anbieten. Bestätigen heißt:
+						die Veranstaltung findet einmal statt, Sie halten sie, und ihre SWS zählen einmal — bei
+						Ihnen.
 					</p>
 					{#each openCoverageRequests as request (request.guestId)}
 						<div class="flex flex-wrap items-center gap-2">
@@ -1312,19 +1312,19 @@
 						coverageSubject.programme.code,
 						coverageSubject.programmeSemester,
 						coverageSubject.track
-					)} — {coverageSubject.module.name} mitdecken lassen
+					)} — {coverageSubject.module.name} gemeinsam mit einem anderen Studiengang planen
 				</h2>
 				<p class="text-base-content/80 text-sm">
 					Der Bedarf bleibt bestehen und zählt weiter für Ihren Studiengang. Was sich ändert: die
 					Veranstaltung findet einmal statt, der andere Studiengang hält sie, und ihre SWS zählen
-					dort. Wirksam wird das erst, wenn die dortige Leitung zustimmt.
+					dort. Wirksam wird das erst, wenn die dortige Leitung zustimmt. Anfragen bei:
 				</p>
 
 				{#if data.coverageCandidates.length === 0}
 					<p class="text-base-content/80 text-sm">
 						Kein anderer Studiengang hat dieses Modul in diesem Semester angemeldet — oder die
-						vorhandenen sind selbst schon gedeckt. Ohne eine Instanz dort gibt es nichts, worauf
-						sich dieser Bedarf beziehen könnte.
+						vorhandenen halten es selbst schon mit jemandem gemeinsam. Ohne eine Instanz dort gibt
+						es nichts, womit sich dieser Zug zusammenlegen ließe.
 					</p>
 				{:else}
 					<form method="POST" action="?/coverage" use:enhance class="flex flex-col gap-2">
@@ -1698,57 +1698,6 @@
 																{/if}
 															{/if}
 															<!--
-																Die Deckung, je Zug statt je Modul — anders als die geteilte
-																Vorlesung, denn welcher Zug seinen Bedarf woanders decken
-																lässt, ist eine Aussage über genau diesen Zug.
-
-																Immer nur ein Knopf. Der Regelfall braucht keinen: wer neben
-																einem anderen Studiengang plant, ist sofort mit ihm zusammen
-																— hier steht dann „getrennt planen", und das ist die
-																ausdrückliche Trennung. „decken lassen" ist der nachträgliche
-																Weg, und den bestätigt die Gegenseite in ihrer eigenen Zeile.
-															-->
-															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER'}
-																{#each row.tracks as cohortTrack, i (i)}
-																	{#if cohortTrack.instanceId}
-																		{#if cohortTrack.coveredBy}
-																			<button
-																				type="submit"
-																				formaction="?/coverage"
-																				name="release"
-																				value={cohortTrack.instanceId}
-																				class="btn btn-xs"
-																				title={cohortTrack.coveredBy.acceptedAt
-																					? 'Dieser Zug hält seine Lehre wieder selbst'
-																					: 'Die Anfrage zurückziehen'}
-																			>
-																				{cohortTrack.coveredBy.acceptedAt
-																					? 'getrennt planen'
-																					: 'Anfrage zurückziehen'}
-																			</button>
-																		{:else}
-																			<!--
-																				Ein GET-Formular statt eines Links, aus demselben
-																				Grund wie überall sonst hier: `resolve()` kennt nur
-																				den Pfad, die Auswahl steht in Query-Parametern,
-																				und ein handgeschriebener Link mit beidem ist genau
-																				das, was die Lint-Regel verhindert.
-																			-->
-																			<button
-																				type="submit"
-																				form="coverage-picker"
-																				name="deckung"
-																				value={cohortTrack.instanceId}
-																				class="btn btn-xs"
-																				title="Diesen Bedarf von einem anderen Studiengang mitdecken lassen"
-																			>
-																				decken lassen
-																			</button>
-																		{/if}
-																	{/if}
-																{/each}
-															{/if}
-															<!--
 																Der Fall, für den es bisher gar keine Anzeige gab: dasselbe
 																Modul, zweimal geplant, weil keiner vom anderen wusste. Als
 																Angebot formuliert und nicht als Fehler.
@@ -1817,15 +1766,16 @@
 												</div>
 											</td>
 											<td>
-												{#if !row.module.practicalKind}
-													<!-- Nichts zu vervielfachen: ein Modul, das nur aus einer Vorlesung
-												     besteht, hat keine Gruppen — parallele Vorlesungen meint hier
-												     niemand. -->
-													<span class="text-base-content/80 text-sm">—</span>
-												{:else}
-													<div class="flex flex-col gap-1">
-														{#each letters as letter, i (i)}
-															<!--
+												<!--
+													Eine Zeile je Zug, immer — auch für ein Modul ohne Gruppen. Vorher
+													stand hier ein „—", und die Deckung des Zuges stand in der
+													Aufteilungsspalte, je Zug ein gleichlautender Knopf ohne Namen
+													dabei: bei zwei Zügen zwei Knöpfe, und keiner sagte, welcher
+													welcher ist. Jetzt steht sie beim Zug, neben seinem Namen.
+												-->
+												<div class="flex flex-col gap-1">
+													{#each letters as letter, i (i)}
+														<!--
 																Ein gedeckter Zug hält gar keine eigene Lehre — ein anderer
 																Studiengang hält sie. Seine Gruppenzahl ist deshalb nicht
 																seine, und der Stepper ist abgeschaltet statt nur auf 0 zu
@@ -1833,13 +1783,16 @@
 																holte sich ein INSTANCE_COVERED, das der Schirm hätte
 																vermeiden können.
 															-->
-															{@const covered = !!row.tracks[i]?.coveredBy?.acceptedAt}
-															<div class="flex items-center gap-1">
-																{#if letters.length > 1}
-																	<span class="badge badge-neutral badge-sm">
-																		{cohortLabel(data.selected.programme, yearOf(row), letter)}
-																	</span>
-																{/if}
+														{@const covered = !!row.tracks[i]?.coveredBy?.acceptedAt}
+														<div class="flex flex-wrap items-center gap-1">
+															{#if letters.length > 1}
+																<span class="badge badge-neutral badge-sm">
+																	{cohortLabel(data.selected.programme, yearOf(row), letter)}
+																</span>
+															{/if}
+															<!-- Nichts zu vervielfachen bei einem Modul, das nur aus einer
+															     Vorlesung besteht — parallele Vorlesungen meint hier niemand. -->
+															{#if row.module.practicalKind}
 																<div class="join">
 																	<button
 																		type="button"
@@ -1871,22 +1824,67 @@
 																		aria-label={groupLabel(row, letters, letter, 'mehr')}>+</button
 																	>
 																</div>
-																{#if row.tracks[i]?.coveredBy}
-																	<span class="badge badge-outline badge-sm">
-																		{coverageLabel(row.tracks[i].coveredBy!)}
-																	</span>
-																{:else if row.tracks[i]?.borrowedKinds.length}
-																	<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
-																{/if}
-																{#each row.tracks[i]?.covers ?? [] as covers, c (c)}
-																	<span class="badge badge-outline badge-sm"
-																		>{coversLabel(covers)}</span
+															{/if}
+															{#if row.tracks[i]?.coveredBy}
+																<span class="badge badge-outline badge-sm">
+																	{coverageLabel(row.tracks[i].coveredBy!)}
+																</span>
+															{:else if row.tracks[i]?.borrowedKinds.length}
+																<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
+															{/if}
+															{#each row.tracks[i]?.covers ?? [] as covers, c (c)}
+																<span class="badge badge-outline badge-sm"
+																	>{coversLabel(covers)}</span
+																>
+															{/each}
+															<!--
+																	Gemeinsam oder getrennt, je Zug: welcher Zug sein Modul mit einem
+																	anderen Studiengang zusammen hält, ist eine Aussage über genau
+																	diesen Zug. Immer nur ein Knopf. Der Regelfall braucht keinen:
+																	wer neben einem anderen Studiengang plant, ist sofort mit ihm
+																	zusammen — dann steht hier „getrennt planen". „gemeinsam
+																	planen" ist der nachträgliche Weg über den Picker, und den
+																	bestätigt die Gegenseite in ihrer eigenen Zeile.
+																-->
+															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER' && row.tracks[i]?.instanceId}
+																{#if row.tracks[i].coveredBy}
+																	<button
+																		type="submit"
+																		formaction="?/coverage"
+																		name="release"
+																		value={row.tracks[i].instanceId}
+																		class="btn btn-xs"
+																		title={row.tracks[i].coveredBy.acceptedAt
+																			? 'Dieser Zug hält seine Lehre wieder selbst'
+																			: 'Die Anfrage zurückziehen'}
 																	>
-																{/each}
-															</div>
-														{/each}
-													</div>
-												{/if}
+																		{row.tracks[i].coveredBy.acceptedAt
+																			? 'getrennt planen'
+																			: 'Anfrage zurückziehen'}
+																	</button>
+																{:else}
+																	<!--
+																			Ein GET-Formular statt eines Links, aus demselben Grund wie
+																			überall sonst hier: `resolve()` kennt nur den Pfad, die
+																			Auswahl steht in Query-Parametern, und ein handgeschriebener
+																			Link mit beidem ist genau das, was die Lint-Regel verhindert.
+																			Das Formular steht außerhalb der Tabelle (`coverage-picker`).
+																		-->
+																	<button
+																		type="submit"
+																		form="coverage-picker"
+																		name="deckung"
+																		value={row.tracks[i].instanceId}
+																		class="btn btn-xs"
+																		title="Dieses Modul zusammen mit einem anderen Studiengang halten: die Veranstaltung findet einmal statt, dort"
+																	>
+																		gemeinsam planen
+																	</button>
+																{/if}
+															{/if}
+														</div>
+													{/each}
+												</div>
 											</td>
 											<td class="text-base-content/90 whitespace-nowrap">
 												{#if draft(row).offered}

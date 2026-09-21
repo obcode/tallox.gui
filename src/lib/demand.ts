@@ -89,7 +89,7 @@ export function borrowedFromLabel(
  * One side of a coverage link, as much of it as a label needs.
  *
  * The cohort year is carried even though nothing computes with it: without it the label falls back
- * to the "nobody has said" marker and reads "gedeckt durch DE?A", which looks like a fault in the
+ * to the "nobody has said" marker and reads "gemeinsam mit DE?A", which looks like a fault in the
  * badge rather than a fact about the other programme.
  */
 export type CoverageLike = {
@@ -113,7 +113,7 @@ function coverageCohort(coverage: CoverageLike): string {
 /** The badge on a cohort whose teaching another study programme holds. */
 export function coverageLabel(coverage: CoverageLike): string {
 	const who = coverageCohort(coverage);
-	return coverage.acceptedAt ? `gedeckt durch ${who}` : `Anfrage an ${who} läuft`;
+	return coverage.acceptedAt ? `gemeinsam mit ${who}, dort gehalten` : `Anfrage an ${who} läuft`;
 }
 
 /** The badge on the cohort that holds the event for somebody else. */
