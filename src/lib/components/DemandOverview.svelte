@@ -22,6 +22,7 @@
 		type ReadInstanceLike
 	} from '$lib/demand';
 	import type { DutyStatus, ModuleKind, ModuleSource } from '$lib/gql/__generated__/graphql';
+	import NoteIcon from './NoteIcon.svelte';
 
 	/**
 	 * What a semester offers, read-only — the half of this page everybody sees.
@@ -99,7 +100,19 @@
 								dort geschrieben wurde.
 							-->
 							{#if row.note !== ''}
-								<span class="text-base-content/80 block text-sm">{row.note}</span>
+								<!--
+									Als Kommentar gesetzt, nicht als zweite Zeile Fließtext: Sprechblase,
+									kursiv, gedämpft, an einer feinen Kante wie ein Zitat. Wer die Tabelle
+									überfliegt, soll sehen, dass hier jemand etwas *dazu* gesagt hat — und
+									nicht ein Feld des Moduls lesen, das er nicht kennt.
+								-->
+								<p
+									class="text-base-content/80 border-base-300 mt-1 flex items-start gap-1 border-l-2 pl-2 text-sm italic"
+								>
+									<NoteIcon class="mt-0.5 size-4 shrink-0" />
+									<span class="sr-only">Notiz:</span>
+									<span>{row.note}</span>
+								</p>
 							{/if}
 						</td>
 						<td class="align-top text-right">{row.cohorts.length}</td>

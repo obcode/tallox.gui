@@ -207,3 +207,9 @@ Wechsel des Fachsemesters (3 → 2) ist das Zahlenfeld der Zeile, kein Import.
 Eingabefeldern — siehe [[daisyui-contrast-overrides]], Nachtrag FieldText. Dazu `.input-stepper`:
 kein nativer Spinner neben den eigenen ±-Knöpfen, 14 px statt daisyUIs 11 px für `input-xs`,
 Tabellenziffern.
+
+**Nachtrag, gleicher Tag: die Notiz muss als Kommentar lesbar sein.** Als zweite Zeile
+Fließtext las sie sich wie ein Modulfeld, das man nicht kennt. Jetzt Sprechblase (`NoteIcon`,
+Heroicons, das erste Icon der App), kursiv, `/80`, an einer feinen linken Kante wie ein Zitat;
+das Eingabefeld trägt dieselbe Sprechblase, damit man beim Tippen sieht, als was es nachher
+dasteht. `sr-only` „Notiz:" davor, weil das Icon für den Screenreader unsichtbar ist.

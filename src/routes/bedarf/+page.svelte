@@ -30,6 +30,7 @@
 		trackLetters
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
+	import NoteIcon from '$lib/components/NoteIcon.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import {
 		PHASE_HINTS,
@@ -1530,18 +1531,23 @@
 													Züge auf einmal — wie das Fachsemester.
 												-->
 												{#if draft(row).offered}
-													<input
-														type="text"
-														name="note:{row.module.id}"
-														value={draft(row).note}
-														maxlength="2000"
-														placeholder="Notiz, z. B. warum vier Züge"
-														oninput={(e) => editLater(row, { note: e.currentTarget.value })}
-														onchange={() => scheduleSave()}
-														disabled={!mayPlan}
-														class="input input-xs mt-1 w-full max-w-sm"
-														aria-label="Notiz zu {moduleName(row.module)}"
-													/>
+													<!-- Das Feld trägt dieselbe Sprechblase wie der gezeigte Kommentar,
+													     damit man beim Tippen schon sieht, als was es nachher dasteht. -->
+													<label class="input input-xs mt-1 w-full max-w-sm">
+														<NoteIcon class="text-base-content/80 size-4 shrink-0" />
+														<input
+															type="text"
+															name="note:{row.module.id}"
+															value={draft(row).note}
+															maxlength="2000"
+															placeholder="Notiz, z. B. warum vier Züge"
+															oninput={(e) => editLater(row, { note: e.currentTarget.value })}
+															onchange={() => scheduleSave()}
+															disabled={!mayPlan}
+															class="italic"
+															aria-label="Notiz zu {moduleName(row.module)}"
+														/>
+													</label>
 												{/if}
 											</td>
 											<td>
