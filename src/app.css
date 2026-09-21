@@ -103,3 +103,48 @@
 .tabs .tab.tab-active {
 	color: var(--color-base-content);
 }
+
+/*
+ * Form controls take the theme's text colour, explicitly.
+ *
+ * daisyUI paints `.input`, `.select` and `.textarea` with the theme's `base-100` as background
+ * and sets no `color` at all — so the text inside them comes from the browser's stylesheet,
+ * which is `color: FieldText`, a *system* colour. Chromium resolves that to black or white by
+ * colour scheme; Firefox on Linux takes it from the GTK theme. On Linux Mint with a dark desktop
+ * theme that is a light grey, on a white field: the numbers in the demand table's steppers were
+ * "schlecht lesbar" for exactly one reporter, and invisible to every test, because the test
+ * browser's FieldText is black. A colour that depends on the reader's desktop theme is not a
+ * colour this stylesheet has chosen, so it is chosen here.
+ *
+ * `:not(:disabled)` keeps daisyUI's damped colour on a disabled field: an unlayered rule would
+ * otherwise beat the layered one, and a switched-off stepper would look switched on.
+ */
+.input:not(:disabled),
+.input input:not(:disabled),
+.select:not(:disabled),
+.textarea:not(:disabled) {
+	color: var(--color-base-content);
+}
+
+/*
+ * A stepper: a number field between a − and a + button of its own.
+ *
+ * The browser's spinner is redundant beside those buttons and, in a 3rem field, it is what the
+ * number has to make room for — Firefox draws its arrows inside the box, and the value ends up
+ * small and pushed to one side. So the spinner goes, the number gets the size of the text around
+ * it rather than daisyUI's 11px for `input-xs`, and the digits are tabular so that 2 and 3 sit
+ * where they sat before.
+ */
+.input-stepper {
+	appearance: textfield;
+	-moz-appearance: textfield;
+	padding-inline: 0.25rem;
+	font-size: 0.875rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.input-stepper::-webkit-inner-spin-button,
+.input-stepper::-webkit-outer-spin-button {
+	appearance: none;
+	margin: 0;
+}

@@ -100,6 +100,7 @@ const DemandDocument = graphql(`
 			id
 			track
 			programmeSemester
+			note
 			teachingHours
 			programme {
 				code
@@ -205,6 +206,7 @@ const DemandDocument = graphql(`
 			id
 			track
 			programmeSemester
+			note
 			teachingHours
 			module {
 				id
@@ -474,7 +476,12 @@ export const load: PageServerLoad = async ({ url }) => {
 				programme: programme === '' ? null : programme,
 				search: search === '' ? null : search,
 				duty: DUTY_VALUES.includes(duty as DutyStatus) ? (duty as DutyStatus) : null,
-				frequency: frequenciesForTerm(term)
+				// A search names the module, and a name beats the term. The case: a module that
+				// moves from the winter to the summer is still "in jedem Wintersemester" to the
+				// examination office until its regulations change — and somebody typing its name
+				// into the summer's table got an empty list and a hint about the term filter,
+				// which reads as "does not exist" to a person who knows it does.
+				frequency: search === '' ? frequenciesForTerm(term) : null
 			}
 		});
 	} catch (err) {
@@ -595,10 +602,14 @@ function entriesFrom(form: FormData): DemandEntryInput[] {
 			}
 
 			const year = String(form.get(`semester:${moduleId}`) ?? '').trim();
+			// The note travels only where the table showed a field for it. `null` is "the screen
+			// said nothing", which the backend leaves alone; the empty string is a cleared field.
+			const note = form.has(`note:${moduleId}`) ? String(form.get(`note:${moduleId}`)) : null;
 			return {
 				moduleId,
 				tracks,
-				programmeSemester: year === '' ? null : Number(year)
+				programmeSemester: year === '' ? null : Number(year),
+				note
 			};
 		});
 }

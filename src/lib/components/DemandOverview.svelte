@@ -93,6 +93,14 @@
 									<span class="badge badge-ghost badge-sm">eigene Lehrveranstaltung</span>
 								{/if}
 							</span>
+							<!--
+								Die Notiz der Planung, für die Leserin, die vier Züge eines Moduls sonst
+								für einen Fehler hielte. Sie steht bei der Zeile, nicht beim Zug, weil sie
+								dort geschrieben wurde.
+							-->
+							{#if row.note !== ''}
+								<span class="text-base-content/80 block text-sm">{row.note}</span>
+							{/if}
 						</td>
 						<td class="align-top text-right">{row.cohorts.length}</td>
 						<td class="text-base-content/90 align-top">
