@@ -65,6 +65,13 @@
 			Entscheidung je Semester und steht beim <a class="link" href={resolve('/bedarf')}>Bedarf</a>.
 			Der Import fasst die Aufteilung nie an.
 		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			<strong>Jedes Modul gehört genau einer Fachgruppe</strong> — oder noch keiner. Die Zuordnung
+			trifft die Administration hier stapelweise oder auf der Modulseite einzeln; umhängen
+			verschiebt, ein Modul ist nie in zwei Gruppen. An ihr hängt, wer die Instanzen des Moduls
+			besetzt. Die Gruppen selbst, ihre Leitung und Mitglieder stehen unter
+			<a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppen</a>.
+		</p>
 	</div>
 
 	<form

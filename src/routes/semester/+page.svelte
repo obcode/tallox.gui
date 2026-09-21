@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { hasAnyRole } from '$lib/roles';
 	import {
 		PHASE_HINTS,
@@ -31,6 +32,14 @@
 			werden muss keines, und für jedes hier gelistete lässt sich planen — auch für die in ein paar
 			Jahren. Die Liste beginnt beim <strong>Planungssemester</strong>: dem einen, das die Fakultät
 			gerade plant und das überall vorausgewählt ist.
+		</p>
+		<p class="text-base-content/80 mt-2 text-sm">
+			Geschaltet wird hier vom <strong>Dekanat</strong>: das Planungssemester, die Phase, und die
+			beiden Veröffentlichungen — der Wünsche und der Zuteilung —, die sich nicht zurücknehmen
+			lassen. Wann ein Studiengang seinen Bedarf fertig meldet und wann eine Fachgruppe ihre
+			Wunschrunde schließt, steht nicht hier, sondern beim
+			<a class="link" href={resolve('/bedarf')}>Bedarf</a> und bei der
+			<a class="link" href={resolve('/zuteilung')}>Zuteilung</a>.
 		</p>
 	</div>
 

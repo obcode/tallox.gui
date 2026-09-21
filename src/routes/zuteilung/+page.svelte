@@ -161,6 +161,13 @@
 	Wer hält eine Instanz — im Regelfall eine Person für alle ihre Teile. Getrennt wird, wo es so
 	abgesprochen ist. Die Eintragungen aus der Wunschphase stehen bei der Instanz, zu der sie gehören.
 </p>
+<p class="text-base-content/80 mt-2 max-w-prose">
+	Besetzt wird nach <strong>Fachgruppe</strong>: zuständig ist deren Leitung, daneben die
+	Studiengangsleitung des Studiengangs und das Dekanat. Welcher Fachgruppe ein Modul gehört, steht
+	im <a class="link" href={resolve('/module')}>Modulkatalog</a>. Auch Lehrende ohne Tallox-Konto
+	sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung unter
+	<a class="link" href={resolve('/semester')}>Semester und Phasen</a> veröffentlicht.
+</p>
 
 <!-- One form per bar. A GET form submits only the button that was clicked, so a bar that shared
      its form with another would send its own field and nothing else. -->

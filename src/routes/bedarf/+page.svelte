@@ -642,6 +642,14 @@
 					Praktikum können verschiedene Personen halten.
 				{/if}
 			</p>
+			<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+				Den Bedarf legt die <strong>Studiengangsleitung</strong> für ihren Studiengang fest, das
+				Dekanat für alle. Voraussetzung je Modul ist die SWS-Aufteilung aus dem
+				<a class="link" href={resolve('/module')}>Modulkatalog</a>; fehlt sie, steht hier ein
+				Vorschlag zum Bestätigen. Wer fertig ist, meldet es oben rechts — das ist eine Ansage an die
+				anderen, keine Sperre. Der ganze Ablauf steht auf der
+				<a class="link" href={resolve('/')}>Startseite</a>.
+			</p>
 		</div>
 
 		<!--

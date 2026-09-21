@@ -1,4 +1,4 @@
-import { test, expect, gotoRendered } from './fixtures';
+import { PERSONAS, test, expect, gotoRendered } from './fixtures';
 
 /**
  * The smoke test. Runs against a real stack: SvelteKit SSR → GraphQL backend → PostgreSQL.
@@ -73,5 +73,43 @@ test.describe('start page', () => {
 		const response = await request.get(health);
 		expect(response.ok(), `GET ${health} answered with ${response.status()}`).toBe(true);
 		expect(await response.json()).toMatchObject({ status: 'ok' });
+	});
+});
+
+/**
+ * The walk-through on the start page: the process as numbered steps, who does each and where.
+ *
+ * Two things are worth a test. The steps link only where the menu links — a lecturer reads
+ * that the administration admits people, and gets no link into a refusal; an administrator
+ * gets the link. And the one sentence the page may never get wrong is the confidentiality of
+ * the wishes.
+ */
+test.describe('the walk-through on the start page', () => {
+	test('tells the process in order, with the roles beside each step', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+
+		await expect(page.getByRole('heading', { name: 'Einmal einrichten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Jedes Semester' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /^Den Bedarf festlegen/ })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /^Interesse bekunden/ })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /^Die Instanzen besetzen/ })).toBeVisible();
+		await expect(page.getByText(/Bis zur Veröffentlichung sieht das niemand sonst/)).toBeVisible();
+		await expect(
+			page.getByText('Jedes Modul gehört genau einer Fachgruppe', { exact: false })
+		).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Wer macht was' })).toBeVisible();
+	});
+
+	test('links a step only where the menu would', async ({ asPersona }) => {
+		const lecturer = await asPersona(PERSONAS.eins);
+		await gotoRendered(lecturer, '/');
+		await expect(lecturer.getByRole('link', { name: 'Personen und Rollen' })).toHaveCount(0);
+		await expect(lecturer.getByText('Personen und Rollen')).toBeVisible();
+		await expect(lecturer.getByRole('link', { name: 'Bedarf', exact: true }).first()).toBeVisible();
+
+		const admin = await asPersona(PERSONAS.sechs);
+		await gotoRendered(admin, '/');
+		await expect(admin.getByRole('link', { name: 'Personen und Rollen' })).toBeVisible();
 	});
 });

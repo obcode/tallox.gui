@@ -280,6 +280,12 @@
 			festgelegt, weil das eine Absprache zwischen mehreren ist. Wenn Du dazu schon etwas sagen willst,
 			schreib es in die Notiz: „nur die Vorlesung“, „lieber Zug B“.
 		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Jede Fachgruppe führt ihre eigene Wunschrunde: die <strong>Fachgruppenleitung</strong> öffnet
+			und schließt sie, und veröffentlicht werden die Wünsche eines Semesters vom Dekanat. Welche
+			Module zuerst stehen, bestimmst Du unter
+			<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a>.
+		</p>
 	</div>
 
 	<!--
