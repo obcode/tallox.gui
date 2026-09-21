@@ -150,8 +150,9 @@ export const actions: Actions = {
 
 			// An empty row is how somebody removes one: the form keeps its inputs and the person
 			// clears the hours. Refusing it would mean the only way to shorten a split is a
-			// button that has to know which row it is.
-			if (raw === '') continue;
+			// button that has to know which row it is. A 0 means the same — it is what people
+			// type when they mean "none of this", and the backend would refuse it anyway.
+			if (raw === '' || Number(raw) === 0) continue;
 			if (!(ALL_PART_KINDS as readonly string[]).includes(kind)) {
 				return fail(400, { error: 'Unbekannte Art von Lehrveranstaltung.' });
 			}

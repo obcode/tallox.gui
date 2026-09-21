@@ -213,3 +213,12 @@ Fließtext las sie sich wie ein Modulfeld, das man nicht kennt. Jetzt Sprechblas
 Heroicons, das erste Icon der App), kursiv, `/80`, an einer feinen linken Kante wie ein Zitat;
 das Eingabefeld trägt dieselbe Sprechblase, damit man beim Tippen sieht, als was es nachher
 dasteht. `sr-only` „Notiz:" davor, weil das Icon für den Screenreader unsichtbar ist.
+
+**Nachtrag 2026-09-21, die Aufteilung in der Zeile.** Beta-Befund: „2 Vorlesung + 2 Praktikum"
+sollte „4 Vorlesung" werden, der zweite Eintrag ließ sich nicht wegnehmen — eine 0 wies das
+Backend ab („zwischen 0 und 20", was 0 ausschloss) und das Feld sprang zurück; gespeichert wurde
+„2 Vorlesung + 2 Vorlesung". Jetzt: **leer oder 0 entfernt einen Eintrag**, auf `/bedarf` wie auf
+der Modulseite dieselbe Lesart, und der Editor sagt es dazu. Das Backend weist dieselbe Art
+zweimal ab (`COMPONENTS_INVALID`, „jede Art nur einmal") — sonst bekäme jede Instanz zwei
+Vorlesungs-Teile. Merksatz: **ein Editor ohne Weg, etwas wegzunehmen, bringt Leuten bei, den
+Wert zu verbiegen.**

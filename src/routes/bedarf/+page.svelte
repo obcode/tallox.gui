@@ -1584,7 +1584,9 @@
 													Korrektur von zwei Feldern und keine Reise auf eine andere Seite —
 													und die Seite, auf der man gerade fünfzehn Häkchen gesetzt hat,
 													verlässt man dafür nicht. Eine Einheit hinzuzunehmen bleibt der
-													Modulseite vorbehalten, die der Modulname verlinkt.
+													Modulseite vorbehalten, die der Modulname verlinkt. Eine
+													wegzunehmen geht hier: leer oder 0 — und das steht dran, weil
+													es sonst niemand errät.
 												-->
 													<div class="flex flex-wrap items-center gap-1">
 														{#each effectiveComponents(row.module) as component, i (i)}
@@ -1624,6 +1626,9 @@
 														>
 															abbrechen
 														</button>
+														<span class="text-base-content/80 basis-full text-xs">
+															Leer oder 0 entfernt einen Teil. Weitere Teile auf der Modulseite.
+														</span>
 													</div>
 												{:else}
 													<!--

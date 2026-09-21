@@ -149,6 +149,15 @@ test.describe('one module', () => {
 		// The estimate is now the faculty's own statement, so the page stops marking it as one.
 		await expect(page.getByText('geschätzt')).toHaveCount(0);
 		await expect(page.getByText('Summe: 4 SWS')).toBeVisible();
+
+		// A 0 takes an entry away, the same as clearing it: the field says so.
+		const hours = page.locator('input[name="teachingHours"]');
+		await expect(hours).toHaveCount(2);
+		await hours.first().fill('4');
+		await hours.nth(1).fill('0');
+		await page.getByRole('button', { name: 'Aufteilung speichern' }).click();
+		await expect(page.getByText('Summe: 4 SWS')).toBeVisible();
+		await expect(page.locator('input[name="teachingHours"]')).toHaveCount(1);
 	});
 
 	// Cosmetic hiding is not the point — the lock is policy.MayPlanProgramme, and it applies to
