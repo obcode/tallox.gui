@@ -36,6 +36,7 @@ nicht die Zuteilung. Einziges Nicht-Erzwungenes ist als solches markiert: PBLVs 
 ## Falle aus dem Lauf
 
 Ein Text-Link auf der Startseite trägt denselben zugänglichen Namen wie der Menüeintrag
-(„Fachgruppen"). `subject-groups.spec.ts` prüft das Menü und traf im Strict Mode zwei — jetzt auf
-`getByRole('banner')` eingegrenzt. **Merksatz: ein Test über das Menü sucht in der Kopfleiste,
+(„Fachgruppen"). `subject-groups.spec.ts` und `own-subject-groups.spec.ts` prüfen das Menü und trafen im Strict
+Mode zwei — jetzt auf `getByRole('banner')` eingegrenzt. Der zweite fiel erst in der CI auf, weil
+lokal nur ein Teil der Suiten lief: **vor dem Push die ganze E2E-Suite**, sie braucht eine Minute. **Merksatz: ein Test über das Menü sucht in der Kopfleiste,
 nicht auf der Seite.**
