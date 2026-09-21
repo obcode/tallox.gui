@@ -243,7 +243,13 @@
 	type Row = (typeof rows)[number];
 
 	/** What one row of the table currently says, before it is saved. */
-	type Draft = { offered: boolean; tracks: number; groups: number[]; year: string };
+	type Draft = {
+		offered: boolean;
+		tracks: number;
+		groups: number[];
+		year: string;
+		note: string;
+	};
 
 	/**
 	 * What the server says each row is, and what somebody has changed about it since.
@@ -421,6 +427,19 @@
 	}
 
 	/**
+	 * An edit that is kept but not yet saved: the note, while it is being typed.
+	 *
+	 * A stepper click is a decision and goes off after a moment. A sentence is not finished at
+	 * its third letter, and saving it there would reload the row under the cursor — so the note
+	 * is kept on every keystroke (the badge says "noch nicht gespeichert") and saved when the
+	 * field is left, which is what `change` fires on.
+	 */
+	function editLater(row: Row, change: Partial<Draft>) {
+		edits = { ...edits, [row.module.id]: { ...draft(row), ...change } };
+		editSeq++;
+	}
+
+	/**
 	 * Saving without a button, and why it still has one.
 	 *
 	 * Every tick and every step is a decision somebody has made, and a screen that keeps them
@@ -455,7 +474,8 @@
 			offered: row.tracks.length > 0,
 			tracks: Math.max(1, row.tracks.length),
 			groups: groups.length > 0 ? groups : [defaultGroups(row)],
-			year: row.programmeSemester == null ? '' : String(row.programmeSemester)
+			year: row.programmeSemester == null ? '' : String(row.programmeSemester),
+			note: row.note
 		};
 	}
 
@@ -1503,6 +1523,26 @@
 														</span>
 													</span>
 												</label>
+												<!--
+													Die Notiz steht unter dem Namen und nur bei einer angemeldeten
+													Zeile: sie erklärt ein Angebot, und eine Zeile ohne Häkchen hat
+													keins. Gesendet wird sie als Feld der Zeile, also für alle
+													Züge auf einmal — wie das Fachsemester.
+												-->
+												{#if draft(row).offered}
+													<input
+														type="text"
+														name="note:{row.module.id}"
+														value={draft(row).note}
+														maxlength="2000"
+														placeholder="Notiz, z. B. warum vier Züge"
+														oninput={(e) => editLater(row, { note: e.currentTarget.value })}
+														onchange={() => scheduleSave()}
+														disabled={!mayPlan}
+														class="input input-xs mt-1 w-full max-w-sm"
+														aria-label="Notiz zu {moduleName(row.module)}"
+													/>
+												{/if}
 											</td>
 											<td>
 												<input
@@ -1513,7 +1553,7 @@
 													value={draft(row).year}
 													oninput={(e) => edit(row, { year: e.currentTarget.value })}
 													disabled={!mayPlan}
-													class="input input-bordered input-xs w-14"
+													class="input input-xs input-stepper w-14 text-center"
 													aria-label="Fachsemester von {moduleName(row.module)}"
 												/>
 											</td>
@@ -1745,7 +1785,7 @@
 														value={draft(row).tracks}
 														oninput={(e) => setTracks(row, numberOf(e.currentTarget))}
 														disabled={!mayPlan}
-														class="input input-bordered input-xs join-item w-12 text-center"
+														class="input input-xs input-stepper join-item w-12 text-center"
 														aria-label="Züge von {moduleName(row.module)}"
 													/>
 													<button
@@ -1798,7 +1838,7 @@
 																		value={draft(row).groups[i]}
 																		oninput={(e) => setGroups(row, i, numberOf(e.currentTarget))}
 																		disabled={!mayPlan || covered}
-																		class="input input-bordered input-xs join-item w-12 text-center"
+																		class="input input-xs input-stepper join-item w-12 text-center"
 																		aria-label={groupLabel(row, letters, letter)}
 																		title={covered
 																			? 'Getrennt planen, um wieder eigene Teile zu setzen'

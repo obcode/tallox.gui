@@ -242,6 +242,7 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	id: string;
 	track: string;
 	programmeSemester?: number | null;
+	note?: string | null;
 	teachingHours: number;
 	module: M;
 	parts: readonly PartLike[];
@@ -298,6 +299,16 @@ export type DemandRow<M extends ModuleLike = ModuleLike> = {
 	module: M;
 	/** The cohort year: what the instances say, else what the regulations say. */
 	programmeSemester: number | null;
+	/**
+	 * The planner's sentence beside the row — why four cohorts, why this semester.
+	 *
+	 * One per row, read off the first cohort: the table writes the same note to every cohort of
+	 * a module, so they agree unless somebody wrote them apart through the API, and then the
+	 * first is as good a choice as any. A proposal carries last year's note along with last
+	 * year's cohorts, for the same reason a copy does — a reason that is a year out of date and
+	 * visible beats one that went missing.
+	 */
+	note: string;
 	tracks: RowTrack[];
 	/** True while the row's cohorts are real instances rather than a proposal. */
 	planned: boolean;
@@ -387,6 +398,7 @@ function rowFor<M extends ModuleLike>(
 		return {
 			module,
 			programmeSemester: own[0].programmeSemester ?? module.programmeSemester ?? null,
+			note: own[0].note ?? '',
 			tracks: own.map((instance) => ({
 				track: instance.track,
 				groups: groupsOf(instance.parts, module.practicalKind),
@@ -407,6 +419,7 @@ function rowFor<M extends ModuleLike>(
 	return {
 		module,
 		programmeSemester: before[0]?.programmeSemester ?? module.programmeSemester ?? null,
+		note: before[0]?.note ?? '',
 		tracks: before.map((instance) => ({
 			track: instance.track,
 			groups: groupsOf(instance.parts, module.practicalKind),
@@ -683,6 +696,7 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	id: string;
 	track: string;
 	programmeSemester?: number | null;
+	note?: string | null;
 	teachingHours: number;
 	module: M;
 	programme: { code: string; title?: string | null };
@@ -717,6 +731,8 @@ export type InstanceRow<M extends RowModule = ModuleLike> = {
 	module: M;
 	programme: { code: string; title?: string | null };
 	programmeSemester: number | null;
+	/** The sentence beside the row, empty for none. */
+	note: string;
 	track: string;
 	/** `IF3A`, assembled from the three facts it is made of. */
 	label: string;
@@ -793,6 +809,7 @@ export function instanceRows<M extends RowModule>(
 				module: instance.module,
 				programme: instance.programme,
 				programmeSemester,
+				note: instance.note ?? '',
 				track: instance.track,
 				label: cohortLabel(instance.programme.code, programmeSemester, instance.track),
 				parts: groupParts(instance.parts),
@@ -838,6 +855,8 @@ export type ModuleRow<M extends RowModule = ModuleLike> = {
 	module: M;
 	programme: { code: string; title?: string | null };
 	programmeSemester: number | null;
+	/** The sentence beside the row: the first cohort's, which is every cohort's when the table wrote it. */
+	note: string;
 	cohorts: InstanceRow<M>[];
 	/** What all the cohorts together cost the faculty. A shared lecture is counted once. */
 	teachingHours: number;
@@ -868,6 +887,7 @@ export function moduleRows<M extends RowModule>(
 			module: row.module,
 			programme: row.programme,
 			programmeSemester: row.programmeSemester,
+			note: row.note,
 			cohorts: [row],
 			teachingHours: row.teachingHours
 		});

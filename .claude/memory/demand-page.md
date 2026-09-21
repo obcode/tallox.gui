@@ -179,3 +179,31 @@ hängt die Suite am letzten Lauf.
 Vorsemester vorbelegt und angehakt; `check()` ist dann ein No-op, und der Test wartete auf einen
 Toast, den nie jemand ausgelöst hat. Irgendeine echte Änderung an der Zeile — der Gruppen-Stepper —
 übernimmt den Vorschlag mit.
+
+## Erste Rückmeldung aus der Fakultät (2026-09-21)
+
+Drei Punkte einer Studiengangsleitung, alle drei an dieser Seite.
+
+**Die Notiz an der Zeile.** `CourseInstance.note`, geschrieben wie das Fachsemester: ein Feld je
+Modulzeile, das Backend schreibt es auf jeden Zug. Der Anlass: im Sommersemester einer
+SPO-Umstellung läuft ein Modul für IF4 (alt) und IF2 (neu) viermal, und ohne Satz daneben liest
+sich das als Fehler. Drei Entscheidungen in der GUI:
+
+- **Getippt wird ohne Speichern, gespeichert beim Verlassen.** `editLater` hält die Änderung in
+  `edits` (die Marke sagt „noch nicht gespeichert"), `onchange` ruft `scheduleSave`. Ein Satz ist
+  beim dritten Buchstaben nicht fertig, und der Stepper-Rhythmus von 600 ms hätte die Zeile unter
+  dem Cursor neu geladen.
+- **Nur bei angehakter Zeile.** Eine Notiz erklärt ein Angebot; ohne Häkchen gibt es keins, und
+  das Feld fehlt dann im Formular — `null` heißt für das Backend „nichts gesagt".
+- **In der Lesesicht unter dem Modulnamen**, einmal je Zeile, nicht je Zug.
+
+**Die Suche schlägt den Turnus.** Ein Modul, das vom Winter in den Sommer wechselt, heißt beim
+Prüfungsamt bis zur SPO-Änderung „in jedem Wintersemester" und war in der Sommertabelle unsichtbar
+— wer den Namen tippte, bekam eine leere Liste. Bei gesetztem `q` fällt der Turnus-Filter jetzt
+weg; der Schalter „auch Module, die nur im …" bleibt für die ungezielte Suche. Ein SPO-bedingter
+Wechsel des Fachsemesters (3 → 2) ist das Zahlenfeld der Zeile, kein Import.
+
+**Die Stepper-Ziffern.** Kein Fehler dieser Seite, sondern ein fehlender `color` auf allen
+Eingabefeldern — siehe [[daisyui-contrast-overrides]], Nachtrag FieldText. Dazu `.input-stepper`:
+kein nativer Spinner neben den eigenen ±-Knöpfen, 14 px statt daisyUIs 11 px für `input-xs`,
+Tabellenziffern.

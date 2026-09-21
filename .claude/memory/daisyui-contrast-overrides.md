@@ -55,3 +55,15 @@ besucht** — eine neue Seite mit einer neuen Komponentenkombination braucht ein
 
 Siehe auch [[theme-cookie]] (die Themeliste und warum sie kuratiert ist) und
 [[save-on-toggle]].
+
+**Nachtrag 2026-09-21, FieldText:** daisyUI setzt auf `.input`, `.select` und `.textarea` den
+Hintergrund (`base-100`), aber **keine Schriftfarbe**. Die kommt dann aus dem UA-Stylesheet:
+`color: FieldText`, eine _Systemfarbe_. Chromium löst sie nach Farbschema auf, Firefox unter Linux
+aus dem GTK-Thema — und auf Mint mit dunklem Desktop ist das ein helles Grau auf weißem Feld. Die
+Stepper der Bedarfstabelle waren für genau eine Person „schlecht lesbar" und für jeden Test
+unsichtbar, weil FieldText im Testbrowser schwarz ist. `app.css` setzt die Farbe jetzt explizit,
+mit `:not(:disabled)`, damit die gedämpfte Farbe eines abgeschalteten Feldes stehen bleibt (eine
+ungelayerte Regel schlägt daisyUIs gelayerte). `contrast.spec.ts` misst die Stepper-Ziffer gegen
+ihr Feld über alle zwölf Themes — das kann den Ausgangsfehler nicht nachstellen, hält aber die
+Regel fest und fängt einen falschen Override auf einem dunklen Theme. **Verallgemeinerung: eine
+Farbe, die vom Desktop-Thema der Leserin abhängt, hat dieses Stylesheet nicht gewählt.**

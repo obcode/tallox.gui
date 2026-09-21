@@ -109,6 +109,52 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toHaveValue('3');
 	});
 
+	// The sentence beside the row, for the reader who would otherwise take four cohorts of one
+	// module for a mistake. Kept while it is typed, saved when the field is left — a sentence is
+	// not finished at its third letter — and shown where the demand is read, not only where it is
+	// planned.
+	test('keeps a sentence beside the row, and shows it where the demand is read', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const note = page.getByRole('textbox', { name: 'Notiz zu E2E Modul mit Aufteilung' });
+		await note.fill('E2E: IF4 (alt) und IF2 (neu)');
+		await expect(page.getByText('noch nicht gespeichert')).toBeVisible();
+		await note.press('Tab');
+		await expect(page.getByText('Gespeichert', { exact: true })).toBeVisible({ timeout: 15_000 });
+
+		await gotoRendered(page, DEMAND_URL);
+		await expect(
+			page.getByRole('textbox', { name: 'Notiz zu E2E Modul mit Aufteilung' })
+		).toHaveValue('E2E: IF4 (alt) und IF2 (neu)');
+
+		// Both cohorts carry it, and the overview says it once, beside the module.
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+		await expect(page.getByText('E2E: IF4 (alt) und IF2 (neu)')).toBeVisible();
+	});
+
+	// A name beats the term. The seed's unsplit module runs only in the summer, and the demand
+	// semester is a winter: without a search it is hidden, and with its name typed it is there —
+	// without the switch that widens the term, which somebody who knows the module's name has
+	// no reason to look for.
+	test('finds a module of the other term by its name, without widening the term', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `${DEMAND_URL}&q=ohne+Aufteilung`);
+
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toBeVisible();
+		await expect(page.getByRole('checkbox', { name: /^auch Module/ })).not.toBeChecked();
+
+		await gotoRendered(page, DEMAND_URL);
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toHaveCount(0);
+	});
+
 	// One lecture for both cohorts: it happens once and its hours count once. Never the default —
 	// every cohort holds its own until somebody says otherwise — so the saying-so has to be here,
 	// and so does the way back.

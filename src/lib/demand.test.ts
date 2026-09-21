@@ -844,3 +844,46 @@ describe('cohortCount', () => {
 		expect(cohortCount(rows)).toBe(3);
 	});
 });
+
+describe('the note beside the row', () => {
+	// One note per row, read off the first cohort: the table writes the same sentence to every
+	// cohort of a module, so they agree unless somebody wrote them apart through the API.
+	it('is read off the first cohort', () => {
+		const rows = demandRows(
+			[module('m')],
+			[
+				instance('m', 'A', 1, { note: 'IF4 (alt) und IF2 (neu)' }),
+				instance('m', 'B', 1, { note: '' })
+			],
+			[],
+			'2026-WS'
+		);
+		expect(rows[0].note).toBe('IF4 (alt) und IF2 (neu)');
+	});
+
+	// A proposal carries last year's note with last year's cohorts, as a copy does: a reason that
+	// is a year out of date and visible beats one that went missing.
+	it('is proposed along with the previous semester', () => {
+		const rows = demandRows(
+			[module('m')],
+			[],
+			[instance('m', '', 1, { note: 'einmalig doppelt' })],
+			'2026-WS'
+		);
+		expect(rows[0].note).toBe('einmalig doppelt');
+		expect(demandRows([module('m')], [], [], '2026-WS')[0].note).toBe('');
+	});
+
+	it('stands beside the module row of the overview', () => {
+		const rows = moduleRows([
+			readInstance('m', 'A', 1, { note: 'IF4 (alt) und IF2 (neu)' }),
+			readInstance('m', 'B', 1, { note: 'IF4 (alt) und IF2 (neu)' })
+		]);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].note).toBe('IF4 (alt) und IF2 (neu)');
+		expect(rows[0].cohorts.map((c) => c.note)).toEqual([
+			'IF4 (alt) und IF2 (neu)',
+			'IF4 (alt) und IF2 (neu)'
+		]);
+	});
+});
