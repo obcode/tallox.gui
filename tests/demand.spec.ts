@@ -748,7 +748,7 @@ test.describe('coverage across study programmes', () => {
 		});
 
 		const held = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await expect(held.getByText(/gedeckt durch/)).toBeVisible();
+		await expect(held.getByText(/gemeinsam mit E2H1, dort gehalten/)).toBeVisible();
 		// Its group count is not its own to set any more.
 		await expect(held.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeDisabled();
 	});
@@ -762,7 +762,7 @@ test.describe('coverage across study programmes', () => {
 		await page.getByRole('button', { name: 'getrennt planen' }).first().click();
 
 		const freed = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await expect(freed.getByText(/gedeckt durch/)).toHaveCount(0);
+		await expect(freed.getByText(/gemeinsam mit E2H1/)).toHaveCount(0);
 		await expect(freed.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeEnabled();
 		// And the pair is now visibly a duplicate, which is the badge that makes a coupling
 		// findable at all. Short in this table — the long sentence wrapped to five lines beside a
@@ -770,5 +770,30 @@ test.describe('coverage across study programmes', () => {
 		const duplicate = freed.getByText(/^auch: /);
 		await expect(duplicate).toBeVisible();
 		await expect(duplicate).toHaveAttribute('title', /geplant \(getrennt\)/);
+	});
+
+	// The way back together, after the fact: a button beside the cohort — not one per cohort in
+	// the split column, where two of them read the same and named nobody — opens the picker for
+	// exactly that cohort, and the request stands beside it until the other side answers.
+	test('asks to plan a cohort together again, from the cohort', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await row.getByRole('button', { name: 'gemeinsam planen' }).first().click();
+
+		await expect(
+			page.getByRole('heading', { name: /gemeinsam mit einem anderen Studiengang planen/ })
+		).toBeVisible();
+		await page.getByRole('button', { name: 'anfragen' }).click();
+
+		const asked = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(asked.getByText('Anfrage an E2H1 läuft')).toBeVisible();
+
+		// And withdrawn again, so the state this group leaves behind is the separate one.
+		await asked.getByRole('button', { name: 'Anfrage zurückziehen' }).click();
+		const withdrawn = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await expect(withdrawn.getByText('Anfrage an E2H1 läuft')).toHaveCount(0);
+		await expect(withdrawn.getByRole('button', { name: 'gemeinsam planen' }).first()).toBeVisible();
 	});
 });

@@ -222,3 +222,13 @@ der Modulseite dieselbe Lesart, und der Editor sagt es dazu. Das Backend weist d
 zweimal ab (`COMPONENTS_INVALID`, „jede Art nur einmal") — sonst bekäme jede Instanz zwei
 Vorlesungs-Teile. Merksatz: **ein Editor ohne Weg, etwas wegzunehmen, bringt Leuten bei, den
 Wert zu verbiegen.**
+
+**Nachtrag 2026-09-21, die Deckung steht beim Zug.** Beta-Befund: „decken lassen" war als Wort
+seltsam und stand in der Aufteilungsspalte **je Zug ein gleichlautender Knopf** — bei zwei Zügen
+zwei, ohne Namen dabei. Jetzt hat die Zug-Spalte immer eine Zeile je Zug (auch für ein Modul ohne
+Gruppen, wo vorher ein „—" stand), und dort steht neben Name und Stepper genau ein Knopf:
+**„gemeinsam planen"** (öffnet den Picker für diesen Zug) bzw. **„getrennt planen"** oder „Anfrage
+zurückziehen". Das Label auf dem gehaltenen Zug heißt „gemeinsam mit E2H1, dort gehalten" statt
+„gedeckt durch". Das Wort „decken" kommt in der Oberfläche nicht mehr vor; im Code bleibt
+`coverage`/`deckung` als Name des Parameters. Der Picker-Weg (anfragen, zurückziehen) hat seit
+heute einen E2E-Test.
