@@ -227,6 +227,17 @@ test.describe('the demand across all themes', () => {
 			await gotoRendered(page, `${view}&bearbeiten=1`);
 			await expectNoContrastViolations(page, theme.value);
 
+			// The steppers' digits, measured against the field they sit in. daisyUI sets no text
+			// colour on a field at all, so the browser's system colour used to decide — black in
+			// this test browser, a light grey in Firefox on a dark Linux desktop, where the numbers
+			// were reported as unreadable. app.css states the colour now; this pins that every
+			// theme keeps it above 4.5:1, which a wrong override on a dark theme would break.
+			const stepper = 'input[name^="tracks:"]:not(:disabled) >> nth=0';
+			expect(
+				await contrastRatio(page, stepper),
+				`${theme.value}: the stepper's digits against its field`
+			).toBeGreaterThanOrEqual(4.5);
+
 			await signedIn.close();
 		});
 	}
