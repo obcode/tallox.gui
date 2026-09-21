@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { CATALOGUE, DEMAND, SEMESTERS, demandResetSql } from './seed';
@@ -41,6 +41,14 @@ const COVERAGE = {
 /** A SQL string literal. The fixture codes are ours, but building SQL by hand deserves the habit. */
 function quoted(value: string): string {
 	return `'${value.replaceAll("'", "''")}'`;
+}
+
+/**
+ * Opens the row's menu — the popover with what a planned row seldom needs: the split, one
+ * lecture for all cohorts, holding a cohort together with another programme.
+ */
+async function openRowMenu(row: Locator): Promise<void> {
+	await row.getByRole('button', { name: /^Weitere Einstellungen für/ }).click();
 }
 
 test.describe('the demand table', () => {
@@ -103,8 +111,9 @@ test.describe('the demand table', () => {
 
 		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
 		// E2E1A and E2E1B, and the first one was renamed rather than replaced.
-		await expect(page.getByText('E2E1A')).toBeVisible();
-		await expect(page.getByText('E2E1B')).toBeVisible();
+		// Visible only: the row's menu names the cohorts too, and it is closed.
+		await expect(page.getByText('E2E1A').filter({ visible: true })).toBeVisible();
+		await expect(page.getByText('E2E1B').filter({ visible: true })).toBeVisible();
 		await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toHaveValue('2');
 		await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toHaveValue('3');
 	});
@@ -158,13 +167,19 @@ test.describe('the demand table', () => {
 	// One lecture for both cohorts: it happens once and its hours count once. Never the default —
 	// every cohort holds its own until somebody says otherwise — so the saying-so has to be here,
 	// and so does the way back.
-	test('holds one lecture for both cohorts, and undoes it', async ({ asPersona }) => {
+	test('holds one lecture for both cohorts, and undoes it', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(row.getByText('14 SWS')).toBeVisible();
 
+		// Behind the row's menu, not in the row: the table was full of buttons almost no row
+		// ever needs. The menu is a popover — checked for accessibility while it is open, because
+		// the regular sweep only ever sees it closed.
+		await openRowMenu(row);
+		await expect(page.getByRole('heading', { name: 'Vorlesung', exact: true })).toBeVisible();
+		await checkA11y(page);
 		await page.getByRole('button', { name: 'Vorlesung zusammenlegen' }).click();
 
 		// Six hours instead of seven per cohort's worth: the lecture is held once now.
@@ -172,6 +187,7 @@ test.describe('the demand table', () => {
 		const merged = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(merged.getByText('12 SWS')).toBeVisible();
 
+		await openRowMenu(merged);
 		await page.getByRole('button', { name: 'Vorlesung trennen' }).click();
 		await expect(page.getByText('Vorlesung geteilt')).toHaveCount(0);
 	});
@@ -226,8 +242,12 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
+		// Confirmed by the test before, so "ändern" has left the row for its menu: the trio
+		// "geschätzt / bestätigen / ändern" stays inline only while there is still something to do.
 		const row = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
-		await row.getByRole('button', { name: 'ändern', exact: true }).click();
+		await expect(row.getByRole('button', { name: 'ändern', exact: true })).toHaveCount(0);
+		await openRowMenu(row);
+		await page.getByRole('button', { name: 'Aufteilung ändern' }).click();
 		await expect(page.getByText('Leer oder 0 entfernt einen Teil.')).toBeVisible();
 		await page.getByRole('textbox', { name: /SWS des 1\. Teils/ }).fill('4');
 		await page.getByRole('textbox', { name: /SWS des 2\. Teils/ }).fill('0');
@@ -481,6 +501,29 @@ test.describe('the demand table', () => {
 		await expect(row).toBeVisible();
 		await expect(row.getByRole('spinbutton', { name: /^Fachsemester von/ })).toHaveValue('');
 		await expect(page.getByRole('heading', { name: /Ohne Fachsemester/ })).toBeVisible();
+	});
+
+	// Four blocks under each other, and the module name took half the width in one and a third
+	// in the next: every block measured its own columns. Fixed shares now, as in the planning
+	// table — the "Teile" column starts at the same x in every block.
+	test('the overview lines its blocks up on the same columns', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+
+		const heads = page.getByRole('columnheader', { name: 'Teile' });
+		expect(
+			await heads.count(),
+			'the tests before leave more than one cohort-year block'
+		).toBeGreaterThan(1);
+		const first = await heads.first().boundingBox();
+		for (let i = 1; i < (await heads.count()); i++) {
+			expect(Math.round((await heads.nth(i).boundingBox())?.x ?? 0)).toBe(
+				Math.round(first?.x ?? 0)
+			);
+		}
 	});
 
 	// The filters that switch on the click rather than on a second button. They are submit
@@ -759,6 +802,7 @@ test.describe('coverage across study programmes', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
+		await openRowMenu(page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first());
 		await page.getByRole('button', { name: 'getrennt planen' }).first().click();
 
 		const freed = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
@@ -780,6 +824,7 @@ test.describe('coverage across study programmes', () => {
 		await gotoRendered(page, DEMAND_URL);
 
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+		await openRowMenu(row);
 		await row.getByRole('button', { name: 'gemeinsam planen' }).first().click();
 
 		await expect(
@@ -791,9 +836,11 @@ test.describe('coverage across study programmes', () => {
 		await expect(asked.getByText('Anfrage an E2H1 läuft')).toBeVisible();
 
 		// And withdrawn again, so the state this group leaves behind is the separate one.
+		await openRowMenu(asked);
 		await asked.getByRole('button', { name: 'Anfrage zurückziehen' }).click();
 		const withdrawn = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		await expect(withdrawn.getByText('Anfrage an E2H1 läuft')).toHaveCount(0);
+		await openRowMenu(withdrawn);
 		await expect(withdrawn.getByRole('button', { name: 'gemeinsam planen' }).first()).toBeVisible();
 	});
 });

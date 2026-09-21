@@ -64,13 +64,25 @@
 
 {#snippet table(list: ModuleRow<ModuleShape>[], code: string)}
 	<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-		<table class="table table-sm w-full min-w-[720px]">
+		<!--
+			`table-fixed` mit festen Spaltenanteilen, wie in der Planungstabelle: sonst misst der
+			Browser jeden Fachsemester-Block nach seinem Inhalt, und der Modulname nimmt in einem
+			Block die halbe Breite und im nächsten ein Drittel — vier Tabellen untereinander, keine
+			zwei mit derselben Spalte an derselben Stelle.
+		-->
+		<table class="table table-fixed table-sm w-full min-w-[720px]">
+			<colgroup>
+				<col style="width: 38%" />
+				<col style="width: 8%" />
+				<col style="width: 42%" />
+				<col style="width: 12%" />
+			</colgroup>
 			<thead>
 				<tr>
 					<th>Modul</th>
-					<th class="w-16 text-right">Züge</th>
+					<th class="text-right">Züge</th>
 					<th>Teile</th>
-					<th class="w-24 text-right">SWS</th>
+					<th class="text-right">SWS</th>
 				</tr>
 			</thead>
 			<tbody>

@@ -232,3 +232,24 @@ zurückziehen". Das Label auf dem gehaltenen Zug heißt „gemeinsam mit E2H1, d
 „gedeckt durch". Das Wort „decken" kommt in der Oberfläche nicht mehr vor; im Code bleibt
 `coverage`/`deckung` als Name des Parameters. Der Picker-Weg (anfragen, zurückziehen) hat seit
 heute einen E2E-Test.
+
+**Nachtrag 2026-09-21, das Zeilenmenü.** Beta-Befund: die Bearbeitungszeile war voll — „ändern",
+„Vorlesung zusammenlegen", „gemeinsam planen" je Zug. Jetzt ein **„⋯"-Knopf je angemeldeter
+Zeile**, dahinter ein natives **Popover** (`popovertarget`, top layer): Aufteilung ändern, Vorlesung
+für alle Züge, je Zug gemeinsam/getrennt mit anderen Studiengängen. **Solange die Aufteilung
+geschätzt ist, bleiben „geschätzt / bestätigen / ändern" in der Zeile** — die Leute sollen sehen,
+dass noch etwas zu tun ist. Warum Popover und kein daisyUI-Dropdown: die Tabelle liegt in
+`overflow-x-auto`, ein Dropdown darin wird abgeschnitten. Drei Fallen aus dem Lauf:
+
+1. **Das Popover überlebt das Neu-Rendern.** Nach einem Submit aus dem Menü blieb es offen, und
+   der nächste „⋯"-Klick (ein Toggle) schloss es. `closeRowMenus()` im `enhance`-Start.
+2. **Was im Menü steht, findet `getByText` in der Zeile doppelt** — auch geschlossen. Deshalb
+   wiederholt das Menü nichts aus der Zeile (keine Aufteilung, kein Status-Abzeichen), und der
+   Test auf die Zug-Labels filtert `{ visible: true }`. Merksatz: **ein verstecktes Menü in der
+   Zeile darf keinen Text der Zeile wiederholen, sonst bricht jeder Strict-Mode-Test.**
+3. `openRowMenu(row)` in `demand.spec.ts` ist der eine Weg hinein; a11y wird einmal bei offenem
+   Menü geprüft, weil der Sweep es sonst nie offen sieht.
+
+Und die **Lesesicht** hat jetzt `table-fixed` mit Spaltenanteilen wie die Planungstabelle: vorher
+maß jeder Fachsemester-Block seine Spalten selbst, und der Modulname nahm mal die Hälfte, mal ein
+Drittel. Test: die „Teile"-Spalte beginnt in jedem Block am selben x.
