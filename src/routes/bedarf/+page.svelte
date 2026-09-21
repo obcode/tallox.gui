@@ -30,6 +30,7 @@
 		trackLetters
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
+	import GearIcon from '$lib/components/GearIcon.svelte';
 	import NoteIcon from '$lib/components/NoteIcon.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import {
@@ -1712,14 +1713,16 @@
 																gehören weiter zum Planungsformular.
 															-->
 															{#if mayPlan && row.module.plannable && (row.planned || !row.module.splitIsEstimated)}
+																<!-- Ein Zahnrad und ein richtiger Knopf: drei Punkte in Ghost-Optik
+															     waren zu unscheinbar für das, was dahintersteckt. -->
 																<button
 																	type="button"
-																	class="btn btn-ghost btn-xs"
+																	class="btn btn-xs"
 																	popovertarget="row-menu-{row.module.id}"
 																	aria-label="Weitere Einstellungen für {moduleName(row.module)}"
 																	title="Weitere Einstellungen: Aufteilung, Vorlesung für alle Züge, gemeinsam mit anderen Studiengängen"
 																>
-																	⋯
+																	<GearIcon class="size-4" />
 																</button>
 																<div
 																	id="row-menu-{row.module.id}"
