@@ -917,6 +917,13 @@ export const actions: Actions = {
 		const components: { kind: InstancePartKind; teachingHours: number }[] = [];
 		for (let i = 0; i < kinds.length; i++) {
 			const kind = kinds[i];
+			const raw = (hours[i] ?? '').replace(',', '.').trim();
+
+			// An empty field, or a 0, is how somebody removes an entry — the same reading the
+			// module page takes. This editor has no button for it, and a beta tester who typed a
+			// 0 got a refusal from the backend and a field that sprang back; "2 Vorlesung + 2
+			// Vorlesung" was the best they could do from there.
+			if (raw === '' || Number(raw) === 0) continue;
 			if (!(ALL_PART_KINDS as readonly string[]).includes(kind)) {
 				return fail(400, {
 					error: 'Unbekannte Art von Lehrveranstaltung.',
@@ -924,15 +931,17 @@ export const actions: Actions = {
 					generic: false
 				});
 			}
-			components.push({
-				kind: kind as InstancePartKind,
-				teachingHours: Number((hours[i] ?? '').replace(',', '.'))
-			});
+			const teachingHours = Number(raw);
+			if (!Number.isFinite(teachingHours)) {
+				return fail(400, { error: `„${hours[i]}“ ist keine Zahl.`, code: '', generic: false });
+			}
+			components.push({ kind: kind as InstancePartKind, teachingHours });
 		}
 
 		if (components.length === 0) {
 			return fail(400, {
-				error: 'Für dieses Modul gibt es nichts zu bestätigen.',
+				error:
+					'Eine Aufteilung braucht mindestens einen Teil. Zum Verwerfen der ganzen Aufteilung die Modulseite benutzen.',
 				code: '',
 				generic: false
 			});

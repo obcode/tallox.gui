@@ -219,6 +219,24 @@ test.describe('the demand table', () => {
 		await expect(corrected.getByText('geschätzt')).toHaveCount(0);
 	});
 
+	// Taking an entry away from the row: a 0 is how people say "none of this", and a beta tester
+	// who typed one got a refusal and a field that sprang back — and saved "Vorlesung 2 +
+	// Vorlesung 2" instead. The row says how an entry goes now, and a 0 does it.
+	test('removes a part of the split with a 0, from the row', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		const row = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
+		await row.getByRole('button', { name: 'ändern', exact: true }).click();
+		await expect(page.getByText('Leer oder 0 entfernt einen Teil.')).toBeVisible();
+		await page.getByRole('textbox', { name: /SWS des 1\. Teils/ }).fill('4');
+		await page.getByRole('textbox', { name: /SWS des 2\. Teils/ }).fill('0');
+		await page.getByRole('button', { name: 'speichern', exact: true }).click();
+
+		const shortened = page.getByRole('row', { name: /E2E Modul zum Ändern/ }).first();
+		await expect(shortened.getByText('Vorlesung 4 SWS')).toBeVisible();
+	});
+
 	// A tick taken away is a statement, and from the wish phase onwards somebody's entry may be
 	// behind it — so it is shown before it is acted on.
 	test('asks before it withdraws anything', async ({ asPersona }) => {

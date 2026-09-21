@@ -290,7 +290,7 @@
 							type="text"
 							inputmode="decimal"
 							bind:value={row.hours}
-							placeholder="leer = entfernen"
+							placeholder="leer oder 0 = entfernen"
 							class="input input-bordered input-sm w-32"
 						/>
 					</label>
