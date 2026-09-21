@@ -469,6 +469,13 @@
 		saveTimer = setTimeout(() => formEl?.requestSubmit(), 600);
 	}
 
+	/** Closes every open row menu. Popovers are browser state, not component state. */
+	function closeRowMenus() {
+		for (const menu of document.querySelectorAll<HTMLElement>('[popover]')) {
+			if (menu.matches(':popover-open')) menu.hidePopover();
+		}
+	}
+
 	function draftOf(row: Row): Draft {
 		const groups = row.tracks.map((t) => t.groups);
 		return {
@@ -1401,6 +1408,10 @@
 				use:enhance={() => {
 					const seq = editSeq;
 					saving = true;
+					// Ein Zeilenmenü, aus dem heraus abgeschickt wurde, schließt. Ohne das bleibt das
+					// Popover über dem neu geladenen Tisch stehen, und der nächste Klick auf „⋯"
+					// schließt es, statt es zu öffnen — der Umschalter kennt nur die eine Richtung.
+					closeRowMenus();
 					return async ({ result, update }) => {
 						const preview =
 							result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
@@ -1654,7 +1665,10 @@
 																	</button>
 																{/if}
 															{/if}
-															{#if mayPlan && row.module.plannable}
+															{#if mayPlan && row.module.plannable && row.module.splitIsEstimated}
+																<!-- Solange es eine Schätzung ist, steht das Ändern hier neben
+															     dem Bestätigen: die Leute sollen sehen, dass noch etwas zu
+															     tun ist. Bestätigt wandert es ins Menü der Zeile. -->
 																<button
 																	type="button"
 																	class="btn btn-xs"
@@ -1662,40 +1676,6 @@
 																>
 																	ändern
 																</button>
-															{/if}
-															<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
-														     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
-														     Knopf, weil ein Sabbatical die Entscheidung revidiert.
-
-														     Für einen Platzhalter gar nicht: drei FWPs sind drei
-														     verschiedene Fächer, keine drei Kohorten desselben — da gibt
-														     es keine gemeinsame Vorlesung zusammenzulegen. -->
-															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER'}
-																{@const sharing = sharingState(row)}
-																{#if sharing.sharedPartId}
-																	<button
-																		type="submit"
-																		formaction="?/sharePart"
-																		name="partId"
-																		value={sharing.sharedPartId}
-																		class="btn btn-xs"
-																		title="Jeder Zug hält seine Vorlesung wieder selbst"
-																	>
-																		Vorlesung trennen
-																	</button>
-																	<input type="hidden" name="split" value="1" />
-																{:else if sharing.mergeablePartId}
-																	<button
-																		type="submit"
-																		formaction="?/sharePart"
-																		name="partId"
-																		value={sharing.mergeablePartId}
-																		class="btn btn-xs"
-																		title="Eine Vorlesung für alle Züge — sie findet einmal statt und zählt einmal"
-																	>
-																		Vorlesung zusammenlegen
-																	</button>
-																{/if}
 															{/if}
 															<!--
 																Der Fall, für den es bisher gar keine Anzeige gab: dasselbe
@@ -1716,6 +1696,192 @@
 																>
 																	{alsoPlannedShort(separatelyPlannedIn(row))}
 																</span>
+															{/if}
+															<!--
+																Das Menü der Zeile: alles, was an einer angemeldeten Zeile
+																selten gebraucht wird — Aufteilung ändern, eine Vorlesung für
+																alle Züge, einen Zug mit einem anderen Studiengang zusammen
+																halten. In der Zeile selbst standen diese Knöpfe zu dritt und
+																viert, und die Tabelle wurde voll, obwohl fast jede Zeile
+																keinen davon je braucht.
+
+																Ein Popover (top layer) und kein daisyUI-Dropdown: die Tabelle
+																steht in `overflow-x-auto`, und ein Dropdown darin würde am
+																Rand der Tabelle abgeschnitten. Ohne JavaScript: das Öffnen
+																macht der Browser über `popovertarget`, die Knöpfe darin
+																gehören weiter zum Planungsformular.
+															-->
+															{#if mayPlan && row.module.plannable && (row.planned || !row.module.splitIsEstimated)}
+																<button
+																	type="button"
+																	class="btn btn-ghost btn-xs"
+																	popovertarget="row-menu-{row.module.id}"
+																	aria-label="Weitere Einstellungen für {moduleName(row.module)}"
+																	title="Weitere Einstellungen: Aufteilung, Vorlesung für alle Züge, gemeinsam mit anderen Studiengängen"
+																>
+																	⋯
+																</button>
+																<div
+																	id="row-menu-{row.module.id}"
+																	popover="auto"
+																	class="border-base-300 bg-base-100 text-base-content m-auto w-[min(30rem,92vw)] rounded-lg border p-4 shadow-lg backdrop:bg-neutral/30"
+																>
+																	<div class="flex flex-col gap-3 text-sm">
+																		<div class="flex items-start justify-between gap-2">
+																			<h3 class="font-medium">{moduleName(row.module)}</h3>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-xs"
+																				popovertarget="row-menu-{row.module.id}"
+																				popovertargetaction="hide"
+																				aria-label="Menü schließen"
+																			>
+																				✕
+																			</button>
+																		</div>
+
+																		{#if !row.module.splitIsEstimated}
+																			<section class="flex flex-col gap-1">
+																				<h4
+																					class="text-base-content/80 text-xs font-medium uppercase"
+																				>
+																					Aufteilung
+																				</h4>
+																				<div>
+																					<button
+																						type="button"
+																						class="btn btn-xs"
+																						popovertarget="row-menu-{row.module.id}"
+																						popovertargetaction="hide"
+																						onclick={() => (editingSplit = row.module.id)}
+																					>
+																						Aufteilung ändern
+																					</button>
+																				</div>
+																			</section>
+																		{/if}
+
+																		<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
+																	     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
+																	     Knopf, weil ein Sabbatical die Entscheidung revidiert.
+
+																	     Für einen Platzhalter gar nicht: drei FWPs sind drei
+																	     verschiedene Fächer, keine drei Kohorten desselben — da gibt
+																	     es keine gemeinsame Vorlesung zusammenzulegen. -->
+																		{#if row.planned && row.module.kind !== 'FWP_PLACEHOLDER'}
+																			{@const sharing = sharingState(row)}
+																			{#if sharing.sharedPartId || sharing.mergeablePartId}
+																				<section class="flex flex-col gap-1">
+																					<h4
+																						class="text-base-content/80 text-xs font-medium uppercase"
+																					>
+																						Vorlesung
+																					</h4>
+																					<p class="text-base-content/80">
+																						Bei mehreren Zügen kann die Vorlesung einmal für alle
+																						stattfinden. Sie zählt dann einmal.
+																					</p>
+																					<div>
+																						{#if sharing.sharedPartId}
+																							<button
+																								type="submit"
+																								formaction="?/sharePart"
+																								name="partId"
+																								value={sharing.sharedPartId}
+																								class="btn btn-xs"
+																								title="Jeder Zug hält seine Vorlesung wieder selbst"
+																							>
+																								Vorlesung trennen
+																							</button>
+																							<input type="hidden" name="split" value="1" />
+																						{:else}
+																							<button
+																								type="submit"
+																								formaction="?/sharePart"
+																								name="partId"
+																								value={sharing.mergeablePartId}
+																								class="btn btn-xs"
+																								title="Eine Vorlesung für alle Züge — sie findet einmal statt und zählt einmal"
+																							>
+																								Vorlesung zusammenlegen
+																							</button>
+																						{/if}
+																					</div>
+																				</section>
+																			{/if}
+
+																			<!--
+																				Gemeinsam oder getrennt, je Zug: welcher Zug sein Modul
+																				mit einem anderen Studiengang zusammen hält, ist eine
+																				Aussage über genau diesen Zug. Der Regelfall braucht
+																				keinen Knopf: wer neben einem anderen Studiengang plant,
+																				ist sofort mit ihm zusammen — dann steht hier „getrennt
+																				planen". „gemeinsam planen" ist der nachträgliche Weg
+																				über den Picker, und den bestätigt die Gegenseite in
+																				ihrer eigenen Zeile.
+																			-->
+																			<section class="flex flex-col gap-1">
+																				<h4
+																					class="text-base-content/80 text-xs font-medium uppercase"
+																				>
+																					Gemeinsam mit anderen Studiengängen
+																				</h4>
+																				<p class="text-base-content/80">
+																					Ein Zug kann sein Modul mit dem Zug eines anderen
+																					Studiengangs zusammen halten: die Veranstaltung findet
+																					einmal statt, dort.
+																				</p>
+																				{#each row.tracks as cohortTrack, i (i)}
+																					{#if cohortTrack.instanceId}
+																						<div class="flex flex-wrap items-center gap-1">
+																							<span class="badge badge-neutral badge-sm">
+																								{cohortLabel(
+																									data.selected.programme,
+																									yearOf(row),
+																									letters[i] ?? cohortTrack.track
+																								)}
+																							</span>
+																							{#if cohortTrack.coveredBy}
+																								<!-- Kein Status-Abzeichen hier: das steht beim Zug in der
+																							     Tabelle, und der Knopf sagt selbst, wo der Zug steht. -->
+																								<button
+																									type="submit"
+																									formaction="?/coverage"
+																									name="release"
+																									value={cohortTrack.instanceId}
+																									class="btn btn-xs"
+																									title={cohortTrack.coveredBy.acceptedAt
+																										? 'Dieser Zug hält seine Lehre wieder selbst'
+																										: 'Die Anfrage zurückziehen'}
+																								>
+																									{cohortTrack.coveredBy.acceptedAt
+																										? 'getrennt planen'
+																										: 'Anfrage zurückziehen'}
+																								</button>
+																							{:else}
+																								<!--
+																									Ein GET-Formular statt eines Links: `resolve()` kennt
+																									nur den Pfad, die Auswahl steht in Query-Parametern.
+																									Das Formular steht außerhalb der Tabelle
+																									(`coverage-picker`).
+																								-->
+																								<button
+																									type="submit"
+																									form="coverage-picker"
+																									name="deckung"
+																									value={cohortTrack.instanceId}
+																									class="btn btn-xs"
+																								>
+																									gemeinsam planen
+																								</button>
+																							{/if}
+																						</div>
+																					{/if}
+																				{/each}
+																			</section>
+																		{/if}
+																	</div>
+																</div>
 															{/if}
 														</span>
 													</div>
@@ -1837,51 +2003,6 @@
 																	>{coversLabel(covers)}</span
 																>
 															{/each}
-															<!--
-																	Gemeinsam oder getrennt, je Zug: welcher Zug sein Modul mit einem
-																	anderen Studiengang zusammen hält, ist eine Aussage über genau
-																	diesen Zug. Immer nur ein Knopf. Der Regelfall braucht keinen:
-																	wer neben einem anderen Studiengang plant, ist sofort mit ihm
-																	zusammen — dann steht hier „getrennt planen". „gemeinsam
-																	planen" ist der nachträgliche Weg über den Picker, und den
-																	bestätigt die Gegenseite in ihrer eigenen Zeile.
-																-->
-															{#if mayPlan && row.module.kind !== 'FWP_PLACEHOLDER' && row.tracks[i]?.instanceId}
-																{#if row.tracks[i].coveredBy}
-																	<button
-																		type="submit"
-																		formaction="?/coverage"
-																		name="release"
-																		value={row.tracks[i].instanceId}
-																		class="btn btn-xs"
-																		title={row.tracks[i].coveredBy.acceptedAt
-																			? 'Dieser Zug hält seine Lehre wieder selbst'
-																			: 'Die Anfrage zurückziehen'}
-																	>
-																		{row.tracks[i].coveredBy.acceptedAt
-																			? 'getrennt planen'
-																			: 'Anfrage zurückziehen'}
-																	</button>
-																{:else}
-																	<!--
-																			Ein GET-Formular statt eines Links, aus demselben Grund wie
-																			überall sonst hier: `resolve()` kennt nur den Pfad, die
-																			Auswahl steht in Query-Parametern, und ein handgeschriebener
-																			Link mit beidem ist genau das, was die Lint-Regel verhindert.
-																			Das Formular steht außerhalb der Tabelle (`coverage-picker`).
-																		-->
-																	<button
-																		type="submit"
-																		form="coverage-picker"
-																		name="deckung"
-																		value={row.tracks[i].instanceId}
-																		class="btn btn-xs"
-																		title="Dieses Modul zusammen mit einem anderen Studiengang halten: die Veranstaltung findet einmal statt, dort"
-																	>
-																		gemeinsam planen
-																	</button>
-																{/if}
-															{/if}
 														</div>
 													{/each}
 												</div>
