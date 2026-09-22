@@ -16,7 +16,10 @@ import {
 	type AssignmentEntry,
 	type AssignmentLike,
 	type InstanceLike,
-	type WishLike
+	type WishLike,
+	instancesOfTab,
+	mayFillUnfiled,
+	UNFILED
 } from './assignment';
 
 const instance = (over: Partial<InstanceLike> = {}): InstanceLike => ({
@@ -469,5 +472,49 @@ describe('moduleBlocks', () => {
 			cohort('m2', 'Algorithmen', 'IF', 'A')
 		]);
 		expect(blocks.map((b) => b.name)).toEqual(['Algorithmen', 'Übersetzerbau']);
+	});
+});
+
+describe('which instances a tab shows', () => {
+	const filed = { module: { subjectGroup: { id: 'g1' } } };
+	const other = { module: { subjectGroup: { id: 'g2' } } };
+	const unfiled = { module: { subjectGroup: null } };
+
+	it('gives a subject group its own instances', () => {
+		expect(instancesOfTab([filed, other, unfiled], 'g1')).toEqual([filed]);
+	});
+
+	// The bug this function exists for. The subject group is derived through the module, so an
+	// instance whose module nobody has filed matches no group at all — and comparing against the
+	// chosen id dropped it silently. A locally created module, which is how a short-notice FWP is
+	// declared, arrives in exactly that state: the instance somebody had just declared was the
+	// one they could not fill.
+	it('gives the unfiled tab the instances that are in no group', () => {
+		expect(instancesOfTab([filed, other, unfiled], UNFILED)).toEqual([unfiled]);
+	});
+
+	it('shows nothing until a tab is chosen', () => {
+		expect(instancesOfTab([filed, other, unfiled], null)).toEqual([]);
+	});
+
+	it('never lets an unfiled instance fall out of every tab', () => {
+		const all = [filed, other, unfiled];
+		const tabs = ['g1', 'g2', UNFILED];
+		const covered = tabs.flatMap((tab) => instancesOfTab(all, tab));
+		expect(covered).toHaveLength(all.length);
+	});
+});
+
+describe('who is offered the unfiled tab', () => {
+	// Only the two roles that may fill such an instance. Filling is a union of "leads the subject
+	// group" and "leads the study programme", and a module in no group satisfies only the second
+	// — so a subject group lead would meet a refusal on every row.
+	it('is the study programme lead and the dean’s office', () => {
+		expect(mayFillUnfiled(['PROGRAMME_LEAD'])).toBe(true);
+		expect(mayFillUnfiled(['DEANS_OFFICE'])).toBe(true);
+	});
+
+	it('is not the subject group lead, whose reach is a group', () => {
+		expect(mayFillUnfiled(['LECTURER', 'SUBJECT_GROUP_LEAD'])).toBe(false);
 	});
 });

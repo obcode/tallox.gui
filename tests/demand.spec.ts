@@ -463,6 +463,44 @@ test.describe('the demand table', () => {
 		await expect(row.getByText('E2E?C')).toBeVisible();
 	});
 
+	// The hole this whole round of feedback uncovered, walked end to end.
+	//
+	// A locally created course is how a short-notice FWP is declared, and it arrives in **no**
+	// subject group. The assignment screen is cut by subject group, so the instance somebody had
+	// just declared matched no tab at all and silently was not there — the backend had always
+	// allowed filling it, since responsibility is a union of "leads the subject group" and "leads
+	// the study programme" and the second axis needs no group.
+	test('a course declared without a subject group is still fillable', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('E2E Kurzfristiges FWP');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+		await expect(page.getByRole('row', { name: /E2E Kurzfristiges FWP/ })).toBeVisible();
+
+		// The sentence that says where it went, because "it is in no subject group" is invisible
+		// on this page and is exactly what somebody has to know next.
+		await expect(page.getByText(/gehört zunächst/)).toBeVisible();
+
+		await gotoRendered(page, `/zuteilung?semester=${DEMAND.semester}`);
+		await page.getByRole('tab', { name: 'ohne Fachgruppe' }).click();
+
+		await expect(page.getByRole('cell', { name: /E2E Kurzfristiges FWP/ })).toBeVisible();
+		// No wish round here: the door belongs to a subject group, and a module in none has no
+		// door — absent means open, and there is nobody whose switch it would be.
+		await expect(page.getByRole('button', { name: /Wunschphase/ })).toHaveCount(0);
+	});
+
+	// The tab is a convenience and not a boundary, but offering somebody a screen on which every
+	// row refuses them is how people learn to ignore refusals.
+	test('the unfiled tab is not offered to a subject group lead', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, `/zuteilung?semester=${DEMAND.semester}`);
+
+		await expect(page.getByRole('tab', { name: 'ohne Fachgruppe' })).toHaveCount(0);
+	});
+
 	// The cohort year, said where the course is entered rather than looked for afterwards.
 	//
 	// The test above is the other half of this one: a local course counts in no set of

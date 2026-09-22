@@ -1018,6 +1018,25 @@
 					/>
 				</label>
 
+				{#if data.filingGroups.length > 0}
+					<label class="form-control">
+						<!--
+							Gleich hier einsortieren, nicht später. Ein lokal angelegtes Modul kommt
+							ohne Fachgruppe auf die Welt, und eine Instanz, deren Modul in keiner
+							steht, erreicht keine Fachgruppenleitung — sie stand deshalb auf der
+							Zuteilungsseite unter gar keinem Reiter. Genau das ist beim
+							kurzfristigen FWP passiert.
+						-->
+						<span class="label-text text-sm">Fachgruppe</span>
+						<select name="fachgruppe" class="select select-bordered select-sm w-56">
+							<option value="">noch keine</option>
+							{#each data.filingGroups as group (group.id)}
+								<option value={group.id} title={group.name}>{group.code} — {group.name}</option>
+							{/each}
+						</select>
+					</label>
+				{/if}
+
 				<label class="form-control">
 					<!-- Nicht nur „Art": die Filterleiste hat schon eine, und die meint Pflicht
 					     oder Wahlpflicht. -->
@@ -1092,6 +1111,24 @@
 				darf. Ein Platzhalter wird wie jedes andere Modul geplant —
 				<strong>drei davon sind drei Züge</strong>.
 			</p>
+			{#if data.filingGroups.length === 0}
+				<!--
+					Der Satz, der den Rest des Wegs beschreibt. Einsortieren darf hier nur, wer eine
+					Fachgruppe leitet oder das Dekanat ist — die Studiengangsleitung legt die
+					Lehrveranstaltung an, ordnet sie aber nicht zu. Ohne diesen Hinweis bliebe das
+					Modul stillschweigend ohne Fachgruppe liegen.
+				-->
+				<p class="text-base-content/80 mt-2 text-sm">
+					Die neue Lehrveranstaltung gehört zunächst <strong>keiner Fachgruppe</strong> an. Besetzen
+					lässt sie sich trotzdem — auf der
+					<a class="link" href="{resolve('/zuteilung')}?semester={data.selected.semester}"
+						>Zuteilungsseite</a
+					>
+					unter „ohne Fachgruppe“. Einsortiert wird sie von der Leitung der Fachgruppe oder der Administration
+					im <a class="link" href={resolve('/module')}>Modulkatalog</a>; danach erscheint sie dort,
+					wo die Fachgruppe besetzt.
+				</p>
+			{/if}
 		</details>
 	{/if}
 

@@ -13,7 +13,10 @@
 		partHours,
 		partsSummary,
 		savedHint,
+		instancesOfTab,
+		mayFillUnfiled,
 		MIXED_CHOICE,
+		UNFILED,
 		type AssignmentLike,
 		type CohortGroup
 	} from '$lib/assignment';
@@ -45,13 +48,17 @@
 	 * argument — the group is derived through the module, and adding a filter for it to the demand
 	 * API would be a second place for that derivation to live.
 	 */
+	/** The chosen tab: a subject group id, the sentinel for "in no group", or nothing. */
+	const tab = $derived(data.selected.group === '' ? null : data.selected.group);
+
+	/** Whether the tab in the address is the one for instances nobody has filed. */
+	const unfiled = $derived(tab === UNFILED);
+
+	/** Whether to offer that tab at all — the two roles that may fill such an instance. */
+	const offerUnfiled = $derived(mayFillUnfiled(data.session?.effectiveRoles ?? []));
+
 	const groups: CohortGroup[] = $derived(
-		data.group === null
-			? []
-			: cohortGroups(
-					data.instances.filter((i) => i.module.subjectGroup?.id === data.group?.id),
-					data.assignments as AssignmentLike[]
-				)
+		cohortGroups(instancesOfTab(data.instances, tab), data.assignments as AssignmentLike[])
 	);
 
 	const members = $derived(data.group?.members ?? []);
@@ -66,6 +73,15 @@
 		data.group === null ||
 			!data.windows.some((w) => w.subjectGroup.id === data.group?.id && !w.open)
 	);
+
+	/**
+	 * Whether this tab has a wish round to switch.
+	 *
+	 * A module in no subject group has no door and is always open — absent means open, and there
+	 * is no group whose lead could shut it. Rendering the switch here would offer a control that
+	 * belongs to nobody.
+	 */
+	const hasWishRound = $derived(data.group !== null);
 
 	/** Which row a refusal belongs to, so it can be rendered in that row and nowhere else. */
 	const refusalFor = $derived(new Map((form?.refusals ?? []).map((r) => [r.partId, r.message])));
@@ -249,10 +265,30 @@
 					{/if}
 				</button>
 			{/each}
+			{#if offerUnfiled}
+				<!--
+					Instanzen, deren Modul in keiner Fachgruppe steht. Kein Sonderfall, den man
+					wegdiskutieren könnte: ein lokal angelegtes Modul — so wird ein kurzfristiges
+					FWP angemeldet — kommt ohne Fachgruppe auf die Welt, und ohne diesen Reiter
+					fiel es aus jeder Auswahl heraus. Nur für die beiden Rollen, die es über den
+					Studiengang besetzen dürfen.
+				-->
+				<button
+					type="submit"
+					name="fachgruppe"
+					value={UNFILED}
+					role="tab"
+					aria-selected={unfiled}
+					class="tab whitespace-nowrap {unfiled ? 'tab-active' : ''}"
+					title="Instanzen, deren Modul noch keiner Fachgruppe zugeordnet ist"
+				>
+					ohne Fachgruppe
+				</button>
+			{/if}
 		</div>
 	</form>
 
-	{#if data.group === null}
+	{#if tab === null}
 		<div class="card bg-base-200 mt-4 max-w-prose">
 			<div class="card-body">
 				<h2 class="card-title text-base">Fachgruppe wählen</h2>
@@ -275,32 +311,44 @@
 			landet man danach ohne Semester und ohne Fachgruppe auf dem Planungssemester. Der Rumpf
 			trägt sie trotzdem, weil die Action sie von dort liest.
 		-->
-		<form
-			method="POST"
-			action="?/window&semester={data.semester.code}&fachgruppe={data.group.id}"
-			class="mt-5"
-		>
-			<input type="hidden" name="semester" value={data.semester.code} />
-			<input type="hidden" name="fachgruppe" value={data.group.id} />
-			<input type="hidden" name="open" value={roundOpen ? 'false' : 'true'} />
-			<div class="alert {roundOpen ? 'alert-info' : 'alert-warning'}">
+		{#if hasWishRound && data.group}
+			<form
+				method="POST"
+				action="?/window&semester={data.semester.code}&fachgruppe={data.group.id}"
+				class="mt-5"
+			>
+				<input type="hidden" name="semester" value={data.semester.code} />
+				<input type="hidden" name="fachgruppe" value={data.group.id} />
+				<input type="hidden" name="open" value={roundOpen ? 'false' : 'true'} />
+				<div class="alert {roundOpen ? 'alert-info' : 'alert-warning'}">
+					<span>
+						{#if roundOpen}
+							Die Wunschphase von <strong>{data.group.name}</strong> ist offen — es können noch Eintragungen
+							dazukommen.
+						{:else}
+							Die Wunschphase von <strong>{data.group.name}</strong> ist geschlossen.
+						{/if}
+					</span>
+					<button type="submit" class="btn btn-sm">
+						{roundOpen ? 'Wunschphase schließen' : 'Wunschphase öffnen'}
+					</button>
+				</div>
+			</form>
+		{:else}
+			<div class="alert alert-info mt-5 max-w-prose">
 				<span>
-					{#if roundOpen}
-						Die Wunschphase von <strong>{data.group.name}</strong> ist offen — es können noch Eintragungen
-						dazukommen.
-					{:else}
-						Die Wunschphase von <strong>{data.group.name}</strong> ist geschlossen.
-					{/if}
+					Diese Instanzen gehören zu Modulen, die noch <strong>keiner Fachgruppe</strong>
+					zugeordnet sind — so kommt ein lokal angelegtes Modul auf die Welt. Besetzen lässt sich das
+					über den Studiengang. Eine Wunschrunde haben sie nicht: die gehört einer Fachgruppe, und ohne
+					Fachgruppe ist sie immer offen. Einsortieren im
+					<a class="link" href={resolve('/module')}>Modulkatalog</a>.
 				</span>
-				<button type="submit" class="btn btn-sm">
-					{roundOpen ? 'Wunschphase schließen' : 'Wunschphase öffnen'}
-				</button>
 			</div>
-		</form>
+		{/if}
 
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-2">
 			<input type="hidden" name="semester" value={data.semester.code} />
-			<input type="hidden" name="fachgruppe" value={data.group.id} />
+			<input type="hidden" name="fachgruppe" value={data.selected.group} />
 			<label class="form-control">
 				<span class="label-text text-sm">Weitere Person suchen</span>
 				<input
@@ -325,8 +373,9 @@
 				<div class="card-body">
 					<h2 class="card-title text-base">Nichts zu besetzen</h2>
 					<p>
-						Für <strong>{data.group.name}</strong> ist in diesem Semester keine Instanz mit Teilen
-						angemeldet. Das ist eine Aussage über den Bedarf, nicht über die Zuteilung — auf der
+						Für <strong>{data.group?.name ?? 'Module ohne Fachgruppe'}</strong> ist in diesem
+						Semester keine Instanz mit Teilen angemeldet. Das ist eine Aussage über den Bedarf,
+						nicht über die Zuteilung — auf der
 						<a class="link" href="{resolve('/bedarf')}?semester={data.semester.code}"
 							>Bedarfsseite</a
 						>

@@ -503,3 +503,47 @@ export function savedHint(count: number): string {
 	if (count === 0) return 'Nichts zu speichern.';
 	return count === 1 ? '1 Änderung gespeichert.' : `${count} Änderungen gespeichert.`;
 }
+
+/**
+ * The query-string value for "the instances that are in no subject group at all".
+ *
+ * A word rather than an empty string, because empty already means "nothing chosen" — and the two
+ * have to render differently: one asks somebody to pick, the other is a pick.
+ */
+export const UNFILED = 'ohne';
+
+/**
+ * Which instances a chosen tab shows.
+ *
+ * The subject group is derived through the module, so an instance whose module nobody has filed
+ * yet matches **no** group — and the page used to compare against the chosen group's id and
+ * therefore dropped it silently. That is not a rare case: a locally created module, which is how
+ * a short-notice FWP is declared, arrives in no subject group, so the instance somebody just
+ * declared was the one they could not fill.
+ *
+ * The backend never refused it — filling is a union of "leads the subject group" and "leads the
+ * study programme", and the second axis does not need a group at all. Only this screen had
+ * nowhere to put it.
+ */
+export function instancesOfTab<T extends { module: { subjectGroup?: { id: string } | null } }>(
+	instances: readonly T[],
+	tab: string | null
+): T[] {
+	if (tab === null) return [];
+	if (tab === UNFILED) return instances.filter((i) => !i.module.subjectGroup);
+	return instances.filter((i) => i.module.subjectGroup?.id === tab);
+}
+
+/**
+ * Whether to offer the "no subject group" tab at all.
+ *
+ * Only to the two roles that may fill such an instance. A subject group lead may not: her reach
+ * is a group, and a module in none is outside every group she leads — offering her a tab whose
+ * every row refuses her would teach her to ignore refusals.
+ *
+ * It is a convenience and not a boundary, like every other role check in this app: the backend
+ * decides, and it decides the same way.
+ */
+export function mayFillUnfiled(roles: readonly string[]): boolean {
+	return roles.includes('PROGRAMME_LEAD') || roles.includes('DEANS_OFFICE');
+}

@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { ALL_PART_KINDS, frequenciesForTerm } from '$lib/catalogue';
+import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
 import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
@@ -51,10 +51,28 @@ const DemandDocument = graphql(`
 			code
 		}
 		me {
+			roles
 			programmes {
 				code
 				title
 			}
+			# Which subject groups this person leads — what the "eigene Lehrveranstaltung"
+			# form may offer as a filing target. A locally created module arrives in no
+			# subject group, and an instance whose module is in none reaches no subject
+			# group lead at all, so filing it straight away is the difference between a
+			# short-notice FWP that can be assigned and one that cannot.
+			subjectGroupsLed {
+				id
+				code
+				name
+			}
+		}
+		# The whole list, for an administrator and the dean's office — both may file into any
+		# of them. Readable by anybody with an account, so this costs nothing extra.
+		subjectGroups {
+			id
+			code
+			name
 		}
 		programmes {
 			code
@@ -421,6 +439,14 @@ const ConfirmSplitDocument = graphql(`
 	}
 `);
 
+const FileLocalDocument = graphql(`
+	mutation FileLocalModule($moduleIds: [ID!]!, $subjectGroup: ID) {
+		setModulesSubjectGroup(moduleIds: $moduleIds, subjectGroup: $subjectGroup) {
+			modulesAssigned
+		}
+	}
+`);
+
 const DUTY_VALUES: DutyStatus[] = ['COMPULSORY', 'ELECTIVE', 'MIXED'];
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -547,6 +573,14 @@ export const load: PageServerLoad = async ({ url }) => {
 		semesters: data.semesters,
 		planningSemester: data.planningSemester?.code ?? '',
 		myProgrammes: data.me?.programmes ?? [],
+		// Which subject groups this person may file a new module into. An administrator and the
+		// dean's office reach all of them; a subject group lead reaches the ones she leads; and
+		// for everybody else the list is empty and the field does not appear.
+		filingGroups: filingGroupsFor(
+			data.me?.roles ?? [],
+			data.subjectGroups,
+			data.me?.subjectGroupsLed ?? []
+		),
 		coverageFor,
 		coverageCandidates,
 		programmes: data.programmes,
@@ -827,6 +861,23 @@ export const actions: Actions = {
 			await backendRequest(DeclareDocument, {
 				in: { semester, programme, moduleId: created.createLocalModule.id, programmeSemester }
 			});
+
+			// Filing it, if somebody chose a group. A third call rather than a field on
+			// LocalModuleInput: the subject group is not a property of the course — it is the
+			// faculty's own filing of it, in its own table, and the ZPA projection must never be
+			// able to reach it.
+			//
+			// After the instance and not before: the course exists either way, and a refusal here
+			// must not leave somebody with a module they cannot see on the demand page. It is
+			// reported rather than swallowed, because "it silently stayed unfiled" is the state
+			// this whole change exists to stop happening.
+			const subjectGroup = String(form.get('fachgruppe') ?? '');
+			if (subjectGroup !== '') {
+				await backendRequest(FileLocalDocument, {
+					moduleIds: [created.createLocalModule.id],
+					subjectGroup
+				});
+			}
 			return { adopted: created.createLocalModule.name };
 		} catch (err) {
 			return fail(400, refusalFor(err));

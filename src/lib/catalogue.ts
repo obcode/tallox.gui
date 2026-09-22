@@ -311,3 +311,26 @@ export function frequenciesForTerm(term: string): Frequency[] | null {
 	if (term === 'SS') return ['EVERY_SUMMER_SEMESTER', ...indefinite];
 	return null;
 }
+
+/** A subject group as the filing picker needs it. */
+export type FilingGroup = { id: string; code: string; name: string };
+
+/**
+ * Which subject groups somebody may file a module into.
+ *
+ * The same rule as `policy.FilingScope` in the backend, and — as with every role check in this
+ * app — it decides what to *offer*, never what is allowed. An administrator and the dean's
+ * office reach every group; a subject group lead reaches the ones she leads; everybody else
+ * reaches none, and then the control is not rendered at all rather than rendered empty.
+ *
+ * Offering a lead a group she does not lead would be offering her a refusal, and that is how
+ * people learn to ignore refusals.
+ */
+export function filingGroupsFor(
+	roles: readonly string[],
+	all: readonly FilingGroup[],
+	led: readonly FilingGroup[]
+): FilingGroup[] {
+	if (roles.includes('ADMIN') || roles.includes('DEANS_OFFICE')) return [...all];
+	return [...led];
+}
