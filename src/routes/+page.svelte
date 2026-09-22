@@ -124,6 +124,10 @@
 			Fachgruppen. Es gibt keine Rolle, die alles sieht: vor der Veröffentlichung liest die
 			Administration keine Wünsche.
 		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Welche Du selbst hast — und wofür sie gelten, denn eine Rolle ohne Zuordnung darf nichts:
+			<a class="link" href={resolve('/konto/rollen')}>Meine Rollen</a>.
+		</p>
 		<div class="mt-3 overflow-x-auto">
 			<table class="table table-sm">
 				<thead>

@@ -110,6 +110,15 @@ export function isActive(item: NavItem, pathname: string): boolean {
  */
 export const ACCOUNT_ITEMS: readonly NavItem[] = [
 	{
+		// No roles: everybody has roles, and the answer "which ones do I have" was previously
+		// unavailable to anybody who is not an administrator — the role preview in the footer
+		// is ADMIN-only, and the menu only ever *implies* the roles by what it shows.
+		emoji: '🪪',
+		label: 'Meine Rollen',
+		href: '/konto/rollen',
+		hint: 'Welche Rollen Du hast, und wofür sie gelten'
+	},
+	{
 		emoji: '🔑',
 		label: 'Tokens',
 		href: '/konto/tokens',
