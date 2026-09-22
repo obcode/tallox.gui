@@ -285,3 +285,64 @@ test.describe('the wish round switch', () => {
 		await expect(page.getByText('Bedarf noch in Arbeit').first()).toBeVisible();
 	});
 });
+
+/**
+ * The gap list a subject group lead asked for.
+ *
+ * Her reason: approach part-time lecturers early, because a week either way decides whether one
+ * is still available. What she wanted was "in welchen Modulen sich noch niemand gemeldet hat".
+ *
+ * This is the one place in the interface allowed to say "noch niemand", and it is allowed only
+ * because she may already read every entry on her group's modules — it rearranges rows she has
+ * rather than disclosing anything. The test that matters is therefore the second one.
+ */
+test.describe('the cohorts nobody has registered interest in', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	test('the lead of the group sees which cohorts have no entry', async ({ asPersona }) => {
+		// The fixture's cohort carries one wish, so it is not a gap. Taking it away is what makes
+		// this cohort the thing the list is for.
+		runSql(
+			`DELETE FROM wish WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+			'emptying the interest in the assignment fixture'
+		);
+
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toBeVisible();
+		await expect(
+			page.getByRole('listitem').filter({ hasText: ASSIGNMENTS.moduleName })
+		).toBeVisible();
+	});
+
+	// The condition the whole thing rests on. A colleague who may open this screen and choose
+	// this group — the study programme lead fills across groups — still reads only the wishes of
+	// her own programme, so a gap list computed for her would be both wrong and a leak.
+	test('somebody who does not lead this group sees no such list', async ({ asPersona }) => {
+		runSql(
+			`DELETE FROM wish WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+			'emptying the interest in the assignment fixture'
+		);
+
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, URL);
+
+		// She is on the page — this is not "the page refused her".
+		await expect(page.getByRole('heading', { name: 'Zuteilung' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
+		await expect(page.getByText(/niemand eingetragen/)).toHaveCount(0);
+	});
+
+	// And nothing appears where every cohort has somebody: the list is the exceptions, not a
+	// permanent section that sometimes reads "0".
+	test('nothing is shown when every cohort has an entry', async ({ asPersona }) => {
+		await reset();
+
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
+	});
+});

@@ -158,6 +158,13 @@ const AssignmentDocument = graphql(`
 		}
 		me {
 			mail
+			# Which subject groups this person leads. The gap list below is shown only for a
+			# group she leads, because there she may already read every entry on its modules —
+			# it is a rearrangement of rows she has, not a new disclosure. Membership would be
+			# the wrong field: it grants nothing and the backend does not read it.
+			subjectGroupsLed {
+				id
+			}
 		}
 	}
 `);
@@ -280,6 +287,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		found: data.teachers ?? [],
 		windows: data.wishWindows ?? [],
 		me: data.me,
+		led: data.me?.subjectGroupsLed ?? [],
 		// The tab, which is either a subject group id, the UNFILED sentinel, or nothing chosen.
 		// `group` above is the resolved group and stays null for the sentinel — the two are
 		// deliberately not the same field, so that "no group chosen" and "the instances in no

@@ -49,3 +49,32 @@ das die zwei Stellen sind, an denen es jemand ergänzen würde.
 
 Was aus `instance_part` kommt (Teile, Gruppen, SWS), ist unbedenklich: das ist Bedarf, nicht
 Wunsch.
+
+## Die eine erlaubte Ausnahme (2026-09-22)
+
+`/zuteilung` zeigt der **Leitung einer Fachgruppe** einen Abschnitt „Noch ohne Interesse": die
+Züge ihrer Fachgruppe, auf die sich niemand eingetragen hat. Damit steht dort genau der Satz, den
+die Liste oben verbietet — und zwar zu Recht, aber nur unter drei Bedingungen, die alle drei im
+Code stehen und einzeln getestet sind:
+
+1. **Nur für eine Fachgruppe, die diese Person leitet** (`mayShowGaps` in `$lib/assignment.ts`).
+   Sie liest die Eintragungen darauf ohnehin — die Regel ist Eigentümer ∨ veröffentlicht ∨
+   zuständig — es ist also eine Umsortierung vorhandener Zeilen und keine neue Auskunft.
+   Geprüft wird die **Leitung** (`me.subjectGroupsLed`), nie die Mitgliedschaft: die berechtigt
+   zu nichts.
+2. **Berechnet aus der serverseitig gefilterten `wishes`-Liste.** Für alle anderen enthält die
+   nur die eigenen Einträge, „niemand eingetragen" wäre dann falsch _und_ verräterisch. Deshalb
+   ist Bedingung 1 keine Höflichkeit.
+3. **Keine Zahl.** Namen von Zügen, nichts gezählt, nichts eingefärbt, nichts danach sortiert.
+   Eine Lücke ist „hier keiner", nie „dort drei".
+
+**Why:** Die Fachgruppenleitung hat im Beta-Test danach gefragt, mit einem konkreten Grund —
+Lehrbeauftragte früh ansprechen, eine Woche entscheidet über die Verfügbarkeit. Die Regel schützt
+vor dem Windhundverfahren zwischen Kolleg:innen, nicht vor der Person, die die Fachgruppe besetzt.
+
+**How to apply:** Diese Ausnahme ist **kein Freibrief**. Sie gilt für diesen einen Abschnitt auf
+dieser einen Seite. Jede weitere Stelle, die etwas über fremde Wünsche aggregieren will, braucht
+dieselben drei Bedingungen einzeln nachgewiesen — insbesondere die erste, ohne die die anderen
+beiden nichts wert sind. Auf `/wuensche` gilt die Ausnahme ausdrücklich **nicht**: dort steht nur
+ein Satz darüber, _dass_ die Leitung die Eintragungen ihrer Fachgruppen sieht, und nie etwas
+darüber, was darin steht.

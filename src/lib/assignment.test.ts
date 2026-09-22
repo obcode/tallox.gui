@@ -19,7 +19,9 @@ import {
 	type WishLike,
 	instancesOfTab,
 	mayFillUnfiled,
-	UNFILED
+	UNFILED,
+	cohortsWithoutInterest,
+	mayShowGaps
 } from './assignment';
 
 const instance = (over: Partial<InstanceLike> = {}): InstanceLike => ({
@@ -516,5 +518,66 @@ describe('who is offered the unfiled tab', () => {
 
 	it('is not the subject group lead, whose reach is a group', () => {
 		expect(mayFillUnfiled(['LECTURER', 'SUBJECT_GROUP_LEAD'])).toBe(false);
+	});
+});
+
+describe('the cohorts nobody has registered interest in', () => {
+	const a = { id: 'i1', module: { name: 'Analysis' }, parts: [{}] };
+	const b = { id: 'i2', module: { name: 'Algebra' }, parts: [{}] };
+	const partless = { id: 'i3', module: { name: 'Platzhalter' }, parts: [] };
+
+	it('names the ones with no entry and leaves out the ones with', () => {
+		expect(cohortsWithoutInterest([a, b], [{ instance: { id: 'i1' } }])).toEqual([b]);
+	});
+
+	it('leaves out cohorts with nothing to fill', () => {
+		// The table leaves them out too: there is nothing to assign, so "nobody wants it" is not
+		// a gap anybody can act on.
+		expect(cohortsWithoutInterest([partless], [])).toEqual([]);
+	});
+
+	it('says nothing about how many registered', () => {
+		// The rule the whole confidentiality design rests on. A gap is "this one has none",
+		// never "that one has three" — the function returns rows, and there is no count to read
+		// off it because the wished-for ones are not in the result at all.
+		const gaps = cohortsWithoutInterest(
+			[a, b],
+			[{ instance: { id: 'i1' } }, { instance: { id: 'i1' } }]
+		);
+		expect(gaps).toEqual([b]);
+	});
+});
+
+describe('who may see the gap list', () => {
+	const led = [{ id: 'g1' }];
+
+	// Condition one of three, and not a nicety: the list is computed from the backend-filtered
+	// wishes, which for anybody else are their own entries alone. "Nobody registered" would then
+	// be false as well as leaky.
+	it('is the lead of the chosen group', () => {
+		expect(mayShowGaps('g1', ['SUBJECT_GROUP_LEAD'], led)).toBe(true);
+	});
+
+	it('is not the lead of a different group', () => {
+		expect(mayShowGaps('g2', ['SUBJECT_GROUP_LEAD'], led)).toBe(false);
+	});
+
+	it('is not a mere member — membership grants nothing', () => {
+		expect(mayShowGaps('g1', ['LECTURER'], [])).toBe(false);
+	});
+
+	it('is not a study programme lead, whose reach is the other axis', () => {
+		// She may fill these instances and read the wishes of her programme — but not the ones
+		// this group's modules carry for other programmes, so a gap she saw would be wrong.
+		expect(mayShowGaps('g1', ['PROGRAMME_LEAD'], [])).toBe(false);
+	});
+
+	it('is the dean’s office, which reads every entry before publication', () => {
+		expect(mayShowGaps('g1', ['DEANS_OFFICE'], [])).toBe(true);
+	});
+
+	it('is never the unfiled tab, whose modules reach no lead at all', () => {
+		expect(mayShowGaps(UNFILED, ['DEANS_OFFICE'], led)).toBe(false);
+		expect(mayShowGaps(null, ['DEANS_OFFICE'], led)).toBe(false);
 	});
 });

@@ -460,7 +460,7 @@
 		</section>
 	{/if}
 
-	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published)}</p>
+	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published, data.leadsGroups)}</p>
 
 	{#if data.instances.length === 0}
 		<p class="text-base-content/80 text-sm">

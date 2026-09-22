@@ -428,9 +428,31 @@ export function openPhaseHint(phase: string | null | undefined): string {
  * interested" — which would be a statement about other people's wishes, i.e. exactly the thing
  * that may not be said.
  */
-export function othersHint(publishedAt: string | null | undefined): string {
+export function othersHint(
+	publishedAt: string | null | undefined,
+	/**
+	 * Whether this person leads at least one subject group.
+	 *
+	 * The third branch, and the reason this function grew an argument. The rule is owner ∨
+	 * published ∨ responsible — so a subject group lead reads the entries on her groups' modules
+	 * **before** publication, in a browser, and always could. This page nevertheless told her
+	 * flatly that nobody's entries were visible, while rendering them underneath.
+	 *
+	 * Saying so is not a leak and not a softening of the rule: it describes a permission she
+	 * already holds. What stays unsaid is anything about the entries themselves — no count, no
+	 * "somebody is already registered", for her groups or anybody else's.
+	 */
+	leadsGroups = false
+): string {
 	if (publishedAt) {
 		return 'Die Wünsche sind veröffentlicht: hier steht, wer sich außerdem eingetragen hat.';
+	}
+	if (leadsGroups) {
+		return (
+			'Für die Fachgruppen, die Du leitest, siehst Du die Eintragungen schon jetzt — das ' +
+			'gehört zur Fachgruppenleitung. Für alle anderen gilt: bis zur Veröffentlichung sind ' +
+			'die Eintragungen anderer nicht sichtbar, auch nicht als Anzahl.'
+		);
 	}
 	return (
 		'Bis zur Veröffentlichung sind die Eintragungen anderer nicht sichtbar — auch nicht als ' +

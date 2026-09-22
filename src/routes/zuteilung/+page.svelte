@@ -13,12 +13,15 @@
 		partHours,
 		partsSummary,
 		savedHint,
+		cohortsWithoutInterest,
 		instancesOfTab,
 		mayFillUnfiled,
+		mayShowGaps,
 		MIXED_CHOICE,
 		UNFILED,
 		type AssignmentLike,
-		type CohortGroup
+		type CohortGroup,
+		cohortLabel
 	} from '$lib/assignment';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
 	import { hoursLabel } from '$lib/demand';
@@ -82,6 +85,24 @@
 	 * belongs to nobody.
 	 */
 	const hasWishRound = $derived(data.group !== null);
+
+	/**
+	 * Die Instanzen dieser Fachgruppe, auf die sich noch niemand eingetragen hat.
+	 *
+	 * Nur für eine Fachgruppe, die diese Person **leitet** — dort liest sie die Eintragungen
+	 * ohnehin schon, das ist also eine Umsortierung vorhandener Zeilen und keine neue Auskunft.
+	 * Überall sonst bliebe die Liste stumm falsch: die `wishes` sind serverseitig gefiltert, für
+	 * alle anderen also nur die eigenen, und „niemand eingetragen" wäre dann eine Lüge und ein
+	 * Leck zugleich.
+	 *
+	 * Und keine Zahl, nirgends: Namen von Zügen, nichts gezählt, nichts eingefärbt, nichts
+	 * danach sortiert.
+	 */
+	const showGaps = $derived(mayShowGaps(tab, data.session?.effectiveRoles ?? [], data.led));
+
+	const gaps = $derived(
+		showGaps ? cohortsWithoutInterest(instancesOfTab(data.instances, tab), data.wishes) : []
+	);
 
 	/** Which row a refusal belongs to, so it can be rendered in that row and nowhere else. */
 	const refusalFor = $derived(new Map((form?.refusals ?? []).map((r) => [r.partId, r.message])));
@@ -367,6 +388,31 @@
 				</span>
 			{/if}
 		</form>
+
+		{#if showGaps && gaps.length > 0}
+			<!--
+				Keine Zahl, keine Färbung, keine Sortierung danach — die Namen der Züge und sonst
+				nichts. Sichtbar nur für die Leitung dieser Fachgruppe, die die Eintragungen
+				darauf ohnehin liest.
+			-->
+			<div class="border-base-300 bg-base-100 mt-5 max-w-prose rounded-lg border p-4">
+				<h2 class="font-medium">Noch ohne Interesse</h2>
+				<p class="text-base-content/80 mt-1 text-sm">
+					Auf diese Züge hat sich bisher niemand eingetragen — derselbe Stand, der unten in den
+					Auswahllisten steht, nur zusammengefasst. Sichtbar ist er Dir, weil Du die Eintragungen
+					dieser Fachgruppe ohnehin liest; für alle anderen bleiben sie bis zur Veröffentlichung
+					unsichtbar.
+				</p>
+				<ul class="mt-2 flex flex-col gap-1">
+					{#each gaps as instance (instance.id)}
+						<li class="text-sm">
+							<span class="font-mono font-medium">{cohortLabel(instance)}</span>
+							<span class="text-base-content/90">— {instance.module.name}</span>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
 
 		{#if groups.length === 0}
 			<div class="card bg-base-200 mt-4 max-w-prose">
