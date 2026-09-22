@@ -64,13 +64,27 @@ export const DUTY_LABELS: Record<DutyStatus, string> = {
 };
 
 /**
- * The badge a duty status gets.
+ * The classes a duty badge gets — the colour **and** the two that let it wrap.
  *
  * MIXED is a neutral badge rather than a warning: it is not a problem with the data, it is what
  * the regulations say. Colouring it like a fault would teach people that this column has errors
  * in it.
+ *
+ * The whole class list rather than the colour alone, because the other half is what was wrong.
+ * daisyUI gives `.badge` a **fixed** height (`height: var(--size)`) and does not set
+ * `white-space`, so "Pflicht (nicht in allen SPOs)" in a narrow table cell wrapped to two lines
+ * inside a pill 18px tall and spilled out of its own background — measured at 27px of text in
+ * 18px of box. `h-auto` and a little vertical padding let the pill grow with its label instead.
+ *
+ * Returning both together is the point: the label and the box that has to hold it were decided
+ * in two different files, and the filter on the demand page had already drifted the same way.
  */
 export function dutyBadge(status: DutyStatus | null | undefined): string {
+	return `badge badge-sm h-auto py-0.5 text-left ${dutyBadgeColour(status)}`;
+}
+
+/** Just the colour. Separate so the reasoning above sits beside the shape and not the hue. */
+function dutyBadgeColour(status: DutyStatus | null | undefined): string {
 	switch (status) {
 		case 'COMPULSORY':
 			return 'badge-primary';

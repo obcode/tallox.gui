@@ -501,6 +501,22 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('tab', { name: 'ohne Fachgruppe' })).toHaveCount(0);
 	});
 
+	// The "Art" filter, which knew two of the three answers.
+	//
+	// A module can be compulsory under one set of regulations and elective under another — 74 of
+	// them are, across programmes — so the status is three-valued. The server accepts all three
+	// here; the select offered two. Two consequences, and the second is the one a beta tester
+	// noticed: you could not filter for it, and with `art=MIXED` in the address no option was
+	// selected, so the field read "alle" while the filter was doing something else.
+	test('the Art filter offers the third duty status and shows when it is chosen', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `${DEMAND_URL}&art=MIXED`);
+
+		await expect(page.getByLabel('Art', { exact: true })).toHaveValue('MIXED');
+	});
+
 	// The cohort year, said where the course is entered rather than looked for afterwards.
 	//
 	// The test above is the other half of this one: a local course counts in no set of

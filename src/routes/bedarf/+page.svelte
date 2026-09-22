@@ -857,7 +857,13 @@
 
 				<label class="form-control">
 					<span class="label-text text-sm">Art</span>
-					<select name="art" class="select select-bordered select-sm">
+					<!--
+						`aria-label`, obwohl das Label das Feld umschließt: bei einem umschließenden
+						Label ist der zugängliche Name der ganze Textinhalt — hier also „Art alle
+						Pflicht Wahlpflicht uneinheitlich". Vorgelesen wird das Feld damit als seine
+						eigene Optionsliste.
+					-->
+					<select name="art" aria-label="Art" class="select select-bordered select-sm">
 						<option value="">alle</option>
 						<option value="COMPULSORY" selected={data.selected.duty === 'COMPULSORY'}>
 							Pflicht
@@ -865,6 +871,12 @@
 						<option value="ELECTIVE" selected={data.selected.duty === 'ELECTIVE'}>
 							Wahlpflicht
 						</option>
+						<!--
+							Dieselbe dritte Möglichkeit wie im Modulkatalog. Ohne sie ließ sich nicht
+							danach filtern — und schlimmer: der Server akzeptiert `art=MIXED`, also
+							stand das Feld auf „alle", während der Filter wirkte.
+						-->
+						<option value="MIXED" selected={data.selected.duty === 'MIXED'}> uneinheitlich </option>
 					</select>
 				</label>
 
@@ -1541,7 +1553,7 @@
 														</a>
 														<span class="flex flex-wrap items-center gap-1">
 															{#if row.module.dutyStatus}
-																<span class="badge {dutyBadge(row.module.dutyStatus)} badge-sm">
+																<span class={dutyBadge(row.module.dutyStatus)}>
 																	{DUTY_LABELS[row.module.dutyStatus]}
 																</span>
 															{/if}

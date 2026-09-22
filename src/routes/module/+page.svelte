@@ -126,7 +126,9 @@
 		{#if data.filter.programme !== ''}
 			<label class="form-control">
 				<span class="label-text text-sm">Art</span>
-				<select name="art" class="select select-bordered select-sm">
+				<!-- Wie auf der Bedarfsseite: ohne `aria-label` ist der zugängliche Name eines
+				     umschließenden Labels sein ganzer Textinhalt, also die Optionsliste selbst. -->
+				<select name="art" aria-label="Art" class="select select-bordered select-sm">
 					<option value="">alle</option>
 					<option value="COMPULSORY" selected={data.filter.duty === 'COMPULSORY'}>Pflicht</option>
 					<option value="ELECTIVE" selected={data.filter.duty === 'ELECTIVE'}>Wahlpflicht</option>
@@ -347,7 +349,7 @@
 							{#if data.filter.programme !== ''}
 								<td>
 									{#if module.dutyStatus}
-										<span class="badge badge-sm {dutyBadge(module.dutyStatus)}">
+										<span class={dutyBadge(module.dutyStatus)}>
 											{DUTY_LABELS[module.dutyStatus]}
 										</span>
 									{:else}
