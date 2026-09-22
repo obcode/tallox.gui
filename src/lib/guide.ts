@@ -116,7 +116,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Die Instanzen besetzen',
 				who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
-				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben.'
+				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben.'
 			},
 			{
 				title: 'Abschließen',
