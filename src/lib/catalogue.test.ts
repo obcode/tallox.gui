@@ -118,6 +118,27 @@ describe('the duty status', () => {
 		expect(dutyBadge(null)).toBeTruthy();
 		expect(dutyBadge(undefined)).toBeTruthy();
 	});
+
+	// The half of this that was actually broken. daisyUI gives `.badge` a fixed height and no
+	// `white-space`, so the MIXED label — the only one long enough — wrapped to two lines inside
+	// a pill 18px tall and spilled out of its own background. Measured: 27px of text in 18px of
+	// box, at an ordinary desktop width, because the column is narrow rather than the window.
+	//
+	// Asserted on the class list rather than by rendering, because the alternative fix is the
+	// one that must not be taken: shortening the label to "Pflicht" would say something false
+	// about these modules, which is why DUTY_LABELS.MIXED is a sentence in the first place.
+	it('lets a badge grow to hold a label that wraps', () => {
+		for (const status of ['COMPULSORY', 'ELECTIVE', 'MIXED', null] as const) {
+			expect(dutyBadge(status)).toContain('h-auto');
+		}
+	});
+
+	it('carries the badge classes itself, so the two call sites cannot disagree', () => {
+		// They already had, on the neighbouring filter: one page offered the third duty status
+		// and the other did not, while the server accepted it from both.
+		expect(dutyBadge('MIXED')).toContain('badge');
+		expect(dutyBadge('MIXED')).toContain('badge-sm');
+	});
 });
 
 describe('the projection findings', () => {

@@ -518,6 +518,27 @@ describe('othersHint', () => {
 
 		expect(othersHint('2026-10-27T12:00:00Z')).toMatch(/veröffentlicht/);
 	});
+
+	// The sentence was flatly wrong for one group of readers, and they are the ones who asked.
+	// The rule is owner ∨ published ∨ responsible: a subject group lead reads the entries on her
+	// groups' modules before publication, in a browser, and always could — while this page told
+	// her nobody's entries were visible and rendered them underneath.
+	it('does not tell a subject group lead that she cannot see what she is looking at', () => {
+		const lead = othersHint(null, true);
+
+		expect(lead).toMatch(/Fachgruppen, die Du leitest/);
+		// Still no aggregate, for her groups or anybody else's: what it describes is a
+		// permission, never what the entries contain.
+		expect(lead).not.toMatch(/niemand hat|noch niemand|keine Interess/i);
+		expect(lead).toMatch(/Anzahl/);
+	});
+
+	it('leaves the sentence alone for everybody else', () => {
+		expect(othersHint(null, false)).toBe(othersHint(null));
+		// Publication is the wider statement and wins: once everybody sees everything, "your
+		// groups" is no longer the distinction worth drawing.
+		expect(othersHint('2026-10-27T12:00:00Z', true)).toBe(othersHint('2026-10-27T12:00:00Z'));
+	});
 });
 
 describe('closedSubjectGroups', () => {

@@ -24,7 +24,22 @@ export const PERSONAS = {
 	/** The dean's office: runs the process, so switches the phases and publishes the wishes. */
 	fuenf: { mail: 'dekanat@example.org', name: 'Deans Office' },
 	/** Administers people and roles — and deliberately reads no wishes. */
-	sechs: { mail: 'admin@example.org', name: 'Admin' }
+	sechs: { mail: 'admin@example.org', name: 'Admin' },
+	/**
+	 * Holds a subject group leadership that nobody has assigned a subject group to.
+	 *
+	 * Her own persona rather than a test that takes Drei's groups away for a moment: the specs
+	 * run in parallel, and the three other files that assert about Drei's leadership would
+	 * become flaky for reasons invisible in their own source.
+	 *
+	 * The state is worth a cast member because it is the one that looks like a working setup
+	 * from every other screen — the role is there, the menu shows the area, every list inside
+	 * it is empty — and it is what a beta tester most likely hit. GUI-only, so she has no
+	 * counterpart in the backend's `internal/testdata`: what she exercises is how a screen
+	 * *renders* an empty scope, and the backend asserts the same rule from its own side without
+	 * needing a seventh person for it.
+	 */
+	unassigned: { mail: 'prof.neun@example.org', name: 'Prof. Neun' }
 } as const;
 
 export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];

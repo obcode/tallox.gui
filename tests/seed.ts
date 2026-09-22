@@ -28,7 +28,11 @@ const ROLES: Record<string, readonly string[]> = {
 	// Sechs administers. LECTURER on top, because the role preview only offers a selection from
 	// the HELD roles: "let me see what a lecturer sees" presupposes being one. That is not
 	// awkwardness but the reason the preview cannot add anything.
-	'admin@example.org': ['LECTURER', 'ADMIN']
+	'admin@example.org': ['LECTURER', 'ADMIN'],
+	// Neun holds a subject group leadership and is assigned no subject group — deliberately, and
+	// permanently. An unscoped grant permits nothing here, so she is the persona that renders
+	// the state a screen has to explain rather than show as an empty list.
+	'prof.neun@example.org': ['LECTURER', 'SUBJECT_GROUP_LEAD']
 };
 
 /** Doubles single quotes. The values are constants from this repository, but a string that

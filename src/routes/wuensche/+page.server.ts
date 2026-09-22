@@ -180,6 +180,15 @@ const WishesDocument = graphql(`
 		}
 		me {
 			mail
+			# Which subject groups this person leads. Not decoration: a scoped lead reads the
+			# unpublished entries on her groups' modules already — the backend's wish rule is
+			# owner ∨ published ∨ responsible-and-interactive — and this page told her flatly
+			# that nobody's entries were visible. The rows were on the screen while the
+			# sentence above them said they could not be.
+			subjectGroupsLed {
+				id
+				code
+			}
 		}
 	}
 `);
@@ -277,6 +286,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		windows: data.wishWindows ?? [],
 		completions: data.demandCompletions ?? [],
 		me: data.me,
+		leadsGroups: (data.me?.subjectGroupsLed ?? []).length > 0,
 		unusable
 	};
 };

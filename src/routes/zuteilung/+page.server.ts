@@ -7,7 +7,8 @@ import {
 	mergeCombined,
 	type AssignmentEntry,
 	type AssignmentLike,
-	type CombinedEntry
+	type CombinedEntry,
+	UNFILED
 } from '$lib/assignment';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -157,6 +158,13 @@ const AssignmentDocument = graphql(`
 		}
 		me {
 			mail
+			# Which subject groups this person leads. The gap list below is shown only for a
+			# group she leads, because there she may already read every entry on its modules —
+			# it is a rearrangement of rows she has, not a new disclosure. Membership would be
+			# the wrong field: it grants nothing and the backend does not read it.
+			subjectGroupsLed {
+				id
+			}
 		}
 	}
 `);
@@ -214,6 +222,16 @@ const SetWindowDocument = graphql(`
 	}
 `);
 
+/**
+ * Whether this tab names a subject group the backend can look up.
+ *
+ * `UNFILED` is a tab and not a group: it stands for the instances whose module is in no group at
+ * all, and asking the backend for a group by that name would be a refusal rather than an answer.
+ */
+function isGroupID(tab: string): boolean {
+	return tab !== '' && tab !== UNFILED;
+}
+
 export const load: PageServerLoad = async ({ url }) => {
 	const wanted = url.searchParams.get('semester') ?? '';
 	const group = url.searchParams.get('fachgruppe') ?? '';
@@ -227,8 +245,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			// excluded field never reads it. The same arrangement `@include` makes for the
 			// semester, and the reason both are here: a placeholder the backend would judge cost
 			// the wish screen a 403 before it reached its own redirect.
-			group: group === '' ? '00000000-0000-0000-0000-000000000000' : group,
-			withGroup: group !== '',
+			group: isGroupID(group) ? group : '00000000-0000-0000-0000-000000000000',
+			withGroup: isGroupID(group),
 			search,
 			withSearch: search !== ''
 		});
@@ -269,6 +287,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		found: data.teachers ?? [],
 		windows: data.wishWindows ?? [],
 		me: data.me,
+		led: data.me?.subjectGroupsLed ?? [],
+		// The tab, which is either a subject group id, the UNFILED sentinel, or nothing chosen.
+		// `group` above is the resolved group and stays null for the sentinel — the two are
+		// deliberately not the same field, so that "no group chosen" and "the instances in no
+		// group" cannot be confused for one another.
 		selected: { semester: wanted, group, search },
 		unusable
 	};

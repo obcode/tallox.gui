@@ -503,3 +503,105 @@ export function savedHint(count: number): string {
 	if (count === 0) return 'Nichts zu speichern.';
 	return count === 1 ? '1 Änderung gespeichert.' : `${count} Änderungen gespeichert.`;
 }
+
+/**
+ * The query-string value for "the instances that are in no subject group at all".
+ *
+ * A word rather than an empty string, because empty already means "nothing chosen" — and the two
+ * have to render differently: one asks somebody to pick, the other is a pick.
+ */
+export const UNFILED = 'ohne';
+
+/**
+ * Which instances a chosen tab shows.
+ *
+ * The subject group is derived through the module, so an instance whose module nobody has filed
+ * yet matches **no** group — and the page used to compare against the chosen group's id and
+ * therefore dropped it silently. That is not a rare case: a locally created module, which is how
+ * a short-notice FWP is declared, arrives in no subject group, so the instance somebody just
+ * declared was the one they could not fill.
+ *
+ * The backend never refused it — filling is a union of "leads the subject group" and "leads the
+ * study programme", and the second axis does not need a group at all. Only this screen had
+ * nowhere to put it.
+ */
+export function instancesOfTab<T extends { module: { subjectGroup?: { id: string } | null } }>(
+	instances: readonly T[],
+	tab: string | null
+): T[] {
+	if (tab === null) return [];
+	if (tab === UNFILED) return instances.filter((i) => !i.module.subjectGroup);
+	return instances.filter((i) => i.module.subjectGroup?.id === tab);
+}
+
+/**
+ * Whether to offer the "no subject group" tab at all.
+ *
+ * Only to the two roles that may fill such an instance. A subject group lead may not: her reach
+ * is a group, and a module in none is outside every group she leads — offering her a tab whose
+ * every row refuses her would teach her to ignore refusals.
+ *
+ * It is a convenience and not a boundary, like every other role check in this app: the backend
+ * decides, and it decides the same way.
+ */
+export function mayFillUnfiled(roles: readonly string[]): boolean {
+	return roles.includes('PROGRAMME_LEAD') || roles.includes('DEANS_OFFICE');
+}
+
+/**
+ * The cohorts of this tab that nobody has registered interest in.
+ *
+ * What it is for: a subject group lead asked for it in so many words — she wants to approach
+ * part-time lecturers early, and a week either way decides whether one is still available.
+ * Reading it off the candidate dropdowns one at a time is the work this replaces.
+ *
+ * # Why this is not the aggregate the rules forbid
+ *
+ * "Noch niemand hat sich eingetragen" is on the list of things this interface must never say,
+ * and the reason is that it gives away the first-come-first-served information in full without
+ * naming anybody. It is sayable here, and only here, because of three things that have to hold
+ * together — and the caller is responsible for the first:
+ *
+ * 1. **Only for a subject group this person leads.** She may already read every entry on its
+ *    modules; this is a rearrangement of rows she has, not a new disclosure. `mayShowGaps`
+ *    below is that check, and it reads the groups she *leads* — membership grants nothing.
+ * 2. **From the wishes the backend sent**, which are filtered by the same rule. For anybody
+ *    else that list is their own entries alone, so "nobody registered" would be false as well
+ *    as leaky — which is why condition 1 is not a nicety.
+ * 3. **No number.** Names of cohorts, nothing counted, nothing coloured, nothing sorted by
+ *    interest. A gap is "this one has none", never "that one has three".
+ *
+ * Everything outside that is unchanged: no badge in the table, no tint, no ordering.
+ */
+export function cohortsWithoutInterest<
+	T extends {
+		id: string;
+		module: { name: string };
+		parts: readonly unknown[];
+	}
+>(instances: readonly T[], wishes: readonly { instance: { id: string } }[]): T[] {
+	const wanted = new Set(wishes.map((w) => w.instance.id));
+	// Instances with no parts are left out, exactly as the table leaves them out: there is
+	// nothing to fill, so "nobody wants it" is not a gap somebody can act on.
+	return instances.filter((i) => i.parts.length > 0 && !wanted.has(i.id));
+}
+
+/**
+ * Whether the gap list may be shown for the tab somebody is looking at.
+ *
+ * The chosen tab has to be a subject group **this person leads**. Not one she is a member of —
+ * membership grants nothing and the backend does not read it — and not the unfiled tab, whose
+ * modules belong to no group and therefore reach no lead at all.
+ *
+ * The dean's office reads every entry before publication, so it passes too; the check is
+ * against what the server would answer, not against a shorter rule that happens to agree today.
+ */
+export function mayShowGaps(
+	tab: string | null,
+	roles: readonly string[],
+	led: readonly { id: string }[]
+): boolean {
+	if (tab === null || tab === UNFILED) return false;
+	if (roles.includes('DEANS_OFFICE')) return true;
+	return led.some((g) => g.id === tab);
+}
