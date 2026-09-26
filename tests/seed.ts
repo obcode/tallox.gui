@@ -510,8 +510,105 @@ export function seedSql(): string {
 		...seedStatementsFor(Object.values(PERSONAS)),
 		...catalogueStatements(),
 		...wishStatements(),
-		...assignmentStatements()
+		...assignmentStatements(),
+		...competenceStatements()
 	].join('\n');
+}
+
+/**
+ * The competence fixture: a subject group with one compulsory and one elective module, a member
+ * who states competences, the group's lead, and a lecturer on contract without an account.
+ *
+ * Its own programme, regulations, group and modules, for the reason the assignment fixture gives:
+ * a fixture that gives somebody a row changes every page that lists their rows. The member is
+ * **Neun**, the persona whose subject group leadership is unscoped — membership grants nothing, so
+ * it does not touch the state she exists to show, and no other spec lists her rows.
+ */
+export const COMPETENCES = {
+	programme: 'E2K',
+	spo: '0e2e0000-0000-4000-8000-000000000061',
+	subjectGroup: '0e2e0000-0000-4000-8000-000000000062',
+	subjectGroupCode: 'E2EKOMP',
+	compulsory: '0e2e0000-0000-4000-8000-000000000063',
+	compulsoryName: 'E2E Pflichtmodul',
+	elective: '0e2e0000-0000-4000-8000-000000000064',
+	electiveName: 'E2E Wahlmodul',
+	teacher: '0e2e0000-0000-4000-8000-000000000065',
+	teacherName: 'Kompetenz Lehrbeauftragte',
+	/**
+	 * A cohort of the compulsory module in the assignment fixture's semester, so the assignment
+	 * screen has a row whose candidate list the pool can show up in. Filtered by this group, so the
+	 * assignment spec — which looks at its own group — never renders it.
+	 */
+	instance: '0e2e0000-0000-4000-8000-000000000066',
+	lecture: '0e2e0000-0000-4000-8000-000000000067'
+} as const;
+
+export function competenceStatements(): string[] {
+	const programme = quote(COMPETENCES.programme);
+	return [
+		// Whatever a run left: every statement on the two modules, and the member's memberships.
+		`DELETE FROM competence WHERE module_id IN
+		   ('${COMPETENCES.compulsory}', '${COMPETENCES.elective}');`,
+		`DELETE FROM assignment WHERE instance_part_id = '${COMPETENCES.lecture}';`,
+		`DELETE FROM course_instance WHERE id = '${COMPETENCES.instance}';`,
+
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Kompetenz-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO spo (id, programme_id, version, valid_from, primuss_id)
+		 SELECT '${COMPETENCES.spo}', id, 2025, '2025-10-01', '07-E2K-2025'
+		   FROM programme WHERE code = ${programme}
+		 ON CONFLICT (programme_id, version) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT m.id, p.id, m.name, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p,
+		        (VALUES ('${COMPETENCES.compulsory}'::uuid, ${quote(COMPETENCES.compulsoryName)}),
+		                ('${COMPETENCES.elective}'::uuid, ${quote(COMPETENCES.electiveName)})) AS m(id, name)
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		// Compulsory is "is_duty under some regulations" — the only thing that makes the first
+		// module count towards the minimum and the second not.
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
+		                              min_programme_semester)
+		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-01'], 1, 1)
+		 ON CONFLICT DO NOTHING;`,
+
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${COMPETENCES.subjectGroup}', ${quote(COMPETENCES.subjectGroupCode)},
+		         'Kompetenz-Testfachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.subjectGroup}'),
+		        ('${COMPETENCES.elective}', '${COMPETENCES.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
+
+		// Neun is a member; Drei leads the group.
+		`INSERT INTO person_subject_group (person_id, subject_group_id)
+		 SELECT id, '${COMPETENCES.subjectGroup}' FROM person WHERE mail = 'prof.neun@example.org'
+		 ON CONFLICT DO NOTHING;`,
+		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
+		 SELECT id, 'SUBJECT_GROUP_LEAD', '${COMPETENCES.subjectGroup}' FROM person
+		  WHERE mail = 'prof.drei@example.org'
+		 ON CONFLICT DO NOTHING;`,
+
+		// Needs the assignment fixture's semester, which is seeded before this.
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${COMPETENCES.instance}', s.id, '${COMPETENCES.compulsory}', pr.id, 'A', 1
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(ASSIGNMENTS.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${COMPETENCES.lecture}', '${COMPETENCES.instance}', 'LECTURE', 0, 4);`,
+
+		// A lecturer on contract without an address — nobody can sign in as her, so the lead
+		// enters for her. Outside FK07, so the admission screen's pre-filter keeps her out of the
+		// lists another spec counts.
+		`INSERT INTO teacher (id, full_name, short_name, is_lecturer_on_contract, active, faculty)
+		 VALUES ('${COMPETENCES.teacher}', ${quote(COMPETENCES.teacherName)},
+		         'Lehrbeauftragte, Kompetenz', true, true, 'EXT')
+		 ON CONFLICT (id) DO NOTHING;`
+	];
 }
 
 /**

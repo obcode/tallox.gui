@@ -62,6 +62,13 @@ export type WishLike = {
 	instance: { id: string };
 };
 
+/** One statement of a module's competence pool, as much of it as the candidate list needs. */
+export type PoolEntryLike = {
+	level: string;
+	note: string;
+	holder: { personId?: string | null; teacherId?: string | null; name: string };
+};
+
 /** One row of the table: a part, and whoever holds it. */
 export type PartRow = {
 	part: PartLike;
@@ -267,8 +274,10 @@ export function commonNote(rows: readonly PartRow[]): string | null {
  * is the point of the whole screen: the assignment is made *from* the wishes, so the wishes have
  * to be where the decision is taken rather than on another page somebody compares against.
  *
- * Then the members of the module's subject group, then whoever the search turned up, then the
- * person currently holding the part if none of the above named them. Deduplicated by identity, so
+ * Then who has said they can teach the module, then who would like to — the competence pool, which
+ * is what is left to go on when a wish round leaves a gap. Then the members of the module's subject
+ * group, then whoever the search turned up, then the person currently holding the part if none of
+ * the above named them. Deduplicated by identity, so
  * somebody who wished for it and is in the subject group appears once, with the reason that says
  * more.
  *
@@ -294,7 +303,14 @@ export function candidatesFor(
 	 * Only consulted for pooled ids, so an ordinary part — one cohort, one id — renders exactly
 	 * as it did.
 	 */
-	programmeOf: ReadonlyMap<string, string> = new Map()
+	programmeOf: ReadonlyMap<string, string> = new Map(),
+	/**
+	 * The module's competence pool, as far as the backend let the caller read it.
+	 *
+	 * Last and optional so that every existing call reads as it did. Stronger statements are
+	 * offered first whatever order they arrive in.
+	 */
+	pool: readonly PoolEntryLike[] = []
 ): Candidate[] {
 	const out: Candidate[] = [];
 	const seen = new Set<string>();
@@ -320,6 +336,19 @@ export function candidatesFor(
 			name: wish.person.name,
 			hint: from ? `Wunsch aus ${from} · ${base}` : base
 		});
+	}
+
+	for (const level of ['CAN_TEACH', 'WOULD_LIKE'] as const) {
+		for (const c of pool) {
+			if (c.level !== level) continue;
+			const words = level === 'CAN_TEACH' ? 'kann halten' : 'würde gern';
+			add({
+				personId: c.holder.personId ?? undefined,
+				teacherId: c.holder.personId ? undefined : (c.holder.teacherId ?? undefined),
+				name: c.holder.name,
+				hint: c.note ? `${words} · ${c.note}` : words
+			});
+		}
 	}
 
 	for (const member of members) add({ personId: member.id, name: member.name, hint: 'Fachgruppe' });

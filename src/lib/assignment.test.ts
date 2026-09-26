@@ -139,6 +139,35 @@ describe('candidatesFor', () => {
 		expect(pooled!.hint).toContain('Wunsch aus GS');
 	});
 
+	// The competence pool comes after the wishes and before the members: "kann halten" is what is
+	// left to go on where nobody registered interest for this cohort.
+	it('offers the competence pool after the wishes, the stronger statement first', () => {
+		const out = candidatesFor(
+			['i1'],
+			wishes,
+			[{ id: 'per3', name: 'Prof. Drei' }],
+			[],
+			[],
+			new Map(),
+			[
+				{ level: 'WOULD_LIKE', note: '', holder: { personId: 'per4', name: 'Prof. Vier' } },
+				{ level: 'CAN_TEACH', note: 'nur Übung', holder: { teacherId: 't8', name: 'LB Acht' } },
+				// Already a wish: listed once, with the wish as the reason.
+				{ level: 'CAN_TEACH', note: '', holder: { personId: 'per1', name: 'Prof. Eins' } }
+			]
+		);
+		expect(out.map((c) => c.name)).toEqual([
+			'Prof. Eins',
+			'Prof. Zwei',
+			'LB Acht',
+			'Prof. Vier',
+			'Prof. Drei'
+		]);
+		expect(out[2]).toEqual({ teacherId: 't8', name: 'LB Acht', hint: 'kann halten · nur Übung' });
+		expect(out[3].hint).toBe('würde gern');
+		expect(out[0].hint).toBe('unbedingt');
+	});
+
 	// The holding cohort's own interest is not labelled: it is the cohort being filled, and a
 	// prefix on every line would be noise on the majority of them.
 	it('does not label the interest registered for the cohort being filled', () => {

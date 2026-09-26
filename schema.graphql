@@ -478,6 +478,98 @@ type BuildInfo {
   builtAt: String!
 }
 
+"""One statement about who can teach a module."""
+type Competence {
+  id: ID!
+
+  """The module the statement is about."""
+  module: CompetenceModule!
+
+  """
+  Who the statement is about: an account (`personId`), or a teacher without one (`teacherId`),
+  whose statements the subject group lead enters.
+  """
+  holder: Assignee!
+
+  """Which of the two statements this is."""
+  level: CompetenceLevel!
+
+  """
+  „nur die Übung“, „zuletzt 2019 gehalten“. Read by whoever may read the row.
+  """
+  note: String!
+
+  """
+  True for a person's statement on a module outside every subject group they are in — they have
+  left it since. Kept rather than deleted behind their back, and removable by them.
+  """
+  outsideSubjectGroups: Boolean!
+
+  """When it was first stated."""
+  createdAt: Time!
+
+  """
+  When it was last changed. Changing your mind moves this and keeps `createdAt`.
+  """
+  updatedAt: Time!
+}
+
+"""
+One of your subject groups, and how many of its compulsory modules you have said you can teach.
+
+A hint, not a validation: `canTeachCompulsory` below `minimum` refuses nothing.
+"""
+type CompetenceGroupStatus {
+  """One of the subject groups you are in."""
+  subjectGroup: SubjectGroupRef!
+
+  """How many of its active compulsory modules you have marked `CAN_TEACH`."""
+  canTeachCompulsory: Int!
+
+  """
+  How many the faculty asks for: „mindestens 3 oder 4 Fächer aus dem Pflichtkatalog“.
+  """
+  minimum: Int!
+}
+
+"""The two statements a competence can be."""
+enum CompetenceLevel {
+  """
+  Kann ich halten, wenn es brennt. Counts towards the minimum, and the assignment reads it first.
+  """
+  CAN_TEACH
+
+  """
+  Würde ich in Zukunft gern halten. Confidential for the reason a wish is.
+  """
+  WOULD_LIKE
+}
+
+"""
+The module a competence is about: enough to label and group a row.
+
+Not the whole `Module`, for the reason `Assignee` is not a `Person`: this row is rendered by one
+query that knows the name and the group and nothing else, and a half-filled `Module` would read
+as a claim about the fields it left empty.
+"""
+type CompetenceModule {
+  id: ID!
+
+  """
+  The module's name as the regulations spell it; empty for the few the source names nowhere.
+  """
+  name: String!
+
+  """
+  Compulsory under at least one version of some programme's regulations — what the faculty calls
+  the "Pflichtkatalog", and what the minimum counts.
+  """
+  compulsory: Boolean!
+
+  """The module's subject group, or `null` while it has none."""
+  subjectGroup: SubjectGroupRef
+}
+
 """
 One unit of a split nobody has stated yet.
 
@@ -1207,6 +1299,22 @@ input LocalModuleInput {
   components: [ModuleComponentInput!]
 }
 
+"""One member of a subject group and their count — the lead's work list."""
+type MemberCompetenceStatus {
+  """
+  The member: a name and an address, and deliberately not a `Person` with roles.
+  """
+  member: Assignee!
+
+  """
+  How many of the group's active compulsory modules they have marked `CAN_TEACH`.
+  """
+  canTeachCompulsory: Int!
+
+  """How many the faculty asks for."""
+  minimum: Int!
+}
+
 """
 An entry in the module catalogue.
 
@@ -1619,6 +1727,12 @@ type ModuleRef {
   similarly named modules apart.
   """
   homeProgrammeCode: String!
+
+  """
+  Compulsory under at least one version of some programme's regulations — the "Pflichtkatalog"
+  the competence profile's minimum counts.
+  """
+  compulsory: Boolean!
 }
 
 """Where a catalogue row comes from."""
@@ -1633,6 +1747,19 @@ enum ModuleSource {
   The import never touches such a row, and it never carries a `zpaId`.
   """
   LOCAL
+}
+
+"""A module of a subject group that nobody has said they can teach."""
+type ModuleWithoutCompetence {
+  id: ID!
+
+  """The module's name."""
+  name: String!
+
+  """
+  Compulsory under at least one version of some programme's regulations. These come first to mind.
+  """
+  compulsory: Boolean!
 }
 
 """
@@ -1904,6 +2031,39 @@ type Mutation {
     """In order. At least one entry, or none at all to clear the split."""
     components: [ModuleComponentInput!]!
   ): Module!
+
+  """
+  State your own competence for a module, or change it.
+  
+  Only for the modules of the subject groups you are in — `COMPETENCE_OUTSIDE_GROUPS` otherwise.
+  Stating twice is changing your mind and keeps `createdAt`.
+  """
+  setMyCompetence(
+    moduleId: ID!
+    level: CompetenceLevel!
+
+    """Up to 500 characters, or nothing."""
+    note: String
+  ): Competence!
+
+  """
+  Withdraw one of your own statements. Not there and not yours are the same answer,
+  `COMPETENCE_NOT_FOUND`. Returns the id.
+  """
+  withdrawMyCompetence(id: ID!): ID!
+
+  """
+  State a competence for a teacher without an account. The lead of the module's subject group and
+  the dean's office only; a teacher with an account says it themselves
+  (`COMPETENCE_TEACHER_HAS_ACCOUNT`).
+  """
+  setTeacherCompetence(moduleId: ID!, teacherId: ID!, level: CompetenceLevel!, note: String): Competence!
+
+  """
+  Withdraw a statement about a teacher without an account. On the terms of `setTeacherCompetence`;
+  anything else answers `COMPETENCE_NOT_FOUND`.
+  """
+  withdrawTeacherCompetence(id: ID!): ID!
 
   """
   Plan a whole screen of demand at once: which modules are offered, in how many cohorts, with how
@@ -2835,6 +2995,47 @@ type Query {
     includeInactive: Boolean = false
   ): [Teacher!]!
 
+  """Your own statements, through either door: they are your data."""
+  myCompetences: [Competence!]!
+
+  """For each subject group you are in, how far you are from the minimum."""
+  myCompetenceStatus: [CompetenceGroupStatus!]!
+
+  """
+  The competences you may see, narrowed by the arguments.
+  
+  **Not an error when you may see none**, for the reason `wishes` gives. Through a Personal Access
+  Token this is your own statements whatever your role.
+  """
+  competences(
+    """One module's pool."""
+    module: ID
+
+    """The modules of one subject group."""
+    subjectGroup: ID
+
+    """One account's statements."""
+    person: ID
+
+    """One teacher's statements."""
+    teacher: ID
+  ): [Competence!]!
+
+  """
+  Every member of a subject group and how many of its compulsory modules they can teach.
+  
+  Only for the lead of that group and the dean's office — `COMPETENCE_GROUP_REFUSED` otherwise.
+  A count over a group is a count over rows, so it is answered only to somebody who may read all
+  of them.
+  """
+  competenceMemberStatus(subjectGroup: ID!): [MemberCompetenceStatus!]!
+
+  """
+  The active modules of a subject group that nobody can teach: „wenn es brennt, kann es niemand“.
+  On the same terms as `competenceMemberStatus`.
+  """
+  modulesWithoutCompetence(subjectGroup: ID!): [ModuleWithoutCompetence!]!
+
   """
   The demand of a semester: which instances have been declared, with their parts.
   
@@ -3233,7 +3434,8 @@ enum ScopeArea {
   PLANNING
 
   """
-  Registering interest in instance parts, and reading what may be read of other people's.
+  Registering interest in instance parts, stating which modules you can teach or would like to,
+  and reading what may be read of other people's.
   
   Its own area rather than part of `PLANNING`, because it is the one part of the planning somebody
   might sensibly want a token narrowed *to*: "this script keeps my wishes in step with my
@@ -3245,7 +3447,12 @@ enum ScopeArea {
   to your own entries whatever the scope says: the area bounds the surface, the policy bounds the
   rows.
   
-  Fields: `myWishes`, `wishes`, `setWish`, `withdrawWish`.
+  Competences are here and not under `PROFILE` because "würde ich gern halten" is a wish without a
+  semester, and confidential for the same reason.
+  
+  Fields: `myWishes`, `wishes`, `setWish`, `withdrawWish`, `myCompetences`, `myCompetenceStatus`,
+  `competences`, `competenceMemberStatus`, `modulesWithoutCompetence`, `setMyCompetence`,
+  `withdrawMyCompetence`, `setTeacherCompetence`, `withdrawTeacherCompetence`.
   """
   WISHES
 

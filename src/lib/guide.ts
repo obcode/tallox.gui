@@ -80,6 +80,12 @@ export const GUIDE: readonly GuideSection[] = [
 				who: [],
 				where: [{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }],
 				text: 'In welchen Fächern Du arbeitest. Eine Aussage über Dich, keine Berechtigung, deshalb trägst Du sie selbst ein. Die Wunschseite zeigt Deine Fachgruppen zuerst; eintragen kannst Du Dich trotzdem überall.'
+			},
+			{
+				title: 'Die eigenen Kompetenzen angeben',
+				who: [],
+				where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
+				text: 'Welche Module Deiner Fachgruppen Du halten kannst, auch wenn es kurzfristig brennt, und welche Du gern halten würdest. Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe. Einmal angeben, nicht jedes Semester. Das sehen nur Du, die zuständigen Leitungen und das Dekanat; die Fachgruppenleitung findet den Pool bei der Zuteilung.'
 			}
 		]
 	},

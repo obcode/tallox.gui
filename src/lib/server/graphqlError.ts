@@ -164,7 +164,20 @@ const PASS_THROUGH = new Set([
 	// and the refusals name which lead to go and see.
 	'NOT_YOUR_SUBJECT_GROUP',
 	'SUBJECT_GROUP_SCOPE_MISSING',
-	'SUBJECT_GROUP_NOT_FOUND'
+	'SUBJECT_GROUP_NOT_FOUND',
+	// The competence profile. "Würde gern" is confidential like a wish, so the same care applies —
+	// and none of these can say anything about somebody else's statement. The backend upserts, so
+	// no uniqueness violation exists on this path; COMPETENCE_NOT_FOUND covers "not there", "not
+	// yours" and "not a row you may remove" with one sentence. COMPETENCE_TEACHER_HAS_ACCOUNT says
+	// that a teacher can sign in, which `teachers { isUser }` tells every signed-in caller anyway.
+	'COMPETENCE_NOT_FOUND',
+	'COMPETENCE_OUTSIDE_GROUPS',
+	'COMPETENCE_FOR_TEACHER_REFUSED',
+	'COMPETENCE_TEACHER_HAS_ACCOUNT',
+	'COMPETENCE_MODULE_RETIRED',
+	'COMPETENCE_LEVEL_INVALID',
+	'COMPETENCE_NOTE_TOO_LONG',
+	'COMPETENCE_GROUP_REFUSED'
 ]);
 
 /** What is shown when the error is none of the known ones. */
