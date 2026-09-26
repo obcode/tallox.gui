@@ -205,6 +205,11 @@
 	sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung unter
 	<a class="link" href={resolve('/semester')}>Semester und Phasen</a> veröffentlicht.
 </p>
+<p class="text-base-content/80 mt-2 max-w-prose">
+	Nach den Wünschen bietet jede Auswahl an, wer das Modul laut
+	<a class="link" href={resolve('/zuteilung/kompetenzen')}>Kompetenzen</a> halten kann oder gern halten
+	würde. Dort steht auch, welche Module niemand abdeckt.
+</p>
 
 <!-- One form per bar. A GET form submits only the button that was clicked, so a bar that shared
      its form with another would send its own field and nothing else. -->
@@ -496,7 +501,8 @@
 									members,
 									data.found,
 									held,
-									pooled.programmes
+									pooled.programmes,
+									data.competences.filter((c) => c.module.id === group.instance.module.id)
 								)}
 								{@const shared = commonValue(group.rows)}
 								{@const sharedNote = commonNote(group.rows)}

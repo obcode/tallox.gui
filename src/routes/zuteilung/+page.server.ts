@@ -151,6 +151,22 @@ const AssignmentDocument = graphql(`
 				id
 			}
 		}
+		# The competence pool of the group's modules. Through the same filter as every read of it,
+		# so a programme lead gets the modules of their programme and a subject group lead their
+		# group's; it never refuses, it answers with less.
+		competences(subjectGroup: $group) @include(if: $withGroup) {
+			id
+			level
+			note
+			module {
+				id
+			}
+			holder {
+				personId
+				teacherId
+				name
+			}
+		}
 		teachers(search: $search) @include(if: $withSearch) {
 			id
 			name
@@ -285,6 +301,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		assignments: data.assignments ?? [],
 		wishes: data.wishes ?? [],
 		found: data.teachers ?? [],
+		competences: data.competences ?? [],
 		windows: data.wishWindows ?? [],
 		me: data.me,
 		led: data.me?.subjectGroupsLed ?? [],

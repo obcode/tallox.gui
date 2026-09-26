@@ -49,3 +49,18 @@ erwarten.
 
 <a href={resolve('/')}>…</a>
 ```
+
+## Erst formatieren, dann `pnpm codegen`
+
+Der `client-preset` ordnet ein `graphql(`…`)`-Dokument über seinen **exakten Quelltext** zu. Formatiert
+Prettier die Query nach dem Codegen um (z. B. die Variablenliste auf eine Zeile), findet
+`graphql()` sein Dokument nicht mehr, die Anfrage scheitert, und die Seite zeigt ein 403 mit der
+generischen Meldung — `svelte-check` bleibt grün. Reihenfolge deshalb immer `pnpm format`, dann
+`pnpm codegen`. Gefunden am 2026-09-26 an `/zuteilung/kompetenzen`.
+
+## Ein alter Preview-Server auf 4173 testet den alten Build
+
+`reuseExistingServer` ist lokal an: läuft auf 4173 noch ein Preview von vorhin, baut Playwright
+**nicht** neu und testet gegen den alten Stand. Ein Fehler, der nach dem Fix bleibt, ist deshalb
+zuerst eine Frage an `ps`, nicht an den Code. Ein manuell gestarteter Preview, der „Port 4173 is in
+use" meldet, hat es gerade verraten.

@@ -133,6 +133,12 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		hint: 'In welchen Fächern Du arbeitest — Vorauswahl für die Wunschseite'
 	},
 	{
+		emoji: '🧠',
+		label: 'Meine Kompetenzen',
+		href: '/konto/kompetenzen',
+		hint: 'Welche Module Du halten kannst, und welche Du gern halten würdest'
+	},
+	{
 		emoji: '📖',
 		label: 'API-Doku',
 		href: '/api-doku',
