@@ -31,6 +31,11 @@ export type GuideStep = {
 	where: readonly GuideLink[];
 	/** What happens, and the rules worth knowing before it does. */
 	text: string;
+	/**
+	 * When, in weeks of the semester that is running while the next one is planned. The faculty's
+	 * rhythm, not a rule: no phase changes by the calendar, and nothing here is enforced.
+	 */
+	when?: string;
 };
 
 export type GuideSection = {
@@ -92,42 +97,48 @@ export const GUIDE: readonly GuideSection[] = [
 	{
 		title: 'Jedes Semester',
 		intro:
-			'Die Reihenfolge ist die des Prozesses. Bedarf, Wünsche und Zuteilung sind aber grundsätzlich immer möglich; die Studiengänge und Fachgruppen sind zu verschiedenen Zeiten dran.',
+			'Die Reihenfolge ist die des Prozesses. Bedarf, Wünsche und Zuteilung sind aber grundsätzlich immer möglich; die Studiengänge und Fachgruppen sind zu verschiedenen Zeiten dran. Geplant wird jeweils das nächste Semester, während das laufende beginnt; die Wochen neben den Schritten sind Wochen dieses laufenden Semesters. Das übernächste gleich mitzuplanen hat erfahrungsgemäß selten getragen.',
 		steps: [
 			{
 				title: 'Das Planungssemester setzen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
+				when: 'Semesterwoche 1–2',
 				text: 'Angelegt wird kein Semester, es ist da wie der nächste März. Das Dekanat sagt, welches gerade geplant wird; das ist dann überall vorausgewählt. Die Phase eines Semesters wird von Hand weitergeschaltet, nie aus dem Kalender abgeleitet.'
 			},
 			{
 				title: 'Den Bedarf festlegen',
 				who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/bedarf', label: 'Bedarf' }],
+				when: 'Semesterwoche 3–5',
 				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten. Am Ende meldet sie „Bedarf ist fertig“; das ist eine Ansage, keine Sperre.'
 			},
 			{
 				title: 'Interesse bekunden',
 				who: [],
 				where: [{ href: '/wuensche', label: 'Wünsche' }],
-				text: 'Jede:r trägt an den Instanzen ein, was er oder sie halten würde, mit Priorität und Notiz. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Leitung einer Fachgruppe öffnet und schließt die Wunschrunde ihrer Fachgruppe; wer schließt, arbeitet mit dem, was gesammelt wurde.'
+				when: 'Semesterwoche 6–7',
+				text: 'Jede:r trägt an den Instanzen ein, was er oder sie halten würde, mit Priorität und Notiz. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Leitung einer Fachgruppe öffnet und schließt die Wunschrunde ihrer Fachgruppe; wer schließt, arbeitet mit dem, was gesammelt wurde. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
 			},
 			{
 				title: 'Die Wünsche veröffentlichen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
-				text: 'Ab dann sieht jede:r alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen.'
+				when: 'Ende Semesterwoche 7',
+				text: 'Ab dann sieht jede:r alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
 			},
 			{
 				title: 'Die Instanzen besetzen',
 				who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
-				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben.'
+				when: 'Semesterwoche 8–9',
+				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben. Auch jetzt lässt sich der Bedarf noch ändern, bis hin zu ganzen Modulen, die wegfallen oder dazukommen.'
 			},
 			{
 				title: 'Abschließen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
+				when: 'nach Semesterwoche 9',
 				text: 'Mit der Phase „final“ steht der Plan. Der Bedarf ist dann geschlossen; die Zuteilung bleibt änderbar, weil eine Vertretung im November die Lehre ändert.'
 			}
 		]

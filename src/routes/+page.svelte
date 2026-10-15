@@ -109,6 +109,9 @@
 							<p class="text-base-content/80 text-sm">
 								Wo: {@render where(step)}
 							</p>
+							{#if step.when}
+								<p class="text-base-content/80 text-sm">Wann: {step.when}</p>
+							{/if}
 						</div>
 					</li>
 				{/each}

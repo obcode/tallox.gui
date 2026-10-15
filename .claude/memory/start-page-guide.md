@@ -40,3 +40,14 @@ Ein Text-Link auf der Startseite trägt denselben zugänglichen Namen wie der Me
 Mode zwei — jetzt auf `getByRole('banner')` eingegrenzt. Der zweite fiel erst in der CI auf, weil
 lokal nur ein Teil der Suiten lief: **vor dem Push die ganze E2E-Suite**, sie braucht eine Minute. **Merksatz: ein Test über das Menü sucht in der Kopfleiste,
 nicht auf der Seite.**
+
+## Zeitrahmen (2026-10-15)
+
+Die Schritte „Jedes Semester" tragen ein `when` in **Wochen des laufenden Semesters** — geplant
+wird das nächste, während das laufende beginnt: Planungssemester Wo 1–2, Bedarf 3–5, Wünsche 6–7,
+Veröffentlichen Ende 7, Zuteilung 8–9, Abschluss danach. Herkunft: Rückmeldung der
+Fachgruppenleitung Mathematik aus den letzten Excel-Planungen. Rhythmus der Fakultät, **nicht
+erzwungen** — keine Phase schaltet nach Kalender. Der Unit-Test verlangt `when` genau für die
+Semesterschritte. Dazu zwei Sätze, die aus derselben Rückmeldung kommen: der Bedarf bleibt in
+Wunsch- und Zuteilungsphase änderbar (Schreibmatrix `DEMAND` in `WISHES`/`ASSIGNMENT`), und nur
+das nächste Semester planen, weil das übernächste selten trägt.

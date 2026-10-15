@@ -35,6 +35,25 @@ describe('the guide on the start page', () => {
 		}
 	});
 
+	// The faculty's rhythm (step 8 in weeks 1–2 up to the assignment in weeks 8–9) is what a
+	// subject group lead plans the term around. Every per-semester step says when; the one-time
+	// setup does not, because it hangs on no semester.
+	it('says when each per-semester step happens, and only those', () => {
+		const [setup, perSemester] = GUIDE;
+		for (const step of setup.steps) expect(step.when, step.title).toBeUndefined();
+		for (const step of perSemester.steps) expect(step.when, step.title).toMatch(/Semesterwoche/);
+	});
+
+	// The demand stays writable through the wish and the assignment phase, and the guide says so,
+	// because a forgotten module or a lecturer who drops out is the normal case, not an exception.
+	it('says that the demand can still change after the demand step', () => {
+		const steps = GUIDE.flatMap((s) => s.steps);
+		expect(steps.find((s) => s.title === 'Interesse bekunden')?.text).toMatch(/Bedarf/);
+		expect(steps.find((s) => s.title === 'Die Instanzen besetzen')?.text).toMatch(
+			/lässt sich der Bedarf noch ändern/
+		);
+	});
+
 	// The confidentiality rule is the one sentence the start page may never get wrong.
 	it('says that wishes stay confidential until they are published', () => {
 		const wishes = GUIDE.flatMap((s) => s.steps).find((s) => s.title === 'Interesse bekunden');
