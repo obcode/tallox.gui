@@ -17,6 +17,7 @@ Kolleg:innen.
 - [Die Zuteilungsseite](assignment-page.md) — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, und zwei Fallen
 - [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, und zwei Befunde aus dem ersten E2E-Lauf
 - [Die Kompetenz-Seiten](competence-pages.md) — eigene Angaben, der Pool der Fachgruppenleitung, und der Pool in der Kandidatenliste
+- [SWS-Controlling-Seite](sws-controlling-page.md) — `/bedarf/sws`: warum kein Menüeintrag, Vorjahr als eigene Anfrage, eigener E2E-Datensatz
 - [Die Startseite als Anleitung](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts`, verlinkt nur, was das Menü zeigt
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
 
