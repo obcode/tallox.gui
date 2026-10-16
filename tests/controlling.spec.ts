@@ -14,8 +14,12 @@ import { runSql } from './psql';
  * earlier E2S held it with one group. So E2S costs 8 hours, 6 of them its own and 2 lent to E2T,
  * against 4 the year before.
  *
- * E2S has a quota of 20 for the study year 2028 (2028-WS and 2029-SS), so the summer may spend 10
- * and the balance is +2. And seen from E2T, the cohort it holds is an import from E2S.
+ * E2S has a quota of 20 for the study year 2028, and its winter 2028-WS held the module once with a
+ * lecture and a laboratory group: 4 hours. The winter may spend half the year, 10, and has 6 left.
+ * The summer may spend what the winter left, 16, and with 8 planned has 8 left — which is also
+ * what is left of the year. And seen from E2T, the cohort it holds is an import from E2S.
+ *
+ * The summer is in the review, so the dean's office can announce it as reviewed.
  */
 const CONTROLLING = {
 	home: { id: '0e2e0000-0000-4000-8000-0000000000a0', code: 'E2S' },
@@ -23,6 +27,7 @@ const CONTROLLING = {
 	module: '0e2e0000-0000-4000-8000-0000000000a2',
 	semester: '2029-SS',
 	previous: '2028-SS',
+	winter: '2028-WS',
 	studyYear: 2028,
 	// A year of its own for the form test, so that what the dean's office types there cannot move
 	// the balance asserted above.
@@ -30,7 +35,8 @@ const CONTROLLING = {
 	instances: {
 		home: '0e2e0000-0000-4000-8000-0000000000a3',
 		lent: '0e2e0000-0000-4000-8000-0000000000a4',
-		previous: '0e2e0000-0000-4000-8000-0000000000a5'
+		previous: '0e2e0000-0000-4000-8000-0000000000a5',
+		winter: '0e2e0000-0000-4000-8000-0000000000a6'
 	}
 } as const;
 
@@ -40,6 +46,7 @@ function seedSql(): string {
 	return [
 		`DELETE FROM course_instance WHERE module_id = '${c.module}';`,
 		`DELETE FROM programme_quota WHERE programme_id = '${c.home.id}';`,
+		`DELETE FROM review_completion WHERE programme_id = '${c.home.id}';`,
 		`INSERT INTO programme (id, code, title) VALUES ('${c.home.id}', '${c.home.code}', 'Controlling-Test')
 		 ON CONFLICT DO NOTHING;`,
 		// Not planned here: it only receives, and a planned programme would turn up as a tab on
@@ -52,18 +59,22 @@ function seedSql(): string {
 		 VALUES ('${c.module}', '${c.home.id}', 'E2E Controlling-Modul', 'SU_WITH_LAB',
 		         'EVERY_SUMMER_SEMESTER', 4, 5)
 		 ON CONFLICT (id) DO NOTHING;`,
-		`INSERT INTO semester (code) VALUES ('${c.semester}'), ('${c.previous}')
+		`INSERT INTO semester (code) VALUES ('${c.semester}'), ('${c.previous}'), ('${c.winter}')
 		 ON CONFLICT (code) DO NOTHING;`,
+		`UPDATE semester SET phase = 'REVIEW' WHERE code = '${c.semester}';`,
 		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track)
 		 SELECT '${i.home}'::uuid, s.id, '${c.module}'::uuid, '${c.home.id}'::uuid, '' FROM semester s WHERE s.code = '${c.semester}'
 		 UNION ALL
 		 SELECT '${i.lent}'::uuid, s.id, '${c.module}'::uuid, '${c.other.id}'::uuid, '' FROM semester s WHERE s.code = '${c.semester}'
 		 UNION ALL
-		 SELECT '${i.previous}'::uuid, s.id, '${c.module}'::uuid, '${c.home.id}'::uuid, '' FROM semester s WHERE s.code = '${c.previous}';`,
+		 SELECT '${i.previous}'::uuid, s.id, '${c.module}'::uuid, '${c.home.id}'::uuid, '' FROM semester s WHERE s.code = '${c.previous}'
+		 UNION ALL
+		 SELECT '${i.winter}'::uuid, s.id, '${c.module}'::uuid, '${c.home.id}'::uuid, '' FROM semester s WHERE s.code = '${c.winter}';`,
 		`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
 		 VALUES ('${i.home}', 'LECTURE', 0, 2), ('${i.home}', 'LAB', 1, 2), ('${i.home}', 'LAB', 2, 2),
 		        ('${i.lent}', 'LAB', 0, 2),
-		        ('${i.previous}', 'LECTURE', 0, 2), ('${i.previous}', 'LAB', 1, 2);`,
+		        ('${i.previous}', 'LECTURE', 0, 2), ('${i.previous}', 'LAB', 1, 2),
+		        ('${i.winter}', 'LECTURE', 0, 2), ('${i.winter}', 'LAB', 1, 2);`,
 		`INSERT INTO programme_quota (programme_id, study_year, teaching_hours)
 		 VALUES ('${c.home.id}', ${c.studyYear}, 20);`
 	].join('\n');
@@ -109,20 +120,70 @@ test.describe('the SWS controlling', () => {
 		await checkA11y(page);
 	});
 
-	test('reads a semester against half of the study year’s quota', async ({ asPersona }) => {
+	test('puts the study year beside its quota, winter and summer', async ({
+		asPersona,
+		checkA11y
+	}) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
 
-		const cells = page
-			.getByRole('region', { name: /^Kontingent/ })
+		const year = page.getByRole('region', { name: /^Studienjahr 2028\/29/ });
+		const cells = year
 			.getByRole('row', { name: new RegExp(`^${CONTROLLING.home.code} – `) })
 			.getByRole('cell');
-
-		// Year, the summer's half, what is planned, and what is left.
+		// Quota, winter, summer, what is left.
 		await expect(cells.nth(0)).toHaveText('20');
-		await expect(cells.nth(1)).toHaveText('10');
+		await expect(cells.nth(1)).toHaveText('4');
 		await expect(cells.nth(2)).toHaveText('8');
-		await expect(cells.nth(3)).toHaveText('+2');
+		await expect(cells.nth(3)).toHaveText('+8');
+
+		// The summer is played through from here: its figure leads into its demand.
+		await expect(cells.nth(2).getByRole('link')).toHaveAttribute(
+			'href',
+			`/bedarf?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.home.code}`
+		);
+		await checkA11y(page);
+	});
+
+	test('holds a winter to half the year and a summer to what the winter left', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		const semesterRow = () =>
+			page
+				.getByRole('region', { name: /^Dieses Semester/ })
+				.getByRole('row', { name: new RegExp(`^${CONTROLLING.home.code} – `) })
+				.getByRole('cell');
+
+		// Available, planned, balance.
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.winter}`);
+		await expect(semesterRow().nth(0)).toHaveText('10');
+		await expect(semesterRow().nth(1)).toHaveText('4');
+		await expect(semesterRow().nth(2)).toHaveText('+6');
+
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
+		await expect(semesterRow().nth(0)).toHaveText('16');
+		await expect(semesterRow().nth(1)).toHaveText('8');
+		await expect(semesterRow().nth(2)).toHaveText('+8');
+	});
+
+	test('the dean’s office announces the review, and the statistics show it', async ({
+		asPersona
+	}) => {
+		const dean = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(
+			dean,
+			`/bedarf?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.home.code}`
+		);
+		await dean.getByRole('button', { name: 'Review fertig' }).click();
+		await expect(dean.getByRole('button', { name: 'Review-Meldung zurücknehmen' })).toBeVisible();
+
+		await gotoRendered(dean, `/statistik?semester=${CONTROLLING.semester}`);
+		await expect(
+			dean
+				.getByRole('region', { name: /^Studienjahr/ })
+				.getByRole('row', { name: new RegExp(`^${CONTROLLING.home.code} – `) })
+		).toContainText('Review fertig');
 	});
 
 	test('shows what a programme takes from elsewhere', async ({ asPersona, checkA11y }) => {

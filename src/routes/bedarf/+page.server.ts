@@ -92,6 +92,14 @@ const DemandDocument = graphql(`
 				code
 			}
 		}
+		# The same kind of announcement after the assignment: the programme lead has gone over the
+		# whole once more, and the figures stand.
+		reviewCompletions(semester: $semester) @include(if: $withOverview) {
+			completedAt
+			programme {
+				code
+			}
+		}
 		modules(filter: $filter) @include(if: $withTable) {
 			id
 			name
@@ -338,6 +346,14 @@ const PlanDocument = graphql(`
 const SetDemandCompleteDocument = graphql(`
 	mutation SetDemandComplete($semester: String!, $programme: String!, $complete: Boolean!) {
 		setDemandComplete(semester: $semester, programme: $programme, complete: $complete) {
+			completedAt
+		}
+	}
+`);
+
+const SetReviewCompleteDocument = graphql(`
+	mutation SetReviewComplete($semester: String!, $programme: String!, $complete: Boolean!) {
+		setReviewComplete(semester: $semester, programme: $programme, complete: $complete) {
 			completedAt
 		}
 	}
@@ -590,6 +606,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		instances: data.courseInstances ?? [],
 		previousInstances: data.previous ?? [],
 		completions: data.demandCompletions ?? [],
+		reviews: data.reviewCompletions ?? [],
 		selected: {
 			semester,
 			programme,
@@ -705,6 +722,25 @@ export const actions: Actions = {
 			return fail(403, refusalFor(err));
 		}
 		return { announced: complete };
+	},
+
+	/** The review announcement, the twin of `complete` above, said after the assignment. */
+	review: async ({ request }) => {
+		const form = await request.formData();
+		const semester = String(form.get('semester') ?? '');
+		const programme = String(form.get('programme') ?? '');
+		const complete = String(form.get('complete') ?? '') === 'true';
+
+		if (semester === '' || programme === '') {
+			return fail(400, { error: 'Kein Semester oder kein Studiengang gewählt.' });
+		}
+
+		try {
+			await backendRequest(SetReviewCompleteDocument, { semester, programme, complete });
+		} catch (err) {
+			return fail(403, refusalFor(err));
+		}
+		return { reviewed: complete };
 	},
 
 	plan: async ({ request }) => {

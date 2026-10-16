@@ -54,6 +54,18 @@ describe('the guide on the start page', () => {
 		);
 	});
 
+	// The review is the step after the assignment, and the guide says that everything stays
+	// changeable there until the semester is over — the faculty's own words were "bis zum Schluss".
+	it('puts the programme review between the assignment and the close', () => {
+		const titles = GUIDE[1].steps.map((s) => s.title);
+		const assign = titles.indexOf('Die Instanzen besetzen');
+		expect(titles[assign + 1]).toBe('Studiengangs-Review');
+		expect(titles[assign + 2]).toBe('Abschließen');
+		const review = GUIDE[1].steps[assign + 1];
+		expect(review.text).toMatch(/änderbar, bis das Semester vorbei ist/);
+		expect(review.where.map((w) => w.href)).toContain('/statistik');
+	});
+
 	// The confidentiality rule is the one sentence the start page may never get wrong.
 	it('says that wishes stay confidential until they are published', () => {
 		const wishes = GUIDE.flatMap((s) => s.steps).find((s) => s.title === 'Interesse bekunden');

@@ -333,7 +333,7 @@ test.describe('the wish phase', () => {
 
 		// The sentence says the semester is over rather than that a deadline was missed — there is
 		// nothing here the reader can repair.
-		await expect(page.getByText(/Dieses Semester ist abgeschlossen/)).toBeVisible();
+		await expect(page.getByText(/Dieses Semester ist vorbei/)).toBeVisible();
 		await expect(save(page)).toBeDisabled();
 		await expect(cell(page)).toBeDisabled();
 	});

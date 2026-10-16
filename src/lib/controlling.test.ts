@@ -5,7 +5,10 @@ import {
 	deltaLabel,
 	importGroups,
 	quotaTable,
+	semesterQuotaRule,
 	studyYearLabel,
+	studyYearSemesters,
+	studyYearTable,
 	studyYearOf,
 	type ImportInput,
 	type LoadInput
@@ -156,5 +159,36 @@ describe('the study year', () => {
 		expect(studyYearOf('Sommer 27')).toBeNull();
 		expect(studyYearLabel(2026)).toBe('2026/27');
 		expect(studyYearLabel(2099)).toBe('2099/00');
+	});
+});
+
+describe('the study-year table', () => {
+	const row = (code: string, status = 'PLANNED', extra = {}) => ({
+		homeProgramme: { code, title: '', planningStatus: status },
+		winterHours: 100,
+		summerHours: 50,
+		partsWithoutHours: 0,
+		...extra
+	});
+
+	it('lists the planned programmes and the others with a quota, marked when reviewed', () => {
+		const rows = studyYearTable(
+			[
+				row('IG'),
+				row('XA', 'NOT_OURS'),
+				row('IF', 'PLANNED', { yearlyQuota: 425, remaining: 275 }),
+				row('XB', 'NOT_OURS', { yearlyQuota: 10, remaining: -140 })
+			],
+			new Set(['IF'])
+		);
+		expect(rows.map((r) => r.programme.code)).toEqual(['IF', 'IG', 'XB']);
+		expect(rows[0]).toMatchObject({ remaining: 275, reviewed: true });
+		expect(rows[1]).toMatchObject({ yearlyQuota: null, remaining: null, reviewed: false });
+	});
+
+	it('names the two semesters of a study year and the rule each is held to', () => {
+		expect(studyYearSemesters(2026)).toEqual({ winter: '2026-WS', summer: '2027-SS' });
+		expect(semesterQuotaRule('2026-WS')).toMatch(/Hälfte/);
+		expect(semesterQuotaRule('2027-SS')).toMatch(/übrig/);
 	});
 });
