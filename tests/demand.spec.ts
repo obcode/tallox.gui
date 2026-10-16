@@ -70,7 +70,7 @@ test.describe('the demand table', () => {
 		await expect(
 			page.getByText(/vorbelegt — wird mit der nächsten Änderung übernommen/)
 		).toBeVisible();
-		await expect(row.getByRole('checkbox')).toBeChecked();
+		await expect(row.locator('input[name="offer"]')).toBeChecked();
 		await expect(row.getByRole('spinbutton', { name: /^Gruppen von/ })).toHaveValue('2');
 
 		// The cohort year is the axis the table is grouped by.
@@ -80,7 +80,7 @@ test.describe('the demand table', () => {
 		// until somebody confirms it: no instance is made from a guess.
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await expect(guess.getByText('geschätzt')).toBeVisible();
-		await expect(guess.getByRole('checkbox')).toBeDisabled();
+		await expect(guess.locator('input[name="offer"]')).toBeDisabled();
 		// Six hours, and the rule this morning changed: four of lecture and two of laboratory.
 		await expect(guess.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
 
@@ -103,7 +103,7 @@ test.describe('the demand table', () => {
 
 		// Then the tick. Nothing else: the tick is a decision, and a decision that sits in a
 		// browser waiting for a second act is one a closed tab undoes.
-		await guess.getByRole('checkbox').check();
+		await guess.locator('input[name="offer"]').check();
 
 		// The SWS column answers before anything is saved: a six-hour module with one laboratory
 		// group is six hours of teaching. It used to say "—" for every row of a semester nobody
@@ -259,7 +259,7 @@ test.describe('the demand table', () => {
 		await gotoRendered(page, DEMAND_URL);
 
 		const row = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
-		await row.getByRole('checkbox').uncheck();
+		await row.locator('input[name="offer"]').uncheck();
 
 		// The one change that does not happen by itself: it is shown before it is done.
 		await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toBeVisible({
@@ -287,8 +287,8 @@ test.describe('the demand table', () => {
 
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
 		// Nothing is planned here yet, and nothing was a year ago either: no prefill, no ticks.
-		await expect(row.getByRole('checkbox')).not.toBeChecked();
-		await row.getByRole('checkbox').check();
+		await expect(row.locator('input[name="offer"]')).not.toBeChecked();
+		await row.locator('input[name="offer"]').check();
 
 		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
 	});
@@ -411,11 +411,11 @@ test.describe('the demand table', () => {
 		const row = page.getByRole('row', { name: /E2E Fremdmodul/ });
 		await expect(row).toBeVisible();
 		await expect(row.getByText('außerhalb des Filters')).toBeVisible();
-		await expect(row.getByRole('checkbox')).toBeChecked();
+		await expect(row.locator('input[name="offer"]')).toBeChecked();
 
 		// And back out. planDemand only touches the modules on the screen, so a row that is
 		// visible is a row that can be withdrawn.
-		await row.getByRole('checkbox').uncheck();
+		await row.locator('input[name="offer"]').uncheck();
 		await page.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
 		await expect(page.getByText('1 zurückgezogen')).toBeVisible({ timeout: 15_000 });
 	});
@@ -439,7 +439,7 @@ test.describe('the demand table', () => {
 		await expect(row).toBeVisible();
 		// The badge, not the name — exact, because the name begins with the same word.
 		await expect(row.getByText('FWP-Platzhalter', { exact: true })).toBeVisible();
-		await expect(row.getByRole('checkbox')).toBeChecked();
+		await expect(row.locator('input[name="offer"]')).toBeChecked();
 
 		// A placeholder holds no lecture two cohorts could share: three FWPs are three different
 		// subjects, not three cohorts of one.
@@ -481,7 +481,9 @@ test.describe('the demand table', () => {
 		await gotoRendered(page, `/zuteilung?semester=${DEMAND.semester}`);
 		await page.getByRole('tab', { name: 'ohne Fachgruppe' }).click();
 
-		await expect(page.getByRole('cell', { name: /E2E Kurzfristiges FWP/ })).toBeVisible();
+		await expect(
+			page.getByRole('cell', { name: 'E2E Kurzfristiges FWP', exact: true })
+		).toBeVisible();
 		// No wish round here: the door belongs to a subject group, and a module in none has no
 		// door — absent means open, and there is nobody whose switch it would be.
 		await expect(page.getByRole('button', { name: /Wunschphase/ })).toHaveCount(0);
@@ -698,7 +700,7 @@ test.describe('the demand table', () => {
 		await gotoRendered(page, DEMAND_URL);
 
 		const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await row.getByRole('checkbox').uncheck();
+		await row.locator('input[name="offer"]').uncheck();
 
 		const dialog = page.getByRole('dialog');
 		await expect(dialog).toBeVisible({ timeout: 15_000 });
@@ -713,7 +715,7 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('dialog')).toHaveCount(0);
 
 		const restored = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
-		await expect(restored.getByRole('checkbox')).toBeChecked();
+		await expect(restored.locator('input[name="offer"]')).toBeChecked();
 		// And nothing was withdrawn on the way through.
 		await expect(restored.getByRole('spinbutton', { name: 'Gruppen von Zug A' })).toBeVisible();
 	});

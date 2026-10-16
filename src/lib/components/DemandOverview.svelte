@@ -12,6 +12,7 @@
 		alsoPlannedLabel,
 		coverageLabel,
 		coversLabel,
+		formatBadges,
 		byProgramme,
 		cohortCount,
 		hoursLabel,
@@ -169,6 +170,11 @@
 											sie sich als Zug, den jemand anzulegen vergessen hat — und genau
 											das ist der Zustand, den die ganze Mechanik vermeiden soll.
 										-->
+										<!-- Nur, was vom Regelfall abweicht: ein Block, eine englische
+										     Lehrveranstaltung. Semesterbegleitend auf Deutsch steht nirgends. -->
+										{#each cohort.format ? formatBadges(cohort.format) : [] as mark (mark)}
+											<span class="badge badge-info badge-sm">{mark}</span>
+										{/each}
 										{#if cohort.coveredBy}
 											<span class="badge badge-outline badge-sm">
 												{coverageLabel(cohort.coveredBy)}

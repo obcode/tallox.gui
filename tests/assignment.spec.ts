@@ -346,3 +346,65 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
 	});
 });
+
+// How a cohort is taught, set where it is staffed. The lead of the subject group is the person who
+// asked for it, so she is the one who sets it here — and the demand screen of the programme reads
+// it back, which is where everybody else looks.
+test.describe('how a cohort is taught', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	const delivery = (page: Page) =>
+		page.getByRole('combobox', {
+			name: new RegExp(`^Durchführung von ${ASSIGNMENTS.moduleName}`)
+		});
+	const english = (page: Page) =>
+		page.getByRole('checkbox', {
+			name: new RegExp(`^${ASSIGNMENTS.moduleName} in .* auf Englisch$`)
+		});
+
+	test('the lead of the subject group marks a block in English, and it stays', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		// Nobody has said anything: across the semester, and the language as the catalogue says.
+		await expect(delivery(page)).toHaveValue('WEEKLY');
+		await expect(english(page)).not.toBeChecked();
+		await expect(page.getByText('(Standard)')).toBeVisible();
+
+		await delivery(page).selectOption('BLOCK');
+		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
+		await english(page).check();
+		await expect(page.getByText('(Standard)')).toHaveCount(0);
+
+		await gotoRendered(page, URL);
+		await expect(delivery(page)).toHaveValue('BLOCK');
+		await expect(english(page)).toBeChecked();
+
+		// And the demand overview of the programme says so, beside the cohort.
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${ASSIGNMENTS.semester}&studiengang=${ASSIGNMENTS.programme}`
+		);
+		const row = page.getByRole('row', { name: new RegExp(ASSIGNMENTS.moduleName) });
+		await expect(row.getByText('Block', { exact: true })).toBeVisible();
+		await expect(row.getByText('Englisch', { exact: true })).toBeVisible();
+	});
+
+	test('unticking English for a German module hands it back to the catalogue', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(english(page)).toBeChecked();
+
+		await english(page).uncheck();
+		await expect(page.getByText('(Standard)')).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(english(page)).not.toBeChecked();
+		await expect(delivery(page)).toHaveValue('BLOCK');
+	});
+});

@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
-import { previousComparableSemester } from '$lib/demand';
+import { formatChanges, previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
 	CourseType,
@@ -128,6 +128,9 @@ const DemandDocument = graphql(`
 			programmeSemester
 			note
 			teachingHours
+			delivery
+			taughtInEnglish
+			taughtInEnglishOverridden
 			programme {
 				code
 				title
@@ -290,6 +293,15 @@ const DemandDocument = graphql(`
 					code
 				}
 			}
+		}
+	}
+`);
+
+/** How a cohort is taught. The operation name differs from the assignment screen's: names are global. */
+const SetFormatDocument = graphql(`
+	mutation SetCohortFormatFromDemand($id: ID!, $delivery: DeliveryFormat!, $english: Boolean) {
+		setCourseInstanceFormat(id: $id, delivery: $delivery, taughtInEnglish: $english) {
+			id
 		}
 	}
 `);
@@ -746,6 +758,22 @@ export const actions: Actions = {
 
 	plan: async ({ request }) => {
 		const form = await request.formData();
+
+		// How the cohorts are taught, before the plan: its own mutation per touched cohort, and
+		// not part of planDemand, because it is the assignment's rule — a subject group lead may
+		// set it too, on the assignment screen. A cohort the plan then withdraws loses it with
+		// everything else.
+		try {
+			for (const change of formatChanges(form)) {
+				await backendRequest(SetFormatDocument, {
+					id: change.instanceId,
+					delivery: change.delivery,
+					english: change.taughtInEnglish
+				});
+			}
+		} catch (err) {
+			return fail(400, refusalFor(err));
+		}
 		const variables: PlanVariables = {
 			semester: String(form.get('semester') ?? ''),
 			programme: String(form.get('programme') ?? ''),

@@ -54,6 +54,8 @@ const WishesDocument = graphql(`
 			track
 			programmeSemester
 			teachingHours
+			delivery
+			taughtInEnglish
 			programme {
 				code
 				title

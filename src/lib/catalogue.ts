@@ -174,6 +174,7 @@ export const FINDING_LABELS: Record<ZpaProjectionFinding, string> = {
 	MODULE_INACTIVE: 'Vom ZPA zurückgezogene Module — übernommen und markiert',
 	FREQUENCY_UNMAPPED: 'Unbekannte Angaben zum Turnus',
 	COURSE_TYPE_UNMAPPED: 'Unbekannte Angaben zur Lehrform',
+	LANGUAGE_UNMAPPED: 'Unbekannte Angaben zur Unterrichtssprache — als Deutsch gelesen',
 	MIN_SEMESTER_CONFLICT: 'Widersprüchliche Angaben zum frühesten Fachsemester',
 	DUTY_CONFLICT: 'Widersprüchliche Angaben zu Pflicht und Wahlpflicht',
 	MODULE_RESPONSIBLE_UNKNOWN:

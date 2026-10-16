@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import WishCell from '$lib/components/WishCell.svelte';
 	import { formatHours } from '$lib/catalogue';
-	import { heldForLabel, hoursLabel } from '$lib/demand';
+	import { formatBadges, heldForLabel, hoursLabel } from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
 	import {
 		heldForOthers,
@@ -236,6 +236,11 @@
 											open={open && closedReason === null}
 										/>
 									{/key}
+									<!-- Block und Englisch stehen beim Zug, nicht beim Modul: zwei Züge
+									     desselben Moduls können verschieden gehalten werden. -->
+									{#each cohort.format ? formatBadges(cohort.format) : [] as mark (mark)}
+										<span class="badge badge-info badge-xs mt-1 mr-1 align-middle">{mark}</span>
+									{/each}
 									{#if closedReason}
 										<p class="text-base-content/80 mt-1 text-xs">{closedReason}</p>
 									{/if}
