@@ -20,6 +20,7 @@ Kolleg:innen.
 - [SWS-Controlling-Seite](sws-controlling-page.md) — `/statistik` (Menü „Statistik“ für Studiengangsleitung und Dekanat, früher `/bedarf/sws`), Vorjahr als eigene Anfrage, Kontingent/Saldo und Fremdmodule, Pflege unter /verwaltung/studiengaenge, eigener E2E-Datensatz
 - [Die Startseite als Anleitung](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts`, verlinkt nur, was das Menü zeigt
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
+- [Semester-Export](semester-export.md) — Excel aus einer GraphQL-Operation in der GUI, keine Wünsche, Hinweissatz für alle
 
 <!-- Weitere Notizen entstehen mit dem Code. Eine Datei = ein Sachverhalt, Frontmatter mit
      name/description/metadata.type, Querverweise als [[slug]]. -->
