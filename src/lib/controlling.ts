@@ -28,6 +28,10 @@ export type LoadInput = {
 		teachingHours: number;
 		instanceCount: number;
 	}[];
+	/** The study year's quota and what follows from it, as the backend computes them. */
+	yearlyQuota?: number | null;
+	semesterQuota?: number | null;
+	balance?: number | null;
 };
 
 /** Where a home programme's modules are taught outside it. */
@@ -134,4 +138,114 @@ export function deltaLabel(delta: number | null, format: (n: number) => string):
 	if (delta === null) return '–';
 	if (delta === 0) return '±0';
 	return delta > 0 ? `+${format(delta)}` : `−${format(-delta)}`;
+}
+
+/** One programme measured against its quota. */
+export type QuotaRow = {
+	programme: ControllingProgramme;
+	/** What the dean's office entered for the study year, or null: nothing entered. */
+	yearlyQuota: number | null;
+	/** Half of it, the share this semester may spend. */
+	semesterQuota: number | null;
+	teachingHours: number;
+	/** semesterQuota minus teachingHours, or null without a quota. */
+	balance: number | null;
+};
+
+/**
+ * The quota table: every programme this faculty plans, and any other one that has a quota.
+ *
+ * The balance is the backend's — a script reading the API must get the same number as this page —
+ * so nothing is computed here but the selection and the order. A planned programme without a
+ * quota stays in the list with no figure: it is the row somebody still has to fill in.
+ */
+export function quotaTable(current: readonly LoadInput[]): QuotaRow[] {
+	return current
+		.filter((l) => l.homeProgramme.planningStatus === 'PLANNED' || l.yearlyQuota != null)
+		.map((l) => ({
+			programme: l.homeProgramme,
+			yearlyQuota: l.yearlyQuota ?? null,
+			semesterQuota: l.semesterQuota ?? null,
+			teachingHours: l.teachingHours,
+			balance: l.balance ?? null
+		}))
+		.sort((a, b) => a.programme.code.localeCompare(b.programme.code));
+}
+
+/**
+ * The badge a balance gets: a programme spending more than it has is the one thing on this page
+ * that asks for a conversation.
+ *
+ * Background colours only, as everywhere: `text-error` on a light theme is unreadable.
+ */
+export function balanceBadge(balance: number | null): string {
+	if (balance === null) return 'badge badge-ghost badge-sm';
+	if (balance < 0) return 'badge badge-error badge-sm';
+	return 'badge badge-success badge-sm';
+}
+
+/** An instance a programme takes from elsewhere, in the shape the page asks for it. */
+export type ImportInput = {
+	id: string;
+	track: string;
+	programmeSemester?: number | null;
+	teachingHours: number;
+	/** Set when another programme holds this cohort's teaching; it costs nothing once accepted. */
+	coveredBy?: { acceptedAt?: string | null } | null;
+	module: {
+		name: string;
+		zpaId?: string | null;
+		kind: string;
+		homeProgramme: { code: string; title: string };
+		dutyStatus?: string | null;
+	};
+};
+
+/** The imports of one home programme. */
+export type ImportGroup = {
+	home: { code: string; title: string };
+	instances: ImportInput[];
+	teachingHours: number;
+};
+
+/**
+ * What a programme takes from elsewhere, grouped by the programme each module is home to.
+ *
+ * The question a programme lead asked: which electives of a basket are actually offered — and
+ * they are mostly someone else's modules, which is exactly why they are not on anybody's radar.
+ * The hours are the hours of the instances; they count at the home programme in the table above,
+ * not here, and the page says so.
+ */
+export function importGroups(instances: readonly ImportInput[]): ImportGroup[] {
+	const groups = new Map<string, ImportGroup>();
+	for (const i of instances) {
+		const home = i.module.homeProgramme;
+		let group = groups.get(home.code);
+		if (!group) {
+			group = { home, instances: [], teachingHours: 0 };
+			groups.set(home.code, group);
+		}
+		group.instances.push(i);
+		group.teachingHours += i.teachingHours;
+	}
+	return [...groups.values()].sort((a, b) => a.home.code.localeCompare(b.home.code));
+}
+
+/**
+ * The study year a semester belongs to, named after the year its winter starts in: 2026-WS and
+ * 2027-SS are both 2026.
+ *
+ * Only to choose which year a form edits and to name it; the backend applies the same rule to the
+ * figures and refuses a year out of reach. Null for a code that is not one.
+ */
+export function studyYearOf(code: string): number | null {
+	const match = /^(\d{4})-(SS|WS)$/.exec(code);
+	if (!match) return null;
+	const year = Number(match[1]);
+	return match[2] === 'SS' ? year - 1 : year;
+}
+
+/** How a study year is named in the faculty: `2026/27`. */
+export function studyYearLabel(year: number): string {
+	return `${year}/${String((year + 1) % 100).padStart(2, '0')}`;
 }

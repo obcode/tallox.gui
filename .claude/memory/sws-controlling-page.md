@@ -1,6 +1,6 @@
 ---
 name: sws-controlling-page
-description: /bedarf/sws — die Seite zum SWS-Controlling: warum unter /bedarf statt im Menü, Vorjahresvergleich als eigene Anfrage, eigener E2E-Datensatz
+description: /bedarf/sws — die Seite zum SWS-Controlling: warum unter /bedarf statt im Menü, Vorjahresvergleich, Kontingent und Saldo, Fremdmodule, eigener E2E-Datensatz
 metadata:
   type: project
 ---
@@ -21,3 +21,24 @@ Heimatstudiengang, wie das alte Excel-Sheet.
   Versuch las das Vorsemester des gemeinsamen Seeds — das setzt der Demand-Spec während des Laufs
   zurück, und die Zahl war die des zuletzt gelaufenen Specs. Seriell, sonst schreiben zwei Worker
   den Seed gleichzeitig.
+
+## Kontingent, Saldo, Fremdmodule (2026-10-16)
+
+Auf das Feedback zum alten Sheet „SWS-Controlling" ([[go/sws-controlling]]):
+
+- **Abschnitt „Kontingent"** über der Haupttabelle: Kontingent Studienjahr, davon dieses Semester
+  (Hälfte), geplant, Saldo. Saldo und Hälfte rechnet das **Backend** (`balance`,
+  `semesterQuota`) — `$lib/controlling.ts` wählt nur aus und sortiert (`quotaTable`). Badge
+  `badge-error` bei negativ, `badge-success` sonst; ohne Kontingent „kein Kontingent", nie 0.
+- **Abschnitt „Module mit fremder Heimat"**: `courseInstances(foreignHome: true)` für den
+  Studiengang aus `?studiengang=`, sonst der erste aus `me.programmes`, sonst Auswahl. Gruppiert
+  nach Heimatstudiengang (`importGroups`), mit Pflicht/Wahlpflicht im empfangenden Studiengang
+  (`dutyStatus(programme:)`). Ein nicht geplanter Studiengang aus der URL kommt mit in die Auswahl.
+- **Pflege** in `/verwaltung/studiengaenge`: Spalte „Kontingent 〈Studienjahr〉" bei den geplanten
+  Studiengängen, Form-Action `setQuota` (Komma erlaubt, leer = zurücknehmen), nur das Dekanat
+  sieht Felder. Studienjahr = das des Planungssemesters (`studyYearOf`), anderes per
+  `?studienjahr=`.
+- Die Abschnitte haben `aria-labelledby` — die E2E-Selektoren `row /^E2S – /` gab es danach
+  zweimal, deshalb gehen die Assertions über `getByRole('region', …)`.
+- E2E: Kontingent 20 für E2S/2028 im Seed; der Formular-Test schreibt 2031, damit er den Saldo
+  der anderen Tests nicht verschiebt.

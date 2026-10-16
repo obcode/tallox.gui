@@ -45,6 +45,53 @@ const LoadDocument = graphql(`
 				teachingHours
 				instanceCount
 			}
+			yearlyQuota
+			semesterQuota
+			balance
+		}
+	}
+`);
+
+/**
+ * What one programme takes from elsewhere: the instances of modules another programme is home
+ * to. The filter is the backend's (`foreignHome`), so a script asking the same question gets the
+ * same list.
+ */
+const ImportsDocument = graphql(`
+	query ControllingImports($semester: String!, $programme: String!) {
+		courseInstances(semester: $semester, programme: $programme, foreignHome: true) {
+			id
+			track
+			programmeSemester
+			teachingHours
+			coveredBy {
+				acceptedAt
+			}
+			module {
+				name
+				zpaId
+				kind
+				homeProgramme {
+					code
+					title
+				}
+				dutyStatus(programme: $programme)
+			}
+		}
+	}
+`);
+
+/** The programmes to choose from, and the caller's own, which the choice starts at. */
+const ProgrammesDocument = graphql(`
+	query ControllingProgrammes {
+		programmes {
+			code
+			title
+		}
+		me {
+			programmes {
+				code
+			}
 		}
 	}
 `);
@@ -52,11 +99,12 @@ const LoadDocument = graphql(`
 export const load: PageServerLoad = async ({ url }) => {
 	const semester = url.searchParams.get('semester') ?? '';
 
-	let semesters, current;
+	let semesters, current, programmes;
 	try {
-		[semesters, current] = await Promise.all([
+		[semesters, current, programmes] = await Promise.all([
 			backendRequest(SemestersDocument, {}),
-			semester === '' ? null : backendRequest(LoadDocument, { semester })
+			semester === '' ? null : backendRequest(LoadDocument, { semester }),
+			backendRequest(ProgrammesDocument, {})
 		]);
 	} catch (err) {
 		// A refusal here is "no account", or a semester code a hand-edited URL invented. Both are
@@ -83,8 +131,26 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 	}
 
+	// Whose imports are shown: the one in the URL, else the caller's own first programme, else
+	// none until somebody picks one. Unlike the semester this is not redirected to — a lecturer
+	// without a programme has no default, and the page is still the page.
+	const own = programmes.me?.programmes.map((p) => p.code) ?? [];
+	const importsFor = (url.searchParams.get('studiengang') ?? own[0] ?? '').toUpperCase();
+	let imports = null;
+	if (current && importsFor !== '') {
+		try {
+			imports = (await backendRequest(ImportsDocument, { semester, programme: importsFor }))
+				.courseInstances;
+		} catch (err) {
+			error(403, toRefusal(err).message);
+		}
+	}
+
 	return {
 		semesters: semesters.semesters,
+		programmes: programmes.programmes,
+		importsFor,
+		imports,
 		selected: semester,
 		previousCode,
 		load: current?.teachingLoad ?? null,

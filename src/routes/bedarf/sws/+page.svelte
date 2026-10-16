@@ -1,13 +1,40 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatHours } from '$lib/catalogue';
-	import { controllingTable, deltaLabel, type ControllingRow } from '$lib/controlling';
+	import { DUTY_LABELS, dutyBadge, formatHours, moduleName } from '$lib/catalogue';
+	import {
+		balanceBadge,
+		controllingTable,
+		deltaLabel,
+		importGroups,
+		quotaTable,
+		type ControllingRow
+	} from '$lib/controlling';
+	import type { DutyStatus } from '$lib/gql/__generated__/graphql';
+	import { cohortLabel } from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
 
 	let { data } = $props();
 
 	const semesterTabs = $derived([...data.semesters].reverse());
 	const table = $derived(data.load ? controllingTable(data.load, data.previous) : null);
+	const quotas = $derived(data.load ? quotaTable(data.load) : []);
+	const imports = $derived(data.imports ? importGroups(data.imports) : null);
+	// The programme asked about may be one the faculty does not plan — it receives modules all the
+	// same — so the choice offers it too rather than showing "please choose" over its table.
+	const importChoices = $derived(
+		data.importsFor === '' || data.programmes.some((p) => p.code === data.importsFor)
+			? data.programmes
+			: [...data.programmes, { code: data.importsFor, title: '' }]
+	);
+	const importsHeading = $derived.by(() => {
+		if (data.importsFor === '') return 'Module mit fremder Heimat';
+		const title = data.programmes.find((p) => p.code === data.importsFor)?.title;
+		return `Module mit fremder Heimat für ${title ? `${data.importsFor} – ${title}` : data.importsFor}`;
+	});
+
+	function maybeHours(n: number | null): string {
+		return n === null ? '–' : formatHours(n);
+	}
 
 	function programmeLabel(p: { code: string; title: string }): string {
 		return p.title ? `${p.code} – ${p.title}` : p.code;
@@ -125,13 +152,60 @@
 		</form>
 	</div>
 
+	{#if table}
+		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="quota">
+			<h2 id="quota" class="font-medium">Kontingent · {semesterName(data.selected)}</h2>
+			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+				Das Kontingent ist die verfügbare Lehrleistung eines Studiengangs für das
+				<strong>Studienjahr</strong> (Winter und folgender Sommer), wie das Dekanat es aus der Kapazitätsrechnung
+				einträgt. Ein Semester darf die Hälfte davon verbrauchen. Ein negativer Saldo heißt: der Studiengang
+				lebt über seinen Verhältnissen. Ein positiver: Raum für weitere Wahlfächer oder für einen anderen
+				Studiengang.
+			</p>
+			<div class="mt-3 overflow-x-auto">
+				<table class="table-sm table">
+					<thead>
+						<tr>
+							<th>Studiengang</th>
+							<th class="text-right">Kontingent Studienjahr</th>
+							<th class="text-right">davon dieses Semester</th>
+							<th class="text-right">geplant (SWS gesamt)</th>
+							<th class="text-right">Saldo</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each quotas as row (row.programme.code)}
+							<tr>
+								<th scope="row" class="font-medium">{programmeLabel(row.programme)}</th>
+								<td class="text-right tabular-nums">{maybeHours(row.yearlyQuota)}</td>
+								<td class="text-right tabular-nums">{maybeHours(row.semesterQuota)}</td>
+								<td class="text-right tabular-nums">{formatHours(row.teachingHours)}</td>
+								<td class="text-right tabular-nums">
+									{#if row.balance === null}
+										<span class="text-base-content/80 text-xs">kein Kontingent</span>
+									{:else}
+										<span class={balanceBadge(row.balance)}>
+											{deltaLabel(row.balance, formatHours)}
+										</span>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{/if}
+
 	{#if !table}
 		<p class="text-base-content/80 text-sm">
 			Es ist noch kein Planungssemester gesetzt. Bitte oben ein Semester wählen.
 		</p>
 	{:else}
-		<section class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<h2 class="font-medium">{semesterName(data.selected)}</h2>
+		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="load">
+			<h2 id="load" class="font-medium">
+				SWS je Heimatstudiengang · {semesterName(data.selected)}
+			</h2>
 			<div class="mt-3 overflow-x-auto">
 				<table class="table-sm table">
 					{@render header('Studiengang')}
@@ -157,6 +231,86 @@
 					„Nicht von uns geplant“ sind Studiengänge, die die Fakultät nicht selbst plant, deren
 					Module hier aber gelehrt werden. Sie zählen in der Summe mit.
 				</p>
+			{/if}
+		</section>
+	{/if}
+	{#if table}
+		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="imports">
+			<h2 id="imports" class="font-medium">
+				{importsHeading}
+			</h2>
+			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+				Was ein Studiengang in diesem Semester von anderen bezieht, etwa die Wahlpflichtfächer eines
+				Korbs. Diese SWS zählen oben beim Heimatstudiengang des Moduls, nicht hier.
+			</p>
+			<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
+				<input type="hidden" name="semester" value={data.selected} />
+				<label class="flex flex-col gap-1">
+					<span class="label-text text-sm">Studiengang</span>
+					<select name="studiengang" class="select select-sm w-64 max-w-full">
+						<option value="" selected={data.importsFor === ''}>– bitte wählen –</option>
+						{#each importChoices as p (p.code)}
+							<option value={p.code} selected={p.code === data.importsFor}>
+								{programmeLabel(p)}
+							</option>
+						{/each}
+					</select>
+				</label>
+				<button type="submit" class="btn btn-sm">Anzeigen</button>
+			</form>
+
+			{#if imports === null}
+				<p class="text-base-content/80 mt-3 text-sm">Bitte einen Studiengang wählen.</p>
+			{:else if imports.length === 0}
+				<p class="text-base-content/80 mt-3 text-sm">
+					{data.importsFor} bezieht in diesem Semester kein Modul aus einem anderen Studiengang.
+				</p>
+			{:else}
+				<div class="mt-3 overflow-x-auto">
+					<table class="table-sm table">
+						<thead>
+							<tr>
+								<th>Modul</th>
+								<th>Zug</th>
+								<th>in {data.importsFor}</th>
+								<th class="text-right">Lehr-SWS</th>
+							</tr>
+						</thead>
+						{#each imports as group (group.home.code)}
+							<tbody>
+								<tr>
+									<th colspan="3" scope="rowgroup">
+										aus {programmeLabel(group.home)}
+									</th>
+									<th class="text-right tabular-nums">{formatHours(group.teachingHours)}</th>
+								</tr>
+								{#each group.instances as i (i.id)}
+									<tr>
+										<td>{moduleName(i.module)}</td>
+										<td class="whitespace-nowrap">
+											{cohortLabel(data.importsFor, i.programmeSemester, i.track)}
+											{#if i.coveredBy}
+												<span class="badge badge-ghost badge-sm ml-1">
+													{i.coveredBy.acceptedAt ? 'mitbetreut' : 'Mitbetreuung angefragt'}
+												</span>
+											{/if}
+										</td>
+										<td>
+											{#if i.module.dutyStatus}
+												<span class={dutyBadge(i.module.dutyStatus as DutyStatus)}>
+													{DUTY_LABELS[i.module.dutyStatus as DutyStatus]}
+												</span>
+											{:else}
+												<span class="text-base-content/80 text-xs">nicht im Katalog</span>
+											{/if}
+										</td>
+										<td class="text-right tabular-nums">{formatHours(i.teachingHours)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						{/each}
+					</table>
+				</div>
 			{/if}
 		</section>
 	{/if}
