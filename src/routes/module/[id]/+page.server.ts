@@ -13,6 +13,10 @@ const ModuleDocument = graphql(`
 				code
 			}
 			roles
+			# The groups a subject group lead may file this module into or release it from.
+			subjectGroupsLed {
+				id
+			}
 		}
 		# The groups to choose from. Readable by anybody with an account — who leads which subject
 		# is what the faculty's organisation looks like, not something confidential.

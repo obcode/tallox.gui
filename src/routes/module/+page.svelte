@@ -7,6 +7,9 @@
 		PROGRAMME_STATUS_LABELS,
 		componentSummary,
 		dutyBadge,
+		filingGroupsFor,
+		mayFileModules,
+		mayRefileModule,
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
@@ -19,7 +22,12 @@
 	// Cosmetic, like every role check in this application — the backend refuses the mutation
 	// anyway, and it refuses it on the token path too. Worth doing so that a lecturer is not shown
 	// a column of checkboxes whose button always fails.
-	const mayAssign = $derived(hasAnyRole(data.session?.effectiveRoles ?? [], ['ADMIN']));
+	//
+	// An administrator and the dean's office file across every group. A subject group lead files
+	// into the groups she leads: she pulls in modules that are in no group and releases her own.
+	const roles = $derived(data.session?.effectiveRoles ?? []);
+	const mayAssign = $derived(mayFileModules(roles, data.led));
+	const asLead = $derived(!hasAnyRole(roles, ['ADMIN', 'DEANS_OFFICE']));
 
 	const refusal = $derived(form && 'message' in form ? form : null);
 	const assigned = $derived(form && 'assigned' in form ? form.assigned : null);
@@ -40,7 +48,13 @@
 	// The groups offered for assignment. Retired ones are left out — a wound-up group is not
 	// somewhere to put a module — but a module already sitting in one still renders as such,
 	// which is what the `active` flag on the reference is for.
-	const assignableGroups = $derived(data.subjectGroups.filter((g) => g.active));
+	const assignableGroups = $derived(
+		filingGroupsFor(
+			roles,
+			data.subjectGroups.filter((g) => g.active),
+			data.led
+		)
+	);
 
 	// The number of columns, so that the empty row spans the table however it is configured.
 	const columnCount = $derived(7 + (data.filter.programme !== '' ? 1 : 0) + (mayAssign ? 1 : 0));
@@ -263,21 +277,39 @@
 						{#each assignableGroups as group (group.id)}
 							<option value={group.id}>{group.code} — {group.name}</option>
 						{/each}
-						<option value="">— keiner Fachgruppe —</option>
+						<option value="">
+							{asLead ? '— keiner Fachgruppe (freigeben) —' : '— keiner Fachgruppe —'}
+						</option>
 					</select>
 				</label>
 				<button type="submit" class="btn btn-sm btn-primary">Zuordnen</button>
+				{#if asLead}
+					<!--
+						Beide Enden einer Verschiebung müssen in Reichweite sein: aufnehmen, was in keiner
+						Fachgruppe steht, freigeben, was in der eigenen steht. Module fremder Fachgruppen
+						sind deshalb nicht ankreuzbar — ein Stapel, der eines davon enthielte, würde als
+						Ganzes abgelehnt.
+					-->
+					<p class="text-base-content/80 w-full max-w-3xl text-sm">
+						Als Fachgruppenleitung kannst Du Module <strong>ohne Fachgruppe</strong> in eine Deiner
+						Fachgruppen aufnehmen und Module Deiner Fachgruppe wieder <strong>freigeben</strong>.
+						Module anderer Fachgruppen lassen sich nicht ankreuzen; freigeben kann sie nur deren
+						Leitung. Die noch offenen findest Du mit dem Filter „ohne Fachgruppe“.
+					</p>
+				{/if}
 				<p class="text-base-content/80 w-full text-sm">
 					In der ersten Spalte lassen sich mehrere Module ankreuzen und gemeinsam einer Fachgruppe
 					zuordnen — der Katalog hat rund 500 Einträge, und einzeln wäre das keine Aufgabe, die
 					jemand zu Ende bringt.
 				</p>
-				<p class="text-base-content/80 w-full text-sm">
-					Ein Modul gehört zu genau einer Fachgruppe. Ein bereits zugeordnetes wird
-					<strong>verschoben</strong>, in einem Schritt — es gibt keinen Moment, in dem es zu keiner
-					gehört. Fachgruppen werden in der
-					<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a> angelegt.
-				</p>
+				{#if !asLead}
+					<p class="text-base-content/80 w-full text-sm">
+						Ein Modul gehört zu genau einer Fachgruppe. Ein bereits zugeordnetes wird
+						<strong>verschoben</strong>, in einem Schritt — es gibt keinen Moment, in dem es zu
+						keiner gehört. Fachgruppen werden in der
+						<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a> angelegt.
+					</p>
+				{/if}
 			</div>
 		{/if}
 		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
@@ -307,11 +339,14 @@
 					{#each data.modules as module (module.id)}
 						<tr>
 							{#if mayAssign}
+								{@const filable = mayRefileModule(roles, data.led, module.subjectGroup?.id)}
 								<td>
 									<input
 										type="checkbox"
 										name="moduleId"
 										value={module.id}
+										disabled={!filable}
+										title={filable ? undefined : 'Gehört zu einer Fachgruppe, die Du nicht leitest'}
 										aria-label="{moduleName(module)} auswählen"
 										class="checkbox checkbox-sm"
 									/>
