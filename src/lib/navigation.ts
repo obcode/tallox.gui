@@ -9,8 +9,16 @@ import { hasAnyRole } from '$lib/roles';
  * of those without its parameters — rightly, since a menu entry has none to give. Excluding them
  * here means a future `/bedarf/[semester]` cannot be put in the menu by accident instead of
  * being discovered as a type error in this file's four call sites.
+ *
+ * Endpoints are excluded as well: `/gui-api/…` and `/healthz/…` answer with data, not pages, so
+ * they are never a menu entry. It is also what keeps the union small enough for `resolve()` —
+ * TypeScript matches a union argument against overloads only up to 25 members, and past that
+ * every call site fails with an error that names none of this.
  */
-type StaticRoute = Exclude<RouteId, `${string}[${string}`>;
+type StaticRoute = Exclude<
+	RouteId,
+	`${string}[${string}` | '/gui-api' | `/gui-api/${string}` | '/healthz' | `/healthz/${string}`
+>;
 
 /**
  * The areas of the application, in the order of the planning process.

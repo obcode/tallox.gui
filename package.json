@@ -29,7 +29,8 @@
 	"dependencies": {
 		"@sentry/sveltekit": "^10.70.0",
 		"graphql": "^16.11.0",
-		"graphql-request": "^7.2.0"
+		"graphql-request": "^7.2.0",
+		"write-excel-file": "^4.1.1"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.12.1",
@@ -51,6 +52,7 @@
 		"globals": "^17.7.0",
 		"prettier": "^3.6.2",
 		"prettier-plugin-svelte": "^4.1.1",
+		"read-excel-file": "^9.3.12",
 		"svelte": "^5.19.0",
 		"svelte-check": "^4.2.2",
 		"svelte2tsx": "^0.7.59",
