@@ -395,7 +395,7 @@ export function wishesAreOpen(phase: string | null | undefined): boolean {
  */
 export function closedPhaseHint(phase: string | null | undefined): string {
 	if (phase === 'FINAL') {
-		return 'Dieses Semester ist abgeschlossen — die Zuteilung ist erfolgt, Wünsche lassen sich nicht mehr ändern.';
+		return 'Dieses Semester ist vorbei — Wünsche lassen sich nicht mehr ändern.';
 	}
 	return 'Wünsche lassen sich in diesem Semester gerade nicht eintragen.';
 }
@@ -416,6 +416,8 @@ export function openPhaseHint(phase: string | null | undefined): string {
 			return 'Die Wunschphase läuft. Jetzt ist der Zeitpunkt, sich einzutragen.';
 		case 'ASSIGNMENT':
 			return 'Die Zuteilung läuft bereits. Ändern geht weiter — sag der Fachgruppenleitung am besten Bescheid, damit es ankommt.';
+		case 'REVIEW':
+			return 'Die Instanzen sind besetzt, die Studiengangsleitungen prüfen gerade. Ändern geht weiter — sag der Fachgruppenleitung Bescheid, damit es ankommt.';
 		default:
 			return '';
 	}

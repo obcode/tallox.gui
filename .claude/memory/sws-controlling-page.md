@@ -48,3 +48,18 @@ Auf das Feedback zum alten Sheet „SWS-Controlling" ([[go/sws-controlling]]):
   zweimal, deshalb gehen die Assertions über `getByRole('region', …)`.
 - E2E: Kontingent 20 für E2S/2028 im Seed; der Formular-Test schreibt 2031, damit er den Saldo
   der anderen Tests nicht verschiebt.
+
+## Studienjahr und Review (2026-10-16)
+
+- **Erster Abschnitt „Studienjahr 2028/29"** aus `studyYearLoad`: Kontingent, WiSe, SoSe, Rest,
+  Badge „Review fertig" für das gewählte Semester. Die Semesterzahlen verlinken auf
+  `/bedarf?semester=…&studiengang=…` — so wird das SoSe „durchgespielt": als echter, früher Bedarf
+  (bewusst kein Planspiel; öffentlich, Wünsche wie immer möglich).
+- **„Dieses Semester"** zeigt „verfügbar in diesem Semester": WiSe die Hälfte, SoSe Kontingent −
+  WiSe. Regeltext aus `semesterQuotaRule`, Zahl vom Backend.
+- **Vorjahr und Δ** sind nur noch Randnotiz: gedämpft, „Vorjahr (zum Vergleich)".
+- **„Review fertig"** auf `/bedarf` (Action `review`), sichtbar in REVIEW und FINAL. Neue Phase
+  `REVIEW` in `$lib/semester.ts` (Label „Studiengangs-Review"); Leitfaden-Schritt
+  „Studiengangs-Review" zwischen Zuteilung und Abschließen ([[go/programme-review]]).
+- E2E: der Controlling-Datensatz hat jetzt ein WiSe 2028-WS (4 SWS) und setzt 2029-SS auf
+  REVIEW; Kontingent 20 → WiSe 10/+6, SoSe 16/+8, Jahr +8.

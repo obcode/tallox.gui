@@ -473,7 +473,7 @@ describe('savedHint', () => {
 describe('wishesAreOpen', () => {
 	it('is open until the semester is finished', () => {
 		// Not only in the wish phase: a correction the tool refuses happens in a mail instead.
-		for (const phase of ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT']) {
+		for (const phase of ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT', 'REVIEW']) {
 			expect(wishesAreOpen(phase), phase).toBe(true);
 		}
 		expect(wishesAreOpen('FINAL')).toBe(false);
@@ -488,7 +488,7 @@ describe('wishesAreOpen', () => {
 
 	it('says the semester is over rather than that a deadline was missed', () => {
 		const hint = closedPhaseHint('FINAL');
-		expect(hint).toMatch(/abgeschlossen/);
+		expect(hint).toMatch(/vorbei/);
 		// The sentence a reader could act on would be the wrong one — there is nothing to repair.
 		expect(hint).not.toMatch(/Frist|verpasst|zu spät/i);
 	});
@@ -496,8 +496,8 @@ describe('wishesAreOpen', () => {
 	it('says which kind of open it is', () => {
 		// "You may" is not obvious from a form that is merely not disabled, and the assignment
 		// phase in particular reads like an oversight without a sentence.
-		const hints = ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT'].map(openPhaseHint);
-		expect(new Set(hints).size).toBe(3);
+		const hints = ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT', 'REVIEW'].map(openPhaseHint);
+		expect(new Set(hints).size).toBe(4);
 		for (const hint of hints) {
 			expect(hint.length).toBeGreaterThan(10);
 		}

@@ -1,4 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
+import { studyYearOf } from '$lib/controlling';
 import { previousComparableSemester } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
@@ -81,6 +82,32 @@ const ImportsDocument = graphql(`
 	}
 `);
 
+/**
+ * The study year the selected semester belongs to: the quota beside both semesters, and which
+ * programmes have announced the review of the selected semester as done.
+ */
+const StudyYearDocument = graphql(`
+	query ControllingStudyYear($studyYear: Int!, $semester: String!) {
+		studyYearLoad(studyYear: $studyYear) {
+			homeProgramme {
+				code
+				title
+				planningStatus
+			}
+			yearlyQuota
+			winterHours
+			summerHours
+			remaining
+			partsWithoutHours
+		}
+		reviewCompletions(semester: $semester) {
+			programme {
+				code
+			}
+		}
+	}
+`);
+
 /** The programmes to choose from, and the caller's own, which the choice starts at. */
 const ProgrammesDocument = graphql(`
 	query ControllingProgrammes {
@@ -146,9 +173,27 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 	}
 
+	// A request of its own for the reason the previous year is one: a study year the backend
+	// will not plan costs this table, not the page.
+	const studyYear = studyYearOf(semester);
+	let year = null;
+	if (current && studyYear !== null) {
+		try {
+			const y = await backendRequest(StudyYearDocument, { studyYear, semester });
+			year = {
+				rows: y.studyYearLoad,
+				reviewed: y.reviewCompletions.map((r) => r.programme.code)
+			};
+		} catch {
+			year = null;
+		}
+	}
+
 	return {
 		semesters: semesters.semesters,
 		programmes: programmes.programmes,
+		studyYear,
+		year,
 		importsFor,
 		imports,
 		selected: semester,

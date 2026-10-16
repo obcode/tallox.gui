@@ -7,6 +7,10 @@
 		deltaLabel,
 		importGroups,
 		quotaTable,
+		semesterQuotaRule,
+		studyYearLabel,
+		studyYearSemesters,
+		studyYearTable,
 		type ControllingRow
 	} from '$lib/controlling';
 	import type { DutyStatus } from '$lib/gql/__generated__/graphql';
@@ -18,6 +22,10 @@
 	const semesterTabs = $derived([...data.semesters].reverse());
 	const table = $derived(data.load ? controllingTable(data.load, data.previous) : null);
 	const quotas = $derived(data.load ? quotaTable(data.load) : []);
+	const year = $derived(
+		data.year ? studyYearTable(data.year.rows, new Set(data.year.reviewed)) : null
+	);
+	const yearSemesters = $derived(data.studyYear ? studyYearSemesters(data.studyYear) : null);
 	const imports = $derived(data.imports ? importGroups(data.imports) : null);
 	// The programme asked about may be one the faculty does not plan — it receives modules all the
 	// same — so the choice offers it too rather than showing "please choose" over its table.
@@ -65,10 +73,13 @@
 			<span class="text-base-content/80 block text-xs">{formatHours(row.fwpHours)} SWS</span>
 		{/if}
 	</td>
-	<td class="text-right tabular-nums">
+	<!-- The year before is a side note since the study year is the figure that counts. -->
+	<td class="text-base-content/80 text-right tabular-nums">
 		{row.previousHours === null ? '–' : formatHours(row.previousHours)}
 	</td>
-	<td class="text-right tabular-nums">{deltaLabel(row.delta, formatHours)}</td>
+	<td class="text-base-content/80 text-right tabular-nums">
+		{deltaLabel(row.delta, formatHours)}
+	</td>
 {/snippet}
 
 {#snippet header(first: string)}
@@ -80,12 +91,12 @@
 			<th>für andere Studiengänge</th>
 			<th class="text-right">Instanzen</th>
 			<th class="text-right">davon FWP</th>
-			<th class="text-right">
-				Vorjahr{#if data.previousCode}<span class="block text-xs font-normal"
+			<th class="text-right font-normal">
+				Vorjahr (zum Vergleich){#if data.previousCode}<span class="block text-xs"
 						>{semesterShortName(data.previousCode)}</span
 					>{/if}
 			</th>
-			<th class="text-right">Δ</th>
+			<th class="text-right font-normal">Δ</th>
 		</tr>
 	</thead>
 {/snippet}
@@ -124,7 +135,7 @@
 			Gezählt wird Lehre, nicht die Modul-SWS: eine Vorlesung und jede Praktikumsgruppe einzeln,
 			eine für mehrere Züge gemeinsame Vorlesung einmal, ein von einem anderen Studiengang
 			mitbetreuter Zug gar nicht. „Für andere Studiengänge“ ist der Teil, der in deren Instanzen
-			gelehrt wird. Zum Vergleich steht dasselbe Semester ein Jahr zuvor daneben.
+			gelehrt wird. Am Rand steht zum Vergleich dasselbe Semester ein Jahr zuvor.
 		</p>
 	</div>
 
@@ -152,23 +163,99 @@
 		</form>
 	</div>
 
-	{#if table}
-		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="quota">
-			<h2 id="quota" class="font-medium">Kontingent · {semesterName(data.selected)}</h2>
+	{#if year && yearSemesters && data.studyYear}
+		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="year">
+			<h2 id="year" class="font-medium">Studienjahr {studyYearLabel(data.studyYear)}</h2>
 			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
-				Das Kontingent ist die verfügbare Lehrleistung eines Studiengangs für das
-				<strong>Studienjahr</strong> (Winter und folgender Sommer), wie das Dekanat es aus der Kapazitätsrechnung
-				einträgt. Ein Semester darf die Hälfte davon verbrauchen. Ein negativer Saldo heißt: der Studiengang
-				lebt über seinen Verhältnissen. Ein positiver: Raum für weitere Wahlfächer oder für einen anderen
-				Studiengang.
+				Das Kontingent ist die verfügbare Lehrleistung eines Studiengangs für das ganze Studienjahr,
+				wie das Dekanat es aus der Kapazitätsrechnung einträgt. Daneben steht, was Winter- und
+				Sommersemester davon verbrauchen, und was übrig bleibt. Ein negativer Rest heißt: der
+				Studiengang lebt über seinen Verhältnissen. Ein positiver: Luft für weitere Wahlfächer oder
+				für einen anderen Studiengang.
+			</p>
+			<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+				<strong>Das Sommersemester durchspielen:</strong> Sein Bedarf lässt sich schon jetzt anlegen —
+				ein Klick auf die Zahl führt in die Bedarfsplanung — und zählt hier sofort mit. Es ist echter
+				Bedarf: alle können ihn lesen, und Dozierende können sich darauf schon eintragen.
 			</p>
 			<div class="mt-3 overflow-x-auto">
 				<table class="table-sm table">
 					<thead>
 						<tr>
 							<th>Studiengang</th>
-							<th class="text-right">Kontingent Studienjahr</th>
-							<th class="text-right">davon dieses Semester</th>
+							<th class="text-right">Kontingent</th>
+							<th class="text-right">{semesterShortName(yearSemesters.winter)}</th>
+							<th class="text-right">{semesterShortName(yearSemesters.summer)}</th>
+							<th class="text-right">Rest</th>
+							<th>Review {semesterShortName(data.selected)}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each year as row (row.programme.code)}
+							<tr>
+								<th scope="row" class="font-medium">
+									{programmeLabel(row.programme)}
+									{#if row.partsWithoutHours > 0}
+										<span
+											class="badge badge-warning badge-sm ml-1"
+											title="Teile ohne SWS-Angabe zählen 0 — die Summe ist zu niedrig"
+										>
+											{row.partsWithoutHours}
+											{row.partsWithoutHours === 1 ? 'Teil' : 'Teile'} ohne SWS
+										</span>
+									{/if}
+								</th>
+								<td class="text-right tabular-nums">{maybeHours(row.yearlyQuota)}</td>
+								<td class="text-right tabular-nums">
+									<a
+										class="link"
+										href={resolve(
+											`/bedarf?semester=${yearSemesters.winter}&studiengang=${row.programme.code}`
+										)}>{formatHours(row.winterHours)}</a
+									>
+								</td>
+								<td class="text-right tabular-nums">
+									<a
+										class="link"
+										href={resolve(
+											`/bedarf?semester=${yearSemesters.summer}&studiengang=${row.programme.code}`
+										)}>{formatHours(row.summerHours)}</a
+									>
+								</td>
+								<td class="text-right tabular-nums">
+									{#if row.remaining === null}
+										<span class="text-base-content/80 text-xs">kein Kontingent</span>
+									{:else}
+										<span class={balanceBadge(row.remaining)}>
+											{deltaLabel(row.remaining, formatHours)}
+										</span>
+									{/if}
+								</td>
+								<td>
+									{#if row.reviewed}
+										<span class="badge badge-success badge-sm">Review fertig</span>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{/if}
+
+	{#if table}
+		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="quota">
+			<h2 id="quota" class="font-medium">Dieses Semester · {semesterName(data.selected)}</h2>
+			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+				{semesterQuotaRule(data.selected)}
+			</p>
+			<div class="mt-3 overflow-x-auto">
+				<table class="table-sm table">
+					<thead>
+						<tr>
+							<th>Studiengang</th>
+							<th class="text-right">verfügbar in diesem Semester</th>
 							<th class="text-right">geplant (SWS gesamt)</th>
 							<th class="text-right">Saldo</th>
 						</tr>
@@ -177,7 +264,6 @@
 						{#each quotas as row (row.programme.code)}
 							<tr>
 								<th scope="row" class="font-medium">{programmeLabel(row.programme)}</th>
-								<td class="text-right tabular-nums">{maybeHours(row.yearlyQuota)}</td>
 								<td class="text-right tabular-nums">{maybeHours(row.semesterQuota)}</td>
 								<td class="text-right tabular-nums">{formatHours(row.teachingHours)}</td>
 								<td class="text-right tabular-nums">

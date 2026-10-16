@@ -27,7 +27,13 @@ describe('PHASE_LABELS', () => {
 	it('lists the phases in the order of the process', () => {
 		// The same order as policy.AllPhases(). It is what phaseDirection reads, so a list sorted
 		// alphabetically here would label a step forwards as a step back.
-		expect([...PHASE_ORDER]).toEqual(['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT', 'FINAL']);
+		expect([...PHASE_ORDER]).toEqual([
+			'DEMAND_PLANNING',
+			'WISHES',
+			'ASSIGNMENT',
+			'REVIEW',
+			'FINAL'
+		]);
 	});
 });
 

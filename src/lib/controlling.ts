@@ -249,3 +249,62 @@ export function studyYearOf(code: string): number | null {
 export function studyYearLabel(year: number): string {
 	return `${year}/${String((year + 1) % 100).padStart(2, '0')}`;
 }
+
+/** One home programme's study year, in the shape `studyYearLoad` answers. */
+export type StudyYearInput = {
+	homeProgramme: ControllingProgramme;
+	yearlyQuota?: number | null;
+	winterHours: number;
+	summerHours: number;
+	remaining?: number | null;
+	partsWithoutHours: number;
+};
+
+export type StudyYearRow = {
+	programme: ControllingProgramme;
+	yearlyQuota: number | null;
+	winterHours: number;
+	summerHours: number;
+	/** The quota minus both semesters, the backend's figure; null without a quota. */
+	remaining: number | null;
+	partsWithoutHours: number;
+	/** Whether the programme has announced its review of the selected semester as done. */
+	reviewed: boolean;
+};
+
+/**
+ * The study-year table: every programme this faculty plans, and any other one with a quota, by
+ * code — the same selection as the quota table, so the two never disagree about who is listed.
+ */
+export function studyYearTable(
+	rows: readonly StudyYearInput[],
+	reviewed: ReadonlySet<string> = new Set()
+): StudyYearRow[] {
+	return rows
+		.filter((r) => r.homeProgramme.planningStatus === 'PLANNED' || r.yearlyQuota != null)
+		.map((r) => ({
+			programme: r.homeProgramme,
+			yearlyQuota: r.yearlyQuota ?? null,
+			winterHours: r.winterHours,
+			summerHours: r.summerHours,
+			remaining: r.remaining ?? null,
+			partsWithoutHours: r.partsWithoutHours,
+			reviewed: reviewed.has(r.homeProgramme.code)
+		}))
+		.sort((a, b) => a.programme.code.localeCompare(b.programme.code));
+}
+
+/** The two semesters of a study year, in order: `2026` is `2026-WS` and `2027-SS`. */
+export function studyYearSemesters(year: number): { winter: string; summer: string } {
+	return { winter: `${year}-WS`, summer: `${year + 1}-SS` };
+}
+
+/**
+ * What a semester may spend, said for its term: a winter half the year, a summer what the winter
+ * left. The figure itself is the backend's; this only says which rule produced it.
+ */
+export function semesterQuotaRule(code: string): string {
+	return code.endsWith('-SS')
+		? 'Ein Sommersemester darf verbrauchen, was das Wintersemester desselben Studienjahres vom Kontingent übrig gelassen hat — das Wintersemester ist verbraucht.'
+		: 'Ein Wintersemester darf die Hälfte des Kontingents verbrauchen, weil das Sommersemester noch kommt.';
+}

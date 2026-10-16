@@ -13,12 +13,19 @@ import type { Phase } from '$lib/gql/__generated__/graphql';
  */
 
 /** The phases in process order — the same order as `policy.AllPhases()`. */
-export const PHASE_ORDER: readonly Phase[] = ['DEMAND_PLANNING', 'WISHES', 'ASSIGNMENT', 'FINAL'];
+export const PHASE_ORDER: readonly Phase[] = [
+	'DEMAND_PLANNING',
+	'WISHES',
+	'ASSIGNMENT',
+	'REVIEW',
+	'FINAL'
+];
 
 export const PHASE_LABELS: Record<Phase, string> = {
 	DEMAND_PLANNING: 'Bedarfsplanung',
 	WISHES: 'Wunschphase',
 	ASSIGNMENT: 'Zuteilung',
+	REVIEW: 'Studiengangs-Review',
 	FINAL: 'Abgeschlossen'
 };
 
@@ -26,7 +33,9 @@ export const PHASE_HINTS: Record<Phase, string> = {
 	DEMAND_PLANNING: 'Die Studiengangsleitungen legen fest, welche Instanzen angeboten werden.',
 	WISHES: 'Dozent:innen bekunden Interesse. Die Eintragungen sind vertraulich.',
 	ASSIGNMENT: 'Die Fachgruppenleitungen besetzen die Instanzen.',
-	FINAL: 'Der Plan steht. Änderungen sind ab hier Korrekturen.'
+	REVIEW:
+		'Die Studiengangsleitungen prüfen Zuschnitt, Besetzung und SWS-Controlling. Bis zum Semesterende bleibt alles änderbar.',
+	FINAL: 'Das Semester ist vorbei. Der Plan ist das Protokoll und wird nicht mehr geändert.'
 };
 
 /**

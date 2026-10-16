@@ -132,6 +132,16 @@
 		data.completions.find((c) => c.programme.code === data.selected.programme) ?? null
 	);
 
+	/**
+	 * The same after the assignment: the programme lead has reviewed the whole once more. Offered
+	 * from the review on — before it, there is nothing yet to review — and in a finished semester
+	 * too, where saying so afterwards is still worth something.
+	 */
+	const reviewed = $derived(
+		data.reviews.find((c) => c.programme.code === data.selected.programme) ?? null
+	);
+	const reviewPhase = $derived(data.current?.phase === 'REVIEW' || data.current?.phase === 'FINAL');
+
 	const mayPlan = $derived(
 		hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE']) ||
 			data.myProgrammes.some((p) => p.code === data.selected.programme)
@@ -690,6 +700,25 @@
 					{announced ? 'Meldung zurücknehmen' : 'Bedarf ist fertig'}
 				</button>
 			</form>
+			{#if reviewPhase}
+				<form
+					method="POST"
+					action="?/review&semester={data.current.code}&studiengang={data.selected.programme}"
+					class="shrink-0"
+				>
+					<input type="hidden" name="semester" value={data.current.code} />
+					<input type="hidden" name="programme" value={data.selected.programme} />
+					<input type="hidden" name="complete" value={reviewed ? 'false' : 'true'} />
+					<button
+						type="submit"
+						class="btn btn-sm {reviewed ? 'btn-ghost' : ''}"
+						disabled={!mayPlan}
+						title={mayPlan ? undefined : editingBlocked || undefined}
+					>
+						{reviewed ? 'Review-Meldung zurücknehmen' : 'Review fertig'}
+					</button>
+				</form>
+			{/if}
 		{/if}
 		{#if plansAtAll}
 			<form method="GET" class="shrink-0">

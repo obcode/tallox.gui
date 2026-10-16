@@ -138,11 +138,21 @@ export const GUIDE: readonly GuideSection[] = [
 				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben. Auch jetzt lässt sich der Bedarf noch ändern, bis hin zu ganzen Modulen, die wegfallen oder dazukommen.'
 			},
 			{
+				title: 'Studiengangs-Review',
+				who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+				where: [
+					{ href: '/statistik', label: 'Statistik' },
+					{ href: '/bedarf', label: 'Bedarf' }
+				],
+				when: 'ab Semesterwoche 10, bis das geplante Semester beginnt',
+				text: 'Wenn die Instanzen besetzt sind, schaltet das Dekanat das Semester auf „Studiengangs-Review“. Die Studiengangsleitung geht ihren Studiengang noch einmal durch und verantwortet gegenüber dem Dekanat, was er an SWS kostet: Wer drei Lehrbeauftragte gefunden hat, braucht den vollen Bedarf; wer selbst drei Züge übernimmt, legt Vorlesungen zusammen und streicht Gruppen. Bedarf, Zuschnitt und Zuteilung bleiben dafür änderbar, bis das Semester vorbei ist, auch wenn kurz vor Semesterbeginn jemand ausfällt. Die Wirkung zeigt das SWS-Controlling unter Statistik. Ist eine Vorlesung schon besetzt, die zusammengelegt werden soll, wird zuerst die Zuteilung gelöst. Am Ende meldet sie auf der Bedarfsseite „Review fertig“; auch das ist eine Ansage, keine Sperre.'
+			},
+			{
 				title: 'Abschließen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
-				when: 'nach Semesterwoche 9',
-				text: 'Mit der Phase „final“ steht der Plan. Der Bedarf ist dann geschlossen; die Zuteilung bleibt änderbar, weil eine Vertretung im November die Lehre ändert.'
+				when: 'am Ende des geplanten Semesters, nicht schon nach Semesterwoche 9',
+				text: 'Mit der Phase „Abgeschlossen“ ist das Semester vorbei, und der Plan ist das Protokoll dessen, was gelehrt wurde. Danach ändert niemand mehr etwas, weder Bedarf noch Zuteilung noch Wünsche. Zurückschalten auf „Studiengangs-Review“ geht, falls doch noch etwas korrigiert werden muss.'
 			}
 		]
 	}

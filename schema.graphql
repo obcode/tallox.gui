@@ -2137,9 +2137,10 @@ type Mutation {
   """
   Declare that a study programme needs this module in this semester, for this cohort.
   
-  Allowed for the lead of **that** programme and for the dean's office — and in every phase,
-  including `FINAL`. An instance declared during the assignment is a correction, and corrections
-  happen; a tool that refuses one moves it into a spreadsheet passed around by mail.
+  Allowed for the lead of **that** programme and for the dean's office, in every phase up to and
+  including `REVIEW` — only a semester that is over (`FINAL`) refuses it. An instance declared
+  during the assignment or the review is a correction, and corrections happen; a tool that
+  refuses one moves it into a spreadsheet passed around by mail.
   
   The parts are made from the module's split, one per unit, each credited with the hours the
   split states — or from the proposal, where nobody has stated a split. A module the catalogue
@@ -2349,6 +2350,24 @@ type Mutation {
     """True to announce or refresh, false to withdraw."""
     complete: Boolean!
   ): DemandCompletion
+
+  """
+  Announce this study programme's review of a semester as done, or withdraw the announcement.
+  
+  Blocks nothing: the demand and the assignment stay writable until the semester is `FINAL`, and a
+  change afterwards is what withdrawing or re-announcing is for. `complete: false` answers `null`.
+  Only the lead of that study programme and the dean's office, in any phase.
+  """
+  setReviewComplete(
+    """Four digits, a hyphen and SS or WS."""
+    semester: String!
+
+    """The study programme's code."""
+    programme: String!
+
+    """True to announce or refresh, false to withdraw."""
+    complete: Boolean!
+  ): ReviewCompletion
 
   """
   Open or shut one subject group's wish round for a semester.
@@ -2755,7 +2774,16 @@ enum Phase {
   """The subject group leads fill the instances."""
   ASSIGNMENT
 
-  """The plan stands. Changes from here on are corrections, not planning."""
+  """
+  The programme leads go over the whole once more: the cut of the demand, who teaches what, and
+  what it costs against the quota. Everything stays writable, and stays so until the semester is
+  over — a colleague falling ill before the first lecture is handled here.
+  """
+  REVIEW
+
+  """
+  The semester is over. Its plan is the record of what was taught, and nothing is written any more.
+  """
   FINAL
 }
 
@@ -2871,6 +2899,42 @@ enum ProgrammeStatus {
 }
 
 """
+One home programme's study year: the quota, what the winter costs and what the summer costs.
+
+The view a programme lead plans against: is there room for another elective this year. The
+summer counts as soon as its demand is declared, which is how a summer is played through while
+the winter is still being planned.
+"""
+type ProgrammeStudyYearLoad {
+  """The programme the modules belong to."""
+  homeProgramme: Programme!
+
+  """The year the study year's winter semester starts in."""
+  studyYear: Int!
+
+  """
+  The quota entered for the study year, or `null` when nothing has been entered.
+  """
+  yearlyQuota: Float
+
+  """
+  The teaching of the home programme's modules in the winter semester, as `teachingLoad` counts it.
+  """
+  winterHours: Float!
+
+  """The same for the summer semester that follows."""
+  summerHours: Float!
+
+  """
+  `yearlyQuota` minus both semesters. Negative: the year is overspent. `null` without a quota.
+  """
+  remaining: Float
+
+  """Parts in either semester that state no hours and therefore count zero."""
+  partsWithoutHours: Int!
+}
+
+"""
 What one programme's modules cost the faculty in a semester, wherever they are taught.
 
 The controlling view the faculty plans its electives against. A module's teaching counts at its
@@ -2930,14 +2994,16 @@ type ProgrammeTeachingLoad {
   yearlyQuota: Float
 
   """
-  Half of `yearlyQuota`: the share one semester may spend. `null` without a quota.
+  What this semester may spend of `yearlyQuota`. A winter: half of it, because its summer is
+  still to come. A summer: what the winter of the same study year left — `yearlyQuota` minus that
+  winter's `teachingHours` — because what the winter spent is spent. `null` without a quota.
   """
   semesterQuota: Float
 
   """
   `semesterQuota` minus `teachingHours`. Negative: the programme spends more than it has.
   Positive: there is room, for another elective or for a programme that needs more than its own.
-  `null` without a quota.
+  For a summer this is what is left of the study year. `null` without a quota.
   """
   balance: Float
 }
@@ -3169,6 +3235,17 @@ type Query {
   ): [ProgrammeTeachingLoad!]!
 
   """
+  A study year's teaching by home programme: winter and summer beside the year's quota. Every
+  programme that appears in either semester is listed, by code. Readable like `teachingLoad`.
+  """
+  studyYearLoad(
+    """
+    The year the study year's winter semester starts in: `2026` for 2026-WS and 2027-SS.
+    """
+    studyYear: Int!
+  ): [ProgrammeStudyYearLoad!]!
+
+  """
   The quotas entered for one study year, ordered by programme code. A programme without one is
   not listed.
   """
@@ -3228,6 +3305,15 @@ type Query {
     """Four digits, a hyphen and SS or WS, for example `2029-SS`."""
     semester: String!
   ): [DemandCompletion!]!
+
+  """
+  Which study programmes have announced their review of a semester as done. Programmes that have
+  not are absent; readable by everybody, like the demand announcements.
+  """
+  reviewCompletions(
+    """Four digits, a hyphen and SS or WS."""
+    semester: String!
+  ): [ReviewCompletion!]!
 
   """
   The subject groups whose wish round somebody has switched, for one semester.
@@ -3459,6 +3545,22 @@ type RefusedSignIn {
 }
 
 """
+One study programme announcing that its review of a semester is done: after the assignment its
+lead has gone over the demand, its cut and who teaches what, and the figures stand against the
+quota as far as anybody knows today. An announcement like `DemandCompletion`; it blocks nothing.
+"""
+type ReviewCompletion {
+  """The semester it is about."""
+  semester: String!
+
+  """The study programme whose review is done."""
+  programme: Programme!
+
+  """When it was last said. Moves on re-announcing after a later change."""
+  completedAt: Time!
+}
+
+"""
 A role somebody holds. Everybody holds `LECTURER`; the others come on top of it.
 
 The values are English. The interface shows the German terms the faculty uses: Dozent:in,
@@ -3559,7 +3661,7 @@ enum ScopeArea {
   
   Fields: `semesters`, `semester`, `planningSemester`, `programmes`, `programme`, `modules`,
   `module`, `teachers`,
-  `courseInstances`, `courseInstance`, `teachingLoad`, `programmeQuotas`, `setProgrammeQuota`,
+  `courseInstances`, `courseInstance`, `teachingLoad`, `studyYearLoad`, `programmeQuotas`, `setProgrammeQuota`,
   `advanceSemesterPhase`, `setPlanningSemester`,
   `publishWishes`, `publishAssignments`,
   # setAssignment and clearAssignment are here and are @interactiveOnly: their refusals answer
@@ -3579,6 +3681,7 @@ enum ScopeArea {
   `requestInstanceCoverage`, `acceptInstanceCoverage`, `releaseInstanceCoverage`,
   `copyDemandFromSemester`, `planDemand`,
   `demandCompletions`, `wishWindows`, `setDemandComplete`, `setWishWindow`,
+  `reviewCompletions`, `setReviewComplete`,
   `subjectGroups`, `subjectGroup`, `mySubjectGroups`, `modulesWithoutSubjectGroup`,
   `subjectGroupsWithoutLead`, `setMySubjectGroups`, `setModulesSubjectGroup`.
   """
