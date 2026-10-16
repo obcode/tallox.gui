@@ -163,6 +163,25 @@
 				{/each}
 			</div>
 		</form>
+		{#if data.load}
+			<!-- A plain link: the file is a GET, and its Content-Disposition makes it a download.
+			     No `download` attribute — with it Chromium fetches the link as a separate download
+			     request, and what came back here was the error page rather than the file.
+			     `data-sveltekit-reload` keeps the client router from treating the endpoint as a page. -->
+			<div class="flex flex-wrap items-center gap-3">
+				<a
+					class="btn btn-sm btn-outline"
+					href="{resolve('/gui-api/export/semester')}?semester={data.selected}"
+					data-sveltekit-reload
+				>
+					Als Excel exportieren
+				</a>
+				<span class="text-base-content/80 text-sm">
+					Planung je Teil mit Besetzung und das SWS-Controlling von {semesterName(data.selected)} — zum
+					Weiterarbeiten in einer Tabelle. Besetzungen nur, soweit Sie sie hier sehen dürfen.
+				</span>
+			</div>
+		{/if}
 	</div>
 
 	{#if year && yearSemesters && data.studyYear}
