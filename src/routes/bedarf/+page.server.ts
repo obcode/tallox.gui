@@ -222,6 +222,7 @@ const DemandDocument = graphql(`
 			source
 			kind
 			plannable
+			splitIsEstimated
 			homeProgramme {
 				code
 				title

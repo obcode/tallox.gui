@@ -348,6 +348,11 @@ export function catalogueStatements(): string[] {
 		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
 		 VALUES ('${CATALOGUE.split}', 'LECTURE', 2, 0), ('${CATALOGUE.split}', 'LAB', 2, 1)
 		 ON CONFLICT (module_id, position) DO NOTHING;`,
+		// The foreign module needs a confirmed split too: without one no instance can be declared
+		// of it, and the test that fetches it in is about the foreign path, not the confirmation.
+		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
+		 VALUES ('${CATALOGUE.otherModule}', 'LECTURE', 2, 0), ('${CATALOGUE.otherModule}', 'LAB', 2, 1)
+		 ON CONFLICT (module_id, position) DO NOTHING;`,
 
 		`INSERT INTO semester (code) VALUES (${quote(DEMAND.semester)}) ON CONFLICT (code) DO NOTHING;`,
 		`INSERT INTO semester (code) VALUES (${quote(DEMAND.previous)}) ON CONFLICT (code) DO NOTHING;`,

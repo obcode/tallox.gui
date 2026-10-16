@@ -76,9 +76,11 @@ test.describe('the demand table', () => {
 		// The cohort year is the axis the table is grouped by.
 		await expect(page.getByRole('heading', { name: /1\. Fachsemester/ })).toBeVisible();
 
-		// And a module nobody has split yet is planned with a guess, which says so.
+		// And a module nobody has split yet shows a guess, which says so — and cannot be ticked
+		// until somebody confirms it: no instance is made from a guess.
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
 		await expect(guess.getByText('geschätzt')).toBeVisible();
+		await expect(guess.getByRole('checkbox')).toBeDisabled();
 		// Six hours, and the rule this morning changed: four of lecture and two of laboratory.
 		await expect(guess.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
 
@@ -89,9 +91,18 @@ test.describe('the demand table', () => {
 		const page = await asPersona(PERSONAS.vier);
 		await gotoRendered(page, DEMAND_URL);
 
-		// Tick a second module beside the prefilled one. Nothing else: the tick is a decision, and
-		// a decision that sits in a browser waiting for a second act is one a closed tab undoes.
+		// A second module beside the prefilled one. Its split is only a guess, so it is confirmed
+		// first — from the row it is shown in — and the confirmed split is the one that was shown.
+		const unconfirmed = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
+		// Exact: the module is called "…zum Bestätigen", and every stepper in its row carries its
+		// name — a substring match finds five buttons and none of them this one.
+		await unconfirmed.getByRole('button', { name: 'bestätigen', exact: true }).click();
 		const guess = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
+		await expect(guess.getByText('geschätzt')).toHaveCount(0);
+		await expect(guess.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
+
+		// Then the tick. Nothing else: the tick is a decision, and a decision that sits in a
+		// browser waiting for a second act is one a closed tab undoes.
 		await guess.getByRole('checkbox').check();
 
 		// The SWS column answers before anything is saved: a six-hour module with one laboratory
@@ -190,22 +201,6 @@ test.describe('the demand table', () => {
 		await openRowMenu(merged);
 		await page.getByRole('button', { name: 'Vorlesung trennen' }).click();
 		await expect(page.getByText('Vorlesung geteilt')).toHaveCount(0);
-	});
-
-	test('confirms a guessed split from the row it is shown in', async ({ asPersona }) => {
-		const page = await asPersona(PERSONAS.vier);
-		await gotoRendered(page, DEMAND_URL);
-
-		const row = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
-		await expect(row.getByText('geschätzt')).toBeVisible();
-		// Exact: the module is called "…zum Bestätigen", and every stepper in its row carries its
-		// name — a substring match finds five buttons and none of them this one.
-		await row.getByRole('button', { name: 'bestätigen', exact: true }).click();
-
-		const confirmed = page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
-		await expect(confirmed.getByText('geschätzt')).toHaveCount(0);
-		// The split it took over is the one that was shown.
-		await expect(confirmed.getByText('Vorlesung 4 + Praktikum 2 SWS')).toBeVisible();
 	});
 
 	// The other half of the estimate: it is a guess, so it has to be correctable where it is

@@ -238,7 +238,10 @@ heute einen E2E-Test.
 Zeile**, dahinter ein natives **Popover** (`popovertarget`, top layer): Aufteilung ändern, Vorlesung
 für alle Züge, je Zug gemeinsam/getrennt mit anderen Studiengängen. **Solange die Aufteilung
 geschätzt ist, bleiben „geschätzt / bestätigen / ändern" in der Zeile** — die Leute sollen sehen,
-dass noch etwas zu tun ist. Warum Popover und kein daisyUI-Dropdown: die Tabelle liegt in
+dass noch etwas zu tun ist. Seit 2026-10-16 ist eine geschätzte Zeile außerdem **nicht ankreuzbar**,
+bis sie bestätigt ist: das Backend baut keine Instanz mehr aus der Schätzung (`plannable` false).
+„ändern" hängt deshalb nur noch an `splitIsEstimated`, nicht mehr an `plannable &&
+splitIsEstimated` — das wäre nie mehr wahr. Warum Popover und kein daisyUI-Dropdown: die Tabelle liegt in
 `overflow-x-auto`, ein Dropdown darin wird abgeschnitten. Drei Fallen aus dem Lauf:
 
 1. **Das Popover überlebt das Neu-Rendern.** Nach einem Submit aus dem Menü blieb es offen, und

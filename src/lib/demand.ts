@@ -329,10 +329,10 @@ export type DemandRow<M extends ModuleLike = ModuleLike> = {
 };
 
 /**
- * The split a row is planned with: what somebody stated, or the proposal.
+ * The split a row shows: what somebody stated, or the proposal waiting to be confirmed.
  *
- * The same fall-back the backend makes when it builds the parts, so the hours on the screen are
- * the hours that get written.
+ * Only for showing and for what „bestätigen“ sends. Planned is only with a confirmed split — the
+ * backend refuses the proposal (since 2026-10-16), and `plannable` says so.
  */
 export function effectiveComponents(
 	module: ModuleLike

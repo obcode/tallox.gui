@@ -289,14 +289,15 @@
 		<p class="text-base-content/80 mb-3 text-sm">
 			Wie sich die Lehre dieses Moduls auf Vorlesung, Praktikum und Übung aufteilt. Das ZPA nennt
 			nur eine Gesamtzahl — die Aufteilung weiß die Fakultät. Sie wird einmal eingetragen und ändert
-			sich danach normalerweise nicht. Fehlt sie, plant Tallox mit der Schätzung unten.
+			sich danach normalerweise nicht. Fehlt sie, lässt sich das Modul nicht planen — die Schätzung
+			unten ist ein Vorschlag zum Bestätigen.
 		</p>
 
 		{#if proposed}
 			<p class="text-base-content/90 mb-3 text-sm">
 				<span class="badge badge-warning badge-sm align-middle">geschätzt</span>
-				Aus Lehrform und SWS abgeleitet, von niemandem bestätigt. Instanzen lassen sich damit schon anlegen
-				— bitte trotzdem prüfen und speichern.
+				Aus Lehrform und SWS abgeleitet, von niemandem bestätigt. Instanzen lassen sich erst anlegen,
+				wenn die Aufteilung geprüft und gespeichert ist.
 			</p>
 		{/if}
 
