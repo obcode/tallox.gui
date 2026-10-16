@@ -16,6 +16,28 @@ wird, das niemand macht. Beide rufen **dieselbe** Mutation `setModulesSubjectGro
 mit einer Liste von einem: „genau eine Fachgruppe, Verschieben in einem Schritt" ist eine Regel
 jener Mutation, und ein zweiter Weg hinein wäre eine zweite Stelle, an der sie schiefgeht.
 
+## Die Fachgruppenleitung sortiert selbst ein (2026-10-16)
+
+Das Backend erlaubt es seit dem 2026-09-22 (`policy.MayFileModule`), die beiden Seiten boten es aber
+nur `ADMIN` an — die Leitung sah die Regel nie. Jetzt gilt auf `/module` und `/module/[id]` dieselbe
+Reichweite wie im Backend, als `mayRefileModule`/`filingGroupsFor` in `$lib/catalogue.ts`:
+
+- Administration und Dekanat: alles, in jede Gruppe.
+- Fachgruppenleitung: **aufnehmen**, was in keiner Fachgruppe steht, **freigeben**, was in der eigenen
+  steht — als Ziel nur die eigenen Gruppen. Module fremder Gruppen sind **nicht ankreuzbar**
+  (`disabled`), denn der Stapel wird im Backend als Ganzes abgelehnt, sobald eine Zeile außer
+  Reichweite liegt; auf der Einzelseite steht stattdessen, warum das Formular fehlt.
+- Eine Leitung ohne Gruppe: nichts.
+
+Aus `session.effectiveRoles` plus `me.subjectGroupsLed`, nicht aus `me.roles`. Die Bedarfsseite
+reicht `filingGroupsFor` noch `me.roles` herein — beim Verengen bietet sie damit mehr an, als der
+Server gerade erlaubt (kosmetisch, aber falsch herum).
+
+E2E: `tests/module-filing.spec.ts` mit eigenem Datensatz `FILING` (Studiengang `E2F`). Die Modulnamen
+beginnen mit `E2F`, damit sie hinter den `E2E …`-Modulen sortieren: `subject-groups.spec.ts` sortiert
+das **erste** Modul der Arbeitsliste ein, und das darf keins von diesen sein. Vorsicht beim Zählen
+von Checkboxen: die Filterleiste hat selbst drei.
+
 ## Mitgliedschaft und Leitung müssen verschieden aussehen
 
 Beides sind zwei Listen von Kolleg:innen und bedeuten völlig Verschiedenes:

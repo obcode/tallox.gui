@@ -11,7 +11,10 @@ import {
 	dutyBadge,
 	frequenciesForTerm,
 	findingIsAlarming,
+	filingGroupsFor,
 	formatHours,
+	mayFileModules,
+	mayRefileModule,
 	moduleName,
 	spoLabel,
 	teacherRole
@@ -218,5 +221,61 @@ describe('frequenciesForTerm', () => {
 	// Without a term there is no filter at all — not an empty list, which would match nothing.
 	it('is no filter without a term', () => {
 		expect(frequenciesForTerm('')).toBeNull();
+	});
+});
+
+describe('filing modules into subject groups', () => {
+	const mathe = { id: 'g-mathe', code: 'MATHE', name: 'Mathematik' };
+	const swe = { id: 'g-swe', code: 'SWE', name: 'Softwareentwicklung' };
+	const all = [mathe, swe];
+
+	it('offers an administrator and the dean’s office every group', () => {
+		expect(filingGroupsFor(['ADMIN'], all, [])).toEqual(all);
+		expect(filingGroupsFor(['DEANS_OFFICE'], all, [])).toEqual(all);
+	});
+
+	it('offers a lead the groups she leads, and no others', () => {
+		expect(filingGroupsFor(['LECTURER', 'SUBJECT_GROUP_LEAD'], all, [swe])).toEqual([swe]);
+	});
+
+	// A retired group is not in the page's list of targets; leading it does not put it back.
+	it('does not offer a led group the page does not list', () => {
+		const retired = { id: 'g-old', code: 'OLD', name: 'Alt' };
+		expect(filingGroupsFor(['SUBJECT_GROUP_LEAD'], all, [retired])).toEqual([]);
+	});
+
+	it('offers a lecturer nothing', () => {
+		expect(filingGroupsFor(['LECTURER'], all, [])).toEqual([]);
+		expect(mayFileModules(['LECTURER'], [])).toBe(false);
+	});
+
+	// The unscoped lead: holds the role, leads nothing — and may therefore file nothing.
+	it('lets an unscoped lead file nothing, not everything', () => {
+		expect(mayFileModules(['SUBJECT_GROUP_LEAD'], [])).toBe(false);
+		expect(mayRefileModule(['SUBJECT_GROUP_LEAD'], [], null)).toBe(false);
+	});
+
+	// The led list without the role: what a narrowed session would look like if the two ever
+	// disagreed. The role decides, as it does in the backend.
+	it('reads a led list without the role as nothing', () => {
+		expect(mayFileModules(['LECTURER'], [mathe])).toBe(false);
+	});
+
+	it('lets a lead pull in a module that is in no group', () => {
+		expect(mayRefileModule(['SUBJECT_GROUP_LEAD'], [mathe], null)).toBe(true);
+		expect(mayRefileModule(['SUBJECT_GROUP_LEAD'], [mathe], undefined)).toBe(true);
+	});
+
+	it('lets a lead release a module of her own group', () => {
+		expect(mayRefileModule(['SUBJECT_GROUP_LEAD'], [mathe], mathe.id)).toBe(true);
+	});
+
+	it('does not let a lead touch a module of a colleague’s group', () => {
+		expect(mayRefileModule(['SUBJECT_GROUP_LEAD'], [mathe], swe.id)).toBe(false);
+	});
+
+	it('lets an administrator and the dean’s office move anything', () => {
+		expect(mayRefileModule(['ADMIN'], [], swe.id)).toBe(true);
+		expect(mayRefileModule(['DEANS_OFFICE'], [], swe.id)).toBe(true);
 	});
 });

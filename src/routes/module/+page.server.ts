@@ -64,6 +64,14 @@ const CatalogueDocument = graphql(`
 			active
 		}
 		modulesWithoutSubjectGroup
+		# Which groups this person leads: a subject group lead may file modules into those, and
+		# release them again — the rows the page lets her tick. Empty for the dean's office,
+		# which reaches every group and is told apart by its role instead.
+		me {
+			subjectGroupsLed {
+				id
+			}
+		}
 	}
 `);
 
@@ -131,6 +139,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			modules: data.modules,
 			subjectGroups: data.subjectGroups,
 			modulesWithoutSubjectGroup: data.modulesWithoutSubjectGroup,
+			led: data.me?.subjectGroupsLed ?? [],
 			filter: {
 				programme,
 				spo,

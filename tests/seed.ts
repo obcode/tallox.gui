@@ -511,7 +511,8 @@ export function seedSql(): string {
 		...catalogueStatements(),
 		...wishStatements(),
 		...assignmentStatements(),
-		...competenceStatements()
+		...competenceStatements(),
+		...filingStatements()
 	].join('\n');
 }
 
@@ -787,4 +788,67 @@ export function wishStatements(): string[] {
 		  WHERE p.mail = 'prof.eins@example.org'
 		 ON CONFLICT DO NOTHING;`
 	];
+}
+
+/**
+ * The filing fixture: a subject group lead filing modules into her own group and releasing them.
+ *
+ * Three modules, one for each answer the rule gives a lead — one in no group (she may pull it
+ * in), one in her group (she may release it), one in a colleague's group (she may do nothing to
+ * it). Drei leads `own`; nobody leads `foreign`, which is enough: what makes it foreign is that
+ * she does not.
+ *
+ * Its own programme, groups and modules, for the reason the assignment fixture gives. The module
+ * names start with `E2F` so that they sort after the catalogue fixture's `E2E …` modules: the
+ * subject group spec files whichever module its work list offers first, and that must not be one
+ * of these.
+ */
+export const FILING = {
+	programme: 'E2F',
+	ownGroup: '0e2e0000-0000-4000-8000-000000000071',
+	ownGroupCode: 'E2FEIGEN',
+	ownGroupName: 'E2F Eigene Fachgruppe',
+	foreignGroup: '0e2e0000-0000-4000-8000-000000000072',
+	foreignGroupCode: 'E2FFREMD',
+	unfiled: '0e2e0000-0000-4000-8000-000000000073',
+	unfiledName: 'E2F Modul ohne Fachgruppe',
+	own: '0e2e0000-0000-4000-8000-000000000074',
+	ownName: 'E2F Modul der eigenen Fachgruppe',
+	foreign: '0e2e0000-0000-4000-8000-000000000075',
+	foreignName: 'E2F Modul einer fremden Fachgruppe'
+} as const;
+
+export function filingStatements(): string[] {
+	const programme = quote(FILING.programme);
+	return [
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Einsortier-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT m.id, p.id, m.name, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p,
+		        (VALUES ('${FILING.unfiled}'::uuid, ${quote(FILING.unfiledName)}),
+		                ('${FILING.own}'::uuid, ${quote(FILING.ownName)}),
+		                ('${FILING.foreign}'::uuid, ${quote(FILING.foreignName)})) AS m(id, name)
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${FILING.ownGroup}', ${quote(FILING.ownGroupCode)}, ${quote(FILING.ownGroupName)}),
+		        ('${FILING.foreignGroup}', ${quote(FILING.foreignGroupCode)}, 'E2F Fremde Fachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
+		 SELECT id, 'SUBJECT_GROUP_LEAD', '${FILING.ownGroup}' FROM person
+		  WHERE mail = 'prof.drei@example.org'
+		 ON CONFLICT DO NOTHING;`,
+		filingResetSql()
+	];
+}
+
+/** Puts the three modules back where the fixture says they are. The spec runs it before each test. */
+export function filingResetSql(): string {
+	return `DELETE FROM module_subject_group
+	         WHERE module_id IN ('${FILING.unfiled}', '${FILING.own}', '${FILING.foreign}');
+	        INSERT INTO module_subject_group (module_id, subject_group_id)
+	        VALUES ('${FILING.own}', '${FILING.ownGroup}'),
+	               ('${FILING.foreign}', '${FILING.foreignGroup}');`;
 }

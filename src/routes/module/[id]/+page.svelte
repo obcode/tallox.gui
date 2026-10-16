@@ -8,7 +8,10 @@
 		teacherRole,
 		PART_KIND_LABELS,
 		componentMismatch,
+		filingGroupsFor,
 		formatHours,
+		mayFileModules,
+		mayRefileModule,
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
@@ -21,11 +24,32 @@
 	// Cosmetic, like every role check in this application — the backend refuses the mutation
 	// anyway, and it refuses it on the token path too. Worth doing so that a lecturer reads which
 	// subject the module belongs to without being offered a control that always fails.
-	const mayAssign = $derived(hasAnyRole(data.session?.effectiveRoles ?? [], ['ADMIN']));
+	//
+	// The effective roles, not `me.roles`: narrowed to LECTURER, an administrator is offered what a
+	// lecturer is. `subjectGroupsLed` already follows the narrowing on the server.
+	const roles = $derived(data.session?.effectiveRoles ?? []);
+	const led = $derived(data.me?.subjectGroupsLed ?? []);
 
-	// Retired groups are not somewhere to put a module. One the module already sits in still
-	// renders as such — that is what the `active` flag on the reference is for.
-	const assignableGroups = $derived(data.subjectGroups.filter((g) => g.active));
+	// Whether this module is in reach: an administrator and the dean's office move anything, a
+	// subject group lead pulls in a module that is in no group and releases one of hers.
+	const mayAssign = $derived(mayRefileModule(roles, led, data.module.subjectGroup?.id));
+	// Somebody who files modules elsewhere, looking at one filed under a colleague's group. Told
+	// why the control is missing rather than left to wonder.
+	const filedElsewhere = $derived(!mayAssign && mayFileModules(roles, led));
+	// Whether the page is talking to a lead rather than to somebody who reaches every group —
+	// the "no group" answer means releasing the module, and the label says so.
+	const asLead = $derived(!hasAnyRole(roles, ['ADMIN', 'DEANS_OFFICE']));
+
+	// Retired groups are not somewhere to put a module, and a lead is offered only her own. One
+	// the module already sits in still renders as such — that is what the `active` flag on the
+	// reference is for.
+	const assignableGroups = $derived(
+		filingGroupsFor(
+			roles,
+			data.subjectGroups.filter((g) => g.active),
+			led
+		)
+	);
 
 	const assigned = $derived(form && 'assigned' in form ? form.assigned : null);
 
@@ -167,7 +191,9 @@
 				<label class="form-control">
 					<span class="label-text text-sm">Fachgruppe</span>
 					<select name="subjectGroup" class="select select-bordered select-sm">
-						<option value="" selected={data.module.subjectGroup == null}>— keine —</option>
+						<option value="" selected={data.module.subjectGroup == null}>
+							{asLead && data.module.subjectGroup ? '— keine (freigeben) —' : '— keine —'}
+						</option>
 						{#each assignableGroups as group (group.id)}
 							<option value={group.id} selected={group.id === data.module.subjectGroup?.id}>
 								{group.code} — {group.name}
@@ -178,16 +204,33 @@
 				<button type="submit" class="btn btn-sm">Speichern</button>
 			</form>
 
-			{#if assignableGroups.length === 0}
+			{#if asLead}
+				<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+					Als Fachgruppenleitung kannst Du ein Modul ohne Fachgruppe in eine Deiner Fachgruppen
+					aufnehmen und ein Modul Deiner Fachgruppe wieder freigeben — es steht dann in keiner
+					Fachgruppe, bis jemand es aufnimmt.
+				</p>
+			{:else if assignableGroups.length === 0}
 				<p class="text-base-content/80 mt-2 text-sm">
 					Es gibt noch keine Fachgruppe. Angelegt werden sie in der
 					<a class="link" href={resolve('/verwaltung/fachgruppen')}>Verwaltung</a>.
 				</p>
 			{/if}
+		{:else if filedElsewhere}
+			<!--
+				Beide Enden einer Verschiebung müssen in Reichweite sein. Ein Modul aus einer fremden
+				Fachgruppe herüberzuziehen wäre ein einseitiger Akt gegen die andere Gruppe; ihre
+				Leitung gibt es frei, dann lässt es sich aufnehmen.
+			-->
+			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+				Dieses Modul gehört zu einer Fachgruppe, die Du nicht leitest. Aufnehmen kannst Du es erst,
+				wenn deren Leitung es freigibt — oder das Dekanat bzw. die Administration es umhängt.
+			</p>
 		{:else}
 			<p class="text-base-content/80 mt-1 text-sm">
-				Zuordnen kann sie die Administration — welche Fachgruppen es gibt und wer sie leitet, steht
-				unter <a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppen</a>.
+				Zuordnen kann sie die Leitung der Fachgruppe, das Dekanat oder die Administration — welche
+				Fachgruppen es gibt und wer sie leitet, steht unter
+				<a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppen</a>.
 			</p>
 		{/if}
 	</div>

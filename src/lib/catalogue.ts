@@ -339,12 +339,54 @@ export type FilingGroup = { id: string; code: string; name: string };
  *
  * Offering a lead a group she does not lead would be offering her a refusal, and that is how
  * people learn to ignore refusals.
+ *
+ * The led groups are taken *out of* `all` rather than returned as they are, so the order is the
+ * page's and a retired group a lead still holds is not offered as a target: `all` is whatever the
+ * page considers somewhere a module may go.
  */
 export function filingGroupsFor(
 	roles: readonly string[],
 	all: readonly FilingGroup[],
-	led: readonly FilingGroup[]
+	led: readonly { id: string }[]
 ): FilingGroup[] {
-	if (roles.includes('ADMIN') || roles.includes('DEANS_OFFICE')) return [...all];
-	return [...led];
+	if (filingReachesEveryGroup(roles)) return [...all];
+	const ids = new Set(led.map((g) => g.id));
+	return all.filter((g) => ids.has(g.id));
+}
+
+/** ADMIN and the dean's office file across every group — `policy.FilingScope`'s `All`. */
+function filingReachesEveryGroup(roles: readonly string[]): boolean {
+	return roles.includes('ADMIN') || roles.includes('DEANS_OFFICE');
+}
+
+/**
+ * Whether somebody may file modules at all — whether a filing control belongs on the page.
+ *
+ * A lead nobody has given a group reaches nothing, the same reading the backend takes: an
+ * unscoped lead may do nothing, not everything.
+ */
+export function mayFileModules(roles: readonly string[], led: readonly { id: string }[]): boolean {
+	return filingReachesEveryGroup(roles) || (roles.includes('SUBJECT_GROUP_LEAD') && led.length > 0);
+}
+
+/**
+ * Whether somebody may move this one module out of the group it is in today.
+ *
+ * The other half of `policy.MayFileModule`, the one `filingGroupsFor` cannot express: filing
+ * touches two groups, and the backend wants **both** ends in reach. A lead may pull in a module
+ * that is in no group yet and let go of one that is hers, and may do nothing to one filed under
+ * a colleague's group — "move this into mine" would otherwise be a unilateral act against
+ * another group.
+ *
+ * Cosmetic like the rest: it decides which rows can be ticked, so that a batch is not refused as
+ * a whole for one row the person could not have moved. The backend decides.
+ */
+export function mayRefileModule(
+	roles: readonly string[],
+	led: readonly { id: string }[],
+	currentGroupId: string | null | undefined
+): boolean {
+	if (filingReachesEveryGroup(roles)) return true;
+	if (!mayFileModules(roles, led)) return false;
+	return currentGroupId == null || led.some((g) => g.id === currentGroupId);
 }
