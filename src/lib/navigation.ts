@@ -80,10 +80,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE']
 	},
 	{
+		// The SWS controlling: what each programme's modules cost against its quota. The programme
+		// leads are the ones who plan against it — how many electives a programme can afford is
+		// their question — so the area is theirs as much as the dean's office's. Readable through
+		// the API by everybody; the roles here only decide who finds it in the bar.
 		emoji: '📊',
 		label: 'Statistik',
-		hint: 'Auswertungen für das Dekanat',
-		roles: ['DEANS_OFFICE']
+		href: '/statistik',
+		hint: 'SWS-Controlling: Lehre je Studiengang gegen das Kontingent',
+		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
 	},
 	{
 		emoji: '🗓️',
