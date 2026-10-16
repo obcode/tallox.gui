@@ -10,6 +10,7 @@ import {
 	type CombinedEntry,
 	UNFILED
 } from '$lib/assignment';
+import { formatChanges } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -72,6 +73,9 @@ const AssignmentDocument = graphql(`
 			track
 			programmeSemester
 			teachingHours
+			delivery
+			taughtInEnglish
+			taughtInEnglishOverridden
 			programme {
 				code
 				title
@@ -224,6 +228,14 @@ const SetDocument = graphql(`
 	}
 `);
 
+const SetFormatDocument = graphql(`
+	mutation SetCourseInstanceFormat($id: ID!, $delivery: DeliveryFormat!, $english: Boolean) {
+		setCourseInstanceFormat(id: $id, delivery: $delivery, taughtInEnglish: $english) {
+			id
+		}
+	}
+`);
+
 const ClearDocument = graphql(`
 	mutation ClearAssignment($id: ID!) {
 		clearAssignment(id: $id)
@@ -314,7 +326,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	};
 };
 
-/** What one part's refusal looks like on the way back, so the page can put it in its row. */
+/**
+ * What one part's refusal looks like on the way back, so the page can put it in its row.
+ *
+ * A refusal of a cohort's format is keyed `format:<instance id>`: it belongs to the cohort's row
+ * rather than to any one part.
+ */
 type RowRefusal = { partId: string; message: string };
 
 export const actions: Actions = {
@@ -401,6 +418,23 @@ export const actions: Actions = {
 				saved += 1;
 			} catch (err) {
 				refusals.push({ partId: change.partId, message: toRefusal(err).message });
+			}
+		}
+
+		// How each cohort is taught. Its own mutation per cohort, and only for the cohorts whose
+		// controls differ from what the page rendered: the table is saved as a whole on every
+		// change, and restating every cohort's format would write a stale page over a colleague's
+		// newer choice.
+		for (const change of formatChanges(form)) {
+			try {
+				await backendRequest(SetFormatDocument, {
+					id: change.instanceId,
+					delivery: change.delivery,
+					english: change.taughtInEnglish
+				});
+				saved += 1;
+			} catch (err) {
+				refusals.push({ partId: `format:${change.instanceId}`, message: toRefusal(err).message });
 			}
 		}
 

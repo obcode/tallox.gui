@@ -24,6 +24,8 @@ const ExportDocument = graphql(`
 			track
 			programmeSemester
 			note
+			delivery
+			taughtInEnglish
 			programme {
 				code
 			}

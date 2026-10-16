@@ -15,7 +15,14 @@
 
 import { PART_KIND_LABELS } from '$lib/catalogue';
 import { controllingTable, type LoadInput } from '$lib/controlling';
-import { cohortLabel, coverageLabel, coversLabel, type CoverageLike } from '$lib/demand';
+import {
+	DELIVERY_LABELS,
+	cohortLabel,
+	coverageLabel,
+	coversLabel,
+	type CoverageLike,
+	type DeliveryFormat
+} from '$lib/demand';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { semesterName } from '$lib/semester';
 
@@ -52,6 +59,8 @@ export type ExportInstance = {
 	parts: readonly ExportPart[];
 	coveredBy?: CoverageLike | null;
 	covers: readonly CoverageLike[];
+	delivery?: DeliveryFormat;
+	taughtInEnglish?: boolean;
 };
 
 export type ExportAssignment = {
@@ -67,6 +76,8 @@ export const PLANNING_HEADER = [
 	'Modul',
 	'ZPA-Nr.',
 	'Fachgruppe',
+	'Durchführung',
+	'Englisch',
 	'Teil',
 	'SWS (Lehrperson)',
 	'Für alle Züge',
@@ -101,7 +112,9 @@ export function planningRows(
 			cohortLabel(instance.programme.code, instance.programmeSemester, instance.track),
 			instance.module.name,
 			instance.module.zpaId ?? '',
-			instance.module.subjectGroup?.code ?? ''
+			instance.module.subjectGroup?.code ?? '',
+			instance.delivery ? DELIVERY_LABELS[instance.delivery] : '',
+			instance.taughtInEnglish ? 'ja' : ''
 		];
 		const hint = instanceHint(instance);
 
@@ -267,7 +280,7 @@ export function exportSheets(input: ExportInput): ExportSheet[] {
 			name: 'Planung',
 			header: PLANNING_HEADER,
 			rows: planningRows(input.instances, input.assignments),
-			widths: [11, 12, 8, 40, 10, 11, 14, 10, 10, 28, 28, 28, 30]
+			widths: [11, 12, 8, 40, 10, 11, 18, 9, 14, 10, 10, 28, 28, 28, 30]
 		},
 		{
 			name: 'SWS je Studiengang',

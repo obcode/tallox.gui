@@ -24,7 +24,7 @@
 		cohortLabel
 	} from '$lib/assignment';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
-	import { hoursLabel } from '$lib/demand';
+	import { DELIVERY_LABELS, hoursLabel } from '$lib/demand';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -590,6 +590,60 @@
 												/>
 											{:else}
 												<span class="text-base-content/80 text-xs">Notizen stehen je Teil.</span>
+											{/if}
+											<!-- How the cohort is taught, for all of its parts. The originals travel
+											     beside the controls: an unticked box sends nothing, and the save only
+											     writes a cohort whose controls differ from what was drawn. -->
+											{#if group.instance.delivery}
+												{@const formatRefusal = refusalFor.get(`format:${group.instance.id}`)}
+												<input
+													type="hidden"
+													name="fmt0:{group.instance.id}"
+													value={group.instance.delivery}
+												/>
+												<input
+													type="hidden"
+													name="en0:{group.instance.id}"
+													value={String(group.instance.taughtInEnglish ?? false)}
+												/>
+												<div class="mt-1 flex flex-wrap items-center gap-3">
+													<select
+														name="fmt:{group.instance.id}"
+														class="select select-bordered select-xs"
+														aria-label="Durchführung von {block.name} in {group.label}"
+														disabled={!open}
+														value={group.instance.delivery}
+													>
+														{#each Object.entries(DELIVERY_LABELS) as [value, label] (value)}
+															<option {value}>{label}</option>
+														{/each}
+													</select>
+													<label
+														class="flex items-center gap-1 text-xs"
+														title={group.instance.taughtInEnglishOverridden
+															? 'Für diesen Zug festgelegt.'
+															: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
+													>
+														<input
+															type="checkbox"
+															name="en:{group.instance.id}"
+															value="true"
+															class="checkbox checkbox-xs"
+															aria-label="{block.name} in {group.label} auf Englisch"
+															disabled={!open}
+															checked={group.instance.taughtInEnglish}
+														/>
+														Englisch
+														{#if !group.instance.taughtInEnglishOverridden}
+															<span class="text-base-content/70">(Standard)</span>
+														{/if}
+													</label>
+												</div>
+												{#if formatRefusal}
+													<span class="badge badge-error mt-1 whitespace-normal"
+														>{formatRefusal}</span
+													>
+												{/if}
 											{/if}
 										</td>
 										<td class="align-top text-right">

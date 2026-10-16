@@ -129,6 +129,24 @@ Tabelle, die `wishes.spec.ts` über ihre Position findet. Jetzt gehört er `fuen
 Wunschtest vorkommt. Das ist die Regel aus [[wish-page]] („eine Fixture, die eine Berechtigung
 vergibt, braucht ein eigenes Subjekt") — sie gilt für Datenzeilen genauso.
 
+## Block und Englisch je Zug (seit 2026-10-16)
+
+In der Zugzeile, unter der Notiz: ein Select „semesterbegleitend / Block“ und ein Kästchen
+„Englisch“, gespeichert mit der Tabelle (`?/save`), ohne JavaScript bedienbar. Felder
+`fmt:<id>`/`en:<id>` plus die gezeichneten Ausgangswerte `fmt0:<id>`/`en0:<id>`: ein
+nicht angehaktes Kästchen schickt nichts, und `formatChanges` in `$lib/demand` schreibt nur
+Züge, deren Felder abweichen — sonst überschriebe jedes Autosave der ganzen Tabelle die
+neuere Wahl eines Kollegen. „(Standard)“ heißt: die Sprache folgt dem Modulkatalog (ZPA
+`std_lang`, sonst Deutsch); bewusst nicht „laut ZPA“, weil lokale Module keine ZPA-Angabe
+haben. Ablehnungen hängen unter dem Schlüssel `format:<instance id>` an der Zugzeile.
+Dieselben Felder in der Planungstabelle von `/bedarf` (Action `?/plan`, vor dem Plan),
+Badges in der Übersicht, auf `/wuensche` und zwei Spalten im Export. Backend:
+`instance-format` in `go/`.
+
+Falle beim Einbau: das EN-Kästchen machte `row.getByRole('checkbox')` in `demand.spec.ts`
+mehrdeutig, und sein `aria-label` mit Modulnamen floss in den Zellnamen ein — Locators
+seitdem `input[name="offer"]` bzw. `exact: true`.
+
 ## Wo es liegt
 
 | Was                | Wo                                                                   |

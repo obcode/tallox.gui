@@ -1,5 +1,6 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { DeliveryFormat } from '$lib/demand';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -33,6 +34,11 @@ export type InstanceLike = {
 	programme: { code: string; title?: string };
 	module: { id: string; name: string; subjectGroup?: { id: string; code: string } | null };
 	parts: PartLike[];
+	/** How the cohort is taught; see `formatChanges` in `$lib/demand`. */
+	delivery?: DeliveryFormat;
+	taughtInEnglish?: boolean;
+	/** Whether the language is a decision about this cohort rather than the catalogue's. */
+	taughtInEnglishOverridden?: boolean;
 	/**
 	 * The other study programmes' demands this cohort meets, where any are agreed.
 	 *

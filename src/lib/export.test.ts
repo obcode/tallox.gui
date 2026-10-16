@@ -110,6 +110,25 @@ describe('planningRows', () => {
 		expect(rows[0][col('SWS (Lehrperson)')]).toBeNull();
 	});
 
+	it('says how the cohort is taught on every row of it', () => {
+		const rows = planningRows(
+			[
+				instance('i1', {
+					delivery: 'BLOCK',
+					taughtInEnglish: true,
+					parts: [part('p1'), part('p2', { kind: 'LAB', position: 1 })]
+				}),
+				instance('i2', { track: 'B', delivery: 'WEEKLY', taughtInEnglish: false })
+			],
+			[]
+		);
+		expect(rows.map((r) => [r[col('Durchführung')], r[col('Englisch')]])).toEqual([
+			['Block', 'ja'],
+			['Block', 'ja'],
+			['semesterbegleitend', '']
+		]);
+	});
+
 	it('keeps a cohort without parts and names the gap', () => {
 		const rows = planningRows([instance('i1')], []);
 		expect(rows[0][col('Hinweis')]).toBe('keine Teile angelegt');

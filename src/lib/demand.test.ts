@@ -18,6 +18,8 @@ import {
 	cohortCount,
 	coverageLabel,
 	coversLabel,
+	formatBadges,
+	formatChanges,
 	partGroupLabel,
 	partLabel,
 	plannedHours,
@@ -884,6 +886,69 @@ describe('the note beside the row', () => {
 		expect(rows[0].cohorts.map((c) => c.note)).toEqual([
 			'IF4 (alt) und IF2 (neu)',
 			'IF4 (alt) und IF2 (neu)'
+		]);
+	});
+});
+
+describe('formatChanges', () => {
+	const formOf = (entries: [string, string][]) => {
+		const form = new FormData();
+		for (const [k, v] of entries) form.append(k, v);
+		return form;
+	};
+
+	it('reports only the cohorts somebody touched', () => {
+		const form = formOf([
+			['fmt0:a', 'WEEKLY'],
+			['en0:a', 'false'],
+			['fmt:a', 'WEEKLY'],
+			['fmt0:b', 'WEEKLY'],
+			['en0:b', 'false'],
+			['fmt:b', 'BLOCK'],
+			['en:b', 'true']
+		]);
+		expect(formatChanges(form)).toEqual([
+			{ instanceId: 'b', delivery: 'BLOCK', taughtInEnglish: true }
+		]);
+	});
+
+	it('reads an unticked box as German', () => {
+		const form = formOf([
+			['fmt0:a', 'BLOCK'],
+			['en0:a', 'true'],
+			['fmt:a', 'BLOCK']
+		]);
+		expect(formatChanges(form)).toEqual([
+			{ instanceId: 'a', delivery: 'BLOCK', taughtInEnglish: false }
+		]);
+	});
+
+	it('keeps the rendered delivery where the select was disabled and sent nothing', () => {
+		const form = formOf([
+			['fmt0:a', 'BLOCK'],
+			['en0:a', 'false']
+		]);
+		expect(formatChanges(form)).toEqual([]);
+	});
+
+	it('ignores a value the backend would not know', () => {
+		const form = formOf([
+			['fmt0:a', 'WEEKLY'],
+			['en0:a', 'false'],
+			['fmt:a', 'ONLINE']
+		]);
+		expect(formatChanges(form)).toEqual([]);
+	});
+});
+
+describe('formatBadges', () => {
+	it('marks nothing on the ordinary cohort', () => {
+		expect(formatBadges({ delivery: 'WEEKLY', taughtInEnglish: false })).toEqual([]);
+	});
+	it('marks a block in English twice', () => {
+		expect(formatBadges({ delivery: 'BLOCK', taughtInEnglish: true })).toEqual([
+			'Block',
+			'Englisch'
 		]);
 	});
 });

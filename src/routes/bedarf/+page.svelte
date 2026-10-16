@@ -24,6 +24,7 @@
 		alsoPlannedShort,
 		coverageLabel,
 		coversLabel,
+		DELIVERY_LABELS,
 		sharingState,
 		separatelyPlannedIn,
 		splitSummary,
@@ -2095,6 +2096,58 @@
 																	>{coversLabel(covers)}</span
 																>
 															{/each}
+															<!-- Wie der Zug gehalten wird. Dieselben Felder wie auf der
+															     Zuteilungsseite; gespeichert wird nur ein Zug, dessen Felder
+															     von den mitgeschickten Ausgangswerten abweichen. -->
+															{#if row.tracks[i]?.format}
+																{@const format = row.tracks[i].format!}
+																<input
+																	type="hidden"
+																	name="fmt0:{format.id}"
+																	value={format.delivery}
+																/>
+																<input
+																	type="hidden"
+																	name="en0:{format.id}"
+																	value={String(format.taughtInEnglish)}
+																/>
+																<select
+																	name="fmt:{format.id}"
+																	class="select select-bordered select-xs w-auto"
+																	aria-label="Durchführung von {moduleName(
+																		row.module
+																	)} in {cohortLabel(data.selected.programme, yearOf(row), letter)}"
+																	disabled={!mayPlan}
+																	value={format.delivery}
+																	onchange={scheduleSave}
+																>
+																	{#each Object.entries(DELIVERY_LABELS) as [value, label] (value)}
+																		<option {value}>{label}</option>
+																	{/each}
+																</select>
+																<label
+																	class="flex items-center gap-1 text-xs"
+																	title={format.taughtInEnglishOverridden
+																		? 'Für diesen Zug festgelegt.'
+																		: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
+																>
+																	<input
+																		type="checkbox"
+																		name="en:{format.id}"
+																		value="true"
+																		class="checkbox checkbox-xs"
+																		aria-label="{moduleName(row.module)} in {cohortLabel(
+																			data.selected.programme,
+																			yearOf(row),
+																			letter
+																		)} auf Englisch"
+																		disabled={!mayPlan}
+																		checked={format.taughtInEnglish}
+																		onchange={scheduleSave}
+																	/>
+																	EN
+																</label>
+															{/if}
 														</div>
 													{/each}
 												</div>

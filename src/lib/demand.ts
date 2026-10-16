@@ -254,6 +254,9 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	coveredBy?: CoverageLike | null;
 	covers?: readonly CoverageLike[];
 	alsoPlannedSeparately?: readonly SeparateLike[];
+	delivery?: DeliveryFormat;
+	taughtInEnglish?: boolean;
+	taughtInEnglishOverridden?: boolean;
 };
 
 /** One cohort in a row of the table. */
@@ -286,6 +289,8 @@ export type RowTrack = {
 	covers?: readonly CoverageLike[];
 	/** Other programmes offering the same module and holding it themselves. */
 	alsoPlannedSeparately?: readonly SeparateLike[];
+	/** How the cohort is taught, where the instance exists and the page asked. */
+	format?: FormatLike;
 };
 
 /**
@@ -408,7 +413,8 @@ function rowFor<M extends ModuleLike>(
 				sharedPartId: instance.parts.find((p) => p.sharedAcrossTracks)?.id,
 				coveredBy: instance.coveredBy ?? null,
 				covers: instance.covers ?? [],
-				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? []
+				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? [],
+				format: formatOf(instance)
 			})),
 			planned: true,
 			teachingHours: own.reduce((sum, i) => sum + i.teachingHours, 0)
@@ -428,6 +434,18 @@ function rowFor<M extends ModuleLike>(
 		planned: false,
 		proposedFrom: before.length > 0 ? previousCode : undefined,
 		teachingHours: 0
+	};
+}
+
+function formatOf(
+	instance: Pick<InstanceLike, 'id' | 'delivery' | 'taughtInEnglish' | 'taughtInEnglishOverridden'>
+): FormatLike | undefined {
+	if (instance.delivery === undefined) return undefined;
+	return {
+		id: instance.id,
+		delivery: instance.delivery,
+		taughtInEnglish: instance.taughtInEnglish ?? false,
+		taughtInEnglishOverridden: instance.taughtInEnglishOverridden ?? false
 	};
 }
 
@@ -709,6 +727,9 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	coveredBy?: CoverageLike | null;
 	covers?: readonly CoverageLike[];
 	alsoPlannedSeparately?: readonly SeparateLike[];
+	delivery?: DeliveryFormat;
+	taughtInEnglish?: boolean;
+	taughtInEnglishOverridden?: boolean;
 };
 
 /**
@@ -755,6 +776,8 @@ export type InstanceRow<M extends RowModule = ModuleLike> = {
 	covers?: readonly CoverageLike[];
 	/** Other programmes offering the same module and holding it themselves. */
 	alsoPlannedSeparately?: readonly SeparateLike[];
+	/** How the cohort is taught, where the instance exists and the page asked. */
+	format?: FormatLike;
 };
 
 /**
@@ -821,7 +844,8 @@ export function instanceRows<M extends RowModule>(
 				teachingHours: instance.teachingHours,
 				coveredBy: instance.coveredBy ?? null,
 				covers: instance.covers ?? [],
-				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? []
+				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? [],
+				format: formatOf(instance)
 			};
 		})
 		.sort(
@@ -956,4 +980,70 @@ export function byProgramme<M extends ModuleLike>(
 /** How many cohorts a set of module rows holds — one instance each, and the figure to say. */
 export function cohortCount<M extends ModuleLike>(rows: readonly ModuleRow<M>[]): number {
 	return rows.reduce((sum, row) => sum + row.cohorts.length, 0);
+}
+
+/**
+ * How a cohort is taught — across the semester or in a block, and whether in English.
+ *
+ * Set on the assignment screen and on the demand screen, both through one form field pair per
+ * cohort. The backend owns both defaults: semesterbegleitend, and the language the examination
+ * office's catalogue states for the module. A language equal to the catalogue's is stored as
+ * "follows the catalogue", so the screen needs no reset button — choosing the catalogue's value
+ * is the reset.
+ */
+export type DeliveryFormat = 'WEEKLY' | 'BLOCK';
+
+export const DELIVERY_LABELS: Record<DeliveryFormat, string> = {
+	WEEKLY: 'semesterbegleitend',
+	BLOCK: 'Block'
+};
+
+/** A cohort, as much of it as the format controls need. */
+export type FormatLike = {
+	id: string;
+	delivery: DeliveryFormat;
+	taughtInEnglish: boolean;
+	taughtInEnglishOverridden: boolean;
+};
+
+/**
+ * The short marks a cohort carries where it is only read: nothing for the ordinary weekly German
+ * cohort, so the marks stand out where they mean something.
+ */
+export function formatBadges(instance: Pick<FormatLike, 'delivery' | 'taughtInEnglish'>): string[] {
+	const out: string[] = [];
+	if (instance.delivery === 'BLOCK') out.push('Block');
+	if (instance.taughtInEnglish) out.push('Englisch');
+	return out;
+}
+
+/** What one cohort's controls say, if it differs from what the page rendered. */
+export type FormatChange = {
+	instanceId: string;
+	delivery: DeliveryFormat;
+	taughtInEnglish: boolean;
+};
+
+/**
+ * The cohorts whose format controls changed, read out of a submitted form.
+ *
+ * Each cohort renders `fmt0:<id>` and `en0:<id>` with the values it was drawn with, beside the
+ * controls `fmt:<id>` (a select) and `en:<id>` (a checkbox, absent when unticked). The originals
+ * are what makes the checkbox readable at all — an unticked box sends nothing — and they keep a
+ * save of the whole table from restating every cohort's format: only a cohort somebody touched is
+ * written, so a colleague's change to another cohort is not overwritten with a stale page.
+ */
+export function formatChanges(form: FormData): FormatChange[] {
+	const out: FormatChange[] = [];
+	for (const [key, original] of form) {
+		if (!key.startsWith('fmt0:')) continue;
+		const id = key.slice('fmt0:'.length);
+		const chosen = String(form.get(`fmt:${id}`) ?? original);
+		if (chosen !== 'WEEKLY' && chosen !== 'BLOCK') continue;
+		const english = form.get(`en:${id}`) === 'true';
+		const wasEnglish = form.get(`en0:${id}`) === 'true';
+		if (chosen === String(original) && english === wasEnglish) continue;
+		out.push({ instanceId: id, delivery: chosen, taughtInEnglish: english });
+	}
+	return out;
 }
