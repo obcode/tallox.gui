@@ -48,8 +48,8 @@
 		return p.title ? `${p.code} – ${p.title}` : p.code;
 	}
 
-	function lentLabel(row: ControllingRow): string {
-		return row.lent.map((s) => `${s.code} ${formatHours(s.teachingHours)}`).join(' · ');
+	function foreignLabel(row: ControllingRow): string {
+		return row.foreign.map((s) => `${s.code} ${formatHours(s.teachingHours)}`).join(' · ');
 	}
 </script>
 
@@ -57,13 +57,13 @@
 	<title>SWS-Controlling · Tallox</title>
 </svelte:head>
 
-{#snippet rowCells(row: Omit<ControllingRow, 'programme' | 'lent'>, lent: string)}
+{#snippet rowCells(row: Omit<ControllingRow, 'programme' | 'foreign'>, foreign: string)}
 	<td class="text-right tabular-nums">{formatHours(row.teachingHours)}</td>
 	<td class="text-right tabular-nums">{formatHours(row.ownHours)}</td>
 	<td class="tabular-nums">
-		{formatHours(row.lentHours)}
-		{#if lent}
-			<span class="text-base-content/80 block text-xs">{lent}</span>
+		{formatHours(row.foreignHours)}
+		{#if foreign}
+			<span class="text-base-content/80 block text-xs">{foreign}</span>
 		{/if}
 	</td>
 	<td class="text-right tabular-nums">{row.instanceCount}</td>
@@ -87,8 +87,8 @@
 		<tr>
 			<th>{first}</th>
 			<th class="text-right">SWS gesamt</th>
-			<th class="text-right">davon eigen</th>
-			<th>für andere Studiengänge</th>
+			<th class="text-right">eigene Module</th>
+			<th>fremde Module</th>
 			<th class="text-right">Instanzen</th>
 			<th class="text-right">davon FWP</th>
 			<th class="text-right font-normal">
@@ -118,7 +118,7 @@
 				</span>
 			{/if}
 		</th>
-		{@render rowCells(row, lentLabel(row))}
+		{@render rowCells(row, foreignLabel(row))}
 	</tr>
 {/snippet}
 
@@ -127,15 +127,17 @@
 		<h1 class="text-2xl font-semibold">SWS-Controlling</h1>
 		<p class="text-base-content/80 mt-1 text-sm">
 			Was der <a class="link" href={resolve('/bedarf')}>Bedarf</a> eines Semesters an Lehre kostet,
-			je <strong>Heimatstudiengang</strong>: die SWS eines Moduls zählen bei dem Studiengang, dem es
-			gehört, egal für wen es gelehrt wird. Daran lässt sich ablesen, wie viele FWP sich ein
-			Studiengang leisten kann.
+			je Studiengang. <strong>Es zahlt, wer die Veranstaltung hält:</strong> Plant DC eine eigene Analysis,
+			zählt sie bei DC, auch wenn das Modul im Katalog IF gehört. Hängt sich ein Zug an die Veranstaltung
+			eines anderen Studiengangs an (mitbetreut), kostet er nichts; es zahlt der Studiengang, der sie
+			hält. Daran lässt sich ablesen, wie viele FWP sich ein Studiengang leisten kann.
 		</p>
 		<p class="text-base-content/80 mt-2 text-sm">
 			Gezählt wird Lehre, nicht die Modul-SWS: eine Vorlesung und jede Praktikumsgruppe einzeln,
 			eine für mehrere Züge gemeinsame Vorlesung einmal, ein von einem anderen Studiengang
-			mitbetreuter Zug gar nicht. „Für andere Studiengänge“ ist der Teil, der in deren Instanzen
-			gelehrt wird. Am Rand steht zum Vergleich dasselbe Semester ein Jahr zuvor.
+			mitbetreuter Zug gar nicht. „Fremde Module“ ist der Teil, der in eigenen Instanzen für Module
+			mit fremder Heimat ausgegeben wird. Am Rand steht zum Vergleich dasselbe Semester ein Jahr
+			zuvor.
 		</p>
 	</div>
 
@@ -290,7 +292,7 @@
 	{:else}
 		<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="load">
 			<h2 id="load" class="font-medium">
-				SWS je Heimatstudiengang · {semesterName(data.selected)}
+				SWS je Studiengang · {semesterName(data.selected)}
 			</h2>
 			<div class="mt-3 overflow-x-auto">
 				<table class="table-sm table">
@@ -314,8 +316,8 @@
 			</div>
 			{#if table.others.length > 0}
 				<p class="text-base-content/80 mt-3 text-sm">
-					„Nicht von uns geplant“ sind Studiengänge, die die Fakultät nicht selbst plant, deren
-					Module hier aber gelehrt werden. Sie zählen in der Summe mit.
+					„Nicht von uns geplant“ sind Studiengänge, die die Fakultät nicht selbst plant, für die
+					hier aber eigene Veranstaltungen gehalten werden. Sie zählen in der Summe mit.
 				</p>
 			{/if}
 		</section>
@@ -327,7 +329,8 @@
 			</h2>
 			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
 				Was ein Studiengang in diesem Semester von anderen bezieht, etwa die Wahlpflichtfächer eines
-				Korbs. Diese SWS zählen oben beim Heimatstudiengang des Moduls, nicht hier.
+				Korbs. Eine eigene Instanz kostet den eigenen Studiengang; eine mitbetreute kostet nichts
+				und zählt bei dem Studiengang, der die Veranstaltung hält.
 			</p>
 			<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
 				<input type="hidden" name="semester" value={data.selected} />

@@ -1,10 +1,11 @@
 /**
- * The SWS controlling: the teaching a semester costs, by the home programme of each module.
+ * The SWS controlling: the teaching a semester costs, by the programme that holds it.
  *
- * The backend sums; this arranges. What is arranged here is what the spreadsheet did beside the
- * sums — the same semester a year earlier next to each programme, the difference, and which
- * programmes are this faculty's and which only lend it modules — and none of it is a rule, which
- * is why it may live in the interface.
+ * Whoever holds the teaching pays for it — the backend's rule since 2026-10-16, so DC's own
+ * Analysis costs DC although the module is IF's, and a cohort that joins another programme's
+ * event costs nothing. The backend sums; this arranges: the same semester a year earlier beside
+ * each programme, the difference, and which programmes are this faculty's — and none of it is a
+ * rule, which is why it may live in the interface.
  */
 
 /** A programme as the controlling names it. */
@@ -14,17 +15,18 @@ export type ControllingProgramme = {
 	planningStatus: string;
 };
 
-/** One home programme's load, in the shape `teachingLoad` answers. */
+/** One programme's load, in the shape `teachingLoad` answers: what its instances cost. */
 export type LoadInput = {
-	homeProgramme: ControllingProgramme;
+	programme: ControllingProgramme;
 	teachingHours: number;
 	ownHours: number;
 	instanceCount: number;
 	fwpInstanceCount: number;
 	fwpHours: number;
 	partsWithoutHours: number;
+	/** Split by the home programme of the modules. */
 	shares: readonly {
-		programme: { code: string; title: string };
+		homeProgramme: { code: string; title: string };
 		teachingHours: number;
 		instanceCount: number;
 	}[];
@@ -34,8 +36,8 @@ export type LoadInput = {
 	balance?: number | null;
 };
 
-/** Where a home programme's modules are taught outside it. */
-export type LentShare = {
+/** Modules of another programme that this one teaches in its own instances. */
+export type ForeignShare = {
 	code: string;
 	title: string;
 	teachingHours: number;
@@ -46,9 +48,9 @@ export type ControllingRow = {
 	programme: ControllingProgramme;
 	teachingHours: number;
 	ownHours: number;
-	/** Taught in other programmes' instances: the export. */
-	lentHours: number;
-	lent: LentShare[];
+	/** Spent on other programmes' modules in its own instances: the import. */
+	foreignHours: number;
+	foreign: ForeignShare[];
 	instanceCount: number;
 	fwpInstanceCount: number;
 	fwpHours: number;
@@ -65,7 +67,7 @@ export type Controlling = {
 	/** Programmes the faculty does not plan whose modules are taught here anyway. */
 	others: ControllingRow[];
 	/** The sum over both, which is what the faculty spends. */
-	total: Omit<ControllingRow, 'programme' | 'lent'>;
+	total: Omit<ControllingRow, 'programme' | 'foreign'>;
 };
 
 /**
@@ -79,24 +81,24 @@ export function controllingTable(
 	current: readonly LoadInput[],
 	previous: readonly LoadInput[] | null
 ): Controlling {
-	const before = new Map((previous ?? []).map((l) => [l.homeProgramme.code, l.teachingHours]));
+	const before = new Map((previous ?? []).map((l) => [l.programme.code, l.teachingHours]));
 
 	const rows = current.map((l): ControllingRow => {
-		const lent = l.shares
-			.filter((s) => s.programme.code !== l.homeProgramme.code)
+		const foreign = l.shares
+			.filter((s) => s.homeProgramme.code !== l.programme.code)
 			.map((s) => ({
-				code: s.programme.code,
-				title: s.programme.title,
+				code: s.homeProgramme.code,
+				title: s.homeProgramme.title,
 				teachingHours: s.teachingHours,
 				instanceCount: s.instanceCount
 			}));
-		const previousHours = previous === null ? null : (before.get(l.homeProgramme.code) ?? 0);
+		const previousHours = previous === null ? null : (before.get(l.programme.code) ?? 0);
 		return {
-			programme: l.homeProgramme,
+			programme: l.programme,
 			teachingHours: l.teachingHours,
 			ownHours: l.ownHours,
-			lentHours: l.teachingHours - l.ownHours,
-			lent,
+			foreignHours: l.teachingHours - l.ownHours,
+			foreign,
 			instanceCount: l.instanceCount,
 			fwpInstanceCount: l.fwpInstanceCount,
 			fwpHours: l.fwpHours,
@@ -122,7 +124,7 @@ export function controllingTable(
 		total: {
 			teachingHours,
 			ownHours: sum((r) => r.ownHours),
-			lentHours: sum((r) => r.lentHours),
+			foreignHours: sum((r) => r.foreignHours),
 			instanceCount: sum((r) => r.instanceCount),
 			fwpInstanceCount: sum((r) => r.fwpInstanceCount),
 			fwpHours: sum((r) => r.fwpHours),
@@ -161,9 +163,9 @@ export type QuotaRow = {
  */
 export function quotaTable(current: readonly LoadInput[]): QuotaRow[] {
 	return current
-		.filter((l) => l.homeProgramme.planningStatus === 'PLANNED' || l.yearlyQuota != null)
+		.filter((l) => l.programme.planningStatus === 'PLANNED' || l.yearlyQuota != null)
 		.map((l) => ({
-			programme: l.homeProgramme,
+			programme: l.programme,
 			yearlyQuota: l.yearlyQuota ?? null,
 			semesterQuota: l.semesterQuota ?? null,
 			teachingHours: l.teachingHours,
@@ -213,8 +215,8 @@ export type ImportGroup = {
  *
  * The question a programme lead asked: which electives of a basket are actually offered — and
  * they are mostly someone else's modules, which is exactly why they are not on anybody's radar.
- * The hours are the hours of the instances; they count at the home programme in the table above,
- * not here, and the page says so.
+ * The hours are the hours of the instances: one with parts of its own counts at the programme
+ * that holds it, a covered one costs nothing here and counts at its host.
  */
 export function importGroups(instances: readonly ImportInput[]): ImportGroup[] {
 	const groups = new Map<string, ImportGroup>();
@@ -250,9 +252,9 @@ export function studyYearLabel(year: number): string {
 	return `${year}/${String((year + 1) % 100).padStart(2, '0')}`;
 }
 
-/** One home programme's study year, in the shape `studyYearLoad` answers. */
+/** One programme's study year, in the shape `studyYearLoad` answers. */
 export type StudyYearInput = {
-	homeProgramme: ControllingProgramme;
+	programme: ControllingProgramme;
 	yearlyQuota?: number | null;
 	winterHours: number;
 	summerHours: number;
@@ -281,15 +283,15 @@ export function studyYearTable(
 	reviewed: ReadonlySet<string> = new Set()
 ): StudyYearRow[] {
 	return rows
-		.filter((r) => r.homeProgramme.planningStatus === 'PLANNED' || r.yearlyQuota != null)
+		.filter((r) => r.programme.planningStatus === 'PLANNED' || r.yearlyQuota != null)
 		.map((r) => ({
-			programme: r.homeProgramme,
+			programme: r.programme,
 			yearlyQuota: r.yearlyQuota ?? null,
 			winterHours: r.winterHours,
 			summerHours: r.summerHours,
 			remaining: r.remaining ?? null,
 			partsWithoutHours: r.partsWithoutHours,
-			reviewed: reviewed.has(r.homeProgramme.code)
+			reviewed: reviewed.has(r.programme.code)
 		}))
 		.sort((a, b) => a.programme.code.localeCompare(b.programme.code));
 }

@@ -7,7 +7,7 @@ import { toRefusal } from '$lib/server/graphqlError';
 import type { PageServerLoad } from './$types';
 
 /**
- * The SWS controlling: what a semester's demand costs, by the home programme of each module.
+ * The SWS controlling: what a semester's demand costs, by the programme that holds the teaching.
  *
  * Readable by everybody, like the demand it sums. The semester travels in the URL for the reason
  * it does on the demand page — a view is a thing somebody sends to a colleague.
@@ -27,7 +27,7 @@ const SemestersDocument = graphql(`
 const LoadDocument = graphql(`
 	query ControllingLoad($semester: String!) {
 		teachingLoad(semester: $semester) {
-			homeProgramme {
+			programme {
 				code
 				title
 				planningStatus
@@ -39,7 +39,7 @@ const LoadDocument = graphql(`
 			fwpHours
 			partsWithoutHours
 			shares {
-				programme {
+				homeProgramme {
 					code
 					title
 				}
@@ -89,7 +89,7 @@ const ImportsDocument = graphql(`
 const StudyYearDocument = graphql(`
 	query ControllingStudyYear($studyYear: Int!, $semester: String!) {
 		studyYearLoad(studyYear: $studyYear) {
-			homeProgramme {
+			programme {
 				code
 				title
 				planningStatus

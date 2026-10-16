@@ -16,7 +16,7 @@ import {
 
 function load(code: string, hours: number, own: number, extra: Partial<LoadInput> = {}): LoadInput {
 	return {
-		homeProgramme: { code, title: '', planningStatus: 'PLANNED' },
+		programme: { code, title: '', planningStatus: 'PLANNED' },
 		teachingHours: hours,
 		ownHours: own,
 		instanceCount: 1,
@@ -29,22 +29,22 @@ function load(code: string, hours: number, own: number, extra: Partial<LoadInput
 }
 
 describe('the SWS controlling table', () => {
-	// The export is what is taught outside the home programme. The backend sends the split; the
-	// row names the other programmes and leaves the home programme's own share out of that list.
-	it('lists what a programme lends, and not what it teaches itself', () => {
+	// The import is what a programme pays for of other programmes' modules. The backend sends the
+	// split by home; the row names the other homes and leaves the programme's own modules out.
+	it('lists the other programmes whose modules a programme pays for, and not its own', () => {
 		const { planned } = controllingTable(
 			[
 				load('IF', 12, 8, {
 					shares: [
-						{ programme: { code: 'IF', title: '' }, teachingHours: 8, instanceCount: 2 },
-						{ programme: { code: 'IG', title: '' }, teachingHours: 4, instanceCount: 1 }
+						{ homeProgramme: { code: 'IF', title: '' }, teachingHours: 8, instanceCount: 2 },
+						{ homeProgramme: { code: 'IG', title: '' }, teachingHours: 4, instanceCount: 1 }
 					]
 				})
 			],
 			null
 		);
-		expect(planned[0].lentHours).toBe(4);
-		expect(planned[0].lent.map((s) => s.code)).toEqual(['IG']);
+		expect(planned[0].foreignHours).toBe(4);
+		expect(planned[0].foreign.map((s) => s.code)).toEqual(['IG']);
 	});
 
 	// A year earlier is the figure a programme lead plans the electives against while there is no
@@ -74,7 +74,7 @@ describe('the SWS controlling table', () => {
 	// the total, because the total is what the faculty spends.
 	it('keeps the programmes the faculty does not plan apart, and in the total', () => {
 		const other = load('XX', 3, 0);
-		other.homeProgramme.planningStatus = 'NOT_OURS';
+		other.programme.planningStatus = 'NOT_OURS';
 		const { planned, others, total } = controllingTable(
 			[load('IG', 6, 6), other, load('IF', 12, 12)],
 			null
@@ -82,7 +82,7 @@ describe('the SWS controlling table', () => {
 		expect(planned.map((r) => r.programme.code)).toEqual(['IF', 'IG']);
 		expect(others.map((r) => r.programme.code)).toEqual(['XX']);
 		expect(total.teachingHours).toBe(21);
-		expect(total.lentHours).toBe(3);
+		expect(total.foreignHours).toBe(3);
 	});
 
 	it('writes a difference with its sign', () => {
@@ -113,7 +113,7 @@ describe('the quota table', () => {
 	it('leaves out a programme the faculty does not plan unless it has a quota', () => {
 		const other = (code: string, extra: Partial<LoadInput> = {}) =>
 			load(code, 4, 0, {
-				homeProgramme: { code, title: '', planningStatus: 'NOT_OURS' },
+				programme: { code, title: '', planningStatus: 'NOT_OURS' },
 				...extra
 			});
 		const rows = quotaTable([other('XA'), other('XB', { yearlyQuota: 0, balance: -4 })]);
@@ -164,7 +164,7 @@ describe('the study year', () => {
 
 describe('the study-year table', () => {
 	const row = (code: string, status = 'PLANNED', extra = {}) => ({
-		homeProgramme: { code, title: '', planningStatus: status },
+		programme: { code, title: '', planningStatus: status },
 		winterHours: 100,
 		summerHours: 50,
 		partsWithoutHours: 0,
