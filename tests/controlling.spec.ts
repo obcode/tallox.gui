@@ -84,7 +84,7 @@ test.describe('the SWS controlling', () => {
 	}) => {
 		// A lecturer: the page is as readable as the demand it sums.
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, `/bedarf/sws?semester=${CONTROLLING.semester}`);
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
 
 		await expect(page.getByRole('heading', { level: 1, name: 'SWS-Controlling' })).toBeVisible();
 		const load = page.getByRole('region', { name: /^SWS je Heimatstudiengang/ });
@@ -111,7 +111,7 @@ test.describe('the SWS controlling', () => {
 
 	test('reads a semester against half of the study year’s quota', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, `/bedarf/sws?semester=${CONTROLLING.semester}`);
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
 
 		const cells = page
 			.getByRole('region', { name: /^Kontingent/ })
@@ -129,7 +129,7 @@ test.describe('the SWS controlling', () => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(
 			page,
-			`/bedarf/sws?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.other.code}`
+			`/statistik?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.other.code}`
 		);
 
 		const imports = page.getByRole('region', { name: /^Module mit fremder Heimat/ });
@@ -140,7 +140,7 @@ test.describe('the SWS controlling', () => {
 		// The home programme takes nothing from anybody.
 		await gotoRendered(
 			page,
-			`/bedarf/sws?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.home.code}`
+			`/statistik?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.home.code}`
 		);
 		await expect(imports).toContainText('kein Modul aus einem anderen Studiengang');
 
@@ -176,14 +176,33 @@ test.describe('the SWS controlling', () => {
 		await expect(read.getByRole('cell').last()).toHaveText('12,5');
 	});
 
-	test('lands on the planning semester and is reached from the demand page', async ({
+	test('is the statistics area for a programme lead, and lands on the planning semester', async ({
 		asPersona
 	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, '/');
+
+		// .first(): the bar renders every area twice, side by side and in the hamburger menu.
+		await page
+			.getByRole('navigation')
+			.getByRole('link', { name: /Statistik/ })
+			.first()
+			.click();
+		await expect(page).toHaveURL(/\/statistik\?semester=\d{4}-(SS|WS)$/);
+		await expect(page.getByRole('heading', { level: 1, name: 'SWS-Controlling' })).toBeVisible();
+	});
+
+	test('the address it had on its first day still works', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, `/bedarf/sws?semester=${CONTROLLING.semester}`);
+		await expect(page).toHaveURL(new RegExp(`/statistik\\?semester=${CONTROLLING.semester}$`));
+	});
+
+	test('is linked from the demand page', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, `/bedarf?semester=${CONTROLLING.semester}`);
 
-		await page.getByRole('main').getByRole('link', { name: 'SWS-Controlling' }).click();
-		await expect(page).toHaveURL(/\/bedarf\/sws\?semester=\d{4}-(SS|WS)$/);
+		await page.getByRole('main').getByRole('link', { name: 'Statistik' }).click();
 		await expect(page.getByRole('heading', { level: 1, name: 'SWS-Controlling' })).toBeVisible();
 	});
 });

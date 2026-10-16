@@ -288,9 +288,7 @@ test.describe('admitting people from the ZPA list', () => {
 });
 
 test.describe('areas by role', () => {
-	test("shows demand to planners and statistics only to the dean's office", async ({
-		asPersona
-	}) => {
+	test('shows demand to everybody and statistics to programme leads', async ({ asPersona }) => {
 		// Narrowed to the area bar: "Bedarf" also appears in the introductory sentence of the
 		// start page, and a test that searches the whole page ends up checking the prose.
 		const lecturer = await asPersona(PERSONAS.eins);
@@ -306,15 +304,16 @@ test.describe('areas by role', () => {
 		await expect(lecturerNav.getByText('Bedarf').first()).toBeVisible();
 		await expect(lecturerNav.getByText('Statistik')).toHaveCount(0);
 
-		// Vier plans, so she sees demand and assignment — but not the statistics. That
-		// intermediate step is exactly why visibility is a list of roles per area and not a
+		// Vier leads a programme, so she sees demand, assignment and the statistics — the SWS
+		// controlling is what a programme lead plans the electives against. The lecturer above
+		// does not: that difference is why visibility is a list of roles per area and not a
 		// ranking.
 		const planner = await asPersona(PERSONAS.vier);
 		await planner.goto('/');
 		const plannerNav = planner.getByRole('navigation');
 		await expect(plannerNav.getByText('Bedarf').first()).toBeVisible();
 		await expect(plannerNav.getByText('Zuteilung').first()).toBeVisible();
-		await expect(plannerNav.getByText('Statistik')).toHaveCount(0);
+		await expect(plannerNav.getByText('Statistik').first()).toBeVisible();
 	});
 });
 
