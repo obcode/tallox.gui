@@ -5,6 +5,8 @@
 		PROGRAMME_STATUS_LABELS,
 		programmeStatusBadge
 	} from '$lib/catalogue';
+	import { formatHours } from '$lib/catalogue';
+	import { studyYearLabel } from '$lib/controlling';
 	import { hasAnyRole } from '$lib/roles';
 	import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
 	import type { ActionData, PageData } from './$types';
@@ -44,6 +46,14 @@
 			Studiengangsleitung zuordnen. Sein Bedarf bleibt lesbar — das ist die Aufzeichnung dessen, was
 			die Fakultät getan hat — und seine Module bleiben im Katalog.
 		</p>
+		{#if data.studyYear !== null}
+			<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+				Das <strong>Kontingent</strong> ist die verfügbare Lehrleistung eines Studiengangs für das
+				Studienjahr {studyYearLabel(data.studyYear)} aus der Kapazitätsrechnung, in Lehr-SWS mit allen
+				Praktikums- und Übungsgruppen. Jedes Semester wird im SWS-Controlling gegen die Hälfte gelesen.
+				Ein leeres Feld nimmt das Kontingent zurück.
+			</p>
+		{/if}
 	</div>
 
 	{#if refusal}
@@ -71,6 +81,12 @@
 							<th>Name</th>
 							<th>SPO</th>
 							<th>Wird geplant?</th>
+							{#if group.status === 'PLANNED' && data.studyYear !== null}
+								<th>
+									Kontingent {studyYearLabel(data.studyYear)}
+									<span class="block text-xs font-normal">SWS im Studienjahr</span>
+								</th>
+							{/if}
 						</tr>
 					</thead>
 					<tbody>
@@ -114,6 +130,38 @@
 										{/if}
 									</div>
 								</td>
+								{#if group.status === 'PLANNED' && data.studyYear !== null}
+									{@const quota = data.quotas[programme.code]}
+									<td>
+										{#if mayDecide}
+											<form
+												method="POST"
+												action="?/setQuota"
+												use:enhance={() =>
+													({ update }) =>
+														update({ reset: false })}
+												class="flex items-center gap-1"
+											>
+												<input type="hidden" name="programme" value={programme.code} />
+												<input type="hidden" name="studyYear" value={data.studyYear} />
+												<input
+													type="text"
+													inputmode="decimal"
+													name="hours"
+													value={quota === undefined ? '' : formatHours(quota)}
+													aria-label="Kontingent {programme.code} {studyYearLabel(data.studyYear)}"
+													placeholder="–"
+													class="input input-xs w-20 text-right tabular-nums"
+												/>
+												<button type="submit" class="btn btn-xs">Speichern</button>
+											</form>
+										{:else}
+											<span class="tabular-nums">
+												{quota === undefined ? '–' : formatHours(quota)}
+											</span>
+										{/if}
+									</td>
+								{/if}
 							</tr>
 						{/each}
 					</tbody>

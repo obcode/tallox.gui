@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { controllingTable, deltaLabel, type LoadInput } from './controlling';
+import {
+	balanceBadge,
+	controllingTable,
+	deltaLabel,
+	importGroups,
+	quotaTable,
+	studyYearLabel,
+	studyYearOf,
+	type ImportInput,
+	type LoadInput
+} from './controlling';
 
 function load(code: string, hours: number, own: number, extra: Partial<LoadInput> = {}): LoadInput {
 	return {
@@ -78,5 +88,73 @@ describe('the SWS controlling table', () => {
 		expect(deltaLabel(0, f)).toBe('±0');
 		expect(deltaLabel(2.5, f)).toBe('+2.5');
 		expect(deltaLabel(-4, f)).toBe('−4');
+	});
+});
+
+describe('the quota table', () => {
+	// A planned programme without a quota is the row somebody still has to fill in, so it stays —
+	// with no figure, not with zero, which would read as a programme with nothing to spend.
+	it('keeps a planned programme without a quota, with no figure', () => {
+		const rows = quotaTable([
+			load('IG', 40, 40),
+			load('IF', 200, 180, { yearlyQuota: 425, semesterQuota: 212.5, balance: 12.5 })
+		]);
+		expect(rows.map((r) => r.programme.code)).toEqual(['IF', 'IG']);
+		expect(rows[0].balance).toBe(12.5);
+		expect(rows[1].yearlyQuota).toBeNull();
+		expect(rows[1].balance).toBeNull();
+	});
+
+	// A programme the faculty does not plan only lends modules; it has a row only when somebody
+	// entered a quota for it anyway.
+	it('leaves out a programme the faculty does not plan unless it has a quota', () => {
+		const other = (code: string, extra: Partial<LoadInput> = {}) =>
+			load(code, 4, 0, {
+				homeProgramme: { code, title: '', planningStatus: 'NOT_OURS' },
+				...extra
+			});
+		const rows = quotaTable([other('XA'), other('XB', { yearlyQuota: 0, balance: -4 })]);
+		expect(rows.map((r) => r.programme.code)).toEqual(['XB']);
+	});
+
+	// Negative is the one state on the page that asks for a conversation.
+	it('colours a negative balance as an error and nothing as nothing', () => {
+		expect(balanceBadge(-0.5)).toContain('badge-error');
+		expect(balanceBadge(0)).toContain('badge-success');
+		expect(balanceBadge(3)).toContain('badge-success');
+		expect(balanceBadge(null)).toContain('badge-ghost');
+	});
+});
+
+describe('the imports of a programme', () => {
+	function instance(home: string, hours: number, name: string): ImportInput {
+		return {
+			id: `${home}-${name}`,
+			track: '',
+			teachingHours: hours,
+			module: { name, kind: 'MODULE', homeProgramme: { code: home, title: '' } }
+		};
+	}
+
+	it('groups by home programme and sums the hours of each', () => {
+		const groups = importGroups([
+			instance('WT', 4, 'Eins'),
+			instance('IF', 6, 'Zwei'),
+			instance('WT', 0, 'Drei')
+		]);
+		expect(groups.map((g) => g.home.code)).toEqual(['IF', 'WT']);
+		expect(groups[1].instances).toHaveLength(2);
+		expect(groups[1].teachingHours).toBe(4);
+	});
+});
+
+describe('the study year', () => {
+	// The summer belongs to the winter before it: the quota is stated for October to September.
+	it('is named after the year its winter starts in', () => {
+		expect(studyYearOf('2026-WS')).toBe(2026);
+		expect(studyYearOf('2027-SS')).toBe(2026);
+		expect(studyYearOf('Sommer 27')).toBeNull();
+		expect(studyYearLabel(2026)).toBe('2026/27');
+		expect(studyYearLabel(2099)).toBe('2099/00');
 	});
 });

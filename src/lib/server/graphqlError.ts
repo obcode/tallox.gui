@@ -112,6 +112,10 @@ const PASS_THROUGH = new Set([
 	'DUPLICATE_ENTRY',
 	'TOO_MANY_TRACKS',
 	'TOO_MANY_GROUPS',
+	// The programme quota. A figure per programme, nothing about anybody; both sentences are the
+	// repair — "between 0 and 10000", "that year is too far away".
+	'QUOTA_INVALID',
+	'STUDY_YEAR_OUT_OF_RANGE',
 	// The wish phase — the one write path where this allowlist is doing security work rather
 	// than being useful. Every sentence below was read for what it gives away before it was
 	// added here.
