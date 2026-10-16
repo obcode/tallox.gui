@@ -63,3 +63,13 @@ Auf das Feedback zum alten Sheet „SWS-Controlling" ([[go/sws-controlling]]):
   „Studiengangs-Review" zwischen Zuteilung und Abschließen ([[go/programme-review]]).
 - E2E: der Controlling-Datensatz hat jetzt ein WiSe 2028-WS (4 SWS) und setzt 2029-SS auf
   REVIEW; Kontingent 20 → WiSe 10/+6, SoSe 16/+8, Jahr +8.
+
+## Wer die Teile hält, zahlt (2026-10-16)
+
+Auf Rückmeldung aus Collab (Analysis: IF- und DC-Variante im Excel) zählt das Backend nicht mehr
+nach Heimat, sondern nach dem Studiengang der Instanz, die die Teile hält ([[go/sws-controlling]]).
+Die Tabelle heißt jetzt „SWS je Studiengang", Spalten „eigene Module" / „fremde Module" (Herkunft
+darunter). `controlling.ts`: `foreign`/`foreignHours` statt `lent`/`lentHours`. Ein nicht geplanter
+Studiengang mit eigener Instanz steht jetzt als eigene Zeile drin (E2E: E2T zahlt 2 SWS für ein
+E2S-Modul). Die Spaltenköpfe sind bewusst kurz: mit „davon Module anderer Studiengänge" lief die
+Tabelle über und axe meldete `scrollable-region-focusable`.

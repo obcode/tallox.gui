@@ -10,13 +10,13 @@ import { runSql } from './psql';
  * any figure read off them is a figure of whichever spec ran last.
  *
  * The arrangement: a module of E2S runs in 2029-SS as one E2S cohort — a lecture and two
- * laboratory groups of two hours — and one E2T cohort with a single two-hour group. A year
- * earlier E2S held it with one group. So E2S costs 8 hours, 6 of them its own and 2 lent to E2T,
- * against 4 the year before.
+ * laboratory groups of two hours — and one E2T cohort with a single two-hour group of its own. A
+ * year earlier E2S held it with one group. Whoever holds the teaching pays: E2S 6 hours against 4
+ * the year before, E2T 2 hours for a module that is E2S's.
  *
  * E2S has a quota of 20 for the study year 2028, and its winter 2028-WS held the module once with a
  * lecture and a laboratory group: 4 hours. The winter may spend half the year, 10, and has 6 left.
- * The summer may spend what the winter left, 16, and with 8 planned has 8 left — which is also
+ * The summer may spend what the winter left, 16, and with 6 planned has 10 left — which is also
  * what is left of the year. And seen from E2T, the cohort it holds is an import from E2S.
  *
  * The summer is in the review, so the dean's office can announce it as reviewed.
@@ -89,7 +89,7 @@ test.describe('the SWS controlling', () => {
 		runSql(seedSql(), 'seeding the controlling fixture');
 	});
 
-	test('counts the teaching at the home programme, with what it lends and a year earlier', async ({
+	test('charges the programme that holds the teaching, with a year earlier', async ({
 		asPersona,
 		checkA11y
 	}) => {
@@ -98,24 +98,26 @@ test.describe('the SWS controlling', () => {
 		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
 
 		await expect(page.getByRole('heading', { level: 1, name: 'SWS-Controlling' })).toBeVisible();
-		const load = page.getByRole('region', { name: /^SWS je Heimatstudiengang/ });
-		const cells = load
-			.getByRole('row', { name: new RegExp(`^${CONTROLLING.home.code} – `) })
-			.getByRole('cell');
+		const load = page.getByRole('region', { name: /^SWS je Studiengang/ });
+		const row = (code: string) =>
+			load.getByRole('row', { name: new RegExp(`^${code} – `) }).getByRole('cell');
 
-		// Total, own, lent (with where to), instances, FWP, previous year, difference. Eight and
-		// not the module's four: every laboratory group is teaching somebody gives.
-		await expect(cells.nth(0)).toHaveText('8');
-		await expect(cells.nth(1)).toHaveText('6');
-		await expect(cells.nth(2)).toContainText(`${CONTROLLING.other.code} 2`);
-		await expect(cells.nth(3)).toHaveText('2');
-		await expect(cells.nth(5)).toHaveText('4');
-		await expect(cells.nth(6)).toHaveText('+4');
+		// Total, own modules, other programmes' modules, instances, FWP, previous year, difference.
+		// Six and not the module's four: every laboratory group is teaching somebody gives.
+		const home = row(CONTROLLING.home.code);
+		await expect(home.nth(0)).toHaveText('6');
+		await expect(home.nth(1)).toHaveText('6');
+		await expect(home.nth(2)).toHaveText('0');
+		await expect(home.nth(3)).toHaveText('1');
+		await expect(home.nth(5)).toHaveText('4');
+		await expect(home.nth(6)).toHaveText('+2');
 
-		// The receiving programme owns none of it, so it is not a row of its own.
-		await expect(
-			load.getByRole('row', { name: new RegExp(`^${CONTROLLING.other.code} – `) })
-		).toHaveCount(0);
+		// E2T plans E2S's module with a group of its own, so E2T pays for it — whoever holds the
+		// teaching pays, as DC does for its own Analysis.
+		const other = row(CONTROLLING.other.code);
+		await expect(other.nth(0)).toHaveText('2');
+		await expect(other.nth(1)).toHaveText('0');
+		await expect(other.nth(2)).toContainText(`${CONTROLLING.home.code} 2`);
 
 		await checkA11y(page);
 	});
@@ -134,8 +136,8 @@ test.describe('the SWS controlling', () => {
 		// Quota, winter, summer, what is left.
 		await expect(cells.nth(0)).toHaveText('20');
 		await expect(cells.nth(1)).toHaveText('4');
-		await expect(cells.nth(2)).toHaveText('8');
-		await expect(cells.nth(3)).toHaveText('+8');
+		await expect(cells.nth(2)).toHaveText('6');
+		await expect(cells.nth(3)).toHaveText('+10');
 
 		// The summer is played through from here: its figure leads into its demand.
 		await expect(cells.nth(2).getByRole('link')).toHaveAttribute(
@@ -163,8 +165,8 @@ test.describe('the SWS controlling', () => {
 
 		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
 		await expect(semesterRow().nth(0)).toHaveText('16');
-		await expect(semesterRow().nth(1)).toHaveText('8');
-		await expect(semesterRow().nth(2)).toHaveText('+8');
+		await expect(semesterRow().nth(1)).toHaveText('6');
+		await expect(semesterRow().nth(2)).toHaveText('+10');
 	});
 
 	test('the dean’s office announces the review, and the statistics show it', async ({

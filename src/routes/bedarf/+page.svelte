@@ -665,8 +665,8 @@
 				Dekanat für alle. Voraussetzung je Modul ist die SWS-Aufteilung aus dem
 				<a class="link" href={resolve('/module')}>Modulkatalog</a>; fehlt sie, steht hier ein
 				Vorschlag zum Bestätigen. Wer fertig ist, meldet es oben rechts — das ist eine Ansage an die
-				anderen, keine Sperre. Was der Bedarf je Heimatstudiengang an SWS kostet und wie viel davon
-				das Kontingent hergibt, zeigt das SWS-Controlling unter
+				anderen, keine Sperre. Was der Bedarf je Studiengang an SWS kostet und wie viel davon das
+				Kontingent hergibt, zeigt das SWS-Controlling unter
 				<a class="link" href={resolve('/statistik')}>Statistik</a>. Der ganze Ablauf steht auf der
 				<a class="link" href={resolve('/')}>Startseite</a>.
 			</p>

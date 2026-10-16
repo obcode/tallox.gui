@@ -114,7 +114,7 @@ export const GUIDE: readonly GuideSection[] = [
 					{ href: '/statistik', label: 'Statistik' }
 				],
 				when: 'Semesterwoche 3–5',
-				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten. Wie viele FWP sich ein Studiengang leisten kann, zeigt das SWS-Controlling unter Statistik: die Lehre je Heimatstudiengang gegen die Hälfte des Kontingents für das Studienjahr, mit dem Vorjahr daneben. Am Ende meldet sie „Bedarf ist fertig“; das ist eine Ansage, keine Sperre.'
+				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten; dann zahlt der Studiengang, der die Veranstaltung hält. Wer eine eigene Variante will (etwa eine eigene Analysis), plant sie separat und zahlt sie selbst. Wie viele FWP sich ein Studiengang leisten kann, zeigt das SWS-Controlling unter Statistik: die Lehre je Studiengang gegen das Kontingent des Studienjahres. Am Ende meldet sie „Bedarf ist fertig“; das ist eine Ansage, keine Sperre.'
 			},
 			{
 				title: 'Interesse bekunden',
