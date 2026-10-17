@@ -18,7 +18,7 @@ Kolleg:innen.
 - [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, die Leitung sortiert Module selbst ein und gibt sie frei, und zwei Befunde aus dem ersten E2E-Lauf
 - [Die Kompetenz-Seiten](competence-pages.md) — eigene Angaben, der Pool der Fachgruppenleitung, und der Pool in der Kandidatenliste
 - [SWS-Controlling-Seite](sws-controlling-page.md) — `/statistik` (Menü „Statistik“ für Studiengangsleitung und Dekanat, früher `/bedarf/sws`), Vorjahr als eigene Anfrage, Kontingent/Saldo und Fremdmodule, Pflege unter /verwaltung/studiengaenge, eigener E2E-Datensatz
-- [Die Startseite als Anleitung](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts`, verlinkt nur, was das Menü zeigt
+- [Ablauf, „Jetzt dran“ und Hilfe-Leiste](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts` unter `/ablauf`, Startseite und Hilfe zeigen nur, was jetzt dran ist; verlinkt nur, was das Menü zeigt
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
 - [Semester-Export](semester-export.md) — Excel aus einer GraphQL-Operation in der GUI, keine Wünsche, Hinweissatz für alle
 

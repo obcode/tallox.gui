@@ -1,15 +1,54 @@
 ---
 name: start-page-guide
-description: Die Startseite erklärt den Ablauf als Schritte mit Rolle und Ort — die Daten liegen in $lib/guide.ts, verlinkt wird nur, was das Menü zeigt
+description: Der Ablauf als Daten in $lib/guide.ts — seit 2026-10-17 unter /ablauf, die Startseite und die Hilfe-Leiste zeigen nur „Jetzt dran“ und Kurzanleitungen; verlinkt wird nur, was das Menü zeigt
 metadata:
   type: project
 ---
 
 Gebaut am 2026-09-21 auf Wunsch: „ganz konkret die Nutzung beschreiben — wer macht was, und wo".
 
+## Umbau am 2026-10-17: Ablauf weg von der Startseite, „Jetzt dran“ und Hilfe-Leiste
+
+Rückmeldung: die zwei Abschnitte mit allen Schritten plus Tabelle auf der Startseite
+**erschlagen neue Nutzer:innen**. Und zwischen zwei Planungsrunden fällt vom How-to etwas hinten
+runter — gefragt wird dann nicht, weil man nicht weiß, dass man fragen müsste.
+
+- **`/ablauf`** trägt jetzt den ganzen Ablauf und „Wer macht was“, unverändert, plus ein Badge
+  „jetzt dran“ an den Schritten der aktuellen Phase (`isDue`). Eintrag im Kontomenü
+  (`ACCOUNT_ITEMS`), damit `mayOpen`/`isNavigationRoute` die Seite selbst kennen.
+- **Startseite**: Einleitung, dann die Karte **„Jetzt dran für Dich“** (`DueNow.svelte`,
+  Logik in `dueCard`/`dueNow` in `guide.ts`), dann die übrigen Kästen.
+- **`due?: DuePhase[]`** je Semesterschritt: die Phase(n) des _Planungssemesters_, in der er dran
+  ist; `UNSET` = kein Planungssemester gesetzt. Ein Zeiger, keine Regel — die Phase ist der Takt
+  der Fakultät, gesperrt wird dadurch nichts. **„Abschließen“ hat bewusst kein `due`**: im Review
+  angezeigt läse es sich wie „jetzt abschließen“, und die Anleitung warnt genau davor.
+- **Neuer Schritt „Die Wunschrunde der Fachgruppe schließen“** (Fachgruppenleitung, Zuteilung,
+  Wunschphase). Die Wunschrunde ist **offen, solange niemand sie schließt** (fehlende Zeile =
+  offen, siehe Backend `planning-marks`) — der Text sagt das, damit niemand auf ein Öffnen wartet.
+- **Phase im Layout**: `loadPlanningState()` (`$lib/server/planning.ts`) als eigene Query neben
+  der Session, nicht als Feld darin — die Session unterscheidet „kein Konto“ von „Backend weg“,
+  und diese Klassifikation darf nicht an einem zweiten Feld scheitern. Drei Zustände
+  (`set`/`unset`/`unknown`), der Typ liegt in `$lib/planning.ts`, weil die Karte ihn rendert.
+- **Hilfe-Leiste** (`HelpPanel.svelte`, Knopf ❓ neben „Feedback“, Text erst ab 2xl wegen der
+  knappen Zeile bei xl): natives `<dialog class="modal modal-end">` mit „Jetzt dran“ und den
+  **Kurzanleitungen aus `$lib/help.ts`** — Fragen mit Antwort, Rollen und Ort, gefiltert nach
+  Rolle, die zur aktuellen Seite zuerst (`helpFor`). Gleiche Link-Prüfung wie der Ablauf.
+
+**Falle aus dem Lauf:** Der Inhalt der geschlossenen Leiste stand versteckt im DOM jeder Seite,
+und `getByText(/geändert/)` in `demand.spec.ts` traf plötzlich eine FAQ-Frage (Strict Mode). Der
+Inhalt wird deshalb **nur gerendert, solange die Leiste offen ist** (`{#if open}`, `onclose`), und
+`help.spec.ts` sichert das ab. Merksatz: was im Layout hängt, darf geschlossen keinen Text auf
+die Seite legen.
+
+**Phasenabhängiges in E2E nicht prüfen:** andere Specs verschieben das Planungssemester parallel.
+Die Abbildung Phase → Schritte steht in `guide.test.ts`; E2E prüft nur, was in jeder Phase gilt.
+
+Stufe 2 (Assistent über das Fakultätsmodell) ist geplant, aber nicht gebaut — Stand und offene
+Fragen in der privaten Workspace-Notiz `help-assistant` (tallox.dev).
+
 ## Wie es gebaut ist
 
-- **`src/lib/guide.ts`** hält den Ablauf als Daten: zwei Abschnitte („Einmal einrichten",
+- **`src/lib/guide.ts`** hält den Ablauf als Daten (gerendert unter `/ablauf`): zwei Abschnitte („Einmal einrichten",
   „Jedes Semester"), je Schritt Titel, Rollen (`who`, leer = alle), Orte (`where`, Routen aus der
   Navigation) und ein Absatz Text. Die Tabelle „Wer macht was" auf der Startseite entsteht aus
   denselben Schritten — zwei Antworten auf „wer macht was" dürfen nicht auseinanderlaufen.
