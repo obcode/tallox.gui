@@ -10,20 +10,22 @@ import { runSql } from './psql';
  * any figure read off them is a figure of whichever spec ran last.
  *
  * The arrangement: a module of E2S runs in 2029-SS as one E2S cohort — a lecture and two
- * laboratory groups of two hours — and one E2T cohort with a single two-hour group of its own. A
+ * laboratory groups of two hours — and one E2U cohort with a single two-hour group of its own. A
  * year earlier E2S held it with one group. Whoever holds the teaching pays: E2S 6 hours against 4
- * the year before, E2T 2 hours for a module that is E2S's.
+ * the year before, E2U 2 hours for a module that is E2S's.
  *
  * E2S has a quota of 20 for the study year 2028, and its winter 2028-WS held the module once with a
  * lecture and a laboratory group: 4 hours. The winter may spend half the year, 10, and has 6 left.
  * The summer may spend what the winter left, 16, and with 6 planned has 10 left — which is also
- * what is left of the year. And seen from E2T, the cohort it holds is an import from E2S.
+ * what is left of the year. And seen from E2U, the cohort it holds is an import from E2S.
  *
  * The summer is in the review, so the dean's office can announce it as reviewed.
  */
 const CONTROLLING = {
 	home: { id: '0e2e0000-0000-4000-8000-0000000000a0', code: 'E2S' },
-	other: { id: '0e2e0000-0000-4000-8000-0000000000a1', code: 'E2T' },
+	// Not E2T: the divided-parts fixture plans that code under an id of its own, so on a fresh
+	// database the insert below skipped this row and left the instances pointing at nothing.
+	other: { id: '0e2e0000-0000-4000-8000-0000000000a1', code: 'E2U' },
 	module: '0e2e0000-0000-4000-8000-0000000000a2',
 	semester: '2029-SS',
 	previous: '2028-SS',
@@ -53,7 +55,7 @@ function seedSql(): string {
 		// every other spec's demand page.
 		`INSERT INTO programme (id, code, title, planning_status)
 		 VALUES ('${c.other.id}', '${c.other.code}', 'Controlling-Gast', 'NOT_OURS')
-		 ON CONFLICT DO NOTHING;`,
+		 ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code;`,
 		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
 		                     contact_hours_per_week, credits)
 		 VALUES ('${c.module}', '${c.home.id}', 'E2E Controlling-Modul', 'SU_WITH_LAB',
@@ -112,7 +114,7 @@ test.describe('the SWS controlling', () => {
 		await expect(home.nth(5)).toHaveText('4');
 		await expect(home.nth(6)).toHaveText('+2');
 
-		// E2T plans E2S's module with a group of its own, so E2T pays for it — whoever holds the
+		// E2U plans E2S's module with a group of its own, so E2U pays for it — whoever holds the
 		// teaching pays, as DC does for its own Analysis.
 		const other = row(CONTROLLING.other.code);
 		await expect(other.nth(0)).toHaveText('2');
