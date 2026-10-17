@@ -13,12 +13,32 @@ import {
 	findingIsAlarming,
 	filingGroupsFor,
 	formatHours,
+	handbookHref,
 	mayFileModules,
 	mayRefileModule,
 	moduleName,
 	spoLabel,
 	teacherRole
 } from './catalogue';
+
+describe('handbookHref', () => {
+	it('passes a web address through', () => {
+		expect(handbookHref({ handbookUrl: 'https://zpa.example.org/pub/#m=101' })).toBe(
+			'https://zpa.example.org/pub/#m=101'
+		);
+	});
+
+	it('has nothing for a module without a page', () => {
+		expect(handbookHref({ handbookUrl: null })).toBeUndefined();
+		expect(handbookHref({})).toBeUndefined();
+		expect(handbookHref({ handbookUrl: '' })).toBeUndefined();
+	});
+
+	it('refuses anything that is not http(s)', () => {
+		expect(handbookHref({ handbookUrl: 'javascript:alert(1)' })).toBeUndefined();
+		expect(handbookHref({ handbookUrl: 'not a url' })).toBeUndefined();
+	});
+});
 
 describe('moduleName', () => {
 	it('uses the name when there is one', () => {

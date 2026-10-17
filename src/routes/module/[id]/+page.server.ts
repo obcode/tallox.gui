@@ -30,6 +30,7 @@ const ModuleDocument = graphql(`
 			id
 			name
 			zpaId
+			handbookUrl
 			active
 			official
 			retiredAt
