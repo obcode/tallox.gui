@@ -147,6 +147,47 @@ Falle beim Einbau: das EN-Kästchen machte `row.getByRole('checkbox')` in `deman
 mehrdeutig, und sein `aria-label` mit Modulnamen floss in den Zellnamen ein — Locators
 seitdem `input[name="offer"]` bzw. `exact: true`.
 
+## Aufteilen und andere Fakultät (seit 2026-10-17)
+
+Für die Ausnahme „4 + 4 SWS, je zur Hälfte bei einer anderen Fakultät“ (Collab-Anforderung).
+Backend: `divided-parts` in `go/`. Bedient wird das über ein **Zahnrad je Zugzeile** in der Spalte
+„Teile“, mit einem Popover und darin einem Abschnitt je Teil:
+
+- abtrennen (SWS, vorbelegt mit der Hälfte),
+- „an andere Fakultät“ (Freitext, gesperrt bei besetztem Teil),
+- „Wieder selbst halten“,
+- „wieder zusammenführen“.
+
+Das Zahnrad sitzt **am Zug und nicht an der Teilzeile**, weil ein Zug mit nur einem Teil gar keine
+Teilzeilen hat und sonst nichts aufzuteilen wäre.
+
+Die Knöpfe gehören zum Tabellenformular und schicken mit `formaction` an `?/divide`, `?/rejoin`
+und `?/taughtBy`. Ihre Felder heißen nach dem Teil (`divide:<id>`, `taughtBy:<id>`). Die
+Semester- und Fachgruppen-Parameter stehen in der `formaction` (`menuAction`), weil die Seite
+ohne JavaScript sonst ohne sie zurückkommt. Änderungen im Popover lösen **kein** Autosave aus
+(`inRowMenu`). Nach einer Menü-Aktion schließt `closeRowMenus` den Popover.
+
+Was ein fremder Teil (`taughtBy`) auf der Seite bewirkt:
+
+- In der Teilzeile steht „hält FK 04“ statt einer Auswahl.
+- Die Zug-Auswahl, `parts:<id>` und die gemeinsame Notiz beziehen sich nur auf `ownRows`.
+- Ein Zug ohne eigene Teile zeigt nur das Badge.
+- Geteilte oder fremde Züge sind vorab aufgeklappt (`isArranged`).
+
+Stücke heißen „Vorlesung – Anteil“ (mit Nummer, wenn es mehrere gibt). Sie werden nicht als
+weitere Vorlesung durchnummeriert, auch nicht im Export. `groupsOf` zählt Stücke nicht mit, wie
+das Backend.
+
+Wunschseite: Ein Zug, der vollständig fremd ist, fällt weg, außer man hat dort einen Eintrag.
+Teilweise fremde Züge zeigen das Badge „teils FK 04“. Statistik: Badge „+ X SWS andere
+Fakultät“. Im Export steht die Fakultät unter „Besetzt durch“, und die SWS-Blattspalte kommt
+**ans Ende**.
+
+E2E: `tests/divided-parts.spec.ts` mit einem eigenen Fixture `DIVIDED`. **Falle:** Das Modul
+hieß zuerst „E2E Fremdmodul“, und das war schon ein Name im Katalog-Fixture.
+`demand.spec.ts` sucht danach per `hasText` und brach deshalb. Fixture-Namen müssen eindeutig
+sein, nicht nur die IDs.
+
 ## Wo es liegt
 
 | Was                | Wo                                                                   |
