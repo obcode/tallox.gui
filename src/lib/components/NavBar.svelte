@@ -2,12 +2,15 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from '$lib/navigation';
+	import type { PlanningState } from '$lib/planning';
+	import HelpPanel from './HelpPanel.svelte';
 
 	let {
 		remoteUser,
 		remoteDisplayname,
 		feedbackUrl,
-		effectiveRoles
+		effectiveRoles,
+		planning
 	}: {
 		remoteUser: string | null;
 		remoteDisplayname: string | null;
@@ -21,6 +24,8 @@
 		feedbackUrl: string | null;
 		/** The roles the server judges this request by — not the ones held. */
 		effectiveRoles: readonly string[];
+		/** The planning semester and its phase, for "Jetzt dran" in the help panel. */
+		planning: PlanningState;
 	} = $props();
 
 	const pathname = $derived(page.url.pathname);
@@ -111,6 +116,8 @@
 					<span aria-hidden="true">💬</span><span class="hidden sm:inline">Feedback</span>
 				</a>
 			{/if}
+
+			<HelpPanel {planning} roles={effectiveRoles} />
 
 			<!-- Only from xl, so exactly where the area bar appears too. Below that the menu at
 			     the bottom carries the identity — it is never missing, it just sits somewhere
