@@ -778,6 +778,11 @@ export type PartGroup = {
 	shared: boolean;
 	/** The other faculty that teaches these parts. Absent where they are ours, which is nearly always. */
 	taughtBy?: string;
+	/**
+	 * Pieces cut off a part. Kept apart from the parts themselves: folded together, "Vorlesung
+	 * 2 SWS ×2" would read as two lectures where there is one lecture held divided.
+	 */
+	piece?: true;
 };
 
 /** One line of the overview. */
@@ -827,12 +832,14 @@ export function groupParts(parts: readonly PartLike[]): PartGroup[] {
 		const hours = part.teachingHours ?? null;
 		const shared = part.sharedAcrossTracks ?? false;
 		const taughtBy = part.taughtBy ?? null;
+		const piece = !!part.dividedFrom;
 		const same = out.find(
 			(g) =>
 				g.kind === part.kind &&
 				g.teachingHours === hours &&
 				g.shared === shared &&
-				(g.taughtBy ?? null) === taughtBy
+				(g.taughtBy ?? null) === taughtBy &&
+				!!g.piece === piece
 		);
 		if (same) same.count++;
 		else
@@ -841,7 +848,8 @@ export function groupParts(parts: readonly PartLike[]): PartGroup[] {
 				teachingHours: hours,
 				count: 1,
 				shared,
-				...(taughtBy ? { taughtBy } : {})
+				...(taughtBy ? { taughtBy } : {}),
+				...(piece ? { piece: true as const } : {})
 			});
 	}
 	return out;
@@ -854,7 +862,11 @@ export function groupParts(parts: readonly PartLike[]): PartGroup[] {
  * of lines, and the reader would stop seeing the `×3` that matters.
  */
 export function partGroupLabel(group: PartGroup): string {
-	const base = partLabel({ kind: group.kind, teachingHours: group.teachingHours });
+	const label = partLabel({ kind: group.kind, teachingHours: group.teachingHours });
+	// `Vorlesung – Anteil 2 SWS`, the name the assignment screen gives the same piece.
+	const base = group.piece
+		? label.replace(PART_KIND_LABELS[group.kind], `${PART_KIND_LABELS[group.kind]} – Anteil`)
+		: label;
 	const counted = group.count > 1 ? `${base} ×${group.count}` : base;
 	const shared = group.shared ? `${counted}, für alle Züge` : counted;
 	return group.taughtBy ? `${shared}, hält ${group.taughtBy}` : shared;

@@ -678,6 +678,15 @@ describe('groupParts', () => {
 		expect(partGroupLabel(groups[1])).toBe('Vorlesung 2 SWS, hält FK 04');
 	});
 
+	// A lecture of 2 + 2 held divided is one lecture, not "Vorlesung 2 SWS ×2".
+	it('keeps a piece apart from the part it was cut from', () => {
+		const groups = groupParts([
+			{ id: 'l', kind: 'LECTURE', teachingHours: 2 },
+			{ kind: 'LECTURE', teachingHours: 2, dividedFrom: 'l' }
+		]);
+		expect(groups.map(partGroupLabel)).toEqual(['Vorlesung 2 SWS', 'Vorlesung – Anteil 2 SWS']);
+	});
+
 	// Two groups of different sizes are two facts, not one with a count of two.
 	it('does not fold parts of the same kind and different sizes', () => {
 		const groups = groupParts([
