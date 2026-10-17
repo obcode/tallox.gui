@@ -40,7 +40,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Warum lässt sich für ein Modul keine Instanz anlegen?',
 		answer:
-			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das Prüfungsamt liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',
+			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das Prüfungsamt liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs oder die Fachgruppenleitung des Moduls einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/bedarf', label: 'Bedarf' },

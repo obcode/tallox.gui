@@ -67,7 +67,7 @@ Fragen in der privaten Workspace-Notiz `help-assistant` (tallox.dev).
 Jede Aussage ist eine Regel des Backends, nicht einer Folie: Zugang ist die Tabelle `person`;
 Studiengangs- und Fachgruppenleitung sind gescopt, leer heißt nichts; Fachgruppen legt die
 Administration an, die Leitung nur an Rolleninhaber:innen; **jedes Modul genau eine Fachgruppe**
-(`module_subject_group`, PK `module_id`); Aufteilung durch die Leitung des Heimatstudiengangs;
+(`module_subject_group`, PK `module_id`); Aufteilung durch die Leitung des Heimatstudiengangs oder der Fachgruppe des Moduls (seit 2026-10-17);
 Kopplung über Studiengänge ist Regelfall; Fertigmeldung ist Ansage, Wunschrunde ist Tür je
 Fachgruppe; Veröffentlichungen sind unumkehrbar und Dekanatssache; `FINAL` schließt den Bedarf,
 nicht die Zuteilung. Einziges Nicht-Erzwungenes ist als solches markiert: PBLVs zuletzt.
