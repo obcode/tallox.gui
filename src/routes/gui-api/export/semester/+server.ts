@@ -42,6 +42,8 @@ const ExportDocument = graphql(`
 				position
 				teachingHours
 				sharedAcrossTracks
+				dividedFrom
+				taughtBy
 			}
 			coveredBy {
 				acceptedAt
@@ -87,6 +89,7 @@ const ExportDocument = graphql(`
 			fwpInstanceCount
 			fwpHours
 			partsWithoutHours
+			externalHours
 			shares {
 				homeProgramme {
 					code

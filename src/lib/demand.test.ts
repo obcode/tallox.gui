@@ -7,8 +7,10 @@ import {
 	cohortLabel,
 	compareWithPrevious,
 	demandRows,
+	facultiesElsewhere,
 	groupParts,
 	groupsOf,
+	taughtEntirelyElsewhere,
 	hoursLabel,
 	instanceRows,
 	instancesByYear,
@@ -245,6 +247,16 @@ describe('groupsOf', () => {
 		const parts = [
 			{ kind: 'LAB' as const, teachingHours: 2, sharedAcrossTracks: false },
 			{ kind: 'LAB' as const, teachingHours: 2, sharedAcrossTracks: true }
+		];
+		expect(groupsOf(parts, 'LAB')).toBe(1);
+	});
+
+	// Half a laboratory given by another faculty is still one laboratory group. The backend counts
+	// the same way; a stepper that counted the piece would add a group on the next save.
+	it('does not count a piece cut off a group', () => {
+		const parts = [
+			{ id: 'lab', kind: 'LAB' as const, teachingHours: 1 },
+			{ kind: 'LAB' as const, teachingHours: 1, dividedFrom: 'lab', taughtBy: 'FK 04' }
 		];
 		expect(groupsOf(parts, 'LAB')).toBe(1);
 	});
@@ -601,6 +613,23 @@ function readInstance(
 	};
 }
 
+describe('another faculty', () => {
+	const ours = { kind: 'LECTURE' as const, teachingHours: 2 };
+	const theirs = { kind: 'LAB' as const, teachingHours: 2, taughtBy: 'FK 04' };
+
+	it('names each faculty once', () => {
+		expect(facultiesElsewhere([ours, theirs, { ...theirs }])).toEqual(['FK 04']);
+		expect(facultiesElsewhere([ours])).toEqual([]);
+	});
+
+	// A cohort with no parts is covered or unfinished — its teaching is ours, or not settled.
+	it('teaches a cohort entirely only where every part is theirs', () => {
+		expect(taughtEntirelyElsewhere([theirs, { ...theirs, kind: 'LECTURE' }])).toBe(true);
+		expect(taughtEntirelyElsewhere([ours, theirs])).toBe(false);
+		expect(taughtEntirelyElsewhere([])).toBe(false);
+	});
+});
+
 describe('groupParts', () => {
 	// Four identical laboratory lines is not what anybody is reading — the number is.
 	it('folds parts of the same kind and size into one entry with a count', () => {
@@ -634,6 +663,19 @@ describe('groupParts', () => {
 		]);
 		expect(groups).toHaveLength(2);
 		expect(groups[0].shared).toBe(true);
+	});
+
+	// Another faculty's half of a lecture is not ours, and folding it into our line would hide that.
+	it('keeps a part another faculty teaches apart, and says who', () => {
+		const groups = groupParts([
+			{ kind: 'LECTURE', teachingHours: 2 },
+			{ kind: 'LECTURE', teachingHours: 2, taughtBy: 'FK 04' }
+		]);
+		expect(groups).toEqual([
+			{ kind: 'LECTURE', teachingHours: 2, count: 1, shared: false },
+			{ kind: 'LECTURE', teachingHours: 2, count: 1, shared: false, taughtBy: 'FK 04' }
+		]);
+		expect(partGroupLabel(groups[1])).toBe('Vorlesung 2 SWS, hält FK 04');
 	});
 
 	// Two groups of different sizes are two facts, not one with a count of two.

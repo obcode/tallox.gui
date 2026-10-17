@@ -5,6 +5,7 @@ import { toRefusal } from '$lib/server/graphqlError';
 import {
 	assignmentChanges,
 	mergeCombined,
+	parseHours,
 	type AssignmentEntry,
 	type AssignmentLike,
 	type CombinedEntry,
@@ -93,6 +94,8 @@ const AssignmentDocument = graphql(`
 				kind
 				teachingHours
 				sharedAcrossTracks
+				dividedFrom
+				taughtBy
 			}
 			# The demands this cohort meets for other study programmes. The event is held once, so
 			# the interest registered for those cohorts is interest in this teaching — and this is
@@ -239,6 +242,38 @@ const SetFormatDocument = graphql(`
 const ClearDocument = graphql(`
 	mutation ClearAssignment($id: ID!) {
 		clearAssignment(id: $id)
+	}
+`);
+
+/**
+ * Cutting a part in two, putting a piece back, and handing a part to another faculty.
+ *
+ * The exception of an exception — a module whose lecture is given half here and half by another
+ * faculty — so they live behind the row menu and not in the table. All three are judged by the
+ * assignment's rule in the backend, which is why they are on this page: the subject group lead
+ * arranges it with the other faculty and is the one who records it.
+ */
+const DivideDocument = graphql(`
+	mutation DivideInstancePart($id: ID!, $hours: Float!) {
+		divideInstancePart(id: $id, teachingHours: $hours) {
+			id
+		}
+	}
+`);
+
+const RejoinDocument = graphql(`
+	mutation RejoinInstancePart($id: ID!) {
+		rejoinInstancePart(id: $id) {
+			id
+		}
+	}
+`);
+
+const TaughtByDocument = graphql(`
+	mutation SetInstancePartTaughtBy($id: ID!, $faculty: String) {
+		setInstancePartTaughtBy(id: $id, faculty: $faculty) {
+			id
+		}
 	}
 `);
 
@@ -442,6 +477,46 @@ export const actions: Actions = {
 	},
 
 	/**
+	 * Cut a piece off a part. The hours are the piece's; the part keeps the rest.
+	 *
+	 * The button names the part and the field beside it carries the hours, keyed by part: the
+	 * whole table is one form, so every row menu's field travels with every submission, and only
+	 * the one belonging to the pressed button is read.
+	 */
+	divide: async ({ request }) => {
+		const form = await request.formData();
+		const partId = String(form.get('partId') ?? '');
+		const hours = parseHours(String(form.get(`divide:${partId}`) ?? ''));
+		if (partId === '' || hours === null) {
+			return fail(400, {
+				message: null,
+				refusals: [{ partId, message: 'Bitte die SWS des abgetrennten Teils angeben.' }]
+			});
+		}
+		return arrange(partId, () => backendRequest(DivideDocument, { id: partId, hours }));
+	},
+
+	/** Put a piece back into the part it was cut from. */
+	rejoin: async ({ request }) => {
+		const form = await request.formData();
+		const partId = String(form.get('partId') ?? '');
+		return arrange(partId, () => backendRequest(RejoinDocument, { id: partId }));
+	},
+
+	/**
+	 * Say that another faculty teaches a part, or — with the other button, `clearPart` — that we
+	 * do again. An empty field is the same as the second button, as the backend reads it.
+	 */
+	taughtBy: async ({ request }) => {
+		const form = await request.formData();
+		const cleared = String(form.get('clearPart') ?? '');
+		const partId = cleared !== '' ? cleared : String(form.get('partId') ?? '');
+		const faculty =
+			cleared !== '' ? null : String(form.get(`taughtBy:${partId}`) ?? '').trim() || null;
+		return arrange(partId, () => backendRequest(TaughtByDocument, { id: partId, faculty }));
+	},
+
+	/**
 	 * Open or shut this subject group's wish round.
 	 *
 	 * Its own action rather than part of the save, because it is a different kind of act: saving
@@ -467,3 +542,17 @@ export const actions: Actions = {
 		return { saved: 0, refusals: [] };
 	}
 };
+
+/**
+ * One of the three row-menu writes, answered the way the save answers: a refusal keyed by the part,
+ * so the page puts it in the part's row.
+ */
+async function arrange(partId: string, write: () => Promise<unknown>) {
+	if (partId === '') return fail(400, { message: 'Kein Teil gewählt.', refusals: [] });
+	try {
+		await write();
+	} catch (err) {
+		return fail(400, { message: null, refusals: [{ partId, message: toRefusal(err).message }] });
+	}
+	return { saved: 1, refusals: [] as RowRefusal[] };
+}

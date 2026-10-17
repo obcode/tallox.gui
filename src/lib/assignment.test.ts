@@ -21,7 +21,11 @@ import {
 	mayFillUnfiled,
 	UNFILED,
 	cohortsWithoutInterest,
-	mayShowGaps
+	mayShowGaps,
+	ownRows,
+	isArranged,
+	divisionDefault,
+	parseHours
 } from './assignment';
 
 const instance = (over: Partial<InstanceLike> = {}): InstanceLike => ({
@@ -65,6 +69,68 @@ describe('cohortGroups', () => {
 	it('assembles the cohort label rather than reading a stored one', () => {
 		const [group] = cohortGroups([instance()], []);
 		expect(group.label).toBe('IF1A');
+	});
+});
+
+// The case from the request: 2 + 2 of the lecture and 2 + 2 of the laboratory, half of each given
+// by another faculty.
+describe('a cohort divided with another faculty', () => {
+	const divided = instance({
+		parts: [
+			{ id: 'p1', kind: 'LECTURE', teachingHours: 2 },
+			{ id: 'p1a', kind: 'LECTURE', teachingHours: 2, dividedFrom: 'p1', taughtBy: 'FK 04' },
+			{ id: 'p2', kind: 'LAB', teachingHours: 2 },
+			{ id: 'p2a', kind: 'LAB', teachingHours: 1, dividedFrom: 'p2' },
+			{ id: 'p2b', kind: 'LAB', teachingHours: 1, dividedFrom: 'p2', taughtBy: 'FK 04' },
+			{ id: 'p3', kind: 'LAB', teachingHours: 2 }
+		]
+	});
+
+	// A lecture cut in two is still the one lecture: "Vorlesung 2" would claim a second one.
+	it('names a piece after the part it was cut from', () => {
+		const [group] = cohortGroups([divided], []);
+		expect(group.rows.map((r) => r.heading)).toEqual([
+			'Vorlesung',
+			'Vorlesung – Anteil',
+			'Praktikum 1',
+			'Praktikum 1 – Anteil 1',
+			'Praktikum 1 – Anteil 2',
+			'Praktikum 2'
+		]);
+	});
+
+	// "One person holds the cohort" is our share of it; another faculty's half is not staffed here.
+	it('leaves the parts another faculty teaches out of the cohort’s own dropdown', () => {
+		const [group] = cohortGroups([divided], [held({ part: { id: 'p1' } })]);
+		expect(ownRows(group.rows).map((r) => r.part.id)).toEqual(['p1', 'p2', 'p2a', 'p3']);
+		expect(commonValue(ownRows(group.rows))).toBeNull();
+	});
+
+	it('says in the summary who teaches what is not ours', () => {
+		const [group] = cohortGroups([divided], []);
+		expect(partsSummary(group.rows)).toContain('Vorlesung – Anteil (FK 04)');
+	});
+
+	it('shows its parts rather than folding them away', () => {
+		const [group] = cohortGroups([divided], []);
+		const [plain] = cohortGroups([instance()], []);
+		expect(isArranged(group.rows)).toBe(true);
+		expect(isArranged(plain.rows)).toBe(false);
+	});
+});
+
+describe('dividing a part', () => {
+	it('offers half of it, and nothing for a part without hours', () => {
+		expect(divisionDefault({ id: 'x', kind: 'LECTURE', teachingHours: 4 })).toBe(2);
+		expect(divisionDefault({ id: 'x', kind: 'LECTURE', teachingHours: 3 })).toBe(1.5);
+		expect(divisionDefault({ id: 'x', kind: 'LECTURE', teachingHours: null })).toBeNull();
+	});
+
+	it('reads a comma as a decimal point and refuses what is not a number', () => {
+		expect(parseHours('1,5')).toBe(1.5);
+		expect(parseHours(' 2 ')).toBe(2);
+		expect(parseHours('')).toBeNull();
+		expect(parseHours('zwei')).toBeNull();
 	});
 });
 

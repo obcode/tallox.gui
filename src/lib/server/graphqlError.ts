@@ -164,6 +164,15 @@ const PASS_THROUGH = new Set([
 	'PART_ASSIGNED',
 	'ASSIGNEE_INVALID',
 	'ASSIGNEE_NOT_FOUND',
+	// A part cut in two, or one another faculty teaches. Facts about the demand, which is not
+	// confidential; PART_TAUGHT_ELSEWHERE says who holds a part — nobody here — and the instance
+	// shows that to everybody anyway. INSTANCE_TAUGHT_ELSEWHERE answers a wish with a statement about
+	// the instance and none about anybody's interest in it.
+	'PART_TAUGHT_ELSEWHERE',
+	'PART_DIVIDED',
+	'PART_NOT_DIVIDED',
+	'TAUGHT_BY_TOO_LONG',
+	'INSTANCE_TAUGHT_ELSEWHERE',
 	// The two planning marks. Nothing confidential on this path at all: which programmes have
 	// settled their demand and which subjects take entries is public to anybody with an account,
 	// and the refusals name which lead to go and see.

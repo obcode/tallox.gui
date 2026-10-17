@@ -85,6 +85,18 @@ describe('the SWS controlling table', () => {
 		expect(total.foreignHours).toBe(3);
 	});
 
+	// Half a lecture given by another faculty is not ours to pay for. The backend leaves it out of
+	// the load and reports it beside it; the table carries it along, and into the total.
+	it('carries what other faculties teach beside the load', () => {
+		const { planned, total } = controllingTable(
+			[load('IF', 6, 6, { externalHours: 4 }), load('IG', 6, 6)],
+			null
+		);
+		expect(planned.map((r) => r.externalHours)).toEqual([4, 0]);
+		expect(total.externalHours).toBe(4);
+		expect(total.teachingHours).toBe(12);
+	});
+
 	it('writes a difference with its sign', () => {
 		const f = (n: number) => String(n);
 		expect(deltaLabel(null, f)).toBe('–');

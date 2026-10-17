@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import WishCell from '$lib/components/WishCell.svelte';
 	import { formatHours } from '$lib/catalogue';
-	import { formatBadges, heldForLabel, hoursLabel } from '$lib/demand';
+	import { facultiesElsewhere, formatBadges, heldForLabel, hoursLabel } from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
 	import {
 		heldForOthers,
@@ -241,6 +241,17 @@
 									{#each cohort.format ? formatBadges(cohort.format) : [] as mark (mark)}
 										<span class="badge badge-info badge-xs mt-1 mr-1 align-middle">{mark}</span>
 									{/each}
+									<!-- Ein Teil davon hält eine andere Fakultät: gewünscht wird trotzdem der
+									     Zug, und die Notiz sagt, welche Hälfte. -->
+									{@const elsewhere = facultiesElsewhere(cohort.parts)}
+									{#if elsewhere.length > 0}
+										<span
+											class="badge badge-ghost badge-xs mt-1 mr-1 align-middle"
+											title="Diesen Teil hält eine andere Fakultät; er wird hier nicht besetzt."
+										>
+											teils {elsewhere.join(', ')}
+										</span>
+									{/if}
 									{#if closedReason}
 										<p class="text-base-content/80 mt-1 text-xs">{closedReason}</p>
 									{/if}

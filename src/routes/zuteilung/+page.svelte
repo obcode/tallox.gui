@@ -21,8 +21,13 @@
 		UNFILED,
 		type AssignmentLike,
 		type CohortGroup,
-		cohortLabel
+		cohortLabel,
+		ownRows,
+		isArranged,
+		divisionDefault
 	} from '$lib/assignment';
+	import GearIcon from '$lib/components/GearIcon.svelte';
+	import { facultiesElsewhere } from '$lib/demand';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
 	import { DELIVERY_LABELS, hoursLabel } from '$lib/demand';
 	import type { ActionData, PageData } from './$types';
@@ -145,6 +150,32 @@
 	function saveIfDirty() {
 		if (dirty) saveNow();
 	}
+
+	/**
+	 * Whether an event comes from inside a row menu.
+	 *
+	 * The menus' fields belong to the table's form — a popover cannot hold a form of its own inside
+	 * another one — so their changes bubble to the same listeners. They are not cells: typing the
+	 * hours of a piece is not something to autosave, and saving would re-render the menu under the
+	 * person typing in it.
+	 */
+	const inRowMenu = (target: EventTarget | null) =>
+		target instanceof Element && target.closest('[popover]') !== null;
+
+	/** Closes every open row menu. Popovers are browser state, not component state. */
+	function closeRowMenus() {
+		for (const menu of document.querySelectorAll<HTMLElement>('[popover]')) {
+			if (menu.matches(':popover-open')) menu.hidePopover();
+		}
+	}
+
+	/**
+	 * The row menus' buttons post to their own actions. Without JavaScript the browser navigates
+	 * there, and `?/divide` replaces the page's query string — the semester and the subject group
+	 * travel in the action's address so that the page comes back where it was.
+	 */
+	const menuAction = (name: string) =>
+		`?/${name}&semester=${data.semester?.code ?? ''}&fachgruppe=${data.selected.group}`;
 
 	/**
 	 * Which cohorts show their parts, where somebody has said so.
@@ -440,17 +471,24 @@
 				action="?/save"
 				bind:this={formElement}
 				onchange={(event) => {
+					if (inRowMenu(event.target)) return;
 					harmonise(event.target);
 					saveNow();
 				}}
-				oninput={() => (dirty = true)}
-				onfocusout={saveIfDirty}
-				use:enhance={() => {
+				oninput={(event) => {
+					if (!inRowMenu(event.target)) dirty = true;
+				}}
+				onfocusout={(event) => {
+					if (!inRowMenu(event.target)) saveIfDirty();
+				}}
+				use:enhance={({ action }) => {
 					saving = true;
+					const fromMenu = !action.search.startsWith('?/save');
 					return async ({ update }) => {
 						// reset:false — a reset puts every field back to its rendered default, which
 						// is the state before the save rather than after it.
 						await update({ reset: false });
+						if (fromMenu) closeRowMenus();
 						saving = false;
 						savedOnce = true;
 						if (queued) {
@@ -504,15 +542,19 @@
 									pooled.programmes,
 									data.competences.filter((c) => c.module.id === group.instance.module.id)
 								)}
-								{@const shared = commonValue(group.rows)}
-								{@const sharedNote = commonNote(group.rows)}
+								<!-- What the cohort's own dropdown stands for: our share of it. A part
+								     another faculty teaches is arranged, not staffed. -->
+								{@const own = ownRows(group.rows)}
+								{@const elsewhere = facultiesElsewhere(group.instance.parts)}
+								{@const shared = commonValue(own)}
+								{@const sharedNote = commonNote(own)}
 								{@const refusals = group.rows
 									.map((row) => refusalFor.get(row.part.id))
 									.filter((message) => message !== undefined)}
 								{@const divisible = group.rows.length > 1}
 								{@const split = expandedFor(
 									group.instance.id,
-									shared === null || refusals.length > 0
+									shared === null || refusals.length > 0 || isArranged(group.rows)
 								)}
 								<!--
 									A tbody per cohort, which is what scopes the disclosure below: the part rows
@@ -534,7 +576,7 @@
 											<input
 												type="hidden"
 												name="parts:{group.instance.id}"
-												value={group.rows.map((row) => row.part.id).join(',')}
+												value={own.map((row) => row.part.id).join(',')}
 											/>
 										</td>
 										<td class="align-top font-medium whitespace-nowrap">{group.label}</td>
@@ -542,24 +584,37 @@
 											{hoursLabel(group.instance.teachingHours)}
 										</td>
 										<td>
-											<select
-												name="all:{group.instance.id}"
-												class="select select-bordered select-sm w-full"
-												aria-label="Wer hält alle Teile von {block.name} in {group.label}"
-												disabled={!open}
-												value={shared ?? MIXED_CHOICE}
-											>
-												<option value="">— nicht besetzt —</option>
-												<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
+											{#if own.length === 0}
+												<!-- Nothing here is ours to fill. Said rather than left blank, or the
+												     cohort reads as one nobody has staffed yet. -->
+												<span class="badge badge-ghost whitespace-normal">
+													hält {elsewhere.join(', ')}
+												</span>
+											{:else}
+												<select
+													name="all:{group.instance.id}"
+													class="select select-bordered select-sm w-full"
+													aria-label="Wer hält alle Teile von {block.name} in {group.label}"
+													disabled={!open}
+													value={shared ?? MIXED_CHOICE}
+												>
+													<option value="">— nicht besetzt —</option>
+													<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
 												     dropdown has to be able to *show* it: a cohort whose parts are held
 												     by different people has no one name to put here. -->
-												<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
-												{#each candidates as candidate (candidateValue(candidate))}
-													<option value={candidateValue(candidate)}>
-														{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
-													</option>
-												{/each}
-											</select>
+													<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
+													{#each candidates as candidate (candidateValue(candidate))}
+														<option value={candidateValue(candidate)}>
+															{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
+														</option>
+													{/each}
+												</select>
+												{#if elsewhere.length > 0}
+													<p class="text-base-content/80 mt-1 text-xs">
+														Ein Teil hält {elsewhere.join(', ')}.
+													</p>
+												{/if}
+											{/if}
 											{#if wishesHere.length > 0}
 												<p class="text-base-content/80 mt-1 text-xs">
 													Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
@@ -577,7 +632,9 @@
 											<!-- Only where the parts carry the same note: where they do not, there is
 											     no one note to edit, and a field showing an empty one would claim
 											     otherwise. -->
-											{#if sharedNote !== null}
+											{#if own.length === 0}
+												<!-- No note to give: nobody here holds anything. -->
+											{:else if sharedNote !== null}
 												<input
 													type="text"
 													name="allnote:{group.instance.id}"
@@ -647,23 +704,28 @@
 											{/if}
 										</td>
 										<td class="align-top text-right">
-											{#if divisible}
-												<label
-													class="flex items-center justify-end gap-1 text-xs whitespace-nowrap"
-													title={partsSummary(group.rows)}
-												>
-													<input
-														type="checkbox"
-														class="split-toggle checkbox checkbox-xs"
-														aria-label="Die {group.rows
-															.length} Teile von {group.label} einzeln besetzen"
-														checked={split}
-														onchange={(event) =>
-															(expanded[group.instance.id] = event.currentTarget.checked)}
-													/>
-													{group.rows.length} Teile
-												</label>
-											{/if}
+											<div class="flex items-center justify-end gap-2">
+												{#if divisible}
+													<label
+														class="flex items-center justify-end gap-1 text-xs whitespace-nowrap"
+														title={partsSummary(group.rows)}
+													>
+														<input
+															type="checkbox"
+															class="split-toggle checkbox checkbox-xs"
+															aria-label="Die {group.rows
+																.length} Teile von {group.label} einzeln besetzen"
+															checked={split}
+															onchange={(event) =>
+																(expanded[group.instance.id] = event.currentTarget.checked)}
+														/>
+														{group.rows.length} Teile
+													</label>
+												{/if}
+												{#if open}
+													{@render rowMenu(group, block.name)}
+												{/if}
+											</div>
 										</td>
 									</tr>
 
@@ -690,37 +752,47 @@
 													{partHours(row.part)}
 												</td>
 												<td>
-													<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly one
+													{#if row.part.taughtBy}
+														<!-- Another faculty's: no dropdown, because there is nobody here to
+														     put on it, and the backend would refuse a name. -->
+														<span class="badge badge-ghost whitespace-normal">
+															hält {row.part.taughtBy}
+														</span>
+													{:else}
+														<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly one
 													     of the two and canonicalises a teacher who has an account. -->
-													<select
-														name="who:{row.part.id}"
-														class="select select-bordered select-sm w-full"
-														aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
-														disabled={!open}
-														value={currentValue(row.assignment)}
-													>
-														<option value="">— nicht besetzt —</option>
-														{#each candidates as candidate (candidateValue(candidate))}
-															<option value={candidateValue(candidate)}>
-																{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
-															</option>
-														{/each}
-													</select>
+														<select
+															name="who:{row.part.id}"
+															class="select select-bordered select-sm w-full"
+															aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
+															disabled={!open}
+															value={currentValue(row.assignment)}
+														>
+															<option value="">— nicht besetzt —</option>
+															{#each candidates as candidate (candidateValue(candidate))}
+																<option value={candidateValue(candidate)}>
+																	{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
+																</option>
+															{/each}
+														</select>
+													{/if}
 													{#if refusal}
 														<span class="badge badge-error mt-1 whitespace-normal">{refusal}</span>
 													{/if}
 												</td>
 												<td>
-													<input
-														type="text"
-														name="note:{row.part.id}"
-														value={row.assignment?.note ?? ''}
-														maxlength="500"
-														placeholder="z. B. vertretungsweise"
-														class="input input-bordered input-sm w-full"
-														aria-label="Notiz zu {row.heading} in {group.label}"
-														disabled={!open}
-													/>
+													{#if !row.part.taughtBy}
+														<input
+															type="text"
+															name="note:{row.part.id}"
+															value={row.assignment?.note ?? ''}
+															maxlength="500"
+															placeholder="z. B. vertretungsweise"
+															class="input input-bordered input-sm w-full"
+															aria-label="Notiz zu {row.heading} in {group.label}"
+															disabled={!open}
+														/>
+													{/if}
 												</td>
 												<td></td>
 											</tr>
@@ -755,3 +827,150 @@
 		{/if}
 	{/if}
 {/if}
+
+<!--
+	Die Ausnahme der Ausnahme, hinter einem Zahnrad: einen Teil aufteilen — die Vorlesung halb bei
+	uns, halb bei einer anderen Fakultät — und einen Teil einer anderen Fakultät überlassen.
+
+	Ein Popover und keine Dropdown-Liste, aus demselben Grund wie in der Bedarfsplanung: die Tabelle
+	steht in `overflow-x-auto`, und ein Dropdown würde am Rand abgeschnitten. Ohne JavaScript: das
+	Öffnen macht der Browser über `popovertarget`, und die Knöpfe gehören zum Formular der Tabelle,
+	mit eigener `formaction`. Die Felder darin tragen den Teil im Namen, weil sie mit jedem Absenden
+	der Tabelle mitreisen und nur das zum gedrückten Knopf gelesen wird.
+
+	Bewusst ohne die Wörter der Tabellenzeile in den Knöpfen: der Inhalt ist versteckt, steht aber im
+	Dokument, und ein zweites „3 Teile" machte jeden Locator darauf mehrdeutig.
+-->
+{#snippet rowMenu(group: CohortGroup, moduleName: string)}
+	{@const menuId = `part-menu-${group.instance.id}`}
+	<button
+		type="button"
+		class="btn btn-xs"
+		popovertarget={menuId}
+		aria-label="Teile von {moduleName} in {group.label} aufteilen oder abgeben"
+		title="Aufteilen oder an eine andere Fakultät abgeben"
+	>
+		<GearIcon class="size-4" />
+	</button>
+	<div
+		id={menuId}
+		popover="auto"
+		class="border-base-300 bg-base-100 text-base-content m-auto w-[min(32rem,92vw)] rounded-lg border p-4 text-left shadow-lg backdrop:bg-neutral/30"
+	>
+		<div class="flex flex-col gap-3 text-sm">
+			<div class="flex items-start justify-between gap-2">
+				<h3 class="font-medium">{moduleName} · {group.label}</h3>
+				<button
+					type="button"
+					class="btn btn-ghost btn-xs"
+					popovertarget={menuId}
+					popovertargetaction="hide"
+					aria-label="Menü schließen"
+				>
+					✕
+				</button>
+			</div>
+			<p class="text-base-content/80">
+				Für den Ausnahmefall: einen Teil zwischen zwei Personen aufteilen, oder einen Teil einer
+				anderen Fakultät überlassen. Die SWS der Instanz bleiben dabei gleich; was eine andere
+				Fakultät hält, wird hier nicht besetzt und zählt nicht zum SWS-Controlling.
+			</p>
+
+			{#each group.rows as row (row.part.id)}
+				{@const half = divisionDefault(row.part)}
+				<section class="border-base-300 flex flex-col gap-2 border-t pt-2">
+					<h4 class="font-medium">
+						{row.heading}
+						<span class="text-base-content/80 font-normal">· {partHours(row.part)}</span>
+					</h4>
+
+					{#if row.part.taughtBy}
+						<div class="flex flex-wrap items-center gap-2">
+							<span>Hält {row.part.taughtBy}.</span>
+							<button
+								type="submit"
+								formaction={menuAction('taughtBy')}
+								name="clearPart"
+								value={row.part.id}
+								class="btn btn-xs"
+							>
+								Wieder selbst halten
+							</button>
+						</div>
+					{:else}
+						{#if half !== null && row.part.teachingHours != null && row.part.teachingHours > 0.25}
+							<div class="flex flex-wrap items-center gap-2">
+								<label class="flex items-center gap-1">
+									<input
+										type="number"
+										name="divide:{row.part.id}"
+										value={half}
+										min="0.25"
+										max={row.part.teachingHours - 0.25}
+										step="0.25"
+										class="input input-bordered input-xs w-20"
+										aria-label="SWS, die von {row.heading} abgetrennt werden"
+									/>
+									SWS
+								</label>
+								<button
+									type="submit"
+									formaction={menuAction('divide')}
+									name="partId"
+									value={row.part.id}
+									class="btn btn-xs"
+								>
+									abtrennen
+								</button>
+							</div>
+							{#if row.assignment}
+								<p class="text-base-content/80 text-xs">
+									{row.assignment.assignee.name} behält dann den Rest.
+								</p>
+							{/if}
+						{/if}
+
+						<div class="flex flex-wrap items-center gap-2">
+							<input
+								type="text"
+								name="taughtBy:{row.part.id}"
+								maxlength="80"
+								placeholder="z. B. FK 04"
+								class="input input-bordered input-xs w-32"
+								aria-label="Fakultät, die {row.heading} hält"
+							/>
+							<button
+								type="submit"
+								formaction={menuAction('taughtBy')}
+								name="partId"
+								value={row.part.id}
+								class="btn btn-xs"
+								disabled={row.assignment !== null}
+								title={row.assignment !== null
+									? 'Erst die Zuteilung lösen — besetzte Teile werden nicht abgegeben.'
+									: undefined}
+							>
+								an andere Fakultät
+							</button>
+						</div>
+					{/if}
+
+					{#if row.part.dividedFrom}
+						<div>
+							<button
+								type="submit"
+								formaction={menuAction('rejoin')}
+								name="partId"
+								value={row.part.id}
+								class="btn btn-xs"
+								disabled={row.assignment !== null}
+							>
+								wieder zusammenführen
+							</button>
+						</div>
+					{/if}
+				</section>
+			{/each}
+		</div>
+	</div>
+{/snippet}

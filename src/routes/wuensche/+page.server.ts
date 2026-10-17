@@ -73,6 +73,8 @@ const WishesDocument = graphql(`
 				kind
 				teachingHours
 				sharedAcrossTracks
+				dividedFrom
+				taughtBy
 			}
 			# Whether this cohort is the event or is held by another programme's, and which
 			# programmes it is held for. One joint event is one thing to want, so the covered

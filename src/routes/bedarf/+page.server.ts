@@ -167,6 +167,8 @@ const DemandDocument = graphql(`
 				kind
 				teachingHours
 				sharedAcrossTracks
+				dividedFrom
+				taughtBy
 			}
 			borrowedParts {
 				fromTrack
@@ -246,6 +248,8 @@ const DemandDocument = graphql(`
 				kind
 				teachingHours
 				sharedAcrossTracks
+				dividedFrom
+				taughtBy
 			}
 			borrowedParts {
 				fromTrack

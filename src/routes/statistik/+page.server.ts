@@ -38,6 +38,7 @@ const LoadDocument = graphql(`
 			fwpInstanceCount
 			fwpHours
 			partsWithoutHours
+			externalHours
 			shares {
 				homeProgramme {
 					code
