@@ -24,6 +24,11 @@ export type LoadInput = {
 	fwpInstanceCount: number;
 	fwpHours: number;
 	partsWithoutHours: number;
+	/**
+	 * What other faculties teach in the programme's instances — beside the load, never in it. Absent
+	 * from a server that predates it, which reads as none.
+	 */
+	externalHours?: number;
 	/** Split by the home programme of the modules. */
 	shares: readonly {
 		homeProgramme: { code: string; title: string };
@@ -55,6 +60,8 @@ export type ControllingRow = {
 	fwpInstanceCount: number;
 	fwpHours: number;
 	partsWithoutHours: number;
+	/** Taught by other faculties in the programme's instances, and not in `teachingHours`. */
+	externalHours: number;
 	/** The same semester a year earlier, or null where there is nothing to compare with. */
 	previousHours: number | null;
 	/** This semester minus that one, or null. */
@@ -103,6 +110,7 @@ export function controllingTable(
 			fwpInstanceCount: l.fwpInstanceCount,
 			fwpHours: l.fwpHours,
 			partsWithoutHours: l.partsWithoutHours,
+			externalHours: l.externalHours ?? 0,
 			previousHours,
 			delta: previousHours === null ? null : l.teachingHours - previousHours
 		};
@@ -129,6 +137,7 @@ export function controllingTable(
 			fwpInstanceCount: sum((r) => r.fwpInstanceCount),
 			fwpHours: sum((r) => r.fwpHours),
 			partsWithoutHours: sum((r) => r.partsWithoutHours),
+			externalHours: sum((r) => r.externalHours),
 			previousHours: previousTotal,
 			delta: previousTotal === null ? null : teachingHours - previousTotal
 		}

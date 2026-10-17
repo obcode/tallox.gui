@@ -23,6 +23,10 @@ export type PartLike = {
 	kind: InstancePartKind;
 	teachingHours?: number | null;
 	sharedAcrossTracks?: boolean;
+	/** The part this one was cut from, where it is a piece of one. */
+	dividedFrom?: string | null;
+	/** The other faculty that teaches this part. Nobody here is put on it. */
+	taughtBy?: string | null;
 };
 
 /** An instance, as much of it as this module needs. */
@@ -105,6 +109,54 @@ export function partHeading(part: PartLike, index: number, sameKind: number): st
 }
 
 /**
+ * The heading of a piece cut off a part: `Vorlesung – Anteil`, numbered where there are several.
+ *
+ * Named after the part it was cut from, because that is what it is — half of that lecture — and
+ * not a second lecture, which is what `Vorlesung 2` would claim.
+ */
+export function pieceHeading(of: string, index: number, pieces: number): string {
+	return pieces > 1 ? `${of} – Anteil ${index + 1}` : `${of} – Anteil`;
+}
+
+/**
+ * The rows somebody here can be put on: every part another faculty does not teach.
+ *
+ * What the cohort's own dropdown stands for. "One person holds the cohort" means one person holds
+ * our share of it; another faculty's half is arranged, not staffed, and writing a name onto it
+ * would be refused.
+ */
+export function ownRows(rows: readonly PartRow[]): PartRow[] {
+	return rows.filter((row) => !row.part.taughtBy);
+}
+
+/**
+ * Whether a cohort has been arranged out of the ordinary — a part cut in two, or one another
+ * faculty teaches — so that its parts are shown rather than folded away. The one dropdown above
+ * them cannot say either.
+ */
+export function isArranged(rows: readonly PartRow[]): boolean {
+	return rows.some((row) => !!row.part.dividedFrom || !!row.part.taughtBy);
+}
+
+/**
+ * What the hours field for cutting a part offers: anything strictly between nothing and all of
+ * it, and half by default — which is what the request was.
+ */
+export function divisionDefault(part: PartLike): number | null {
+	if (part.teachingHours == null || part.teachingHours <= 0) return null;
+	return Math.round((part.teachingHours / 2) * 100) / 100;
+}
+
+/**
+ * The hours somebody typed for a piece, or null where that is not a number. A comma is a decimal
+ * point here; the browser's number field sends a dot, the field without JavaScript may not.
+ */
+export function parseHours(raw: string): number | null {
+	const value = Number(raw.trim().replace(',', '.'));
+	return raw.trim() !== '' && Number.isFinite(value) ? value : null;
+}
+
+/**
  * What a part is worth to whoever holds it, as a sentence.
  *
  * `instance_part.teaching_hours` and not the module's contact hours: three quantities could be
@@ -146,18 +198,37 @@ export function cohortGroups(
 	for (const instance of instances) {
 		if (instance.parts.length === 0) continue;
 
+		// Numbered among the undivided parts only: a lecture cut in two is still the one lecture,
+		// and its pieces are named after it rather than counted as a second one.
 		const counts = new Map<string, number>();
-		for (const p of instance.parts) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
+		for (const p of instance.parts) {
+			if (!p.dividedFrom) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
+		}
+		const pieces = new Map<string, number>();
+		for (const p of instance.parts) {
+			if (p.dividedFrom) pieces.set(p.dividedFrom, (pieces.get(p.dividedFrom) ?? 0) + 1);
+		}
 
 		const seen = new Map<string, number>();
+		const headings = new Map<string, string>();
+		const cut = new Map<string, number>();
 		const rows: PartRow[] = instance.parts.map((part) => {
-			const index = seen.get(part.kind) ?? 0;
-			seen.set(part.kind, index + 1);
-			return {
-				part,
-				heading: partHeading(part, index, counts.get(part.kind) ?? 1),
-				assignment: byPart.get(part.id) ?? null
-			};
+			let heading: string;
+			if (part.dividedFrom) {
+				const index = cut.get(part.dividedFrom) ?? 0;
+				cut.set(part.dividedFrom, index + 1);
+				heading = pieceHeading(
+					headings.get(part.dividedFrom) ?? PART_KIND_LABELS[part.kind],
+					index,
+					pieces.get(part.dividedFrom) ?? 1
+				);
+			} else {
+				const index = seen.get(part.kind) ?? 0;
+				seen.set(part.kind, index + 1);
+				heading = partHeading(part, index, counts.get(part.kind) ?? 1);
+				headings.set(part.id, heading);
+			}
+			return { part, heading, assignment: byPart.get(part.id) ?? null };
 		});
 
 		groups.push({ instance, label: cohortLabel(instance), rows });
@@ -251,7 +322,9 @@ export function pooledInstances(instance: InstanceLike): {
  * them" is. Without it the single control is a promise the page has not shown the extent of.
  */
 export function partsSummary(rows: readonly PartRow[]): string {
-	return rows.map((row) => row.heading).join(' · ');
+	return rows
+		.map((row) => (row.part.taughtBy ? `${row.heading} (${row.part.taughtBy})` : row.heading))
+		.join(' · ');
 }
 
 /**

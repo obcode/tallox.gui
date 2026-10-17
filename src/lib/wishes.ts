@@ -1,6 +1,7 @@
 import {
 	cohortLabel,
 	moduleRows,
+	taughtEntirelyElsewhere,
 	type ModuleRow,
 	type ReadInstanceLike,
 	type SeparateLike
@@ -221,8 +222,16 @@ export function wishRows(
 	// lists entries, and the only control for one is the cell in this table. Hiding the row would
 	// take somebody's own entry out of their hands, which is the one thing this screen may never
 	// do.
+	//
+	// The same exception for a cohort another faculty teaches entirely: nothing in it is ours to
+	// want, and the backend refuses the wish (INSTANCE_TAUGHT_ELSEWHERE). Half of it elsewhere is an
+	// ordinary cohort — the wish is for the cohort, and the note says which half.
 	return moduleRows(
-		instances.filter((instance) => !instance.coveredBy?.acceptedAt || entered.has(instance.id))
+		instances.filter(
+			(instance) =>
+				entered.has(instance.id) ||
+				(!instance.coveredBy?.acceptedAt && !taughtEntirelyElsewhere(instance.parts))
+		)
 	);
 }
 

@@ -117,6 +117,15 @@
 					{row.partsWithoutHours === 1 ? 'Teil' : 'Teile'} ohne SWS
 				</span>
 			{/if}
+			{#if row.externalHours > 0}
+				<!-- Not in the figure beside it: another faculty teaches it, so it costs nobody here. -->
+				<span
+					class="badge badge-ghost badge-sm ml-1"
+					title="Diese SWS hält eine andere Fakultät. Sie zählen nicht zu den SWS dieses Studiengangs."
+				>
+					+ {formatHours(row.externalHours)} SWS andere Fakultät
+				</span>
+			{/if}
 		</th>
 		{@render rowCells(row, foreignLabel(row))}
 	</tr>

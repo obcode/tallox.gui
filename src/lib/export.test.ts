@@ -84,6 +84,31 @@ describe('planningRows', () => {
 		expect(rows[1][col('SWS (Lehrperson)')]).toBeNull();
 	});
 
+	// The case from the request: the lecture given half here and half by another faculty.
+	it('names a piece after its part and writes the other faculty where the holder goes', () => {
+		const rows = planningRows(
+			[
+				instance('i1', {
+					track: 'A',
+					parts: [
+						part('p1'),
+						part('p1a', { dividedFrom: 'p1', taughtBy: 'FK 04' }),
+						part('p2', { kind: 'LAB', position: 1 }),
+						part('p3', { kind: 'LAB', position: 2 })
+					]
+				})
+			],
+			[held('p1', 'Prof. Eins')]
+		);
+		expect(rows.map((r) => r[col('Teil')])).toEqual([
+			'Vorlesung',
+			'Vorlesung – Anteil',
+			'Praktikum 1',
+			'Praktikum 2'
+		]);
+		expect(rows.map((r) => r[col('Besetzt durch')])).toEqual(['Prof. Eins', 'FK 04', '', '']);
+	});
+
 	it('marks the lecture held once for all tracks', () => {
 		const rows = planningRows(
 			[instance('i1', { track: 'A', parts: [part('p1', { sharedAcrossTracks: true })] })],
@@ -223,6 +248,7 @@ describe('loadRows', () => {
 		expect(total[LOAD_HEADER.indexOf('SWS gesamt')]).toBe(26);
 		expect(total[LOAD_HEADER.indexOf('davon Module anderer Studiengänge')]).toBe(4);
 		expect(total[LOAD_HEADER.indexOf('Jahreskontingent')]).toBeNull();
+		expect(total[LOAD_HEADER.indexOf('SWS anderer Fakultäten (nicht enthalten)')]).toBe(0);
 		expect(rows[2][LOAD_HEADER.indexOf('Saldo')]).toBeNull();
 		expect(rows[1][LOAD_HEADER.indexOf('Saldo')]).toBe(10);
 	});

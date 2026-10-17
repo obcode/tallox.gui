@@ -43,6 +43,10 @@ export type ExportPart = {
 	position: number;
 	teachingHours?: number | null;
 	sharedAcrossTracks: boolean;
+	/** The part this one was cut from, where it is a piece of one. */
+	dividedFrom?: string | null;
+	/** The other faculty that teaches this part. */
+	taughtBy?: string | null;
 };
 
 export type ExportInstance = {
@@ -123,23 +127,44 @@ export function planningRows(
 			continue;
 		}
 
+		// Stable: a piece has its part's position and follows it, in the order the backend lists them.
 		const parts = [...instance.parts].sort((a, b) => a.position - b.position);
+		// Numbered among the undivided parts, as on the assignment screen: a lecture cut in two is
+		// still the one lecture, and its piece is named after it.
 		const perKind = new Map<InstancePartKind, number>();
-		for (const p of parts) perKind.set(p.kind, (perKind.get(p.kind) ?? 0) + 1);
+		const pieces = new Map<string, number>();
+		for (const p of parts) {
+			if (p.dividedFrom) pieces.set(p.dividedFrom, (pieces.get(p.dividedFrom) ?? 0) + 1);
+			else perKind.set(p.kind, (perKind.get(p.kind) ?? 0) + 1);
+		}
 		const seen = new Map<InstancePartKind, number>();
+		const headings = new Map<string, string>();
+		const cut = new Map<string, number>();
 
 		for (const part of parts) {
-			const index = (seen.get(part.kind) ?? 0) + 1;
-			seen.set(part.kind, index);
 			const kind = PART_KIND_LABELS[part.kind];
-			const heading = (perKind.get(part.kind) ?? 0) > 1 ? `${kind} ${index}` : kind;
+			let heading: string;
+			if (part.dividedFrom) {
+				const index = (cut.get(part.dividedFrom) ?? 0) + 1;
+				cut.set(part.dividedFrom, index);
+				const of = headings.get(part.dividedFrom) ?? kind;
+				heading =
+					(pieces.get(part.dividedFrom) ?? 0) > 1 ? `${of} – Anteil ${index}` : `${of} – Anteil`;
+			} else {
+				const index = (seen.get(part.kind) ?? 0) + 1;
+				seen.set(part.kind, index);
+				heading = (perKind.get(part.kind) ?? 0) > 1 ? `${kind} ${index}` : kind;
+				headings.set(part.id, heading);
+			}
 			const held = byPart.get(part.id);
 			rows.push([
 				...lead,
 				heading,
 				part.teachingHours ?? null,
 				part.sharedAcrossTracks ? 'ja' : '',
-				held?.assignee.name ?? '',
+				// Another faculty's part has nobody of ours on it; who gives it is what this column
+				// is for.
+				part.taughtBy ?? held?.assignee.name ?? '',
 				held?.note ?? '',
 				instance.note,
 				hint
@@ -179,7 +204,10 @@ export const LOAD_HEADER = [
 	'Teile ohne SWS',
 	'Jahreskontingent',
 	'Anteil dieses Semesters',
-	'Saldo'
+	'Saldo',
+	// Last rather than beside the hours it is not part of, so that a sheet somebody built on the
+	// earlier columns keeps reading them where they were.
+	'SWS anderer Fakultäten (nicht enthalten)'
 ];
 
 /**
@@ -206,7 +234,8 @@ export function loadRows(load: readonly LoadInput[]): ExportCell[][] {
 			r.partsWithoutHours,
 			q?.yearlyQuota ?? null,
 			q?.semesterQuota ?? null,
-			q?.balance ?? null
+			q?.balance ?? null,
+			r.externalHours
 		];
 	});
 	const t = table.total;
@@ -222,7 +251,8 @@ export function loadRows(load: readonly LoadInput[]): ExportCell[][] {
 		t.partsWithoutHours,
 		null,
 		null,
-		null
+		null,
+		t.externalHours
 	]);
 	return rows;
 }
@@ -257,6 +287,9 @@ export function noticeLines(
 			'SWS, die Studierende belegen.',
 		'„Für alle Züge“: der Teil findet einmal für alle Züge des Moduls statt, seine SWS zählen ' +
 			'einmal.',
+		'„… – Anteil“: ein Teil, der zwischen zwei Lehrenden oder mit einer anderen Fakultät ' +
+			'aufgeteilt ist. Hält ihn eine andere Fakultät, steht sie unter „Besetzt durch“, und seine SWS ' +
+			'zählen nicht zum Studiengang.',
 		'Blatt „SWS je Studiengang“: das SWS-Controlling wie unter „Statistik“ in Tallox.',
 		'',
 		'Der Export ist eine Momentaufnahme. Änderungen in der Datei fließen nicht nach Tallox zurück.'
@@ -286,7 +319,7 @@ export function exportSheets(input: ExportInput): ExportSheet[] {
 			name: 'SWS je Studiengang',
 			header: LOAD_HEADER,
 			rows: loadRows(input.load),
-			widths: [11, 36, 11, 12, 14, 10, 10, 10, 10, 12, 12, 10]
+			widths: [11, 36, 11, 12, 14, 10, 10, 10, 10, 12, 12, 10, 16]
 		},
 		{
 			name: 'Hinweise',

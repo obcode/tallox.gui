@@ -16,6 +16,10 @@ export type PartLike = {
 	kind: InstancePartKind;
 	teachingHours?: number | null;
 	sharedAcrossTracks?: boolean;
+	/** The part this one was cut from, where it is a piece of one. A piece is not a group. */
+	dividedFrom?: string | null;
+	/** The other faculty that teaches this part (`FK 04`), or nothing where it is ours. */
+	taughtBy?: string | null;
 };
 
 /**
@@ -346,17 +350,45 @@ export function effectiveComponents(
 }
 
 /**
+ * The other faculties that teach some of these parts, each once, in the order they appear.
+ *
+ * Empty for nearly every cohort. Where it is not, the cohort is shared with another faculty by
+ * arrangement — half the lecture is theirs — and that is said wherever the cohort is shown,
+ * because otherwise its hours look like teaching somebody here still has to give.
+ */
+export function facultiesElsewhere(parts: readonly PartLike[]): string[] {
+	const out: string[] = [];
+	for (const p of parts) {
+		if (p.taughtBy && !out.includes(p.taughtBy)) out.push(p.taughtBy);
+	}
+	return out;
+}
+
+/**
+ * Whether another faculty teaches every part of a cohort, so that nothing in it is ours.
+ *
+ * A cohort with no parts at all is not: a covered cohort's teaching is ours, held in another
+ * programme, and a cohort whose split nobody has stated is unfinished, not elsewhere.
+ */
+export function taughtEntirelyElsewhere(parts: readonly PartLike[]): boolean {
+	return parts.length > 0 && parts.every((p) => !!p.taughtBy);
+}
+
+/**
  * How many parallel groups a cohort runs.
  *
  * Parts of the module's practical kind, and only the ones this cohort holds itself: a lecture
- * held for both cohorts is neither a group nor this cohort's.
+ * held for both cohorts is neither a group nor this cohort's. A piece cut off a laboratory — half
+ * of it given by another faculty — is not a second group either; the backend counts the same way,
+ * and a stepper that disagreed would add a group on the next save.
  */
 export function groupsOf(
 	parts: readonly PartLike[],
 	practicalKind?: InstancePartKind | null
 ): number {
 	if (!practicalKind) return 0;
-	return parts.filter((p) => p.kind === practicalKind && !p.sharedAcrossTracks).length;
+	return parts.filter((p) => p.kind === practicalKind && !p.sharedAcrossTracks && !p.dividedFrom)
+		.length;
 }
 
 /**
@@ -744,6 +776,8 @@ export type PartGroup = {
 	count: number;
 	/** Held once for all the cohorts of this module — counted at the cohort that owns it. */
 	shared: boolean;
+	/** The other faculty that teaches these parts. Absent where they are ours, which is nearly always. */
+	taughtBy?: string;
 };
 
 /** One line of the overview. */
@@ -792,11 +826,23 @@ export function groupParts(parts: readonly PartLike[]): PartGroup[] {
 	for (const part of parts) {
 		const hours = part.teachingHours ?? null;
 		const shared = part.sharedAcrossTracks ?? false;
+		const taughtBy = part.taughtBy ?? null;
 		const same = out.find(
-			(g) => g.kind === part.kind && g.teachingHours === hours && g.shared === shared
+			(g) =>
+				g.kind === part.kind &&
+				g.teachingHours === hours &&
+				g.shared === shared &&
+				(g.taughtBy ?? null) === taughtBy
 		);
 		if (same) same.count++;
-		else out.push({ kind: part.kind, teachingHours: hours, count: 1, shared });
+		else
+			out.push({
+				kind: part.kind,
+				teachingHours: hours,
+				count: 1,
+				shared,
+				...(taughtBy ? { taughtBy } : {})
+			});
 	}
 	return out;
 }
@@ -810,7 +856,8 @@ export function groupParts(parts: readonly PartLike[]): PartGroup[] {
 export function partGroupLabel(group: PartGroup): string {
 	const base = partLabel({ kind: group.kind, teachingHours: group.teachingHours });
 	const counted = group.count > 1 ? `${base} ×${group.count}` : base;
-	return group.shared ? `${counted}, für alle Züge` : counted;
+	const shared = group.shared ? `${counted}, für alle Züge` : counted;
+	return group.taughtBy ? `${shared}, hält ${group.taughtBy}` : shared;
 }
 
 /**

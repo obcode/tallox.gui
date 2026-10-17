@@ -196,6 +196,24 @@ describe('a cohort another programme holds', () => {
 	});
 
 	// A programme that planned the module for itself is a second event, and stays a second row.
+	it('drops a cohort another faculty teaches entirely, unless the reader has an entry on it', () => {
+		const elsewhere: ReadInstanceLike<WishModule> = {
+			...instance('away', 'm2', 'Physik', ''),
+			parts: [
+				{ id: 'l', kind: 'LECTURE', teachingHours: 2, taughtBy: 'FK 06' },
+				{ id: 'p', kind: 'LAB', teachingHours: 2, taughtBy: 'FK 06' }
+			]
+		};
+		const half: ReadInstanceLike<WishModule> = {
+			...instance('half', 'm3', 'Elektrotechnik', ''),
+			parts: [
+				{ id: 'l2', kind: 'LECTURE', teachingHours: 2 },
+				{ id: 'p2', kind: 'LAB', teachingHours: 2, taughtBy: 'FK 04' }
+			]
+		};
+		expect(wishRows([elsewhere, half]).map((r) => r.module.name)).toEqual(['Elektrotechnik']);
+		expect(wishRows([elsewhere, half], new Set(['away']))).toHaveLength(2);
+	});
 	it('leaves a separately planned cohort alone', () => {
 		const separate: ReadInstanceLike<WishModule> = {
 			...instance('own', 'm1', 'IT-Sicherheit', ''),

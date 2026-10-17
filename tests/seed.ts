@@ -517,7 +517,8 @@ export function seedSql(): string {
 		...wishStatements(),
 		...assignmentStatements(),
 		...competenceStatements(),
-		...filingStatements()
+		...filingStatements(),
+		...dividedStatements()
 	].join('\n');
 }
 
@@ -856,4 +857,87 @@ export function filingResetSql(): string {
 	        INSERT INTO module_subject_group (module_id, subject_group_id)
 	        VALUES ('${FILING.own}', '${FILING.ownGroup}'),
 	               ('${FILING.foreign}', '${FILING.foreignGroup}');`;
+}
+
+/**
+ * The fixture for dividing a part: one cohort of 4 + 4 hours, and one another faculty teaches
+ * entirely.
+ *
+ * Its own programme, subject group and modules, for the reason the assignment fixture gives: a
+ * fixture that gives somebody a row changes every page that lists their rows. The semester is the
+ * assignment fixture's, because the phase it needs is the same, and the tab is a different one.
+ */
+export const DIVIDED = {
+	semester: ASSIGNMENTS.semester,
+	programme: 'E2T',
+	subjectGroup: '0e2e0000-0000-4000-8000-000000000081',
+	subjectGroupCode: 'E2EAFG',
+	module: '0e2e0000-0000-4000-8000-000000000082',
+	moduleName: 'E2E Aufteilungsmodul',
+	instance: '0e2e0000-0000-4000-8000-000000000083',
+	lecture: '0e2e0000-0000-4000-8000-000000000084',
+	lab: '0e2e0000-0000-4000-8000-000000000085',
+	elsewhereModule: '0e2e0000-0000-4000-8000-000000000086',
+	elsewhereName: 'E2E Modul der Nachbarfakultät',
+	elsewhereInstance: '0e2e0000-0000-4000-8000-000000000087',
+	elsewherePart: '0e2e0000-0000-4000-8000-000000000088'
+} as const;
+
+export function dividedStatements(): string[] {
+	const programme = quote(DIVIDED.programme);
+	const instances = `'${DIVIDED.instance}', '${DIVIDED.elsewhereInstance}'`;
+	return [
+		// Whatever a run left: assignments on any part of the two cohorts, pieces included, then
+		// the cohorts, whose parts cascade.
+		`DELETE FROM assignment WHERE instance_part_id IN
+		   (SELECT id FROM instance_part WHERE course_instance_id IN (${instances}));`,
+		`DELETE FROM wish WHERE course_instance_id IN (${instances});`,
+		`DELETE FROM course_instance WHERE id IN (${instances});`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(DIVIDED.semester)}, 'ASSIGNMENT')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Aufteilungs-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT m.id, p.id, m.name, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p,
+		        (VALUES ('${DIVIDED.module}'::uuid, ${quote(DIVIDED.moduleName)}),
+		                ('${DIVIDED.elsewhereModule}'::uuid, ${quote(DIVIDED.elsewhereName)}))
+		          AS m(id, name)
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${DIVIDED.subjectGroup}', ${quote(DIVIDED.subjectGroupCode)},
+		         'Aufteilungs-Testfachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${DIVIDED.module}', '${DIVIDED.subjectGroup}'),
+		        ('${DIVIDED.elsewhereModule}', '${DIVIDED.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT c.id, s.id, c.module, pr.id, '', 3
+		   FROM semester s, programme pr,
+		        (VALUES ('${DIVIDED.instance}'::uuid, '${DIVIDED.module}'::uuid),
+		                ('${DIVIDED.elsewhereInstance}'::uuid, '${DIVIDED.elsewhereModule}'::uuid))
+		          AS c(id, module)
+		  WHERE s.code = ${quote(DIVIDED.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours, taught_by)
+		 VALUES ('${DIVIDED.lecture}', '${DIVIDED.instance}', 'LECTURE', 0, 4, NULL),
+		        ('${DIVIDED.lab}', '${DIVIDED.instance}', 'LAB', 1, 4, NULL),
+		        ('${DIVIDED.elsewherePart}', '${DIVIDED.elsewhereInstance}', 'LECTURE', 0, 2, 'FK 06');`,
+
+		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
+		 SELECT id, 'SUBJECT_GROUP_LEAD', '${DIVIDED.subjectGroup}' FROM person
+		  WHERE mail = 'prof.drei@example.org'
+		 ON CONFLICT DO NOTHING;`,
+		// A candidate for the cohort's dropdown. Fuenf, for the reason the assignment fixture
+		// gives: nobody asserts about Fuenf's own entries.
+		`INSERT INTO wish (course_instance_id, person_id, priority, note)
+		 SELECT '${DIVIDED.instance}', p.id, 1, '' FROM person p
+		  WHERE p.mail = 'dekanat@example.org'
+		 ON CONFLICT DO NOTHING;`
+	];
 }
