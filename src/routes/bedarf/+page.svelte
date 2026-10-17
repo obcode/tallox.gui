@@ -10,6 +10,7 @@
 		PART_KIND_LABELS,
 		dutyBadge,
 		formatHours,
+		mayWriteModuleSplit,
 		moduleName
 	} from '$lib/catalogue';
 	import {
@@ -147,6 +148,22 @@
 		hasAnyRole(data.session?.effectiveRoles ?? [], ['DEANS_OFFICE']) ||
 			data.myProgrammes.some((p) => p.code === data.selected.programme)
 	);
+
+	/**
+	 * The modules whose split this person may state — not the same as planning the programme: a
+	 * module counts here and may be at home elsewhere. `policy.MayWriteModuleSplit`, mirrored.
+	 *
+	 * Ids rather than a check on `row.module`, because the row's module type is what the table and
+	 * the instances have in common, and the home programme is not part of that.
+	 */
+	const splittable = $derived(
+		data.modules
+			.filter((m) =>
+				mayWriteModuleSplit(data.session?.effectiveRoles ?? [], data.myProgrammes, data.led, m)
+			)
+			.map((m) => m.id)
+	);
+	const maySplit = (module: { id: string }) => splittable.includes(module.id);
 
 	/**
 	 * Whether this person plans at all — which is what the toggle's *presence* answers.
@@ -1744,7 +1761,7 @@
 														<span class="flex flex-wrap items-center gap-1">
 															{#if row.module.splitIsEstimated}
 																<span class="badge badge-warning badge-sm">geschätzt</span>
-																{#if mayPlan}
+																{#if maySplit(row.module)}
 																	<button
 																		type="submit"
 																		formaction="?/confirmSplit"
@@ -1756,7 +1773,7 @@
 																	</button>
 																{/if}
 															{/if}
-															{#if mayPlan && row.module.splitIsEstimated}
+															{#if maySplit(row.module) && row.module.splitIsEstimated}
 																<!-- Solange es eine Schätzung ist, steht das Ändern hier neben
 															     dem Bestätigen: die Leute sollen sehen, dass noch etwas zu
 															     tun ist. Bestätigt wandert es ins Menü der Zeile. -->
@@ -1833,7 +1850,7 @@
 																			</button>
 																		</div>
 
-																		{#if !row.module.splitIsEstimated}
+																		{#if !row.module.splitIsEstimated && maySplit(row.module)}
 																			<section class="flex flex-col gap-1">
 																				<h4
 																					class="text-base-content/80 text-xs font-medium uppercase"

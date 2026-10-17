@@ -410,3 +410,33 @@ export function mayRefileModule(
 	if (!mayFileModules(roles, led)) return false;
 	return currentGroupId == null || led.some((g) => g.id === currentGroupId);
 }
+
+/**
+ * Whether somebody may state this module's split — whether the editor, and the "eintragen" link
+ * to it, belong on the page.
+ *
+ * The mirror of `policy.MayWriteModuleSplit`: the lead of the module's home programme, the lead
+ * of the subject group it is filed under, and the dean's office. ADMIN is not on the list, the
+ * same decision the backend makes for planning. A lead nobody has given a programme or a group
+ * reaches nothing.
+ *
+ * Cosmetic like the rest — the backend refuses on both doors. It exists because a lead followed
+ * the link, filled in the form and was refused on saving, which is how people learn to ignore
+ * the interface.
+ */
+export function mayWriteModuleSplit(
+	roles: readonly string[],
+	programmes: readonly { code: string }[],
+	led: readonly { id: string }[],
+	module: { homeProgramme: { code: string }; subjectGroup?: { id: string } | null }
+): boolean {
+	if (roles.includes('DEANS_OFFICE')) return true;
+	const home =
+		roles.includes('PROGRAMME_LEAD') &&
+		programmes.some((p) => p.code === module.homeProgramme.code);
+	const group =
+		roles.includes('SUBJECT_GROUP_LEAD') &&
+		module.subjectGroup != null &&
+		led.some((g) => g.id === module.subjectGroup?.id);
+	return home || group;
+}

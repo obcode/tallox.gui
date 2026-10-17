@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
-import { CATALOGUE } from './seed';
+import { CATALOGUE, FILING } from './seed';
 
 test.describe('the module catalogue', () => {
 	test('a lecturer sees it — the catalogue is not confidential', async ({
@@ -160,14 +160,39 @@ test.describe('one module', () => {
 		await expect(page.locator('input[name="teachingHours"]')).toHaveCount(1);
 	});
 
-	// Cosmetic hiding is not the point — the lock is policy.MayPlanProgramme, and it applies to
-	// the token door too. What this asserts is that the refusal arrives as a sentence rather than
-	// as a silent no-op.
-	test('a lecturer is refused, and told so', async ({ asPersona }) => {
+	// The lead of the module's subject group, who is no programme lead: the case a colleague
+	// reported, where the editor was offered and saving was refused.
+	test('the lead of the module’s subject group can state the split', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, `/module/${FILING.splittable}`);
+
+		await page.getByRole('button', { name: 'Aufteilung speichern' }).click();
+		await expect(page.getByText('geschätzt')).toHaveCount(0);
+		await expect(page.getByText('Nicht gespeichert')).toHaveCount(0);
+	});
+
+	// The lock is policy.MayWriteModuleSplit, on both doors. What this asserts is the interface's
+	// half: somebody who may not save is not handed a form that is refused on saving, and is told
+	// who enters the split instead.
+	test('a lecturer reads the split and is told who enters it', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, `/module/${CATALOGUE.split}`);
 
-		await page.getByRole('button', { name: 'Aufteilung speichern' }).click();
-		await expect(page.getByText('Nicht gespeichert')).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Aufteilung speichern' })).toHaveCount(0);
+		await expect(page.getByText('Vorlesung 2 + Praktikum 2 = 4 SWS')).toBeVisible();
+		await expect(page.getByText(/Eintragen können die Fachgruppenleitung/)).toBeVisible();
+	});
+
+	// The catalogue's "eintragen" is a link only where saving would succeed.
+	test('the catalogue links “eintragen” only where the split may be entered', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, `/module?q=${FILING.programme}`);
+
+		const row = (name: string) => page.getByRole('row', { name: new RegExp(name) });
+		await expect(row(FILING.linkableName).getByRole('link', { name: /eintragen/ })).toBeVisible();
+		await expect(row(FILING.foreignName).getByRole('link', { name: /eintragen/ })).toHaveCount(0);
+		await expect(row(FILING.foreignName).getByText('fehlt')).toBeVisible();
 	});
 });

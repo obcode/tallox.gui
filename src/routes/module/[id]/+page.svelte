@@ -9,9 +9,11 @@
 		PART_KIND_LABELS,
 		componentMismatch,
 		filingGroupsFor,
+		componentSummary,
 		formatHours,
 		mayFileModules,
 		mayRefileModule,
+		mayWriteModuleSplit,
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
@@ -53,6 +55,13 @@
 	);
 
 	const assigned = $derived(form && 'assigned' in form ? form.assigned : null);
+
+	// Whether the split editor is offered at all. The lead of the home programme, the lead of the
+	// module's subject group, and the dean's office; everybody else reads the split and is told
+	// who enters it, rather than filling in a form that is refused on saving.
+	const maySplit = $derived(
+		mayWriteModuleSplit(roles, data.me?.programmes ?? [], led, data.module)
+	);
 
 	type Row = { kind: InstancePartKind; hours: string };
 
@@ -305,70 +314,81 @@
 			</p>
 		{/if}
 
-		<!--
+		{#if !maySplit}
+			{@const shown = proposed ? data.module.proposedComponents : data.module.components}
+			{#if shown.length > 0}
+				<p class="text-base-content/90 text-sm">{componentSummary(shown)}</p>
+			{/if}
+			<p class="text-base-content/80 mt-2 text-sm">
+				Eintragen können die Fachgruppenleitung dieses Moduls, die Studiengangsleitung von
+				{data.module.homeProgramme.code} und das Dekanat.
+			</p>
+		{:else}
+			<!--
 			`enhance` ohne eigenen Callback setzt das Formular nach einem erfolgreichen Absenden
 			zurück, und Svelte 5 zieht ein `reset` in die gebundenen Werte. Der Editor stand danach
 			leer da, obwohl die Aufteilung gespeichert war — und wer das sieht, tippt sie noch
 			einmal ein. Also nicht zurücksetzen, sondern aus den frisch geladenen Daten neu füllen.
 		-->
-		<form
-			method="POST"
-			action="?/components"
-			use:enhance={() =>
-				async ({ update }) => {
-					await update({ reset: false });
-					rows = initialRows();
-				}}
-			class="flex flex-col gap-3"
-		>
-			{#each rows as row, i (i)}
-				<div class="flex flex-wrap items-end gap-2">
-					<label class="form-control">
-						<span class="label-text text-sm">Art</span>
-						<select name="kind" bind:value={row.kind} class="select select-bordered select-sm">
-							{#each ALL_PART_KINDS as kind (kind)}
-								<option value={kind}>{PART_KIND_LABELS[kind]}</option>
-							{/each}
-						</select>
-					</label>
-					<label class="form-control">
-						<span class="label-text text-sm">SWS</span>
-						<input
-							name="teachingHours"
-							type="text"
-							inputmode="decimal"
-							bind:value={row.hours}
-							placeholder="leer oder 0 = entfernen"
-							class="input input-bordered input-sm w-32"
-						/>
-					</label>
+			<form
+				method="POST"
+				action="?/components"
+				use:enhance={() =>
+					async ({ update }) => {
+						await update({ reset: false });
+						rows = initialRows();
+					}}
+				class="flex flex-col gap-3"
+			>
+				{#each rows as row, i (i)}
+					<div class="flex flex-wrap items-end gap-2">
+						<label class="form-control">
+							<span class="label-text text-sm">Art</span>
+							<select name="kind" bind:value={row.kind} class="select select-bordered select-sm">
+								{#each ALL_PART_KINDS as kind (kind)}
+									<option value={kind}>{PART_KIND_LABELS[kind]}</option>
+								{/each}
+							</select>
+						</label>
+						<label class="form-control">
+							<span class="label-text text-sm">SWS</span>
+							<input
+								name="teachingHours"
+								type="text"
+								inputmode="decimal"
+								bind:value={row.hours}
+								placeholder="leer oder 0 = entfernen"
+								class="input input-bordered input-sm w-32"
+							/>
+						</label>
+					</div>
+				{/each}
+
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="button"
+						class="btn btn-sm btn-ghost"
+						onclick={() => (rows = [...rows, { kind: 'LAB', hours: '' }])}
+					>
+						Teil hinzufügen
+					</button>
+					<button type="submit" class="btn btn-sm btn-primary">Aufteilung speichern</button>
+					<span class="text-base-content/80 text-sm">
+						Summe: {formatHours(enteredHours)} SWS
+					</span>
 				</div>
-			{/each}
 
-			<div class="flex flex-wrap items-center gap-3">
-				<button
-					type="button"
-					class="btn btn-sm btn-ghost"
-					onclick={() => (rows = [...rows, { kind: 'LAB', hours: '' }])}
-				>
-					Teil hinzufügen
-				</button>
-				<button type="submit" class="btn btn-sm btn-primary">Aufteilung speichern</button>
-				<span class="text-base-content/80 text-sm">
-					Summe: {formatHours(enteredHours)} SWS
-				</span>
-			</div>
-
-			{#if mismatch}
-				<!-- A note, never a refusal: twelve modules carry no hours in the source at all and
+				{#if mismatch}
+					<!-- A note, never a refusal: twelve modules carry no hours in the source at all and
 				     several carry a figure that does not match what is taught. A hard rule would make
 				     exactly those unplannable. -->
-				<p class="text-base-content/90 text-sm">
-					<span class="badge badge-warning badge-sm align-middle">Abweichung</span>
-					{mismatch}
-				</p>
-			{/if}
-		</form>
+					<p class="text-base-content/90 text-sm">
+						<span class="badge badge-warning badge-sm align-middle">Abweichung</span>
+						{mismatch}
+					</p>
+				{/if}
+			</form>
+		{/if}
 	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">

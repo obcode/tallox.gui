@@ -821,7 +821,16 @@ export const FILING = {
 	own: '0e2e0000-0000-4000-8000-000000000074',
 	ownName: 'E2F Modul der eigenen Fachgruppe',
 	foreign: '0e2e0000-0000-4000-8000-000000000075',
-	foreignName: 'E2F Modul einer fremden Fachgruppe'
+	foreignName: 'E2F Modul einer fremden Fachgruppe',
+	/**
+	 * The module the subject group lead states the split of. Its own row and never refiled, so
+	 * the filing tests can move the other three while the split test writes this one.
+	 */
+	splittable: '0e2e0000-0000-4000-8000-000000000076',
+	splittableName: 'E2F Modul zum Aufteilen',
+	/** In the same group and never written: the row on which "eintragen" has to be a link. */
+	linkable: '0e2e0000-0000-4000-8000-000000000077',
+	linkableName: 'E2F Modul mit offener Aufteilung'
 } as const;
 
 export function filingStatements(): string[] {
@@ -835,7 +844,9 @@ export function filingStatements(): string[] {
 		   FROM programme p,
 		        (VALUES ('${FILING.unfiled}'::uuid, ${quote(FILING.unfiledName)}),
 		                ('${FILING.own}'::uuid, ${quote(FILING.ownName)}),
-		                ('${FILING.foreign}'::uuid, ${quote(FILING.foreignName)})) AS m(id, name)
+		                ('${FILING.foreign}'::uuid, ${quote(FILING.foreignName)}),
+		                ('${FILING.splittable}'::uuid, ${quote(FILING.splittableName)}),
+		                ('${FILING.linkable}'::uuid, ${quote(FILING.linkableName)})) AS m(id, name)
 		  WHERE p.code = ${programme}
 		 ON CONFLICT (id) DO NOTHING;`,
 		`INSERT INTO subject_group (id, code, name)
@@ -846,6 +857,12 @@ export function filingStatements(): string[] {
 		 SELECT id, 'SUBJECT_GROUP_LEAD', '${FILING.ownGroup}' FROM person
 		  WHERE mail = 'prof.drei@example.org'
 		 ON CONFLICT DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${FILING.splittable}', '${FILING.ownGroup}'), ('${FILING.linkable}', '${FILING.ownGroup}')
+		 ON CONFLICT DO NOTHING;`,
+		// The split the subject group lead states is cleared at the start of every run, so the
+		// second run asserts the same thing the first one did.
+		`DELETE FROM module_component WHERE module_id = '${FILING.splittable}';`,
 		filingResetSql()
 	];
 }

@@ -16,6 +16,7 @@ import {
 	handbookHref,
 	mayFileModules,
 	mayRefileModule,
+	mayWriteModuleSplit,
 	moduleName,
 	spoLabel,
 	teacherRole
@@ -297,5 +298,42 @@ describe('filing modules into subject groups', () => {
 	it('lets an administrator and the dean’s office move anything', () => {
 		expect(mayRefileModule(['ADMIN'], [], swe.id)).toBe(true);
 		expect(mayRefileModule(['DEANS_OFFICE'], [], swe.id)).toBe(true);
+	});
+});
+
+describe('mayWriteModuleSplit', () => {
+	const inGroup = { homeProgramme: { code: 'IF' }, subjectGroup: { id: 'g-se' } };
+	const unfiled = { homeProgramme: { code: 'IF' }, subjectGroup: null };
+
+	// The case that prompted it: a lecturer who leads the module's subject group.
+	it('lets the lead of the module’s subject group', () => {
+		expect(
+			mayWriteModuleSplit(['LECTURER', 'SUBJECT_GROUP_LEAD'], [], [{ id: 'g-se' }], inGroup)
+		).toBe(true);
+	});
+
+	it('does not let the lead of another group, nor of no group', () => {
+		expect(mayWriteModuleSplit(['SUBJECT_GROUP_LEAD'], [], [{ id: 'g-ma' }], inGroup)).toBe(false);
+		expect(mayWriteModuleSplit(['SUBJECT_GROUP_LEAD'], [], [{ id: 'g-se' }], unfiled)).toBe(false);
+		expect(mayWriteModuleSplit(['SUBJECT_GROUP_LEAD'], [], [], inGroup)).toBe(false);
+	});
+
+	it('lets the lead of the home programme, filed or not', () => {
+		expect(mayWriteModuleSplit(['PROGRAMME_LEAD'], [{ code: 'IF' }], [], inGroup)).toBe(true);
+		expect(mayWriteModuleSplit(['PROGRAMME_LEAD'], [{ code: 'IF' }], [], unfiled)).toBe(true);
+		expect(mayWriteModuleSplit(['PROGRAMME_LEAD'], [{ code: 'DC' }], [], unfiled)).toBe(false);
+	});
+
+	it('lets the dean’s office, and not an administrator or a lecturer', () => {
+		expect(mayWriteModuleSplit(['DEANS_OFFICE'], [], [], unfiled)).toBe(true);
+		expect(mayWriteModuleSplit(['ADMIN'], [], [], unfiled)).toBe(false);
+		expect(mayWriteModuleSplit(['LECTURER'], [], [], unfiled)).toBe(false);
+	});
+
+	// A narrowed session: the lists may still say something the role no longer backs.
+	it('reads a scope without its role as nothing', () => {
+		expect(mayWriteModuleSplit(['LECTURER'], [{ code: 'IF' }], [{ id: 'g-se' }], inGroup)).toBe(
+			false
+		);
 	});
 });

@@ -10,6 +10,7 @@
 		filingGroupsFor,
 		mayFileModules,
 		mayRefileModule,
+		mayWriteModuleSplit,
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
@@ -417,7 +418,7 @@
 							<td>
 								{#if module.components.length > 0}
 									<span class="text-base-content/90">{componentSummary(module.components)}</span>
-								{:else}
+								{:else if mayWriteModuleSplit(roles, data.myProgrammes, data.led, module)}
 									<!--
 									Ein Badge, keine Textfarbe. `link-warning` auf `base-100` erreicht 1,35:1
 									und ist auf den hellen Themes schlicht nicht lesbar — daisyUI paart die
@@ -427,6 +428,10 @@
 										<span class="badge badge-warning badge-sm">fehlt</span>
 										<span class="ml-1">eintragen</span>
 									</a>
+								{:else}
+									<!-- Kein Link für wen, der nicht speichern darf: der führte in ein
+									     Formular, das erst beim Speichern ablehnt. -->
+									<span class="badge badge-warning badge-sm">fehlt</span>
 								{/if}
 							</td>
 						</tr>
