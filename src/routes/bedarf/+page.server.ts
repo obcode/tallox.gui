@@ -121,6 +121,15 @@ const DemandDocument = graphql(`
 			}
 			dutyStatus(programme: $programme)
 			programmeSemester(programme: $programme)
+			# Whose split this is to state: the home programme's lead and the subject group's.
+			# A module that counts here may be at home elsewhere, and then "bestätigen" is not
+			# this programme lead's to press.
+			homeProgramme {
+				code
+			}
+			subjectGroup {
+				id
+			}
 		}
 		courseInstances(semester: $semester, programme: $programmeFilter) @include(if: $withOverview) {
 			id
@@ -606,6 +615,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		semesters: data.semesters,
 		planningSemester: data.planningSemester?.code ?? '',
 		myProgrammes: data.me?.programmes ?? [],
+		led: data.me?.subjectGroupsLed ?? [],
 		// Which subject groups this person may file a new module into. An administrator and the
 		// dean's office reach all of them; a subject group lead reaches the ones she leads; and
 		// for everybody else the list is empty and the field does not appear.

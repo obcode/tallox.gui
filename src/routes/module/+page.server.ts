@@ -72,6 +72,11 @@ const CatalogueDocument = graphql(`
 			subjectGroupsLed {
 				id
 			}
+			# Which programmes this person plans: with the groups above, whose split they may
+			# enter — and so on which rows "eintragen" is a link.
+			programmes {
+				code
+			}
 		}
 	}
 `);
@@ -141,6 +146,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			subjectGroups: data.subjectGroups,
 			modulesWithoutSubjectGroup: data.modulesWithoutSubjectGroup,
 			led: data.me?.subjectGroupsLed ?? [],
+			myProgrammes: data.me?.programmes ?? [],
 			filter: {
 				programme,
 				spo,

@@ -74,6 +74,9 @@ const PASS_THROUGH = new Set([
 	'MODULE_NOT_FOUND',
 	'NOT_YOUR_PROGRAMME',
 	'PROGRAMME_SCOPE_MISSING',
+	// The split's own refusal: it has two axes, the home programme and the subject group, and
+	// the sentence names both.
+	'NOT_YOUR_MODULE',
 	'COMPONENTS_INVALID',
 	'UNKNOWN_PROGRAMME',
 	'NOT_A_PROGRAMME_LEAD',
