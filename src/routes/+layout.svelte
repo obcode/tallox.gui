@@ -26,6 +26,7 @@
 		remoteDisplayname={data.remoteDisplayname}
 		feedbackUrl={data.feedbackUrl}
 		{effectiveRoles}
+		planning={data.planning}
 	/>
 
 	<!-- Horizontal padding comes from the layout. New pages do not set a p-8 of their own. -->
