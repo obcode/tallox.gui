@@ -1,5 +1,7 @@
-import type { Role } from '$lib/gql/__generated__/graphql';
+import type { Phase, Role } from '$lib/gql/__generated__/graphql';
 import { ACCOUNT_ITEMS, NAV_ITEMS, visibleNavItems, type NavItem } from '$lib/navigation';
+import type { PlanningState } from '$lib/planning';
+import { PHASE_LABELS, semesterName } from '$lib/semester';
 
 /**
  * The planning process, step by step, as the start page tells it.
@@ -36,7 +38,21 @@ export type GuideStep = {
 	 * rhythm, not a rule: no phase changes by the calendar, and nothing here is enforced.
 	 */
 	when?: string;
+	/**
+	 * When this step is what to do now, for the "Jetzt dran" card: the phases of the planning
+	 * semester it belongs to, or `UNSET` while the dean's office has not named one.
+	 *
+	 * A pointer, not a rule. The demand stays writable through the wish and the assignment phase,
+	 * and a subject group's wish round is open until its lead closes it — the phase is the
+	 * faculty's beat, and this says what that beat asks for. Absent means never "due": the
+	 * one-time setup, and the close, which happens at the end of the planned semester and would
+	 * read like a prompt to do it early.
+	 */
+	due?: readonly DuePhase[];
 };
+
+/** A phase of the planning semester, or `UNSET` for "no planning semester has been named". */
+export type DuePhase = Phase | 'UNSET';
 
 export type GuideSection = {
 	title: string;
@@ -103,6 +119,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Das Planungssemester setzen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
+				due: ['UNSET', 'FINAL'],
 				when: 'Semesterwoche 1–2',
 				text: 'Angelegt wird kein Semester, es ist da wie der nächste März. Das Dekanat sagt, welches gerade geplant wird; das ist dann überall vorausgewählt. Die Phase eines Semesters wird von Hand weitergeschaltet, nie aus dem Kalender abgeleitet.'
 			},
@@ -113,6 +130,7 @@ export const GUIDE: readonly GuideSection[] = [
 					{ href: '/bedarf', label: 'Bedarf' },
 					{ href: '/statistik', label: 'Statistik' }
 				],
+				due: ['DEMAND_PLANNING'],
 				when: 'Semesterwoche 3–5',
 				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten; dann zahlt der Studiengang, der die Veranstaltung hält. Wer eine eigene Variante will (etwa eine eigene Analysis), plant sie separat und zahlt sie selbst. Wie viele FWP sich ein Studiengang leisten kann, zeigt das SWS-Controlling unter Statistik: die Lehre je Studiengang gegen das Kontingent des Studienjahres. Am Ende meldet sie „Bedarf ist fertig“; das ist eine Ansage, keine Sperre.'
 			},
@@ -120,13 +138,23 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Interesse bekunden',
 				who: [],
 				where: [{ href: '/wuensche', label: 'Wünsche' }],
+				due: ['WISHES'],
 				when: 'Semesterwoche 6–7',
 				text: 'Jede:r trägt an den Instanzen ein, was er oder sie halten würde, mit Priorität und Notiz. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Leitung einer Fachgruppe öffnet und schließt die Wunschrunde ihrer Fachgruppe; wer schließt, arbeitet mit dem, was gesammelt wurde. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
+			},
+			{
+				title: 'Die Wunschrunde der Fachgruppe schließen',
+				who: ['SUBJECT_GROUP_LEAD'],
+				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
+				due: ['WISHES'],
+				when: 'Ende Semesterwoche 7',
+				text: 'Die Wunschrunde jeder Fachgruppe ist offen, solange niemand sie schließt; eintragen kann man sich also, ohne dass vorher jemand etwas freischaltet. Die Fachgruppenleitung schließt sie auf der Zuteilungsseite, wenn gesammelt ist, und arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit, etwa wenn sich jemand verspätet meldet.'
 			},
 			{
 				title: 'Die Wünsche veröffentlichen',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
+				due: ['WISHES'],
 				when: 'Ende Semesterwoche 7',
 				text: 'Ab dann sieht jede:r alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
 			},
@@ -134,6 +162,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Die Instanzen besetzen',
 				who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
+				due: ['ASSIGNMENT'],
 				when: 'Semesterwoche 8–9',
 				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Auch Lehrbeauftragte ohne Tallox-Konto sind zuteilbar. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben. Auch jetzt lässt sich der Bedarf noch ändern, bis hin zu ganzen Modulen, die wegfallen oder dazukommen.'
 			},
@@ -144,6 +173,7 @@ export const GUIDE: readonly GuideSection[] = [
 					{ href: '/statistik', label: 'Statistik' },
 					{ href: '/bedarf', label: 'Bedarf' }
 				],
+				due: ['REVIEW'],
 				when: 'ab Semesterwoche 10, bis das geplante Semester beginnt',
 				text: 'Wenn die Instanzen besetzt sind, schaltet das Dekanat das Semester auf „Studiengangs-Review“. Die Studiengangsleitung geht ihren Studiengang noch einmal durch und verantwortet gegenüber dem Dekanat, was er an SWS kostet: Wer drei Lehrbeauftragte gefunden hat, braucht den vollen Bedarf; wer selbst drei Züge übernimmt, legt Vorlesungen zusammen und streicht Gruppen. Bedarf, Zuschnitt und Zuteilung bleiben dafür änderbar, bis das Semester vorbei ist, auch wenn kurz vor Semesterbeginn jemand ausfällt. Die Wirkung zeigt das SWS-Controlling unter Statistik. Ist eine Vorlesung schon besetzt, die zusammengelegt werden soll, wird zuerst die Zuteilung gelöst. Am Ende meldet sie auf der Bedarfsseite „Review fertig“; auch das ist eine Ansage, keine Sperre.'
 			},
@@ -171,6 +201,88 @@ const KNOWN_ITEMS: readonly NavItem[] = [...NAV_ITEMS, ...ACCOUNT_ITEMS];
 export function mayOpen(href: NavItem['href'], roles: readonly string[]): boolean {
 	if (!href) return false;
 	return visibleNavItems(KNOWN_ITEMS, roles).some((item) => item.href === href);
+}
+
+/**
+ * The steps that are due now for somebody with these roles: what the "Jetzt dran" card shows.
+ *
+ * `phase` is the planning semester's, or null when the dean's office has not named one — which
+ * is a state of its own and has its own step. A step nobody in particular does is everybody's.
+ * No roles at all (the backend did not answer) means nothing is due, rather than the steps for
+ * everybody: a card that tells somebody to enter wishes while the page cannot load the wishes
+ * is worse than no card.
+ */
+export function dueNow(phase: Phase | null, roles: readonly string[]): GuideStep[] {
+	if (roles.length === 0) return [];
+	const now: DuePhase = phase ?? 'UNSET';
+	return GUIDE.flatMap((section) => section.steps).filter(
+		(step) =>
+			step.due?.includes(now) &&
+			(step.who.length === 0 || step.who.some((role) => roles.includes(role)))
+	);
+}
+
+/**
+ * Whether a step belongs to where the planning semester stands, whoever does it — the mark on the
+ * walk-through. The card asks the narrower question of `dueNow`, for these roles only.
+ */
+export function isDue(step: GuideStep, planning: PlanningState): boolean {
+	if (planning.kind === 'unknown') return false;
+	return step.due?.includes(planning.kind === 'set' ? planning.phase : 'UNSET') ?? false;
+}
+
+/** How many due steps the card lists before it points at the full walk-through instead. */
+export const DUE_NOW_LIMIT = 3;
+
+/** What the "Jetzt dran" card says: a heading about the semester, the steps, or a sentence. */
+export type DueCard = {
+	/** "Sommersemester 2027 · Wunschphase", or null when there is nothing to name. */
+	heading: string | null;
+	steps: GuideStep[];
+	/** Due steps beyond the limit, which the card counts and links to rather than lists. */
+	more: number;
+	/** The sentence in place of the steps when none are due, or null when there are steps. */
+	note: string | null;
+};
+
+/**
+ * The "Jetzt dran" card, decided outside the markup so that every state can be tested.
+ *
+ * Four cases, and each says something different: steps are due; nothing is due for these roles
+ * in this phase; no planning semester has been named (the dean's office then has a step, everybody
+ * else waits); the backend did not answer, where the card claims nothing at all.
+ */
+export function dueCard(planning: PlanningState, roles: readonly string[]): DueCard {
+	if (planning.kind === 'unknown' || roles.length === 0) {
+		return {
+			heading: null,
+			steps: [],
+			more: 0,
+			note: 'Der Stand des Planungssemesters lässt sich gerade nicht abrufen.'
+		};
+	}
+
+	const phase = planning.kind === 'set' ? planning.phase : null;
+	const all = dueNow(phase, roles);
+	const heading =
+		planning.kind === 'set'
+			? `${semesterName(planning.code)} · ${PHASE_LABELS[planning.phase]}`
+			: 'Noch kein Planungssemester';
+
+	let note: string | null = null;
+	if (all.length === 0) {
+		note =
+			planning.kind === 'set'
+				? `In der Phase „${PHASE_LABELS[planning.phase]}“ ist für Deine Rollen gerade nichts Bestimmtes dran.`
+				: 'Das Dekanat hat noch nicht gesagt, welches Semester geplant wird. Bis dahin ist nichts Semesterbezogenes dran.';
+	}
+
+	return {
+		heading,
+		steps: all.slice(0, DUE_NOW_LIMIT),
+		more: Math.max(0, all.length - DUE_NOW_LIMIT),
+		note
+	};
 }
 
 /** The routes the guide names, for the test that checks them against the navigation. */

@@ -2,10 +2,12 @@ import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/public';
 import type { LayoutServerLoad } from './$types';
 import { loadServerBuildInfo } from '$lib/server/buildInfo';
+import { loadPlanningState } from '$lib/server/planning';
 import { loadSession } from '$lib/server/session';
 
 /**
- * What appears in the frame on every page: identity, roles, theme, server version.
+ * What appears in the frame on every page: identity, roles, theme, server version, and the
+ * planning semester's phase.
  *
  * In the layout rather than in every `+page.server.ts`, so that a new page cannot accidentally
  * render the frame without these values.
@@ -17,7 +19,11 @@ import { loadSession } from '$lib/server/session';
  * thereby fails to answer the very question the preview exists for.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
-	const [session, serverBuild] = await Promise.all([loadSession(), loadServerBuildInfo()]);
+	const [session, serverBuild, planning] = await Promise.all([
+		loadSession(),
+		loadServerBuildInfo(),
+		loadPlanningState()
+	]);
 
 	if (session.kind === 'no-access') {
 		// 403 and not 401: signing in again does not help. The auth proxy already let this person
@@ -40,6 +46,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		// footer — a deploy in progress must not make every page answer with an error.
 		session: session.kind === 'ok' ? session.session : null,
 		theme: locals.theme,
-		serverBuild
+		serverBuild,
+		// The planning semester and its phase, for "Jetzt dran" on the start page and in the help
+		// panel. In the layout because the panel opens on every page.
+		planning
 	};
 };

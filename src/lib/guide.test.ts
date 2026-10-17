@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { GUIDE, guideRoutes, isNavigationRoute, mayOpen } from './guide';
+import {
+	DUE_NOW_LIMIT,
+	dueCard,
+	dueNow,
+	GUIDE,
+	guideRoutes,
+	isDue,
+	isNavigationRoute,
+	mayOpen
+} from './guide';
+import { PHASE_ORDER } from './semester';
 
-describe('the guide on the start page', () => {
+describe('the walk-through', () => {
 	// A step that points at a page the navigation does not know is a link into nothing — or,
 	// worse, a link into a page that exists but that the menu hides from this person on purpose.
 	it('links only to routes the navigation knows', () => {
@@ -72,5 +82,139 @@ describe('the guide on the start page', () => {
 		expect(wishes?.text).toMatch(
 			/Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl/
 		);
+	});
+});
+
+const titles = (steps: { title: string }[]) => steps.map((s) => s.title);
+
+/**
+ * "Jetzt dran": what the start page and the help panel say is due.
+ *
+ * The phase is the faculty's beat, not a lock — but what the card says has to match what the
+ * walk-through says, or the two answers to "what do I do now" drift apart. These tests pin the
+ * mapping a person actually meets.
+ */
+describe('what is due now', () => {
+	it('tells a programme lead to plan the demand while the demand is being planned', () => {
+		expect(titles(dueNow('DEMAND_PLANNING', ['LECTURER', 'PROGRAMME_LEAD']))).toEqual([
+			'Den Bedarf festlegen'
+		]);
+	});
+
+	it('tells everybody to enter wishes in the wish phase, and a lead to close the round', () => {
+		expect(titles(dueNow('WISHES', ['LECTURER']))).toEqual(['Interesse bekunden']);
+		expect(titles(dueNow('WISHES', ['LECTURER', 'SUBJECT_GROUP_LEAD']))).toEqual([
+			'Interesse bekunden',
+			'Die Wunschrunde der Fachgruppe schließen'
+		]);
+		expect(titles(dueNow('WISHES', ['LECTURER', 'DEANS_OFFICE']))).toContain(
+			'Die Wünsche veröffentlichen'
+		);
+	});
+
+	// The round is open from the start, and the step says so. The opposite sentence ("the lead
+	// opens it") would send a lecturer to wait for something nobody has to do.
+	it('says the wish round is open until somebody closes it', () => {
+		const step = GUIDE[1].steps.find((s) => s.title === 'Die Wunschrunde der Fachgruppe schließen');
+		expect(step?.text).toMatch(/offen, solange niemand sie schließt/);
+		expect(step?.where.map((w) => w.href)).toEqual(['/zuteilung']);
+	});
+
+	it('shows a lecturer nothing in the assignment', () => {
+		expect(dueNow('ASSIGNMENT', ['LECTURER'])).toEqual([]);
+		expect(titles(dueNow('ASSIGNMENT', ['SUBJECT_GROUP_LEAD']))).toEqual([
+			'Die Instanzen besetzen'
+		]);
+	});
+
+	// The close happens at the end of the planned semester. Shown as due in the review, it would
+	// read like a prompt to do it after week 9 — which the walk-through explicitly warns against.
+	it('never shows the close as due', () => {
+		for (const phase of PHASE_ORDER) {
+			expect(titles(dueNow(phase, ['DEANS_OFFICE']))).not.toContain('Abschließen');
+		}
+	});
+
+	it('asks the dean’s office for a planning semester when none is set, or the last one is over', () => {
+		expect(titles(dueNow(null, ['DEANS_OFFICE']))).toEqual(['Das Planungssemester setzen']);
+		expect(titles(dueNow('FINAL', ['DEANS_OFFICE']))).toEqual(['Das Planungssemester setzen']);
+		expect(dueNow(null, ['LECTURER'])).toEqual([]);
+	});
+
+	it('shows nothing without roles, rather than everybody’s steps', () => {
+		expect(dueNow('WISHES', [])).toEqual([]);
+	});
+
+	it('gives every phase at least one step for somebody', () => {
+		for (const phase of PHASE_ORDER) {
+			expect(
+				dueNow(phase, ['DEANS_OFFICE', 'PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'LECTURER']).length,
+				phase
+			).toBeGreaterThan(0);
+		}
+	});
+
+	it('never marks a one-time setup step as due', () => {
+		for (const step of GUIDE[0].steps) expect(step.due, step.title).toBeUndefined();
+	});
+});
+
+describe('the "Jetzt dran" card', () => {
+	it('names the semester and the phase above the steps', () => {
+		const card = dueCard({ kind: 'set', code: '2027-SS', phase: 'WISHES' }, ['LECTURER']);
+		expect(card.heading).toBe('Sommersemester 2027 · Wunschphase');
+		expect(titles(card.steps)).toEqual(['Interesse bekunden']);
+		expect(card.note).toBeNull();
+		expect(card.more).toBe(0);
+	});
+
+	it('says so in a sentence when nothing is due, instead of an empty list', () => {
+		const card = dueCard({ kind: 'set', code: '2026-WS', phase: 'ASSIGNMENT' }, ['LECTURER']);
+		expect(card.steps).toEqual([]);
+		expect(card.note).toMatch(/„Zuteilung“ ist für Deine Rollen gerade nichts Bestimmtes dran/);
+	});
+
+	it('tells everybody but the dean’s office that no planning semester has been named', () => {
+		const lecturer = dueCard({ kind: 'unset' }, ['LECTURER']);
+		expect(lecturer.heading).toBe('Noch kein Planungssemester');
+		expect(lecturer.note).toMatch(/Das Dekanat hat noch nicht gesagt/);
+
+		const dean = dueCard({ kind: 'unset' }, ['DEANS_OFFICE']);
+		expect(titles(dean.steps)).toEqual(['Das Planungssemester setzen']);
+		expect(dean.note).toBeNull();
+	});
+
+	// Backend down: the card must not claim a phase it does not know.
+	it('claims nothing when the state is unknown', () => {
+		const card = dueCard({ kind: 'unknown' }, ['LECTURER']);
+		expect(card.heading).toBeNull();
+		expect(card.steps).toEqual([]);
+		expect(card.note).toMatch(/nicht abrufen/);
+	});
+
+	it('lists at most the limit and counts the rest', () => {
+		// Nobody holds enough roles today to exceed it; the cap is for the day a phase grows.
+		const everybody = ['LECTURER', 'SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE', 'ADMIN'];
+		const card = dueCard({ kind: 'set', code: '2027-SS', phase: 'WISHES' }, everybody);
+		const all = dueNow('WISHES', everybody);
+		expect(card.steps.length).toBe(Math.min(all.length, DUE_NOW_LIMIT));
+		expect(card.more).toBe(Math.max(0, all.length - DUE_NOW_LIMIT));
+	});
+});
+
+describe('the mark on the walk-through', () => {
+	const steps = GUIDE.flatMap((s) => s.steps);
+	const step = (title: string) => steps.find((s) => s.title === title)!;
+
+	it('marks the steps of the current phase, whoever does them', () => {
+		const wishes = { kind: 'set', code: '2027-SS', phase: 'WISHES' } as const;
+		expect(isDue(step('Interesse bekunden'), wishes)).toBe(true);
+		expect(isDue(step('Die Wünsche veröffentlichen'), wishes)).toBe(true);
+		expect(isDue(step('Den Bedarf festlegen'), wishes)).toBe(false);
+	});
+
+	it('marks the planning semester step while none is set, and nothing when unknown', () => {
+		expect(isDue(step('Das Planungssemester setzen'), { kind: 'unset' })).toBe(true);
+		expect(isDue(step('Das Planungssemester setzen'), { kind: 'unknown' })).toBe(false);
 	});
 });
