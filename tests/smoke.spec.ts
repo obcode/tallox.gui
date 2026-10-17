@@ -1,4 +1,4 @@
-import { PERSONAS, test, expect, gotoRendered } from './fixtures';
+import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
 
 /**
  * The smoke test. Runs against a real stack: SvelteKit SSR → GraphQL backend → PostgreSQL.
@@ -77,22 +77,28 @@ test.describe('start page', () => {
 });
 
 /**
- * The walk-through on the start page: the process as numbered steps, who does each and where.
+ * The walk-through, on its own page since the start page shows only what is due now.
  *
  * Two things are worth a test. The steps link only where the menu links — a lecturer reads
  * that the administration admits people, and gets no link into a refusal; an administrator
  * gets the link. And the one sentence the page may never get wrong is the confidentiality of
  * the wishes.
  */
-test.describe('the walk-through on the start page', () => {
+test.describe('the walk-through', () => {
 	test('tells the process in order, with the roles beside each step', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, '/');
+		await gotoRendered(page, '/ablauf');
 
+		await expect(
+			page.getByRole('heading', { name: 'Ablauf der Einsatzplanung', level: 1 })
+		).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Einmal einrichten' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Jedes Semester' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: /^Den Bedarf festlegen/ })).toBeVisible();
 		await expect(page.getByRole('heading', { name: /^Interesse bekunden/ })).toBeVisible();
+		await expect(
+			page.getByRole('heading', { name: /^Die Wunschrunde der Fachgruppe schließen/ })
+		).toBeVisible();
 		await expect(page.getByRole('heading', { name: /^Die Instanzen besetzen/ })).toBeVisible();
 		await expect(page.getByText(/Bis zur Veröffentlichung sieht das niemand sonst/)).toBeVisible();
 		await expect(
@@ -103,13 +109,46 @@ test.describe('the walk-through on the start page', () => {
 
 	test('links a step only where the menu would', async ({ asPersona }) => {
 		const lecturer = await asPersona(PERSONAS.eins);
-		await gotoRendered(lecturer, '/');
-		await expect(lecturer.getByRole('link', { name: 'Personen und Rollen' })).toHaveCount(0);
-		await expect(lecturer.getByText('Personen und Rollen')).toBeVisible();
-		await expect(lecturer.getByRole('link', { name: 'Bedarf', exact: true }).first()).toBeVisible();
+		await gotoRendered(lecturer, '/ablauf');
+		const main = lecturer.getByRole('main');
+		await expect(main.getByRole('link', { name: 'Personen und Rollen' })).toHaveCount(0);
+		await expect(main.getByText('Personen und Rollen')).toBeVisible();
+		await expect(main.getByRole('link', { name: 'Bedarf', exact: true }).first()).toBeVisible();
 
 		const admin = await asPersona(PERSONAS.sechs);
-		await gotoRendered(admin, '/');
-		await expect(admin.getByRole('link', { name: 'Personen und Rollen' })).toBeVisible();
+		await gotoRendered(admin, '/ablauf');
+		await expect(
+			admin.getByRole('main').getByRole('link', { name: 'Personen und Rollen' })
+		).toBeVisible();
+	});
+
+	test('is in the account menu for everybody', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+		// Behind the identity, like the rest of the account area.
+		await openDropdown(page, /Prof/);
+		await expect(
+			page.getByRole('banner').getByRole('link', { name: 'Ablauf', exact: true })
+		).toBeVisible();
+	});
+});
+
+/**
+ * The start page no longer tells the whole process: two sections of steps and a table met
+ * somebody on their first visit. It says what is due now and points at the rest.
+ */
+test.describe('the start page as a starting point', () => {
+	test('shows what is due now and links the whole walk-through', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+		const main = page.getByRole('main');
+
+		await expect(main.getByRole('heading', { name: /Jetzt dran für Dich/ })).toBeVisible();
+		await expect(main.getByRole('link', { name: /Gesamten Ablauf ansehen/ })).toBeVisible();
+		await expect(main.getByRole('heading', { name: 'Einmal einrichten' })).toHaveCount(0);
+		await expect(main.getByRole('heading', { name: 'Wer macht was' })).toHaveCount(0);
+
+		await main.getByRole('link', { name: /Gesamten Ablauf ansehen/ }).click();
+		await expect(page).toHaveURL(/\/ablauf$/);
 	});
 });

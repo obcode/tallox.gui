@@ -123,6 +123,15 @@ export function isActive(item: NavItem, pathname: string): boolean {
  */
 export const ACCOUNT_ITEMS: readonly NavItem[] = [
 	{
+		// The whole process, step by step. Moved off the start page, where two sections of steps
+		// and a table met somebody on their first visit; it is reference, and reference belongs
+		// in the menu rather than in the way. No roles: every step says who does it.
+		emoji: '📜',
+		label: 'Ablauf',
+		href: '/ablauf',
+		hint: 'Die Einsatzplanung Schritt für Schritt: wer macht was, wo und wann'
+	},
+	{
 		// No roles: everybody has roles, and the answer "which ones do I have" was previously
 		// unavailable to anybody who is not an administrator — the role preview in the footer
 		// is ADMIN-only, and the menu only ever *implies* the roles by what it shows.
