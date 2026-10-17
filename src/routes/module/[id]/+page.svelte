@@ -16,6 +16,7 @@
 		spoLabel
 	} from '$lib/catalogue';
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+	import HandbookLink from '$lib/components/HandbookLink.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import type { ActionData, PageData } from './$types';
 
@@ -124,6 +125,9 @@
 				· {data.module.credits} ECTS
 			{/if}
 		</p>
+		{#if data.module.handbookUrl}
+			<p class="text-sm"><HandbookLink module={data.module} /></p>
+		{/if}
 	</div>
 
 	{#if form && 'message' in form && form.message}

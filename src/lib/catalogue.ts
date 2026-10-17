@@ -111,6 +111,25 @@ export function moduleName(module: { name: string; zpaId?: string | null }): str
 }
 
 /**
+ * The module's page in the public module handbook, if the backend names one and it is a web
+ * address.
+ *
+ * The backend builds it from its own configuration, so this is not a defence against the user —
+ * it is the one place an `href` is filled from an API value rather than from `resolve()`, and a
+ * scheme other than http(s) would turn a link into script.
+ */
+export function handbookHref(module: { handbookUrl?: string | null }): string | undefined {
+	const url = module.handbookUrl;
+	if (!url) return undefined;
+	try {
+		const { protocol } = new URL(url);
+		return protocol === 'https:' || protocol === 'http:' ? url : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
  * The label of one version of a programme's examination regulations.
  *
  * An unfinished version is marked, because it holds a fraction of its eventual modules — a

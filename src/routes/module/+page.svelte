@@ -14,6 +14,7 @@
 		spoLabel
 	} from '$lib/catalogue';
 	import { enhance } from '$app/forms';
+	import HandbookLink from '$lib/components/HandbookLink.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import type { ActionData, PageData } from './$types';
 
@@ -356,6 +357,7 @@
 								<a class="link font-medium" href={resolve(`/module/${module.id}`)}>
 									{moduleName(module)}
 								</a>
+								<HandbookLink {module} compact />
 								{#if !module.active}
 									<span class="badge badge-ghost badge-sm ml-1">zurückgezogen</span>
 								{/if}
