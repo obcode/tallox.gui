@@ -157,6 +157,10 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   placement, because every other test finds the buttons by name wherever they sit.
 - **Prettier:** tabs, single quotes, no trailing commas, printWidth 100.
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
+- **A filter of dropdowns switches on change**, not on an "Anzeigen" button (asked for on
+  2026-10-18): `onchange={(e) => e.currentTarget.form?.requestSubmit()}` on each `<select>`, and
+  the button inside `<noscript>`. Where a text or search field sits in the same form, the button
+  stays — submitting on every keystroke is worse.
 
 ## Things the UI must not do
 
