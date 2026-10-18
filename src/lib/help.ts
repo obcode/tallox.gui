@@ -133,6 +133,13 @@ export const HELP: readonly HelpEntry[] = [
 			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
 		who: [],
 		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }]
+	},
+	{
+		question: 'Wo sehe ich, was ich tatsächlich halte?',
+		answer:
+			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“ — die Fachgruppenleitung kann noch umplanen.',
+		who: ['LECTURER'],
+		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
 	}
 ];
 

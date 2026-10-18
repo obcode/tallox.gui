@@ -7,7 +7,7 @@ import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
  * else; the administration is an area of its own for whoever runs it.
  */
 test.describe('areas and their tabs', () => {
-	test('a lecturer finds wishes, competences and subject groups in one place', async ({
+	test('a lecturer finds wishes, assignments, competences and subject groups in one place', async ({
 		asPersona,
 		checkA11y
 	}) => {
@@ -18,7 +18,12 @@ test.describe('areas and their tabs', () => {
 		await expect(page).toHaveURL(/\/wuensche/);
 
 		const tabs = page.getByRole('navigation', { name: 'Meine Lehre' });
-		await expect(tabs.getByRole('link')).toHaveText(['Wünsche', 'Kompetenzen', 'Fachgruppen']);
+		await expect(tabs.getByRole('link')).toHaveText([
+			'Wünsche',
+			'Zuteilungen',
+			'Kompetenzen',
+			'Fachgruppen'
+		]);
 		await expect(tabs.getByRole('link', { name: 'Wünsche' })).toHaveAttribute(
 			'aria-current',
 			'page'

@@ -102,6 +102,13 @@ const TEACHING: NavItem = {
 			colleaguesOnly: true
 		},
 		{
+			emoji: '📅',
+			label: 'Zuteilungen',
+			href: '/konto/zuteilungen',
+			hint: 'Wo Du tatsächlich eingeplant bist, je Semester',
+			colleaguesOnly: true
+		},
+		{
 			emoji: '🧠',
 			label: 'Kompetenzen',
 			href: '/konto/kompetenzen',

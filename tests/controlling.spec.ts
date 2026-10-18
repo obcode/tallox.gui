@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { semesterName } from '../src/lib/semester';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 
@@ -48,6 +49,10 @@ function seedSql(): string {
 	const c = CONTROLLING;
 	const i = c.instances;
 	return [
+		// Assignments first: they hold their parts with RESTRICT, so the instances would not go.
+		`DELETE FROM assignment WHERE instance_part_id IN
+		   (SELECT ip.id FROM instance_part ip JOIN course_instance ci ON ci.id = ip.course_instance_id
+		     WHERE ci.module_id = '${c.module}');`,
 		`DELETE FROM course_instance WHERE module_id = '${c.module}';`,
 		`DELETE FROM programme_quota WHERE programme_id = '${c.home.id}';`,
 		`DELETE FROM review_completion WHERE programme_id = '${c.home.id}';`,
@@ -91,7 +96,14 @@ function seedSql(): string {
 		 SELECT id, 'PARTNER_READER', '${c.other.id}' FROM person WHERE mail = '${PERSONAS.partner.mail}'
 		 ON CONFLICT DO NOTHING;`,
 		`INSERT INTO programme_quota (programme_id, study_year, teaching_hours)
-		 VALUES ('${c.home.id}', ${c.studyYear}, 20);`
+		 VALUES ('${c.home.id}', ${c.studyYear}, 20);`,
+		// Eins holds the lecture in both summers: the earlier one published, the later a draft.
+		`INSERT INTO assignment (instance_part_id, person_id)
+		 SELECT ip.id, p.id FROM instance_part ip, person p
+		  WHERE ip.course_instance_id IN ('${i.home}', '${i.previous}') AND ip.kind = 'LECTURE'
+		    AND p.mail = '${PERSONAS.eins.mail}';`,
+		`UPDATE semester SET assignments_published_at = now() WHERE code = '${c.previous}';`,
+		`UPDATE semester SET assignments_published_at = NULL WHERE code = '${c.semester}';`
 	].join('\n');
 }
 
@@ -264,6 +276,24 @@ test.describe('the SWS controlling', () => {
 		const nav = page.getByRole('navigation').first();
 		await expect(nav.getByRole('link', { name: /Statistik/ }).first()).toBeAttached();
 		await expect(nav.getByRole('link', { name: /Meine Lehre|Wünsche/ })).toHaveCount(0);
+
+		await checkA11y(page);
+	});
+
+	// Where somebody is actually down to teach, with a draft marked as one.
+	test('a lecturer sees where they are down to teach', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/konto/zuteilungen');
+
+		const draft = page.getByRole('region', { name: semesterName(CONTROLLING.semester) });
+		await expect(draft).toContainText('Entwurf');
+		await expect(draft.getByRole('row', { name: /E2E Controlling-Modul/ })).toContainText(
+			'Vorlesung 2 SWS'
+		);
+
+		const published = page.getByRole('region', { name: semesterName(CONTROLLING.previous) });
+		await expect(published).toContainText('veröffentlicht');
+		await expect(published).not.toContainText('Entwurf');
 
 		await checkA11y(page);
 	});

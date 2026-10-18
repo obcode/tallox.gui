@@ -50,6 +50,7 @@ describe('NAV_ITEMS', () => {
 		)!;
 		expect(teaching.children!.map((c) => c.href)).toEqual([
 			'/wuensche',
+			'/konto/zuteilungen',
 			'/konto/kompetenzen',
 			'/konto/fachgruppen'
 		]);
@@ -98,7 +99,7 @@ describe('areas with tabs', () => {
 	it('give a tab bar inside an area, and none outside', () => {
 		expect(areaFor('/module', ['LECTURER'])).toBeNull();
 		expect(areaFor('/konto/tokens', ['LECTURER'])).toBeNull();
-		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(3);
+		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(4);
 	});
 });
 
