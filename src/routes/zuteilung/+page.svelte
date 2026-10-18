@@ -572,6 +572,13 @@
 									<tr>
 										<td class="align-top font-medium">
 											{position === 0 ? block.name : ''}
+											{#if position === 0 && block.projectBased}
+												<span
+													class="badge badge-secondary badge-sm ml-1 align-middle"
+													title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
+													>PBLV</span
+												>
+											{/if}
 											<!-- Which parts the cohort's dropdown stands for. The server writes one
 											     choice onto all of them, and reading them out of the form is what lets
 											     it do that without any JavaScript on this page. -->

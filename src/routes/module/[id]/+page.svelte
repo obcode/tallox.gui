@@ -295,6 +295,46 @@
 		{/if}
 	</div>
 
+	<section
+		class="border-base-300 bg-base-100 rounded-lg border p-4"
+		aria-labelledby="project-based"
+	>
+		<h2 id="project-based" class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">🧭</span> Projektbasierte Lehrveranstaltung (PBLV)
+		</h2>
+		<p class="text-base-content/80 mb-3 max-w-3xl text-sm">
+			PBLVs werden zuletzt vergeben, damit sie nicht als Lückenfüller weggeschnappt werden. Das ZPA
+			kennzeichnet sie nicht, deshalb trägt die Fakultät es hier einmal je Modul ein.
+		</p>
+		{#if maySplit}
+			<form method="POST" action="?/projectBased" use:enhance class="flex items-center gap-3">
+				<input type="hidden" name="projectBased" value={data.module.projectBased ? '0' : '1'} />
+				<span class="text-sm">
+					{#if data.module.projectBased}
+						<span class="badge badge-secondary badge-sm align-middle">PBLV</span> Dieses Modul ist als
+						PBLV gekennzeichnet.
+					{:else}
+						Dieses Modul ist nicht als PBLV gekennzeichnet.
+					{/if}
+				</span>
+				<button type="submit" class="btn btn-sm">
+					{data.module.projectBased ? 'Kennzeichnung entfernen' : 'Als PBLV kennzeichnen'}
+				</button>
+			</form>
+		{:else}
+			<p class="text-base-content/90 text-sm">
+				{#if data.module.projectBased}
+					<span class="badge badge-secondary badge-sm align-middle">PBLV</span>
+					Dieses Modul ist als PBLV gekennzeichnet.
+				{:else}
+					Nicht als PBLV gekennzeichnet.
+				{/if}
+				Ändern können es die Fachgruppenleitung, die Studiengangsleitung von
+				{data.module.homeProgramme.code} und das Dekanat.
+			</p>
+		{/if}
+	</section>
+
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="mb-2 flex items-center gap-2 font-medium">
 			<span aria-hidden="true">🧮</span> SWS-Aufteilung

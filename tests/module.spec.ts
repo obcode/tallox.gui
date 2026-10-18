@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
+import { runSql } from './psql';
 import { CATALOGUE, FILING } from './seed';
 
 test.describe('the module catalogue', () => {
@@ -44,6 +45,30 @@ test.describe('the module catalogue', () => {
 			'E2E WPF-Korb'
 		);
 		await expect(page.getByText('E2E Pflichtkorb')).toHaveCount(0);
+	});
+
+	// The PBLV mark: set on the module page by its home programme's lead, shown in the catalogue.
+	test('a lead marks a project-based course, and the catalogue shows it', async ({ asPersona }) => {
+		runSql(
+			`UPDATE module SET project_based = false WHERE id = '${CATALOGUE.unsplit}';`,
+			'clearing the PBLV mark'
+		);
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/module/${CATALOGUE.unsplit}`);
+
+		const card = page.getByRole('region', { name: /PBLV/ });
+		await card.getByRole('button', { name: 'Als PBLV kennzeichnen' }).click();
+		await expect(card.getByRole('button', { name: 'Kennzeichnung entfernen' })).toBeVisible();
+
+		await gotoRendered(page, `/module?studiengang=${CATALOGUE.programme}`);
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toContainText(
+			'PBLV'
+		);
+
+		runSql(
+			`UPDATE module SET project_based = false WHERE id = '${CATALOGUE.unsplit}';`,
+			'clearing the PBLV mark'
+		);
 	});
 
 	// The work list. A lead getting ready for a semester needs to know which of their modules

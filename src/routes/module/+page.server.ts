@@ -53,6 +53,7 @@ const CatalogueDocument = graphql(`
 				teachingHours
 			}
 			dutyStatus(programme: $programme)
+			projectBased
 			baskets(programme: $programme)
 			inCatalogue(programme: $programme)
 		}

@@ -563,6 +563,19 @@ describe('moduleBlocks', () => {
 		expect(blocks[1].cohorts.map((c) => c.label)).toEqual(['IF1A', 'IF1B']);
 	});
 
+	// The process gives PBLVs out last, and the screen is read top to bottom.
+	it('puts the project-based courses after everything else', () => {
+		const pblv = cohortGroups(
+			[instance({ id: 'p', module: { id: 'p', name: 'Agiles Projekt', projectBased: true } })],
+			[]
+		)[0];
+		const blocks = moduleBlocks([pblv, cohort('m1', 'Übersetzerbau', 'IF', 'A')]);
+		expect(blocks.map((b) => [b.name, b.projectBased])).toEqual([
+			['Übersetzerbau', false],
+			['Agiles Projekt', true]
+		]);
+	});
+
 	// By name and not by id: the first column is read down, looking for a module.
 	it('orders the modules the way somebody reads the first column', () => {
 		const blocks = moduleBlocks([

@@ -29,6 +29,7 @@ const ModuleDocument = graphql(`
 		module(id: $id) {
 			id
 			name
+			projectBased
 			zpaId
 			handbookUrl
 			active
@@ -106,6 +107,15 @@ const SetSubjectGroupDocument = graphql(`
 	}
 `);
 
+const SetProjectBasedDocument = graphql(`
+	mutation SetModuleProjectBased($moduleId: ID!, $projectBased: Boolean!) {
+		setModuleProjectBased(moduleId: $moduleId, projectBased: $projectBased) {
+			id
+			projectBased
+		}
+	}
+`);
+
 const SetComponentsDocument = graphql(`
 	mutation SetModuleComponents($moduleId: ID!, $components: [ModuleComponentInput!]!) {
 		setModuleComponents(moduleId: $moduleId, components: $components) {
@@ -142,6 +152,18 @@ export const load: PageServerLoad = async ({ params }) => {
  * positions from it.
  */
 export const actions: Actions = {
+	/** Mark the module as a PBLV, or take the mark back. The same people as the split. */
+	projectBased: async ({ request, params }) => {
+		const form = await request.formData();
+		const projectBased = form.get('projectBased') === '1';
+		try {
+			await backendRequest(SetProjectBasedDocument, { moduleId: params.id, projectBased });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { projectBasedSaved: true };
+	},
+
 	components: async ({ request, params }) => {
 		const form = await request.formData();
 

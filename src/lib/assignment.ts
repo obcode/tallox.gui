@@ -37,7 +37,13 @@ export type InstanceLike = {
 	programmeSemester?: number | null;
 	teachingHours: number;
 	programme: { code: string; title?: string };
-	module: { id: string; name: string; subjectGroup?: { id: string; code: string } | null };
+	module: {
+		id: string;
+		name: string;
+		subjectGroup?: { id: string; code: string } | null;
+		/** A project-based course (PBLV): given out last. */
+		projectBased?: boolean;
+	};
 	parts: PartLike[];
 	/** How the cohort is taught; see `formatChanges` in `$lib/demand`. */
 	delivery?: DeliveryFormat;
@@ -241,6 +247,8 @@ export function cohortGroups(
 export type ModuleBlock = {
 	id: string;
 	name: string;
+	/** A PBLV, sorted after everything else and marked so. */
+	projectBased: boolean;
 	cohorts: CohortGroup[];
 };
 
@@ -261,7 +269,12 @@ export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
 
 	for (const group of groups) {
 		const module = group.instance.module;
-		const block = blocks.get(module.id) ?? { id: module.id, name: module.name, cohorts: [] };
+		const block = blocks.get(module.id) ?? {
+			id: module.id,
+			name: module.name,
+			projectBased: module.projectBased ?? false,
+			cohorts: []
+		};
 		block.cohorts.push(group);
 		blocks.set(module.id, block);
 	}
@@ -272,7 +285,11 @@ export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
 		block.cohorts.sort((a, b) => a.label.localeCompare(b.label, 'de', { numeric: true }));
 	}
 
-	return [...blocks.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+	// The PBLVs last: the process gives them out after everything else, so that they are not
+	// snapped up as gap fillers, and the screen is read top to bottom.
+	return [...blocks.values()].sort(
+		(a, b) => Number(a.projectBased) - Number(b.projectBased) || a.name.localeCompare(b.name, 'de')
+	);
 }
 
 /** Somebody who can be put on a part. */

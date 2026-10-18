@@ -1620,6 +1620,13 @@
 																	{DUTY_LABELS[row.module.dutyStatus]}
 																</span>
 															{/if}
+															{#if row.module.projectBased}
+																<span
+																	class="badge badge-secondary badge-sm"
+																	title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
+																	>PBLV</span
+																>
+															{/if}
 															{#if basketLabel(row.module.dutyStatus, row.module.baskets)}
 																<span class="text-base-content/80 text-xs">
 																	{basketLabel(row.module.dutyStatus, row.module.baskets)}

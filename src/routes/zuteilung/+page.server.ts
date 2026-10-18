@@ -84,6 +84,7 @@ const AssignmentDocument = graphql(`
 			module {
 				id
 				name
+				projectBased
 				subjectGroup {
 					id
 					code

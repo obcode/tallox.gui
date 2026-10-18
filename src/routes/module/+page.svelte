@@ -391,6 +391,11 @@
 										<span class={dutyBadge(module.dutyStatus)}>
 											{DUTY_LABELS[module.dutyStatus]}
 										</span>
+										{#if module.projectBased}
+											<span class="badge badge-secondary badge-sm" title="wird zuletzt vergeben"
+												>PBLV</span
+											>
+										{/if}
 										{#if basketLabel(module.dutyStatus, module.baskets)}
 											<span class="text-base-content/80 block text-xs">
 												{basketLabel(module.dutyStatus, module.baskets)}
