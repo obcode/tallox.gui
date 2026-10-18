@@ -55,7 +55,7 @@ describe('levels', () => {
 	it('does not make the interest read like a wish or like the stronger level', () => {
 		for (const words of [COMPETENCE_LEVEL_LABELS.WOULD_LIKE, COMPETENCE_LEVEL_OTHERS.WOULD_LIKE]) {
 			expect(words).not.toMatch(/gern|Wunsch|möchte/i);
-			expect(words).toContain('noch nicht gehalten');
+			expect(words).toContain('Einarbeitung');
 		}
 		expect(COMPETENCE_LEVEL_HINTS.CAN_TEACH).toContain('gern');
 		expect(COMPETENCE_LEVEL_HINTS.CAN_TEACH).toContain('Pflichtfächer');

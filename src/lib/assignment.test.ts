@@ -230,7 +230,7 @@ describe('candidatesFor', () => {
 			'Prof. Drei'
 		]);
 		expect(out[2]).toEqual({ teacherId: 't8', name: 'LB Acht', hint: 'kann halten · nur Übung' });
-		expect(out[3].hint).toBe('Interesse, noch nicht gehalten');
+		expect(out[3].hint).toBe('Interesse, Einarbeitung nötig');
 		expect(out[0].hint).toBe('unbedingt');
 	});
 

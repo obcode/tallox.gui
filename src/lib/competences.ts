@@ -23,17 +23,18 @@ export type CompetenceChoice = CompetenceLevelValue | typeof COMPETENCE_NONE;
  * The two are not degrees of one thing, and the labels have to say so. WOULD_LIKE used to read
  * "würde ich gern", which sounds like a wish and like the warmer of the two — so somebody who can
  * teach a module *and* likes to picked it, and dropped out of the emergency pool and the minimum
- * without noticing. Hence "noch nicht gehalten": it is the subject one is growing into.
+ * without noticing. Hence "Einarbeitung nötig": a subject one would have to work (back) into — never taught, or
+ * taught ten years ago, which is not "at short notice" either.
  */
 export const COMPETENCE_LEVEL_LABELS: Record<CompetenceLevelValue, string> = {
 	CAN_TEACH: 'kann ich halten (auch kurzfristig)',
-	WOULD_LIKE: 'Interesse, noch nicht gehalten'
+	WOULD_LIKE: 'Interesse, Einarbeitung nötig'
 };
 
 /** How a level reads about somebody else, in the lead's pool and the candidate list. */
 export const COMPETENCE_LEVEL_OTHERS: Record<CompetenceLevelValue, string> = {
 	CAN_TEACH: 'kann halten',
-	WOULD_LIKE: 'Interesse, noch nicht gehalten'
+	WOULD_LIKE: 'Interesse, Einarbeitung nötig'
 };
 
 /** The sentence beside a level, as a tooltip in the picker and in the page's explanation. */
@@ -41,7 +42,7 @@ export const COMPETENCE_LEVEL_HINTS: Record<CompetenceLevelValue, string> = {
 	CAN_TEACH:
 		'Du hast das Modul gehalten oder könntest es übernehmen, auch wenn es kurzfristig brennt. Zählt für die drei Pflichtfächer. Wenn Du es kannst und gern hältst: diese Stufe.',
 	WOULD_LIKE:
-		'Ein Modul, das Du noch nicht gehalten hast und Dir gern erarbeiten würdest. Kein Wunsch für ein Semester — Wünsche trägst Du in der Wunschphase ein.'
+		'Ein Modul, das Du gern halten würdest, für das Du Dich aber erst einarbeiten müsstest — weil Du es noch nie gehalten hast oder es lange her ist. Kein Wunsch für ein Semester — Wünsche trägst Du in der Wunschphase ein.'
 };
 
 export function isCompetenceLevel(value: string): value is CompetenceLevelValue {

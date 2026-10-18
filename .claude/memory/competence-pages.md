@@ -35,10 +35,14 @@ Bis 2026-10-18 hießen sie „kann ich halten“ / „würde ich gern“. Aus de
 ich gern“ las sich wie ein Wunsch und wie die _höhere_ Stufe — wer ein Pflichtfach kann **und**
 gern hält, wählte es, fiel damit aus dem Notfall-Pool und aus dem Minimum und sah oben „0 von 3“.
 Gemeint ist laut Kickoff: `CAN_TEACH` = „kann halten, wenn es brennt“, `WOULD_LIKE` = Interesse
-an einem Fach, das man **noch nicht** gehalten hat. Jetzt: **„kann ich halten (auch
-kurzfristig)“** / **„Interesse, noch nicht gehalten“**, dazu `COMPETENCE_LEVEL_HINTS` als
+an einem Fach, in das man sich **erst einarbeiten** müsste. Jetzt: **„kann ich halten (auch
+kurzfristig)“** / **„Interesse, Einarbeitung nötig“**, dazu `COMPETENCE_LEVEL_HINTS` als
 Erklärliste über der Tabelle und als Tooltip. Ein vitest verbietet „gern“/„Wunsch“/„möchte“ im
 zweiten Label.
+
+Zwischenstand am selben Tag war „Interesse, noch nicht gehalten“ — verworfen, weil es den
+häufigen Fall nicht trifft: eine LV, die jemand vor zehn Jahren gehalten hat und heute nicht
+kurzfristig wieder halten könnte. Maßgeblich ist der Einarbeitungsaufwand, nicht die Historie.
 
 Die Mindestzahl ist ein **Hinweis** (`badge-warning` + Satz), keine Ablehnung; `minimumHint` hat
 einen Test, der Ablehnungsvokabular ausschließt. Einträge **außerhalb** der eigenen Gruppen (Gruppe
@@ -59,7 +63,7 @@ Komfort, verweigern tut das Backend (`COMPETENCE_TEACHER_HAS_ACCOUNT`).
 
 ## In der Kandidatenliste
 
-Reihenfolge: Wünsche → `kann halten` → `Interesse, noch nicht gehalten` → Fachgruppe → Suche → aktuell zugeteilt.
+Reihenfolge: Wünsche → `kann halten` → `Interesse, Einarbeitung nötig` → Fachgruppe → Suche → aktuell zugeteilt.
 Der Pool ist optionaler letzter Parameter von `candidatesFor`, damit bestehende Aufrufe gleich
 lesen. Geladen mit `competences(subjectGroup:)` — verweigert nie, antwortet mit weniger, also
 gefahrlos in der großen Anfrage.

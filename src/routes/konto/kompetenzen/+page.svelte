@@ -67,8 +67,9 @@
 		<h1 class="text-2xl font-semibold">Meine Kompetenzen</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
 			Welche Module Du halten <strong>kannst</strong> — auch, wenn es kurzfristig brennt — und für
-			welche Du Dich <strong>interessierst</strong>, ohne sie bisher gehalten zu haben. Daraus
-			entsteht für jedes Modul ein Pool, auf den die Fachgruppenleitung bei der Zuteilung schaut.
+			welche Du Dich <strong>interessierst</strong>, auch wenn Du Dich dafür erst einarbeiten
+			müsstest. Daraus entsteht für jedes Modul ein Pool, auf den die Fachgruppenleitung bei der
+			Zuteilung schaut.
 		</p>
 		<dl
 			class="text-base-content/80 mt-2 grid max-w-3xl grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]"

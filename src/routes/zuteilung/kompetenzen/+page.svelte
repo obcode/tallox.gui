@@ -25,8 +25,8 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Kompetenzen einer Fachgruppe</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
-			Wer die Module der Fachgruppe halten kann, wer sich dafür interessiert, ohne sie bisher
-			gehalten zu haben, welche Module niemand abdeckt — und wer noch unter den erbetenen drei
+			Wer die Module der Fachgruppe halten kann, wer sich dafür interessiert und sich erst
+			einarbeiten müsste, welche Module niemand abdeckt — und wer noch unter den erbetenen drei
 			Pflichtfächern liegt. Die Angaben machen die Kolleginnen und Kollegen selbst unter <a
 				class="link"
 				href={resolve('/konto/kompetenzen')}>Meine Kompetenzen</a
