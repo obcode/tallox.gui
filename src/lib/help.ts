@@ -140,6 +140,34 @@ export const HELP: readonly HelpEntry[] = [
 			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“ — die Fachgruppenleitung kann noch umplanen.',
 		who: ['LECTURER'],
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
+	},
+	{
+		question: 'Wo gebe ich an, wie viele SWS ich halten möchte?',
+		answer:
+			'Auf der Wunschseite, über der Tabelle, je Semester. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Das lesen nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; bei der Zuteilung steht es neben Deinem Namen.',
+		who: ['LECTURER'],
+		where: [{ href: '/wuensche', label: 'Wünsche' }]
+	},
+	{
+		question: 'Wie kennzeichne ich ein Modul als PBLV?',
+		answer:
+			'Auf der Modulseite unter „Projektbasierte Lehrveranstaltung (PBLV)“. Das dürfen die Fachgruppenleitung des Moduls, die Studiengangsleitung seines Heimatstudiengangs und das Dekanat. Gekennzeichnete PBLVs stehen bei der Zuteilung am Ende.',
+		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/module', label: 'Modulkatalog' }]
+	},
+	{
+		question: 'Welche Wahlpflichtmodule eines Korbs laufen in diesem Semester?',
+		answer:
+			'Unter Statistik, Abschnitt „Wahlpflicht nach Korb“, für den gewählten Studiengang: eigene und fremde Module, je Korb der Prüfungsordnung mit den SWS. Ein Modul in zwei Körben steht in beiden.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/statistik', label: 'Statistik' }]
+	},
+	{
+		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',
+		answer:
+			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät vergeben, speichern, dann die Studiengänge ankreuzen, denen die Person folgt. Ohne Studiengang liest sie nichts. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht alles wie alle anderen.',
+		who: ['ADMIN'],
+		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	}
 ];
 

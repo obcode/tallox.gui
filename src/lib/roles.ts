@@ -24,7 +24,8 @@ export const ROLE_HINTS: Record<Role, string> = {
 	LECTURER: 'Eigenes Profil, eigene Kompetenzen, eigene Wünsche. Haben fast alle.',
 	SUBJECT_GROUP_LEAD: 'Besetzt die Instanzen einer Fachgruppe.',
 	PROGRAMME_LEAD: 'Meldet den Bedarf eines Studiengangs an.',
-	DEANS_OFFICE: 'Liest studiengangsübergreifend, pflegt die Deputats-Ampel.',
+	DEANS_OFFICE:
+		'Liest studiengangsübergreifend, schaltet die Phasen und veröffentlicht Wünsche und Zuteilung.',
 	PARTNER_READER:
 		'Liest Bedarf, Statistik und veröffentlichte Zuteilung der zugeordneten Studiengänge — allein vergeben weniger als ein normales Konto, keine Wünsche, keine Eintragungen.',
 	ADMIN: 'Verwaltet Personen, Rollen und Tokens. Liest bewusst keine Wünsche.'
