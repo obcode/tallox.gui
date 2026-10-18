@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import CompetenceRow from '$lib/components/CompetenceRow.svelte';
 	import {
-		COMPETENCE_LEVELS,
+		COMPETENCE_LEVEL_HINTS,
 		COMPETENCE_LEVEL_LABELS,
 		belowMinimum,
 		competenceByModule,
@@ -30,16 +31,53 @@
 	);
 	const inMyGroups = $derived(new Set(groups.flatMap((g) => g.modules.map((m) => m.id))));
 	const outside = $derived(outsideStatements(data.mine, inMyGroups));
+
+	/**
+	 * The profile saves itself, the way the wish table does — see `/wuensche` for the long version.
+	 *
+	 * `change` triggers (a level chosen, a note finished), `input` only remembers that something is
+	 * open, and `focusout` catches a note that was set without the browser seeing it as typing. One
+	 * submission at a time: each carries the whole form, and an older one arriving second would put
+	 * an older level back.
+	 */
+	let formElement = $state<HTMLFormElement | null>(null);
+	let saving = $state(false);
+	/** Something was typed and not yet submitted. Not `$state`: nothing renders it. */
+	let dirty = false;
+	/** A change that came in while a save was running. */
+	let queued = false;
+
+	function saveNow() {
+		if (saving) {
+			queued = true;
+			return;
+		}
+		// Reset synchronously, or the focusout right after a change would submit a second time.
+		dirty = false;
+		formElement?.requestSubmit();
+	}
+
+	function saveIfDirty() {
+		if (dirty) saveNow();
+	}
 </script>
 
 <div class="flex flex-col gap-4">
 	<div>
 		<h1 class="text-2xl font-semibold">Meine Kompetenzen</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
-			Welche Module Du halten <strong>kannst</strong> — auch, wenn es kurzfristig brennt — und
-			welche Du in Zukunft gern halten <strong>würdest</strong>. Daraus entsteht für jedes Modul ein
-			Pool, auf den die Fachgruppenleitung bei der Zuteilung schaut.
+			Welche Module Du halten <strong>kannst</strong> — auch, wenn es kurzfristig brennt — und für
+			welche Du Dich <strong>interessierst</strong>, ohne sie bisher gehalten zu haben. Daraus
+			entsteht für jedes Modul ein Pool, auf den die Fachgruppenleitung bei der Zuteilung schaut.
 		</p>
+		<dl
+			class="text-base-content/80 mt-2 grid max-w-3xl grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]"
+		>
+			<dt class="font-semibold">„{COMPETENCE_LEVEL_LABELS.CAN_TEACH}“</dt>
+			<dd>{COMPETENCE_LEVEL_HINTS.CAN_TEACH}</dd>
+			<dt class="font-semibold">„{COMPETENCE_LEVEL_LABELS.WOULD_LIKE}“</dt>
+			<dd>{COMPETENCE_LEVEL_HINTS.WOULD_LIKE}</dd>
+		</dl>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Angeboten werden die Module Deiner Fachgruppen, die Pflichtfächer zuerst. Die Fakultät bittet
 			um mindestens drei Pflichtfächer je Fachgruppe — nicht nur die Rosinen. Wer sich ein neues
@@ -59,17 +97,6 @@
 				{refusal.message}
 			</p>
 		</div>
-	{:else if savedCount !== null}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<p class="text-base-content/90 text-sm">
-				{savedHint(savedCount)}
-				{#if rowRefusals.size > 0}
-					<span class="badge badge-error badge-sm align-middle">
-						{rowRefusals.size === 1 ? 'Eine Zeile' : `${rowRefusals.size} Zeilen`} nicht gespeichert
-					</span>
-				{/if}
-			</p>
-		</div>
 	{/if}
 
 	{#if groups.length === 0}
@@ -81,107 +108,102 @@
 			</p>
 		</div>
 	{:else}
-		{#key data.mine}
-			<form
-				method="POST"
-				action="?/save"
-				use:enhance={() =>
+		<form
+			method="POST"
+			action="?/save"
+			bind:this={formElement}
+			onchange={saveNow}
+			oninput={() => (dirty = true)}
+			onfocusout={saveIfDirty}
+			use:enhance={() => {
+				saving = true;
+				return async ({ update }) => {
 					// reset: false — the fields show a state, not an input to be cleared.
-					async ({ update }) => {
-						await update({ reset: false });
-					}}
-				class="flex flex-col gap-4"
+					await update({ reset: false });
+					saving = false;
+					if (queued) {
+						queued = false;
+						saveNow();
+					}
+				};
+			}}
+			class="flex flex-col gap-4"
+		>
+			{#each groups as group (group.id)}
+				{@const status = statusByGroup.get(group.id)}
+				<section
+					class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4"
+					aria-labelledby="group-{group.id}"
+				>
+					<h2 id="group-{group.id}" class="text-lg font-semibold">
+						<span class="font-mono">{group.code}</span> — {group.name}
+					</h2>
+					{#if status}
+						<p class="text-base-content/80 text-sm">
+							{#if belowMinimum(status)}
+								<span class="badge badge-warning badge-sm align-middle">Noch zu wenige</span>
+							{/if}
+							{minimumHint(status)}
+						</p>
+					{/if}
+
+					{#if group.modules.length === 0}
+						<p class="text-base-content/80 text-sm">
+							Dieser Fachgruppe ist noch kein Modul zugeordnet.
+						</p>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="table-sm table">
+								<thead>
+									<tr>
+										<th>Modul</th>
+										<th>Stufe</th>
+										<th>Notiz</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each group.modules as module (module.id)}
+										{@const mine = mineByModule.get(module.id)}
+										<!-- Keyed on the stored statement: the row remounts after a save
+										     changed it, and not while somebody is typing. -->
+										{#key `${mine?.id ?? ''}:${mine?.level ?? ''}:${mine?.note ?? ''}`}
+											<CompetenceRow {module} {mine} refusal={rowRefusals.get(module.id)} />
+										{/key}
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</section>
+			{/each}
+
+			<div
+				class="border-base-300 bg-base-100 sticky bottom-0 flex flex-wrap items-center gap-3 rounded-lg border p-3"
 			>
-				{#each groups as group (group.id)}
-					{@const status = statusByGroup.get(group.id)}
-					<section
-						class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4"
-						aria-labelledby="group-{group.id}"
-					>
-						<h2 id="group-{group.id}" class="text-lg font-semibold">
-							<span class="font-mono">{group.code}</span> — {group.name}
-						</h2>
-						{#if status}
-							<p class="text-base-content/80 text-sm">
-								{#if belowMinimum(status)}
-									<span class="badge badge-warning badge-sm align-middle">Noch zu wenige</span>
-								{/if}
-								{minimumHint(status)}
-							</p>
+				<p class="text-base-content/90 grow text-sm" aria-live="polite">
+					{#if saving}
+						<span class="loading loading-spinner loading-xs align-middle"></span>
+						wird gespeichert …
+					{:else if savedCount !== null}
+						<span class="badge badge-ghost badge-sm align-middle">gespeichert</span>
+						{savedHint(savedCount)}
+						{#if rowRefusals.size > 0}
+							<span class="badge badge-error badge-sm align-middle">
+								{rowRefusals.size === 1 ? 'Eine Zeile' : `${rowRefusals.size} Zeilen`} nicht gespeichert
+							</span>
 						{/if}
-
-						{#if group.modules.length === 0}
-							<p class="text-base-content/80 text-sm">
-								Dieser Fachgruppe ist noch kein Modul zugeordnet.
-							</p>
-						{:else}
-							<div class="overflow-x-auto">
-								<table class="table-sm table">
-									<thead>
-										<tr>
-											<th>Modul</th>
-											<th>Stufe</th>
-											<th>Notiz</th>
-										</tr>
-									</thead>
-									<tbody>
-										{#each group.modules as module (module.id)}
-											{@const mine = mineByModule.get(module.id)}
-											{@const rowRefusal = rowRefusals.get(module.id)}
-											<tr>
-												<td>
-													<a class="link" href={resolve(`/module/${module.id}`)}>
-														{module.name || 'Modul ohne Namen'}
-													</a>
-													<span class="text-base-content/80">({module.homeProgrammeCode})</span>
-													{#if module.compulsory}
-														<span class="badge badge-neutral badge-sm">Pflicht</span>
-													{/if}
-													{#if rowRefusal}
-														<span class="text-base-content/90 block text-sm">
-															<span class="badge badge-error badge-sm">Nicht gespeichert</span>
-															{rowRefusal}
-														</span>
-													{/if}
-												</td>
-												<td>
-													<select
-														name="level:{module.id}"
-														class="select select-sm"
-														aria-label="Stufe für {module.name || 'Modul ohne Namen'}"
-													>
-														<option value="" selected={!mine}>—</option>
-														{#each COMPETENCE_LEVELS as level (level)}
-															<option value={level} selected={mine?.level === level}>
-																{COMPETENCE_LEVEL_LABELS[level]}
-															</option>
-														{/each}
-													</select>
-												</td>
-												<td>
-													<input
-														type="text"
-														name="note:{module.id}"
-														value={mine?.note ?? ''}
-														maxlength="500"
-														class="input input-sm w-full min-w-40"
-														aria-label="Notiz zu {module.name || 'Modul ohne Namen'}"
-													/>
-												</td>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						{/if}
-					</section>
-				{/each}
-
-				<div>
-					<button type="submit" class="btn btn-sm btn-primary">Speichern</button>
-				</div>
-			</form>
-		{/key}
+					{:else}
+						Änderungen werden beim Auswählen gespeichert — bei der Notiz, sobald Du das Feld
+						verlässt. Eine Zeile auf „—“ zu stellen zieht die Angabe zurück.
+					{/if}
+				</p>
+				<!-- Stays although it normally does nothing: without JavaScript it is the only way to
+				     submit a select. It sends the whole profile, so pressing it is harmless. -->
+				<button type="submit" class="btn btn-ghost btn-sm" disabled={saving}>
+					Alles speichern
+				</button>
+			</div>
+		</form>
 	{/if}
 
 	{#if outside.length > 0}

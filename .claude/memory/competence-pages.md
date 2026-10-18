@@ -19,8 +19,26 @@ in `tests/seed.ts`.
 ## Eigene Angaben
 
 Nur die Module der **eigenen Fachgruppen**, Pflichtfächer zuerst (`ModuleRef.compulsory`, eigens
-dafür im Backend ergänzt). Eine Tabelle je Gruppe, **ein** Formular und ein Speichern für alles,
-Differenz serverseitig gegen den gespeicherten Stand — das Muster der Wunschseite.
+dafür im Backend ergänzt). Eine Tabelle je Gruppe, **ein** Formular für alles, Differenz
+serverseitig gegen den gespeicherten Stand — das Muster der Wunschseite.
+
+**Speichert sich selbst** (seit 2026-10-18, wie `/wuensche`, siehe [[wish-page]]): `change` /
+`input` / `focusout` am Formular, immer nur eine Abschickung unterwegs, „Alles speichern“ bleibt
+unauffällig für den Fall ohne JavaScript. Die Zeile ist `CompetenceRow.svelte` mit lokalem
+`$state`, im `{#key}` auf dem _gespeicherten_ Stand. Das frühere `{#key data.mine}` um das ganze
+Formular hätte nach jedem automatischen Speichern alle Zeilen neu aufgebaut und den Fokus aus der
+Notiz genommen.
+
+## Die zwei Stufen sind keine Rangfolge
+
+Bis 2026-10-18 hießen sie „kann ich halten“ / „würde ich gern“. Aus dem Betrieb gemeldet: „würde
+ich gern“ las sich wie ein Wunsch und wie die _höhere_ Stufe — wer ein Pflichtfach kann **und**
+gern hält, wählte es, fiel damit aus dem Notfall-Pool und aus dem Minimum und sah oben „0 von 3“.
+Gemeint ist laut Kickoff: `CAN_TEACH` = „kann halten, wenn es brennt“, `WOULD_LIKE` = Interesse
+an einem Fach, das man **noch nicht** gehalten hat. Jetzt: **„kann ich halten (auch
+kurzfristig)“** / **„Interesse, noch nicht gehalten“**, dazu `COMPETENCE_LEVEL_HINTS` als
+Erklärliste über der Tabelle und als Tooltip. Ein vitest verbietet „gern“/„Wunsch“/„möchte“ im
+zweiten Label.
 
 Die Mindestzahl ist ein **Hinweis** (`badge-warning` + Satz), keine Ablehnung; `minimumHint` hat
 einen Test, der Ablehnungsvokabular ausschließt. Einträge **außerhalb** der eigenen Gruppen (Gruppe
@@ -41,14 +59,14 @@ Komfort, verweigern tut das Backend (`COMPETENCE_TEACHER_HAS_ACCOUNT`).
 
 ## In der Kandidatenliste
 
-Reihenfolge: Wünsche → `kann halten` → `würde gern` → Fachgruppe → Suche → aktuell zugeteilt.
+Reihenfolge: Wünsche → `kann halten` → `Interesse, noch nicht gehalten` → Fachgruppe → Suche → aktuell zugeteilt.
 Der Pool ist optionaler letzter Parameter von `candidatesFor`, damit bestehende Aufrufe gleich
 lesen. Geladen mit `competences(subjectGroup:)` — verweigert nie, antwortet mit weniger, also
 gefahrlos in der großen Anfrage.
 
 ## Vertraulichkeit
 
-„würde gern" ist ein Wunsch ohne Semester — keine Zahl über fremde Einträge außer den beiden
+`WOULD_LIKE` ist ein Wunsch ohne Semester — keine Zahl über fremde Einträge außer den beiden
 Arbeitslisten der Leitung, die das Backend nur ihr gibt. Die E2E-Spec prüft für Zwei, dass Neuns
 Name auf keiner der beiden Seiten steht.
 

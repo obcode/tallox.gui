@@ -35,17 +35,23 @@ test.describe('competences', () => {
 		await expect(rows.nth(1)).toContainText('Pflicht');
 		await expect(group.getByText('0 von mindestens 3 Pflichtfächern')).toBeVisible();
 
+		// Choosing saves — no button. The count above the table follows.
 		await group
 			.getByRole('combobox', { name: `Stufe für ${COMPETENCES.compulsoryName}` })
 			.selectOption('CAN_TEACH');
-		await group.getByRole('textbox', { name: `Notiz zu ${COMPETENCES.compulsoryName}` }).fill(NOTE);
+		await expect(group.getByText('1 von mindestens 3 Pflichtfächern')).toBeVisible();
+
+		// A note is saved on leaving the field, and typing is not interrupted by the save before.
+		const note = group.getByRole('textbox', { name: `Notiz zu ${COMPETENCES.compulsoryName}` });
+		await note.fill(NOTE);
+		await note.blur();
+		await expect(page.getByText('Eine Änderung gespeichert.')).toBeVisible();
+
 		await group
 			.getByRole('combobox', { name: `Stufe für ${COMPETENCES.electiveName}` })
 			.selectOption('WOULD_LIKE');
-		await page.getByRole('button', { name: 'Speichern' }).click();
-
-		await expect(page.getByText('2 Änderungen gespeichert.')).toBeVisible();
-		// The elective counts for nothing: one of three.
+		await expect(page.getByText('Eine Änderung gespeichert.')).toBeVisible();
+		// The elective counts for nothing: still one of three.
 		await expect(group.getByText('1 von mindestens 3 Pflichtfächern')).toBeVisible();
 
 		// And it is stored, not just shown.
@@ -56,9 +62,12 @@ test.describe('competences', () => {
 		await expect(
 			page.getByRole('textbox', { name: `Notiz zu ${COMPETENCES.compulsoryName}` })
 		).toHaveValue(NOTE);
+		await expect(
+			page.getByRole('combobox', { name: `Stufe für ${COMPETENCES.electiveName}` })
+		).toHaveValue('WOULD_LIKE');
 
-		// Saving again without a change says so, and changes nothing.
-		await page.getByRole('button', { name: 'Speichern' }).click();
+		// The button without JavaScript's job: pressing it with nothing changed changes nothing.
+		await page.getByRole('button', { name: 'Alles speichern' }).click();
 		await expect(page.getByText('Es gab nichts zu speichern.')).toBeVisible();
 
 		await checkA11y(page);
@@ -77,7 +86,7 @@ test.describe('competences', () => {
 		const elective = pool.getByRole('row', { name: new RegExp(COMPETENCES.electiveName) });
 		await expect(elective).toContainText('Neun');
 
-		// Nobody can teach the elective — only "würde gern" — so it is a gap.
+		// Nobody can teach the elective — only an interest — so it is a gap.
 		const gaps = page.getByRole('region', { name: 'Wenn es brennt, kann es niemand' });
 		await expect(gaps).toContainText(COMPETENCES.electiveName);
 		await expect(gaps).not.toContainText(COMPETENCES.compulsoryName);
