@@ -1588,6 +1588,14 @@
 												{#each letters as letter, i (i)}
 													<input type="hidden" name="track:{row.module.id}:{i}" value={letter} />
 												{/each}
+												<!-- A disabled checkbox is not submitted, and a missing "offer" tells
+												     the server "unticked". Without this field every save withdrew the
+												     cohorts of a module planned while its split was still an estimate:
+												     the tick nobody could click was the one that disappeared. Only for a
+												     row the server holds: a proposal must stay unsent, as before. -->
+												{#if row.planned && (!mayPlan || !row.module.plannable)}
+													<input type="hidden" name="offer" value={row.module.id} />
+												{/if}
 												<label class="flex items-start gap-2">
 													<input
 														type="checkbox"

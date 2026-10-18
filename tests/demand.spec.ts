@@ -275,6 +275,49 @@ test.describe('the demand table', () => {
 		await expect(page.getByText('1 zurückgezogen')).toBeVisible();
 	});
 
+	// Reported from the beta: withdrawing one module offered to withdraw two cohorts of another,
+	// whose tick was greyed out. It had been planned while its split was still an estimate, which
+	// the table no longer allows — so the box was disabled, a disabled box is not submitted, and
+	// the save read the missing tick as "unticked". Every save of the screen, not only a withdrawal.
+	test('leaves a cohort alone whose tick cannot be clicked', async ({ asPersona }) => {
+		const legacy = '0e2e0000-0000-4000-8000-000000000092';
+		const cleanUp = `DELETE FROM course_instance WHERE id = '${legacy}'
+		   OR (module_id = '${CATALOGUE.confirmable}' AND semester_id =
+		       (SELECT id FROM semester WHERE code = ${quoted(DEMAND.semester)}));`;
+		// The split back to a guess, and a cohort that was planned on it before the rule.
+		runSql(
+			`DELETE FROM course_instance WHERE module_id = '${CATALOGUE.correctable}';
+			 DELETE FROM module_component WHERE module_id = '${CATALOGUE.correctable}';
+			 INSERT INTO course_instance (id, semester_id, module_id, programme_id, track)
+			 SELECT '${legacy}', s.id, '${CATALOGUE.correctable}', p.id, ''
+			   FROM semester s, programme p
+			  WHERE s.code = ${quoted(DEMAND.semester)} AND p.code = ${quoted(CATALOGUE.programme)};
+			 INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+			 VALUES ('${legacy}', 'LECTURE', 0, 2), ('${legacy}', 'LAB', 1, 2);`,
+			'a cohort planned on an estimated split'
+		);
+
+		try {
+			const page = await asPersona(PERSONAS.vier);
+			await gotoRendered(page, DEMAND_URL);
+
+			const tick = (name: RegExp) =>
+				page.getByRole('row', { name }).first().locator('input[type="checkbox"][name="offer"]');
+			await expect(tick(/E2E Modul zum Ändern/)).toBeChecked();
+			await expect(tick(/E2E Modul zum Ändern/)).toBeDisabled();
+
+			// Any save sends every row. This one only adds, so it must go through without asking.
+			await tick(/E2E Modul zum Bestätigen/).check();
+			await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+			await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toHaveCount(0);
+			await expect(page.getByText(/zurückgezogen/)).toHaveCount(0);
+			await expect(tick(/E2E Modul zum Ändern/)).toBeChecked();
+		} finally {
+			// Back to where the test before left the table, for the ones that follow.
+			runSql(cleanUp, 'removing the estimated cohort again');
+		}
+	});
+
 	// The first thing anybody plans in a semester nobody has touched — the ordinary way this
 	// screen gets used, and the case that failed in production: the preview the save runs first
 	// had no semester row to point at, and the person got "Das hat nicht geklappt".
