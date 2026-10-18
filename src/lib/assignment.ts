@@ -1,4 +1,5 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
+import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import type { DeliveryFormat } from '$lib/demand';
 
@@ -420,7 +421,7 @@ export function candidatesFor(
 	for (const level of ['CAN_TEACH', 'WOULD_LIKE'] as const) {
 		for (const c of pool) {
 			if (c.level !== level) continue;
-			const words = level === 'CAN_TEACH' ? 'kann halten' : 'würde gern';
+			const words = COMPETENCE_LEVEL_OTHERS[level];
 			add({
 				personId: c.holder.personId ?? undefined,
 				teacherId: c.holder.personId ? undefined : (c.holder.teacherId ?? undefined),

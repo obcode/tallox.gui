@@ -238,8 +238,8 @@
 </p>
 <p class="text-base-content/80 mt-2 max-w-prose">
 	Nach den Wünschen bietet jede Auswahl an, wer das Modul laut
-	<a class="link" href={resolve('/zuteilung/kompetenzen')}>Kompetenzen</a> halten kann oder gern halten
-	würde. Dort steht auch, welche Module niemand abdeckt.
+	<a class="link" href={resolve('/zuteilung/kompetenzen')}>Kompetenzen</a> halten kann oder sich dafür
+	interessiert. Dort steht auch, welche Module niemand abdeckt.
 </p>
 
 <!-- One form per bar. A GET form submits only the button that was clicked, so a bar that shared
