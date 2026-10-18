@@ -362,7 +362,11 @@
 				<input type="hidden" name="semester" value={data.selected} />
 				<label class="flex flex-col gap-1">
 					<span class="label-text text-sm">Studiengang</span>
-					<select name="studiengang" class="select select-sm w-64 max-w-full">
+					<select
+						name="studiengang"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+						class="select select-sm w-64 max-w-full"
+					>
 						<option value="" selected={data.importsFor === ''}>– bitte wählen –</option>
 						{#each importChoices as p (p.code)}
 							<option value={p.code} selected={p.code === data.importsFor}>
@@ -371,7 +375,7 @@
 						{/each}
 					</select>
 				</label>
-				<button type="submit" class="btn btn-sm">Anzeigen</button>
+				<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 			</form>
 
 			{#if imports === null}

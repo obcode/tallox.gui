@@ -31,7 +31,11 @@
 	<form method="GET" class="flex flex-wrap items-end gap-2">
 		<label class="flex flex-col gap-1">
 			<span class="label-text text-sm">Semester</span>
-			<select name="semester" class="select select-sm w-56 max-w-full">
+			<select
+				name="semester"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-sm w-56 max-w-full"
+			>
 				{#each semesterTabs as s (s.code)}
 					<option value={s.code} selected={s.code === data.selected.semester}>
 						{semesterName(s.code)}
@@ -41,7 +45,11 @@
 		</label>
 		<label class="flex flex-col gap-1">
 			<span class="label-text text-sm">Studiengang</span>
-			<select name="studiengang" class="select select-sm w-64 max-w-full">
+			<select
+				name="studiengang"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-sm w-64 max-w-full"
+			>
 				<option value="" selected={data.selected.programme === ''}>alle</option>
 				{#each data.programmes as p (p.code)}
 					<option value={p.code} selected={p.code === data.selected.programme}>
@@ -50,7 +58,7 @@
 				{/each}
 			</select>
 		</label>
-		<button type="submit" class="btn btn-sm">Anzeigen</button>
+		<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 	</form>
 
 	{#if data.selected.semester === ''}

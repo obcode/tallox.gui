@@ -291,6 +291,26 @@ test.describe('the SWS controlling', () => {
 		).toHaveCount(0);
 	});
 
+	// Choosing in a dropdown switches at once, without a button to press.
+	test('a filter switches as soon as something is chosen', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, `/zuteilung/uebersicht?semester=${CONTROLLING.previous}`);
+		await expect(page.getByRole('button', { name: 'Anzeigen' })).toHaveCount(0);
+
+		await page.getByLabel('Studiengang').selectOption(CONTROLLING.home.code);
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CONTROLLING.home.code}`));
+		await expect(
+			page.getByRole('region', { name: new RegExp(`^${CONTROLLING.home.code}`) })
+		).toBeVisible();
+
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
+		await page
+			.getByRole('region', { name: /^Module mit fremder Heimat/ })
+			.getByLabel('Studiengang')
+			.selectOption(CONTROLLING.home.code);
+		await expect(page).toHaveURL(new RegExp(`studiengang=${CONTROLLING.home.code}`));
+	});
+
 	// A partner faculty reads the statistics of the programme it follows and nothing of the others,
 	// and is offered none of the pages where somebody states something about themselves.
 	test('a partner faculty reads its own programme only', async ({ asPersona, checkA11y }) => {

@@ -42,14 +42,19 @@
 	<form method="GET" class="flex flex-wrap items-end gap-2">
 		<label class="flex flex-col gap-1 text-sm">
 			<span>Fachgruppe</span>
-			<select name="fachgruppe" class="select select-sm" value={data.selected.group}>
+			<select
+				name="fachgruppe"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-sm"
+				value={data.selected.group}
+			>
 				<option value="">— wählen —</option>
 				{#each groups as g (g.id)}
 					<option value={g.id}>{g.code} — {g.name}</option>
 				{/each}
 			</select>
 		</label>
-		<button type="submit" class="btn btn-sm">Anzeigen</button>
+		<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 	</form>
 
 	{#if groups.length === 0}

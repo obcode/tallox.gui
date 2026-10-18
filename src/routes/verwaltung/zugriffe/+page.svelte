@@ -43,7 +43,11 @@
 	<form method="GET" class="flex flex-wrap items-end gap-3">
 		<label class="form-control">
 			<span class="label-text text-sm">Zeitraum</span>
-			<select name="zeitraum" class="select select-bordered select-sm">
+			<select
+				name="zeitraum"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-bordered select-sm"
+			>
 				{#each WINDOWS as w (w.days)}
 					<option value={w.days} selected={w.days === data.days}>{w.label}</option>
 				{/each}
@@ -63,7 +67,11 @@
 
 		<label class="form-control">
 			<span class="label-text text-sm">Tür</span>
-			<select name="tuer" class="select select-bordered select-sm">
+			<select
+				name="tuer"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-bordered select-sm"
+			>
 				<option value="" selected={data.door === ''}>beide</option>
 				{#each Object.entries(DOOR_LABELS) as [value, label] (value)}
 					<option {value} selected={data.door === value}>{label}</option>
@@ -73,7 +81,11 @@
 
 		<label class="form-control">
 			<span class="label-text text-sm">Zeigen</span>
-			<select name="nur" class="select select-bordered select-sm">
+			<select
+				name="nur"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-bordered select-sm"
+			>
 				<option value="" selected={data.only === ''}>alles</option>
 				<option value="auffaellig" selected={data.only === 'auffaellig'}>nur Auffälliges</option>
 				<option value="aenderungen" selected={data.only === 'aenderungen'}>nur Änderungen</option>
