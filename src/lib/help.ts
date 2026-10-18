@@ -142,6 +142,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
 	},
 	{
+		question: 'Wer hält welche Veranstaltung?',
+		answer:
+			'Unter „Zuteilung → Übersicht“, nur zum Lesen: je Studiengang, Modul und Kohorte, wer welchen Teil hält. Sichtbar, sobald das Dekanat die Zuteilung des Semesters veröffentlicht hat; vorher ist sie ein Entwurf, und nur die eigenen Teile stehen unter „Meine Zuteilungen“.',
+		who: [],
+		where: [{ href: '/zuteilung/uebersicht', label: 'Zuteilung, Übersicht' }]
+	},
+	{
 		question: 'Wo gebe ich an, wie viele SWS ich halten möchte?',
 		answer:
 			'Auf der Wunschseite, über der Tabelle, je Semester. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Das lesen nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; bei der Zuteilung steht es neben Deinem Namen.',

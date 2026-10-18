@@ -262,6 +262,35 @@ test.describe('the SWS controlling', () => {
 		await checkA11y(page);
 	});
 
+	// Who holds what, read-only: once published for everybody, before that a notice and not a
+	// table of parts that only look unfilled.
+	test('everybody reads the published assignment, and nothing before', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(
+			page,
+			`/zuteilung/uebersicht?semester=${CONTROLLING.previous}&studiengang=${CONTROLLING.home.code}`
+		);
+		const programme = page.getByRole('region', { name: new RegExp(`^${CONTROLLING.home.code}`) });
+		const rows = programme.getByRole('row');
+		await expect(rows.filter({ hasText: 'Vorlesung' })).toContainText(PERSONAS.eins.name);
+		await expect(rows.filter({ hasText: 'Praktikum' })).toContainText('nicht besetzt');
+		await checkA11y(page);
+
+		await gotoRendered(page, `/zuteilung/uebersicht?semester=${CONTROLLING.semester}`);
+		await expect(page.getByText('nicht veröffentlicht')).toBeVisible();
+		await expect(page.getByRole('table')).toHaveCount(0);
+
+		// A partner of E2U reads nothing of E2S, published or not.
+		const partner = await asPersona(PERSONAS.partner);
+		await gotoRendered(partner, `/zuteilung/uebersicht?semester=${CONTROLLING.previous}`);
+		await expect(
+			partner.getByRole('region', { name: new RegExp(`^${CONTROLLING.home.code}`) })
+		).toHaveCount(0);
+	});
+
 	// A partner faculty reads the statistics of the programme it follows and nothing of the others,
 	// and is offered none of the pages where somebody states something about themselves.
 	test('a partner faculty reads its own programme only', async ({ asPersona, checkA11y }) => {

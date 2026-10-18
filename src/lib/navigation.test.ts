@@ -180,10 +180,23 @@ describe('the bar of a partner faculty', () => {
 		expect(bar).toContain('Bedarf');
 		expect(bar).toContain('Statistik');
 		expect(bar).not.toContain('Meine Lehre');
-		expect(bar).not.toContain('Zuteilung');
+		expect(bar).toContain('Zuteilung');
 	});
 
 	it('gives a partner who also teaches here everything a colleague has', () => {
 		expect(labels(['PARTNER_READER', 'LECTURER'])).toContain('Meine Lehre');
+	});
+});
+
+describe('the assignment area', () => {
+	const area = (roles: string[]) =>
+		visibleNavItems(NAV_ITEMS, roles).find((i) => i.label === 'Zuteilung');
+
+	// Everybody reads the published assignment; the leads still land where they fill it.
+	it('leads a lecturer to the overview and a lead to the filling', () => {
+		expect(area(['LECTURER'])!.href).toBe('/zuteilung/uebersicht');
+		expect(area(['LECTURER'])!.children!.map((c) => c.label)).toEqual(['Übersicht']);
+		expect(area(['LECTURER', 'SUBJECT_GROUP_LEAD'])!.href).toBe('/zuteilung');
+		expect(area(['PARTNER_READER'])!.href).toBe('/zuteilung/uebersicht');
 	});
 });

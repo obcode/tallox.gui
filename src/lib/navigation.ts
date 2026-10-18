@@ -17,7 +17,17 @@ import { hasAnyRole, isPartnerOnly } from '$lib/roles';
  */
 type StaticRoute = Exclude<
 	RouteId,
-	`${string}[${string}` | '/gui-api' | `/gui-api/${string}` | '/healthz' | `/healthz/${string}`
+	| `${string}[${string}`
+	| '/gui-api'
+	| `/gui-api/${string}`
+	| '/healthz'
+	| `/healthz/${string}`
+	// Never a menu entry either, and out for the 25-member limit above: the schema is a sub-page
+	// of the API documentation, `/bedarf/sws` an old address that redirects, and `/konto` is a
+	// layout with no page of its own. Reached the limit with `/zuteilung/uebersicht`.
+	| `/api-doku/${string}`
+	| '/bedarf/sws'
+	| '/konto'
 >;
 
 /**
@@ -143,10 +153,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	},
 	TEACHING,
 	{
+		// No roles on the area since the read-only overview: everybody reads who holds what once a
+		// semester is published. Its first visible tab is where the bar entry leads, so the leads
+		// still land on "Besetzen" and everybody else on the overview.
 		emoji: '🧩',
 		label: 'Zuteilung',
-		hint: 'Instanzen besetzen',
-		roles: ASSIGNING,
+		hint: 'Wer hält was — und Instanzen besetzen',
 		children: [
 			// Exact: the competence pool lives below it and is a tab of its own.
 			{
@@ -163,6 +175,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				href: '/zuteilung/kompetenzen',
 				hint: 'Wer was halten kann, welche Module niemand abdeckt',
 				roles: ASSIGNING
+			},
+			{
+				emoji: '👀',
+				label: 'Übersicht',
+				href: '/zuteilung/uebersicht',
+				hint: 'Die veröffentlichte Zuteilung, nur zum Lesen'
 			}
 		]
 	},
