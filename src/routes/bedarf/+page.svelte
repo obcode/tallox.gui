@@ -6,6 +6,7 @@
 		ALL_PART_KINDS,
 		COURSE_TYPE_LABELS,
 		DUTY_LABELS,
+		basketLabel,
 		MODULE_KIND_LABELS,
 		PART_KIND_LABELS,
 		dutyBadge,
@@ -1617,6 +1618,11 @@
 															{#if row.module.dutyStatus}
 																<span class={dutyBadge(row.module.dutyStatus)}>
 																	{DUTY_LABELS[row.module.dutyStatus]}
+																</span>
+															{/if}
+															{#if basketLabel(row.module.dutyStatus, row.module.baskets)}
+																<span class="text-base-content/80 text-xs">
+																	{basketLabel(row.module.dutyStatus, row.module.baskets)}
 																</span>
 															{/if}
 															{#if !row.planned && row.proposedFrom}

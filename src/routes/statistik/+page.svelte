@@ -5,6 +5,7 @@
 		balanceBadge,
 		controllingTable,
 		deltaLabel,
+		basketGroups,
 		importGroups,
 		quotaTable,
 		semesterQuotaRule,
@@ -27,6 +28,7 @@
 	);
 	const yearSemesters = $derived(data.studyYear ? studyYearSemesters(data.studyYear) : null);
 	const imports = $derived(data.imports ? importGroups(data.imports) : null);
+	const baskets = $derived(data.baskets ? basketGroups(data.baskets) : null);
 	// The programme asked about may be one the faculty does not plan — it receives modules all the
 	// same — so the choice offers it too rather than showing "please choose" over its table.
 	const importChoices = $derived(
@@ -430,5 +432,56 @@
 				</div>
 			{/if}
 		</section>
+		{#if baskets !== null}
+			<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="baskets">
+				<h2 id="baskets" class="font-medium">Wahlpflicht nach Korb · {data.importsFor}</h2>
+				<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+					Welche Wahlpflichtmodule eines Korbs der Prüfungsordnung in diesem Semester laufen, eigene
+					wie fremde. Ein Modul in zwei Körben steht in beiden; die Summen der Körbe zusammen zählen
+					es deshalb doppelt. Pflichtmodule stehen nicht hier.
+				</p>
+				{#if baskets.length === 0}
+					<p class="text-base-content/80 mt-3 text-sm">
+						{data.importsFor} bietet in diesem Semester kein Wahlpflichtmodul an.
+					</p>
+				{:else}
+					<div class="mt-3 overflow-x-auto">
+						<table class="table-sm table">
+							<thead>
+								<tr>
+									<th>Modul</th>
+									<th>Zug</th>
+									<th>auch in</th>
+									<th class="text-right">Lehr-SWS</th>
+								</tr>
+							</thead>
+							{#each baskets as group (group.basket ?? '')}
+								<tbody>
+									<tr>
+										<th colspan="3" scope="rowgroup">{group.basket ?? 'ohne Korb'}</th>
+										<th class="text-right tabular-nums">{formatHours(group.teachingHours)}</th>
+									</tr>
+									{#each group.instances as i (i.id)}
+										<tr>
+											<td>{moduleName(i.module)}</td>
+											<td class="whitespace-nowrap">
+												{cohortLabel(data.importsFor, i.programmeSemester, i.track)}
+												{#if i.coveredBy}
+													<span class="badge badge-ghost badge-sm ml-1">
+														{i.coveredBy.acceptedAt ? 'mitbetreut' : 'Mitbetreuung angefragt'}
+													</span>
+												{/if}
+											</td>
+											<td class="text-base-content/80 text-xs">{i.alsoIn.join(' · ')}</td>
+											<td class="text-right tabular-nums">{formatHours(i.teachingHours)}</td>
+										</tr>
+									{/each}
+								</tbody>
+							{/each}
+						</table>
+					</div>
+				{/if}
+			</section>
+		{/if}
 	{/if}
 </div>

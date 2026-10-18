@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	balanceBadge,
+	basketGroups,
 	controllingTable,
 	deltaLabel,
 	importGroups,
@@ -10,6 +11,7 @@ import {
 	studyYearSemesters,
 	studyYearTable,
 	studyYearOf,
+	type BasketInput,
 	type ImportInput,
 	type LoadInput
 } from './controlling';
@@ -202,5 +204,55 @@ describe('the study-year table', () => {
 		expect(studyYearSemesters(2026)).toEqual({ winter: '2026-WS', summer: '2027-SS' });
 		expect(semesterQuotaRule('2026-WS')).toMatch(/Hälfte/);
 		expect(semesterQuotaRule('2027-SS')).toMatch(/übrig/);
+	});
+});
+
+describe('the electives by basket', () => {
+	function instance(
+		name: string,
+		hours: number,
+		baskets: string[],
+		dutyStatus: string | null = 'ELECTIVE'
+	): BasketInput {
+		return {
+			id: name,
+			track: '',
+			teachingHours: hours,
+			module: { name, kind: 'MODULE', dutyStatus, baskets }
+		};
+	}
+
+	// The question from the programme lead: which modules of this basket run this semester.
+	it('groups the electives by basket and leaves the compulsory modules out', () => {
+		const groups = basketGroups([
+			instance('Eins', 4, ['WPF B']),
+			instance('Zwei', 6, ['WPF A']),
+			instance('Drei', 2, ['WPF A']),
+			instance('Pflicht', 8, ['Pflichtmodule'], 'COMPULSORY')
+		]);
+		expect(groups.map((g) => g.basket)).toEqual(['WPF A', 'WPF B']);
+		expect(groups[0].teachingHours).toBe(8);
+		expect(groups[0].instances.map((i) => i.module.name)).toEqual(['Zwei', 'Drei']);
+	});
+
+	// Listed where somebody looks for it, and marked, so the sum over groups is not mistaken for
+	// the programme's elective total.
+	it('lists a module in two baskets in both, and names the other one', () => {
+		const groups = basketGroups([instance('Beides', 4, ['WPF A', 'WPF B'])]);
+		expect(groups.map((g) => [g.basket, g.instances[0].alsoIn])).toEqual([
+			['WPF A', ['WPF B']],
+			['WPF B', ['WPF A']]
+		]);
+	});
+
+	// A local module or a placeholder sits in no basket of the regulations; it still runs.
+	it('keeps the electives without a basket, last', () => {
+		const groups = basketGroups([instance('Lokal', 2, [], null), instance('Eins', 4, ['WPF A'])]);
+		expect(groups.map((g) => g.basket)).toEqual(['WPF A', null]);
+		expect(groups[1].teachingHours).toBe(2);
+	});
+
+	it('takes a mixed module as an elective', () => {
+		expect(basketGroups([instance('Mal so', 4, ['WPF A'], 'MIXED')])).toHaveLength(1);
 	});
 });

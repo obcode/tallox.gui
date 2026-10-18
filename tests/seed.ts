@@ -303,13 +303,14 @@ export function catalogueStatements(): string[] {
 		// what makes the list a union rather than a lookup.
 		// The earliest semester each of them may be taken in: the demand table groups by it, and
 		// a fixture that left it empty would only ever exercise the "no cohort year" heading.
-		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
+		// The basket names the elective's line shows, and the compulsory one's does not.
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, baskets, source_rows,
 		                              min_programme_semester)
-		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], 1, 1),
-		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], 1, 2),
-		        ('${CATALOGUE.confirmable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-05'], 1, 1),
-		        ('${CATALOGUE.correctable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-06'], 1, 2)
-		 ON CONFLICT (module_id, spo_id) DO NOTHING;`,
+		 VALUES ('${CATALOGUE.split}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-01'], ARRAY['E2E Pflichtkorb'], 1, 1),
+		        ('${CATALOGUE.unsplit}', '${CATALOGUE.spo}', false, ARRAY['E2E-M-02'], ARRAY['E2E WPF-Korb'], 1, 2),
+		        ('${CATALOGUE.confirmable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-05'], ARRAY['E2E Pflichtkorb'], 1, 1),
+		        ('${CATALOGUE.correctable}', '${CATALOGUE.spo}', true, ARRAY['E2E-M-06'], ARRAY['E2E Pflichtkorb'], 1, 2)
+		 ON CONFLICT (module_id, spo_id) DO UPDATE SET baskets = EXCLUDED.baskets;`,
 
 		// Somebody who teaches, and the module that names them.
 		//

@@ -242,6 +242,69 @@ export function importGroups(instances: readonly ImportInput[]): ImportGroup[] {
 	return [...groups.values()].sort((a, b) => a.home.code.localeCompare(b.home.code));
 }
 
+/** An instance of a programme, with the baskets its module sits in there. */
+export type BasketInput = {
+	id: string;
+	track: string;
+	programmeSemester?: number | null;
+	teachingHours: number;
+	coveredBy?: { acceptedAt?: string | null } | null;
+	module: {
+		name: string;
+		zpaId?: string | null;
+		kind: string;
+		dutyStatus?: string | null;
+		baskets: string[];
+	};
+};
+
+/** The electives of one basket, or of none (`basket` null) for the ones the catalogue files nowhere. */
+export type BasketGroup = {
+	basket: string | null;
+	instances: (BasketInput & { alsoIn: string[] })[];
+	teachingHours: number;
+};
+
+/**
+ * A programme's electives this semester, grouped by the basket of its regulations they sit in.
+ *
+ * Compulsory modules are left out: the question is "which of this basket's electives run", and a
+ * compulsory module answers a different one. A module in two baskets is listed in both — that is
+ * where a programme lead looks for it — and says so with `alsoIn`, so that adding up the groups by
+ * hand visibly counts it twice. Electives without a basket (a local module, a placeholder) come
+ * last, under `null`, rather than vanishing.
+ */
+export function basketGroups(instances: readonly BasketInput[]): BasketGroup[] {
+	const groups = new Map<string | null, BasketGroup>();
+	const add = (basket: string | null, i: BasketInput, alsoIn: string[]) => {
+		let group = groups.get(basket);
+		if (!group) {
+			group = { basket, instances: [], teachingHours: 0 };
+			groups.set(basket, group);
+		}
+		group.instances.push({ ...i, alsoIn });
+		group.teachingHours += i.teachingHours;
+	};
+	for (const i of instances) {
+		if (i.module.dutyStatus === 'COMPULSORY') continue;
+		const baskets = i.module.baskets;
+		if (baskets.length === 0) {
+			add(null, i, []);
+			continue;
+		}
+		for (const b of baskets) {
+			add(
+				b,
+				i,
+				baskets.filter((other) => other !== b)
+			);
+		}
+	}
+	return [...groups.values()].sort((a, b) =>
+		a.basket === null ? 1 : b.basket === null ? -1 : a.basket.localeCompare(b.basket, 'de')
+	);
+}
+
 /**
  * The study year a semester belongs to, named after the year its winter starts in: 2026-WS and
  * 2027-SS are both 2026.

@@ -34,6 +34,18 @@ test.describe('the module catalogue', () => {
 		await expect(row.getByText('nur Heimat')).toBeVisible();
 	});
 
+	// Which basket an elective sits in, on its line; a compulsory module's basket says nothing the
+	// badge does not.
+	test('names the basket of an elective, and not of a compulsory module', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/module?studiengang=${CATALOGUE.programme}`);
+
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toContainText(
+			'E2E WPF-Korb'
+		);
+		await expect(page.getByText('E2E Pflichtkorb')).toHaveCount(0);
+	});
+
 	// The work list. A lead getting ready for a semester needs to know which of their modules
 	// cannot be declared yet, and that is a bounded, finishable task.
 	test('the work list finds the modules with no split', async ({ asPersona }) => {

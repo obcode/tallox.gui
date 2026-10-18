@@ -83,6 +83,19 @@ export function dutyBadge(status: DutyStatus | null | undefined): string {
 	return `badge badge-sm h-auto py-0.5 text-left ${dutyBadgeColour(status)}`;
 }
 
+/**
+ * The basket an elective sits in, for the line under its name: "WPF Anwendungen des maschinellen
+ * Lernens". Null for a compulsory module — "Pflichtmodule" beside a "Pflicht" badge says nothing
+ * twice — and for one the catalogue files nowhere.
+ */
+export function basketLabel(
+	status: DutyStatus | null | undefined,
+	baskets: readonly string[] | null | undefined
+): string | null {
+	if (status === 'COMPULSORY' || !baskets || baskets.length === 0) return null;
+	return baskets.join(' · ');
+}
+
 /** Just the colour. Separate so the reasoning above sits beside the shape and not the hue. */
 function dutyBadgeColour(status: DutyStatus | null | undefined): string {
 	switch (status) {

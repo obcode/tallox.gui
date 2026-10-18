@@ -3,6 +3,7 @@
 	import {
 		COURSE_TYPE_LABELS,
 		DUTY_LABELS,
+		basketLabel,
 		FREQUENCY_LABELS,
 		PROGRAMME_STATUS_LABELS,
 		componentSummary,
@@ -390,6 +391,11 @@
 										<span class={dutyBadge(module.dutyStatus)}>
 											{DUTY_LABELS[module.dutyStatus]}
 										</span>
+										{#if basketLabel(module.dutyStatus, module.baskets)}
+											<span class="text-base-content/80 block text-xs">
+												{basketLabel(module.dutyStatus, module.baskets)}
+											</span>
+										{/if}
 									{:else}
 										<span class="text-base-content/80">—</span>
 									{/if}

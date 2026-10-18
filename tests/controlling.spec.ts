@@ -27,6 +27,8 @@ const CONTROLLING = {
 	// database the insert below skipped this row and left the instances pointing at nothing.
 	other: { id: '0e2e0000-0000-4000-8000-0000000000a1', code: 'E2U' },
 	module: '0e2e0000-0000-4000-8000-0000000000a2',
+	// E2U's regulations, where the module is an elective in two baskets at once.
+	guestSpo: '0e2e0000-0000-4000-8000-0000000000a7',
 	semester: '2029-SS',
 	previous: '2028-SS',
 	winter: '2028-WS',
@@ -77,6 +79,13 @@ function seedSql(): string {
 		        ('${i.lent}', 'LAB', 0, 2),
 		        ('${i.previous}', 'LECTURE', 0, 2), ('${i.previous}', 'LAB', 1, 2),
 		        ('${i.winter}', 'LECTURE', 0, 2), ('${i.winter}', 'LAB', 1, 2);`,
+		`INSERT INTO spo (id, programme_id, version, valid_from, primuss_id)
+		 VALUES ('${c.guestSpo}', '${c.other.id}', 2025, '2025-10-01', '07-E2U-2025')
+		 ON CONFLICT DO NOTHING;`,
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, baskets, source_rows)
+		 VALUES ('${c.module}', '${c.guestSpo}', false, ARRAY['E2U-01'],
+		         ARRAY['E2E Vertiefung', 'E2E WPF-Korb'], 2)
+		 ON CONFLICT (module_id, spo_id) DO UPDATE SET baskets = EXCLUDED.baskets;`,
 		`INSERT INTO programme_quota (programme_id, study_year, teaching_hours)
 		 VALUES ('${c.home.id}', ${c.studyYear}, 20);`
 	].join('\n');
@@ -208,6 +217,31 @@ test.describe('the SWS controlling', () => {
 			`/statistik?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.home.code}`
 		);
 		await expect(imports).toContainText('kein Modul aus einem anderen Studiengang');
+
+		await checkA11y(page);
+	});
+
+	// The question a programme lead asked: which electives of a basket run this semester. A module
+	// in two baskets is in both groups, and says where else it is.
+	test('groups the electives by basket', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(
+			page,
+			`/statistik?semester=${CONTROLLING.semester}&studiengang=${CONTROLLING.other.code}`
+		);
+
+		const baskets = page.getByRole('region', { name: /^Wahlpflicht nach Korb/ });
+		for (const [basket, other] of [
+			['E2E Vertiefung', 'E2E WPF-Korb'],
+			['E2E WPF-Korb', 'E2E Vertiefung']
+		]) {
+			const group = baskets.getByRole('rowgroup').filter({
+				has: page.getByRole('rowheader', { name: basket, exact: true })
+			});
+			const row = group.getByRole('row', { name: /E2E Controlling-Modul/ });
+			await expect(row).toContainText(other);
+			await expect(row.getByRole('cell').last()).toHaveText('2');
+		}
 
 		await checkA11y(page);
 	});

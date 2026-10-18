@@ -8,6 +8,7 @@ import {
 	PART_KIND_LABELS,
 	componentMismatch,
 	componentSummary,
+	basketLabel,
 	dutyBadge,
 	frequenciesForTerm,
 	findingIsAlarming,
@@ -335,5 +336,19 @@ describe('mayWriteModuleSplit', () => {
 		expect(mayWriteModuleSplit(['LECTURER'], [{ code: 'IF' }], [{ id: 'g-se' }], inGroup)).toBe(
 			false
 		);
+	});
+});
+
+describe('the basket line', () => {
+	it('names the baskets of an elective', () => {
+		expect(basketLabel('ELECTIVE', ['WPF A', 'WPF B'])).toBe('WPF A · WPF B');
+		expect(basketLabel('MIXED', ['WPF A'])).toBe('WPF A');
+	});
+
+	// "Pflichtmodule" under a "Pflicht" badge would say the same thing twice.
+	it('says nothing for a compulsory module or one in no basket', () => {
+		expect(basketLabel('COMPULSORY', ['Pflichtmodule'])).toBeNull();
+		expect(basketLabel('ELECTIVE', [])).toBeNull();
+		expect(basketLabel(null, undefined)).toBeNull();
 	});
 });

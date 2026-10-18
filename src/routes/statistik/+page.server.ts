@@ -84,6 +84,32 @@ const ImportsDocument = graphql(`
 `);
 
 /**
+ * Every instance of one programme, with the baskets its module sits in there — for the electives
+ * by basket. All of them, not only the foreign-home ones: a basket mixes the programme's own
+ * modules with other programmes'.
+ */
+const BasketsDocument = graphql(`
+	query ControllingBaskets($semester: String!, $programme: String!) {
+		courseInstances(semester: $semester, programme: $programme) {
+			id
+			track
+			programmeSemester
+			teachingHours
+			coveredBy {
+				acceptedAt
+			}
+			module {
+				name
+				zpaId
+				kind
+				dutyStatus(programme: $programme)
+				baskets(programme: $programme)
+			}
+		}
+	}
+`);
+
+/**
  * The study year the selected semester belongs to: the quota beside both semesters, and which
  * programmes have announced the review of the selected semester as done.
  */
@@ -165,10 +191,16 @@ export const load: PageServerLoad = async ({ url }) => {
 	const own = programmes.me?.programmes.map((p) => p.code) ?? [];
 	const importsFor = (url.searchParams.get('studiengang') ?? own[0] ?? '').toUpperCase();
 	let imports = null;
+	let baskets = null;
 	if (current && importsFor !== '') {
 		try {
-			imports = (await backendRequest(ImportsDocument, { semester, programme: importsFor }))
-				.courseInstances;
+			const variables = { semester, programme: importsFor };
+			const [i, b] = await Promise.all([
+				backendRequest(ImportsDocument, variables),
+				backendRequest(BasketsDocument, variables)
+			]);
+			imports = i.courseInstances;
+			baskets = b.courseInstances;
 		} catch (err) {
 			error(403, toRefusal(err).message);
 		}
@@ -197,6 +229,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		year,
 		importsFor,
 		imports,
+		baskets,
 		selected: semester,
 		previousCode,
 		load: current?.teachingLoad ?? null,

@@ -53,6 +53,7 @@ const CatalogueDocument = graphql(`
 				teachingHours
 			}
 			dutyStatus(programme: $programme)
+			baskets(programme: $programme)
 			inCatalogue(programme: $programme)
 		}
 		# The groups to assign into, and the number still waiting. Both are readable by anybody

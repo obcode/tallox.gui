@@ -120,6 +120,7 @@ const DemandDocument = graphql(`
 				teachingHours
 			}
 			dutyStatus(programme: $programme)
+			baskets(programme: $programme)
 			programmeSemester(programme: $programme)
 			# Whose split this is to state: the home programme's lead and the subject group's.
 			# A module that counts here may be at home elsewhere, and then "bestätigen" is not
@@ -169,6 +170,7 @@ const DemandDocument = graphql(`
 					teachingHours
 				}
 				dutyStatus(programme: $programme)
+				baskets(programme: $programme)
 				programmeSemester(programme: $programme)
 			}
 			parts {
