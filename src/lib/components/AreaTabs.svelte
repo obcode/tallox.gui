@@ -22,7 +22,9 @@
 
 {#if area}
 	<nav aria-label={area.label} class="mb-4">
-		<div class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+		<!-- Wrapping, not scrolling: at 375px the administration's five tabs do not fit, and a
+		     scrolled-away "Diagnose" is a page nobody finds. A second row is visible. -->
+		<div class="tabs tabs-box w-fit max-w-full flex-wrap">
 			{#each area.children ?? [] as tab (tab.href)}
 				<a
 					href={resolve(tab.href!)}

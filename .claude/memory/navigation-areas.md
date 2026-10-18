@@ -48,5 +48,19 @@ und E2E-Links bleiben gültig, und es braucht keine Weiterleitungen.
 
 ## Gemessen
 
-Bei 1280 px passt die Leiste auch für das Dekanat mit allen sieben Einträgen;
-`tests/responsive.spec.ts` blieb ohne Änderung grün. E2E: `tests/navigation.spec.ts`.
+Bei 1280 px passt die Leiste auch für das Dekanat mit allen sieben Einträgen. E2E:
+`tests/navigation.spec.ts`.
+
+**`responsive.spec.ts` war grün und hat trotzdem nichts gesagt:** es misst nur die Startseite,
+anonym — keine Reiter, kein langes Menü. Nachgemessen fanden sich zwei echte Fehler:
+
+- Bei 375 px schoben die fünf Verwaltungsreiter „Diagnose“ hinter einen seitlichen Scroll. Die
+  Reiter brechen jetzt um (`flex-wrap`), statt zu scrollen.
+- Das ☰-Menü des Dekanats endete bei 727 px — auf einem 667-px-Telefon unter der `sticky`
+  Kopfzeile unerreichbar. Es hat jetzt `max-h-[calc(100dvh-4.5rem)] overflow-y-auto` und
+  **`flex-nowrap`**: daisyUIs `.menu` bricht um, und eine Höhengrenze auf einer umbrechenden
+  Spalte erzeugt eine zweite Spalte statt einer Scrollleiste. Dazu `w-64`, weil „Kompetenzen der
+  Fachgruppe“ eingerückt nicht in `w-56` passt.
+
+Beides prüft jetzt „areas across widths“ in `responsive.spec.ts`, angemeldet, über alle fünf
+Breiten; die Tests schlugen gegen den alten Stand fehl.

@@ -171,9 +171,15 @@
 					<span aria-hidden="true">☰</span>
 				</div>
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<!-- Scrolls inside itself: with the areas' pages indented below them the menu is
+				     taller than a 667px phone, and the header it hangs from is sticky — what runs
+				     past the screen's bottom edge cannot be scrolled to. `flex-nowrap`, because
+				     daisyUI's `.menu` wraps, and a height limit on a wrapping column makes a second
+				     column instead of a scrollbar. w-64: "Kompetenzen der Fachgruppe", indented,
+				     does not fit in w-56. -->
 				<ul
 					tabindex="0"
-					class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 w-56 border p-2 shadow-lg"
+					class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 max-h-[calc(100dvh-4.5rem)] w-64 flex-nowrap overflow-y-auto border p-2 shadow-lg"
 				>
 					<li class="menu-title truncate">
 						{#if remoteUser}
