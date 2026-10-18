@@ -32,7 +32,10 @@ const ROLES: Record<string, readonly string[]> = {
 	// Neun holds a subject group leadership and is assigned no subject group — deliberately, and
 	// permanently. An unscoped grant permits nothing here, so she is the persona that renders
 	// the state a screen has to explain rather than show as an empty list.
-	'prof.neun@example.org': ['LECTURER', 'SUBJECT_GROUP_LEAD']
+	'prof.neun@example.org': ['LECTURER', 'SUBJECT_GROUP_LEAD'],
+	// Zehn is a partner faculty and nothing else — the one account that reads less than an
+	// ordinary one. Which programme it follows is the controlling spec's to seed.
+	'partner.zehn@example.org': ['PARTNER_READER']
 };
 
 /** Doubles single quotes. The values are constants from this repository, but a string that

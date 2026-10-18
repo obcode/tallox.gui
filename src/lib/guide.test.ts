@@ -218,3 +218,14 @@ describe('the mark on the walk-through', () => {
 		expect(isDue(step('Das Planungssemester setzen'), { kind: 'unknown' })).toBe(false);
 	});
 });
+
+describe('what is due for a partner faculty', () => {
+	// The steps for everybody are a colleague's — choosing groups, stating competences, wishes.
+	it('names none of the steps one does for oneself', () => {
+		for (const phase of PHASE_ORDER) {
+			expect(dueNow(phase, ['PARTNER_READER']).filter((s) => s.who.length === 0)).toEqual([]);
+		}
+		expect(mayOpen('/wuensche', ['PARTNER_READER'])).toBe(false);
+		expect(mayOpen('/statistik', ['PARTNER_READER'])).toBe(true);
+	});
+});

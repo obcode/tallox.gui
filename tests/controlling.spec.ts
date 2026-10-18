@@ -86,6 +86,10 @@ function seedSql(): string {
 		 VALUES ('${c.module}', '${c.guestSpo}', false, ARRAY['E2U-01'],
 		         ARRAY['E2E Vertiefung', 'E2E WPF-Korb'], 2)
 		 ON CONFLICT (module_id, spo_id) DO UPDATE SET baskets = EXCLUDED.baskets;`,
+		// The partner faculty follows E2U, the programme that only receives.
+		`INSERT INTO person_programme_scope (person_id, role, programme_id)
+		 SELECT id, 'PARTNER_READER', '${c.other.id}' FROM person WHERE mail = '${PERSONAS.partner.mail}'
+		 ON CONFLICT DO NOTHING;`,
 		`INSERT INTO programme_quota (programme_id, study_year, teaching_hours)
 		 VALUES ('${c.home.id}', ${c.studyYear}, 20);`
 	].join('\n');
@@ -242,6 +246,24 @@ test.describe('the SWS controlling', () => {
 			await expect(row).toContainText(other);
 			await expect(row.getByRole('cell').last()).toHaveText('2');
 		}
+
+		await checkA11y(page);
+	});
+
+	// A partner faculty reads the statistics of the programme it follows and nothing of the others,
+	// and is offered none of the pages where somebody states something about themselves.
+	test('a partner faculty reads its own programme only', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.partner);
+		await gotoRendered(page, `/statistik?semester=${CONTROLLING.semester}`);
+
+		const load = page.getByRole('region', { name: /^SWS je Studiengang/ });
+		const row = (code: string) => load.getByRole('row', { name: new RegExp(`^${code} – `) });
+		await expect(row(CONTROLLING.other.code)).toBeVisible();
+		await expect(row(CONTROLLING.home.code)).toHaveCount(0);
+
+		const nav = page.getByRole('navigation').first();
+		await expect(nav.getByRole('link', { name: /Statistik/ }).first()).toBeAttached();
+		await expect(nav.getByRole('link', { name: /Meine Lehre|Wünsche/ })).toHaveCount(0);
 
 		await checkA11y(page);
 	});

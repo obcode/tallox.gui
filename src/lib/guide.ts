@@ -6,6 +6,7 @@ import {
 	visibleNavItems,
 	type NavItem
 } from '$lib/navigation';
+import { isPartnerOnly } from '$lib/roles';
 import type { PlanningState } from '$lib/planning';
 import { PHASE_LABELS, semesterName } from '$lib/semester';
 
@@ -227,7 +228,10 @@ export function dueNow(phase: Phase | null, roles: readonly string[]): GuideStep
 	return GUIDE.flatMap((section) => section.steps).filter(
 		(step) =>
 			step.due?.includes(now) &&
-			(step.who.length === 0 || step.who.some((role) => roles.includes(role)))
+			// A step nobody in particular does is every colleague's — not a partner faculty's,
+			// which states nothing here.
+			((step.who.length === 0 && !isPartnerOnly(roles)) ||
+				step.who.some((role) => roles.includes(role)))
 	);
 }
 

@@ -1989,6 +1989,13 @@ type Mutation {
     Short codes, for example `["IF", "IG"]`. Upper-cased and de-duplicated for you.
     """
     programmes: [String!]!
+
+    """
+    Which grant the programmes are for: `PROGRAMME_LEAD` (the default) or `PARTNER_READER`.
+    Anything else is refused with `ROLE_NOT_PROGRAMME_SCOPED`; a partner without the role with
+    `NOT_A_PARTNER_READER`. A partner may follow a programme the faculty does not plan.
+    """
+    role: Role = PROGRAMME_LEAD
   ): Person!
 
   """
@@ -2901,6 +2908,12 @@ type Person {
   script needs to know, and on `me` it is your own data.
   """
   programmes: [Programme!]!
+
+  """
+  The study programmes this person follows as a partner faculty (`PARTNER_READER`). Empty for
+  everybody else, and empty for a partner nobody has assigned one to — who then reads nothing.
+  """
+  partnerProgrammes: [Programme!]!
 
   """
   The subject groups this person's subject-group leadership applies to.
@@ -3839,6 +3852,13 @@ enum Role {
   Reads across programmes for the import/export statistics, keeps the teaching-load traffic light.
   """
   DEANS_OFFICE
+
+  """
+  A partner faculty following the study programmes it shares with this one. Held alone it reads
+  less than an ordinary account — the demand, the controlling and the published assignments of its
+  programmes, and no wishes — and writes nothing.
+  """
+  PARTNER_READER
 
   """
   Administers people, roles and tokens. Not a reader of unpublished wishes.

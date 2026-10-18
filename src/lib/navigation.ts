@@ -1,6 +1,6 @@
 import type { RouteId } from '$app/types';
 import type { Role } from '$lib/gql/__generated__/graphql';
-import { hasAnyRole } from '$lib/roles';
+import { hasAnyRole, isPartnerOnly } from '$lib/roles';
 
 /**
  * A route that can be linked to without arguments.
@@ -64,6 +64,12 @@ export type NavItem = {
 	 */
 	roles?: readonly Role[];
 	/**
+	 * Only for members of the faculty: hidden from an account that is a partner faculty and
+	 * nothing else. For the pages where somebody states something about themselves — a partner
+	 * reads the planning and states nothing, and the backend refuses it (PARTNER_READS_ONLY).
+	 */
+	colleaguesOnly?: boolean;
+	/**
 	 * The pages of an area, shown as tabs above them (`AreaTabs`) and indented in the narrow menu.
 	 *
 	 * Grouped here and not in the route tree: `/wuensche` and `/konto/kompetenzen` keep their
@@ -86,13 +92,21 @@ const TEACHING: NavItem = {
 	emoji: '✋',
 	label: 'Meine Lehre',
 	hint: 'Wünsche, Kompetenzen und Fachgruppen — was Du selbst angibst',
+	colleaguesOnly: true,
 	children: [
-		{ emoji: '✋', label: 'Wünsche', href: '/wuensche', hint: 'Interesse an Instanzen bekunden' },
+		{
+			emoji: '✋',
+			label: 'Wünsche',
+			href: '/wuensche',
+			hint: 'Interesse an Instanzen bekunden',
+			colleaguesOnly: true
+		},
 		{
 			emoji: '🧠',
 			label: 'Kompetenzen',
 			href: '/konto/kompetenzen',
-			hint: 'Welche Module Du halten kannst, und für welche Du Dich interessierst'
+			hint: 'Welche Module Du halten kannst, und für welche Du Dich interessierst',
+			colleaguesOnly: true
 		},
 		{
 			// Membership is not a permission, so this is the one thing about a subject group that
@@ -100,7 +114,8 @@ const TEACHING: NavItem = {
 			emoji: '🗂️',
 			label: 'Fachgruppen',
 			href: '/konto/fachgruppen',
-			hint: 'In welchen Fächern Du arbeitest — Vorauswahl für Wünsche und Kompetenzen'
+			hint: 'In welchen Fächern Du arbeitest — Vorauswahl für Wünsche und Kompetenzen',
+			colleaguesOnly: true
 		}
 	]
 };
@@ -153,7 +168,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		label: 'Statistik',
 		href: '/statistik',
 		hint: 'SWS-Controlling: Lehre je Studiengang gegen das Kontingent',
-		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
+		// And the partner faculties: the controlling of their programmes is what they follow.
+		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'PARTNER_READER']
 	},
 	{
 		// Running the faculty's side of the installation: not a step of the planning, so it comes
@@ -278,8 +294,10 @@ export function visibleNavItems(
 	roles: readonly string[]
 ): readonly NavItem[] {
 	const out: NavItem[] = [];
+	const partner = isPartnerOnly(roles);
 	for (const item of items) {
 		if (item.roles && !hasAnyRole(roles, item.roles)) continue;
+		if (item.colleaguesOnly && partner) continue;
 		if (!item.children) {
 			out.push(item);
 			continue;

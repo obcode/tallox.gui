@@ -39,7 +39,14 @@ export const PERSONAS = {
 	 * *renders* an empty scope, and the backend asserts the same rule from its own side without
 	 * needing a seventh person for it.
 	 */
-	unassigned: { mail: 'prof.neun@example.org', name: 'Prof. Neun' }
+	unassigned: { mail: 'prof.neun@example.org', name: 'Prof. Neun' },
+	/**
+	 * A partner faculty and nothing else: reads the demand, the statistics and the published
+	 * assignments of the programmes it follows, and states nothing. GUI-only like Neun — the
+	 * backend asserts the rule with its own cast (`bootstrap/partner_test.go`); what this one
+	 * exercises is the bar and the pages a partner is offered.
+	 */
+	partner: { mail: 'partner.zehn@example.org', name: 'Partner Zehn' }
 } as const;
 
 export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];

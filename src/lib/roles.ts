@@ -12,6 +12,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 	SUBJECT_GROUP_LEAD: 'Fachgruppenleitung',
 	PROGRAMME_LEAD: 'Studiengangsleitung',
 	DEANS_OFFICE: 'Dekanat',
+	PARTNER_READER: 'Partnerfakultät',
 	ADMIN: 'Administration'
 };
 
@@ -24,6 +25,8 @@ export const ROLE_HINTS: Record<Role, string> = {
 	SUBJECT_GROUP_LEAD: 'Besetzt die Instanzen einer Fachgruppe.',
 	PROGRAMME_LEAD: 'Meldet den Bedarf eines Studiengangs an.',
 	DEANS_OFFICE: 'Liest studiengangsübergreifend, pflegt die Deputats-Ampel.',
+	PARTNER_READER:
+		'Liest Bedarf, Statistik und veröffentlichte Zuteilung der zugeordneten Studiengänge — allein vergeben weniger als ein normales Konto, keine Wünsche, keine Eintragungen.',
 	ADMIN: 'Verwaltet Personen, Rollen und Tokens. Liest bewusst keine Wünsche.'
 };
 
@@ -36,6 +39,7 @@ export const ALL_ROLES: readonly Role[] = [
 	'SUBJECT_GROUP_LEAD',
 	'PROGRAMME_LEAD',
 	'DEANS_OFFICE',
+	'PARTNER_READER',
 	'ADMIN'
 ] as const;
 
@@ -78,6 +82,15 @@ export function mayPreviewRoles(grantedRoles: readonly string[]): boolean {
 /** Does this set of roles hold at least one of the named ones? */
 export function hasAnyRole(held: readonly string[], wanted: readonly Role[]): boolean {
 	return wanted.some((role) => held.includes(role));
+}
+
+/**
+ * Whether these roles are a partner faculty's alone. The backend's policy.PartnerOnly: held
+ * beside any other role, the partner role changes nothing, because whoever also teaches here is a
+ * colleague.
+ */
+export function isPartnerOnly(roles: readonly string[]): boolean {
+	return roles.length === 1 && roles[0] === 'PARTNER_READER';
 }
 
 /**

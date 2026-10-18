@@ -588,6 +588,22 @@
 												</span>
 											{/if}
 										{/if}
+										{#if person.roles.includes('PARTNER_READER')}
+											{#if person.partnerProgrammes.length > 0}
+												{#each person.partnerProgrammes as programme (programme.code)}
+													<span class="badge badge-ghost badge-sm" title="liest als Partnerfakultät"
+														>{programme.code} (Partner)</span
+													>
+												{/each}
+											{:else}
+												<span
+													class="badge badge-warning badge-sm"
+													title="Ohne Zuordnung liest diese Partnerfakultät nichts"
+												>
+													Partner ohne Studiengang
+												</span>
+											{/if}
+										{/if}
 									</div>
 								{/if}
 							</td>
@@ -688,6 +704,52 @@
 											<button type="submit" class="btn btn-sm">Studiengänge speichern</button>
 										</div>
 									</form>
+
+									{#if person.roles.includes('PARTNER_READER')}
+										<form
+											method="POST"
+											action="?/programmes"
+											use:enhance
+											class="border-base-300 flex flex-col gap-3 border-t py-3"
+										>
+											<input type="hidden" name="id" value={person.id} />
+											<input type="hidden" name="role" value="PARTNER_READER" />
+
+											<fieldset class="flex flex-col gap-1">
+												<legend class="mb-1 text-sm font-medium">
+													Studiengänge dieser Partnerfakultät
+												</legend>
+												<p class="text-base-content/80 mb-1 text-sm">
+													Welche Studiengänge diese Person lesen darf: Bedarf, Statistik und
+													veröffentlichte Zuteilung, keine Wünsche. Ohne Zuordnung liest sie nichts.
+													Hat sie daneben eine weitere Rolle, gilt die — dann gehört sie zum
+													Kollegium.
+												</p>
+												<div class="grid grid-cols-2 gap-1 sm:grid-cols-4">
+													{#each data.programmes as programme (programme.code)}
+														<label class="flex items-center gap-2 text-sm">
+															<input
+																type="checkbox"
+																name="programmes"
+																value={programme.code}
+																checked={person.partnerProgrammes.some(
+																	(p) => p.code === programme.code
+																)}
+																class="checkbox checkbox-sm"
+															/>
+															<span title={programme.title}>{programme.code}</span>
+														</label>
+													{/each}
+												</div>
+											</fieldset>
+
+											<div class="flex flex-wrap gap-2">
+												<button type="submit" class="btn btn-sm"
+													>Partner-Studiengänge speichern</button
+												>
+											</div>
+										</form>
+									{/if}
 
 									<form method="POST" action="?/active" use:enhance class="pb-2">
 										<input type="hidden" name="id" value={person.id} />

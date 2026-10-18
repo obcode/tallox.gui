@@ -55,6 +55,9 @@ const PeopleDocument = graphql(`
 			programmes {
 				code
 			}
+			partnerProgrammes {
+				code
+			}
 		}
 		programmes {
 			code
@@ -83,10 +86,13 @@ const SetPersonRolesDocument = graphql(`
 `);
 
 const SetPersonProgrammesDocument = graphql(`
-	mutation SetPersonProgrammes($id: ID!, $programmes: [String!]!) {
-		setPersonProgrammes(id: $id, programmes: $programmes) {
+	mutation SetPersonProgrammes($id: ID!, $programmes: [String!]!, $role: Role) {
+		setPersonProgrammes(id: $id, programmes: $programmes, role: $role) {
 			id
 			programmes {
+				code
+			}
+			partnerProgrammes {
 				code
 			}
 		}
@@ -243,9 +249,12 @@ export const actions: Actions = {
 		// the moment two administrators have the same person open, and here the race would end
 		// with somebody leading a programme nobody assigned them.
 		const programmes = form.getAll('programmes').map(String);
+		// Which grant the programmes are for: the lead's, or the partner faculty's. The backend
+		// refuses anything else, so this only picks between the two forms on the page.
+		const role = form.get('role') === 'PARTNER_READER' ? 'PARTNER_READER' : 'PROGRAMME_LEAD';
 
 		try {
-			await backendRequest(SetPersonProgrammesDocument, { id, programmes });
+			await backendRequest(SetPersonProgrammesDocument, { id, programmes, role });
 		} catch (error) {
 			// NOT_A_PROGRAMME_LEAD arrives here when somebody sets programmes before the role.
 			// Its sentence names the next step, which is worth more than a generic refusal.

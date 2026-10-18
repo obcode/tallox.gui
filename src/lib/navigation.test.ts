@@ -169,3 +169,20 @@ describe('visibleNavItems', () => {
 		expect(visibleNavItems(items, ['ADMIN'])[0].href).toBe('/verwaltung/diagnose');
 	});
 });
+
+describe('the bar of a partner faculty', () => {
+	const labels = (roles: string[]) => visibleNavItems(NAV_ITEMS, roles).map((i) => i.label);
+
+	// A partner reads the planning of its programmes and states nothing about itself.
+	it('offers the demand and the statistics, and none of the pages one fills in oneself', () => {
+		const bar = labels(['PARTNER_READER']);
+		expect(bar).toContain('Bedarf');
+		expect(bar).toContain('Statistik');
+		expect(bar).not.toContain('Meine Lehre');
+		expect(bar).not.toContain('Zuteilung');
+	});
+
+	it('gives a partner who also teaches here everything a colleague has', () => {
+		expect(labels(['PARTNER_READER', 'LECTURER'])).toContain('Meine Lehre');
+	});
+});

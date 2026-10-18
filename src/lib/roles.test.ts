@@ -4,6 +4,7 @@ import {
 	ROLE_HINTS,
 	ROLE_LABELS,
 	displayName,
+	isPartnerOnly,
 	mayPreviewRoles,
 	roleLabel,
 	sortRoles
@@ -82,5 +83,15 @@ describe('mayPreviewRoles', () => {
 
 		expect(mayPreviewRoles(granted)).toBe(true);
 		expect(mayPreviewRoles(effectiveWhileNarrowed)).toBe(false);
+	});
+});
+
+describe('a partner faculty', () => {
+	// Held alone the role narrows; beside any other, whoever holds it is a colleague.
+	it('is a partner only when the role is held alone', () => {
+		expect(isPartnerOnly(['PARTNER_READER'])).toBe(true);
+		expect(isPartnerOnly(['PARTNER_READER', 'LECTURER'])).toBe(false);
+		expect(isPartnerOnly([])).toBe(false);
+		expect(isPartnerOnly(['LECTURER'])).toBe(false);
 	});
 });

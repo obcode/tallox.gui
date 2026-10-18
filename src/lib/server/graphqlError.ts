@@ -80,6 +80,11 @@ const PASS_THROUGH = new Set([
 	'COMPONENTS_INVALID',
 	'UNKNOWN_PROGRAMME',
 	'NOT_A_PROGRAMME_LEAD',
+	// The partner faculty: two administration refusals with a repair, and the one a partner meets
+	// on every write path. All three are about the caller's own account or the person being edited.
+	'NOT_A_PARTNER_READER',
+	'ROLE_NOT_PROGRAMME_SCOPED',
+	'PARTNER_READS_ONLY',
 	// The admission screen. TEACHER_HAS_NO_MAIL is the one refusal there that nobody can act on,
 	// and its sentence says why — a generic "that did not work" would send an administrator
 	// looking for a mistake they did not make.

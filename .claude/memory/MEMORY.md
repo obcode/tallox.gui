@@ -25,3 +25,5 @@ Kolleg:innen.
 
 <!-- Weitere Notizen entstehen mit dem Code. Eine Datei = ein Sachverhalt, Frontmatter mit
      name/description/metadata.type, Querverweise als [[slug]]. -->
+
+- [Partnerfakultät in der GUI](partner-faculty-ui.md) — „Meine Lehre“ und die Schritte für alle sind für Partner allein ausgeblendet, Statistik eingeblendet, eigener Studiengangs-Picker
