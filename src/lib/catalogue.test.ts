@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	programmeLabel,
 	ALL_PART_KINDS,
 	COURSE_TYPE_LABELS,
 	DUTY_LABELS,
@@ -350,5 +351,13 @@ describe('the basket line', () => {
 		expect(basketLabel('COMPULSORY', ['Pflichtmodule'])).toBeNull();
 		expect(basketLabel('ELECTIVE', [])).toBeNull();
 		expect(basketLabel(null, undefined)).toBeNull();
+	});
+});
+
+describe('a programme in a choice', () => {
+	it('puts the title after a dash, and no dash without one', () => {
+		expect(programmeLabel({ code: 'IF', title: 'Informatik' })).toBe('IF – Informatik');
+		expect(programmeLabel({ code: 'DPH', title: '' })).toBe('DPH');
+		expect(programmeLabel({ code: 'DPH' })).toBe('DPH');
 	});
 });

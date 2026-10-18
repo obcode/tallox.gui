@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { assignmentOverview } from '$lib/assignmentOverview';
-	import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
+	import { PART_KIND_LABELS, formatHours, programmeLabel } from '$lib/catalogue';
 	import { semesterName } from '$lib/semester';
 	import type { PageData } from './$types';
 
@@ -45,7 +45,7 @@
 				<option value="" selected={data.selected.programme === ''}>alle</option>
 				{#each data.programmes as p (p.code)}
 					<option value={p.code} selected={p.code === data.selected.programme}>
-						{p.code} – {p.title}
+						{programmeLabel(p)}
 					</option>
 				{/each}
 			</select>
@@ -73,7 +73,7 @@
 				aria-labelledby="programme-{programme.code}"
 			>
 				<h2 id="programme-{programme.code}" class="font-medium">
-					{programme.code}{programme.title ? ` – ${programme.title}` : ''}
+					{programmeLabel(programme)}
 				</h2>
 				<div class="mt-3 overflow-x-auto">
 					<table class="table-sm table">

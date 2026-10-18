@@ -453,3 +453,11 @@ export function mayWriteModuleSplit(
 		led.some((g) => g.id === module.subjectGroup?.id);
 	return home || group;
 }
+
+/**
+ * A study programme as a choice reads it: `IF – Informatik`, or the code alone where the programme
+ * has no title — a dash with nothing after it reads as a value that went missing.
+ */
+export function programmeLabel(p: { code: string; title?: string | null }): string {
+	return p.title ? `${p.code} – ${p.title}` : p.code;
+}

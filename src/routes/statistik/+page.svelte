@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { DUTY_LABELS, dutyBadge, formatHours, moduleName } from '$lib/catalogue';
+	import { DUTY_LABELS, dutyBadge, formatHours, moduleName, programmeLabel } from '$lib/catalogue';
 	import {
 		balanceBadge,
 		controllingTable,
@@ -44,10 +44,6 @@
 
 	function maybeHours(n: number | null): string {
 		return n === null ? '–' : formatHours(n);
-	}
-
-	function programmeLabel(p: { code: string; title: string }): string {
-		return p.title ? `${p.code} – ${p.title}` : p.code;
 	}
 
 	function foreignLabel(row: ControllingRow): string {
