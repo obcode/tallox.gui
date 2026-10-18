@@ -123,9 +123,9 @@
 			     the bottom carries the identity — it is never missing, it just sits somewhere
 			     else. -->
 			{#if remoteUser}
-				<!-- From xl the identity doubles as the way into the account. A separate entry in
-				     the area bar would be wrong: that bar holds the planning process in its
-				     order, and tokens are not a step in it. -->
+				<!-- From xl the identity doubles as the way into the account — roles and tokens,
+				     nothing else. A separate entry in the area bar would be wrong: that bar holds
+				     the planning process in its order, and tokens are not a step in it. -->
 				<div class="dropdown dropdown-end hidden xl:block">
 					<div
 						tabindex="0"
@@ -187,7 +187,23 @@
 
 					{#each areas as item (item.label)}
 						<li>
-							{#if item.href}
+							{#if item.children}
+								<!-- An area with tabs: its pages indented below it, the same destinations
+								     the tab bar offers once there. The area itself is a heading here, not
+								     a link — it would only be a second way to its first tab. -->
+								<span class="menu-title text-base-content/90 flex items-center gap-2 px-2 pb-0">
+									<span aria-hidden="true">{item.emoji}</span>{item.label}
+								</span>
+								<ul>
+									{#each item.children as child (child.href)}
+										<li>
+											<a href={resolve(child.href!)} class:menu-active={isActive(child, pathname)}>
+												{child.label}
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{:else if item.href}
 								<a href={resolve(item.href)} class:menu-active={isActive(item, pathname)}>
 									<span aria-hidden="true">{item.emoji}</span>{item.label}
 								</a>

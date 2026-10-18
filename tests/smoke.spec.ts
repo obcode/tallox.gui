@@ -1,4 +1,4 @@
-import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
+import { PERSONAS, test, expect, gotoRendered } from './fixtures';
 
 /**
  * The smoke test. Runs against a real stack: SvelteKit SSR → GraphQL backend → PostgreSQL.
@@ -122,14 +122,20 @@ test.describe('the walk-through', () => {
 		).toBeVisible();
 	});
 
-	test('is in the account menu for everybody', async ({ asPersona }) => {
+	test('is in the help panel for everybody', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/');
-		// Behind the identity, like the rest of the account area.
-		await openDropdown(page, /Prof/);
+		// It is reference, so it sits with the help — not behind the identity, which is the
+		// account and nothing else.
+		await page.getByRole('button', { name: 'Hilfe', exact: true }).click();
+		await page
+			.getByRole('dialog')
+			.getByRole('link', { name: /Ablauf der Einsatzplanung/ })
+			.click();
 		await expect(
-			page.getByRole('banner').getByRole('link', { name: 'Ablauf', exact: true })
+			page.getByRole('heading', { name: 'Ablauf der Einsatzplanung', level: 1 })
 		).toBeVisible();
+		await expect(page.getByRole('dialog')).toBeHidden();
 	});
 });
 

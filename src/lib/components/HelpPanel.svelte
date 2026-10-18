@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { helpFor, type HelpEntry } from '$lib/help';
 	import type { PlanningState } from '$lib/planning';
@@ -110,6 +111,26 @@
 					{@render answers(entries.more)}
 				</section>
 			{/if}
+
+			<!-- Reference that used to sit in the account menu, between the tokens and the
+			     administration. It is help, so it is here. -->
+			<section aria-labelledby="help-reference-title" class="flex flex-col gap-1">
+				<h3 id="help-reference-title" class="font-medium">Nachschlagen</h3>
+				<ul class="flex flex-col gap-1 text-sm">
+					<li>
+						<a class="link" href={resolve('/ablauf')}>
+							<span aria-hidden="true">📜</span> Ablauf der Einsatzplanung
+						</a>
+						— wer macht was, wo und wann
+					</li>
+					<li>
+						<a class="link" href={resolve('/api-doku')}>
+							<span aria-hidden="true">📖</span> API-Doku
+						</a>
+						— eigene Auswertungen mit einem Token
+					</li>
+				</ul>
+			</section>
 		</div>
 	{/if}
 	<form method="dialog" class="modal-backdrop">

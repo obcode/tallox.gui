@@ -50,8 +50,9 @@ verlassen) stehen in einem eigenen Abschnitt mit „Entfernen“, weil keine Gru
 
 ## Pool der Fachgruppenleitung
 
-Unter `/zuteilung/…`, nicht als eigener Menüpunkt: die Leiste hat ab `xl` genau Platz für ihre
-Bereiche, und der Pool gehört zur Zuteilung. Verlinkt aus dem Einleitungstext von `/zuteilung`.
+Unter `/zuteilung/…`, nicht als eigener Leisteneintrag: der Pool gehört zur Zuteilung. Seit
+2026-10-18 ist er der Reiter „Kompetenzen der Fachgruppe“ im Bereich Zuteilung (siehe
+[[navigation-areas]]), zusätzlich verlinkt aus dem Einleitungstext von `/zuteilung`.
 
 Die beiden Zählungen (`competenceMemberStatus`, `modulesWithoutCompetence`) stehen in einer
 **eigenen Anfrage**: sie verweigern für jeden, der nicht über die ganze Gruppe zählen darf, und in

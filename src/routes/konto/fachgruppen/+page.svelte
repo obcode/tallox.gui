@@ -34,8 +34,12 @@
 			Gebiet erschließt, tritt der Fachgruppe bei; das ist der Weg, nicht eine Ablehnung.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
-			Die <strong>Leitung</strong> einer Fachgruppe ist etwas anderes: sie besetzt deren Instanzen und
-			sieht vor dem Stichtag die Wünsche darauf. Die wird in der Verwaltung vergeben und nicht hier.
+			Die <strong>Leitung</strong> einer Fachgruppe ist etwas anderes: sie besetzt deren Instanzen
+			und sieht vor dem Stichtag die Wünsche darauf. Die wird in der Verwaltung vergeben und nicht
+			hier. Wer welche Fachgruppe leitet, steht unter
+			<a class="link" href={resolve('/verwaltung/fachgruppen')}
+				>Alle Fachgruppen und ihre Leitungen</a
+			>.
 		</p>
 	</div>
 

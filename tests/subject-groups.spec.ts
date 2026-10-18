@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
+import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 
 /**
@@ -148,21 +148,23 @@ test.describe('subject groups', () => {
 		await expect(page.getByRole('button', { name: 'Leitung speichern' })).toHaveCount(0);
 	});
 
-	test('the entry is in everybody’s menu, unlike the other administration screens', async ({
+	test('the overview is reachable for everybody, unlike the other administration screens', async ({
 		asPersona
 	}) => {
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, '/');
+		await gotoRendered(page, '/konto/fachgruppen');
 
-		await openDropdown(page, /Prof/);
-		// In the bar, not anywhere on the page: the start page's walk-through links the same
-		// screen in its text, and this test is about the menu.
-		const bar = page.getByRole('banner');
-		// Exact: the account menu also carries "Meine Fachgruppen", which is the other half of the
-		// same subject — the faculty's organisation here, one's own membership there.
-		await expect(bar.getByRole('link', { name: 'Fachgruppen', exact: true })).toBeVisible();
-		// The contrast: user administration is ADMIN-only and stays out of a lecturer's menu.
-		await expect(bar.getByRole('link', { name: /Verwaltung/ })).toHaveCount(0);
+		// From one's own membership — the other half of the same subject: the faculty's
+		// organisation there, one's own membership here.
+		await page
+			.getByRole('main')
+			.getByRole('link', { name: 'Alle Fachgruppen und ihre Leitungen' })
+			.click();
+		await expect(page).toHaveURL(/\/verwaltung\/fachgruppen$/);
+		// The contrast: the administration is not in a lecturer's bar, and the overview shows no
+		// administration tabs either.
+		await expect(page.getByRole('banner').getByRole('link', { name: /Verwaltung/ })).toHaveCount(0);
+		await expect(page.getByRole('navigation', { name: 'Verwaltung' })).toHaveCount(0);
 	});
 
 	test('a module is assigned, moved and taken out again', async ({ asPersona }) => {
