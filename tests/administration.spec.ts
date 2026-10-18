@@ -105,10 +105,10 @@ test.describe('creating people and setting roles', () => {
 		// Roles are a step of their own, LECTURER included: who may do what should be a list
 		// somebody wrote, not a default nobody chose.
 		await row.getByRole('button', { name: 'Bearbeiten' }).click();
-		await page.getByRole('checkbox', { name: /Dozent:in/ }).check();
+		await page.getByRole('checkbox', { name: /Dozierende/ }).check();
 		await page.getByRole('button', { name: 'Rollen speichern' }).click();
 
-		await expect(page.getByRole('row').filter({ hasText: mail })).toContainText('Dozent:in');
+		await expect(page.getByRole('row').filter({ hasText: mail })).toContainText('Dozierende');
 	});
 
 	test('does not let the last administrator be removed', async ({ asPersona }) => {
@@ -191,7 +191,7 @@ test.describe('admitting people from the ZPA list', () => {
 
 		// Admitting grants exactly the one role, and the row shows it immediately.
 		await expect(account).toBeChecked();
-		await expect(row.getByRole('switch', { name: 'Dozent:in' })).toBeChecked();
+		await expect(row.getByRole('switch', { name: 'Dozierende' })).toBeChecked();
 		await expect(row.getByRole('switch', { name: 'Administration' })).not.toBeChecked();
 
 		// There is no save button. A reload is the only way to tell that from a screen that only
@@ -236,7 +236,7 @@ test.describe('admitting people from the ZPA list', () => {
 		await page.getByRole('button', { name: 'Anwenden' }).click();
 
 		const row = page.getByRole('row').filter({ hasText: 'prof.sieben@example.org' });
-		await expect(row).toContainText('Dozent:in');
+		await expect(row).toContainText('Dozierende');
 		await expect(row).toContainText('Studiengangsleitung');
 		// Surname first, because that is what the list is sorted by — and a list sorted by
 		// something it does not show reads as unsorted.

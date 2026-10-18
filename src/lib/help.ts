@@ -64,7 +64,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wer sieht meine Wünsche?',
 		answer:
-			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht jede:r alle Eintragungen des Semesters.',
+			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium alle Eintragungen des Semesters.',
 		who: [],
 		where: [{ href: '/wuensche', label: 'Wünsche' }]
 	},

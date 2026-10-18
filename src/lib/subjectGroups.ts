@@ -5,7 +5,7 @@
  * lives here is labelling, splitting and the two sentences the work lists are made of.
  *
  * One thing deliberately absent: anything that counts or hints at wishes. A subject group is
- * where somebody will eventually want to write "3 Interessent:innen" next to a module, and
+ * where somebody will eventually want to write "3 Interessierte" next to a module, and
  * before the publication date that number may not exist anywhere — not in the backend, not as a
  * client-side count over a filtered list. See the note in `demand.ts`.
  */

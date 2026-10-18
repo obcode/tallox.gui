@@ -421,7 +421,7 @@ export type ProgrammeStatus =
 /**
  * A role somebody holds. Everybody holds `LECTURER`; the others come on top of it.
  *
- * The values are English. The interface shows the German terms the faculty uses: Dozent:in,
+ * The values are English. The interface shows the German terms the faculty uses: Dozierende,
  * Fachgruppenleitung, Studiengangsleitung, Dekanat.
  */
 export type Role =

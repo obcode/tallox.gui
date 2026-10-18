@@ -122,7 +122,7 @@
 							<summary class="btn btn-sm btn-outline">Wünsche veröffentlichen …</summary>
 							<div class="border-base-300 bg-base-100 mt-2 max-w-md rounded-lg border p-3">
 								<p class="text-base-content/90 mb-3 text-sm">
-									Danach sehen alle Kolleg:innen die Eintragungen der anderen.
+									Danach sieht das ganze Kollegium alle Eintragungen.
 									<strong>Das lässt sich nicht zurücknehmen.</strong>
 								</p>
 								<form method="POST" action="?/publish" use:enhance>

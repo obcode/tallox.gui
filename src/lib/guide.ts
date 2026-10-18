@@ -70,7 +70,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Personen zulassen und Rollen vergeben',
 				who: ['ADMIN'],
 				where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }],
-				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und sind damit Dozent:in. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles.'
+				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und haben damit die Rolle Dozierende. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles.'
 			},
 			{
 				title: 'Festlegen, welche Studiengänge die Fakultät plant',
@@ -82,7 +82,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Fachgruppen anlegen, Leitung und Mitglieder eintragen',
 				who: ['ADMIN'],
 				where: [{ href: '/verwaltung/fachgruppen', label: 'Fachgruppen' }],
-				text: 'Mathematik, Softwarefächer, Technische Informatik: die fachliche Gruppierung von Modulen und Personen, unabhängig vom Semester. Die Leitung ist eine Berechtigung und wird nur an Personen mit der Rolle Fachgruppenleitung vergeben. Keine Fachgruppe ohne Leitung, die Seite zählt die offenen. Die Mitgliedschaft berechtigt zu nichts, jede:r kann sie auch selbst pflegen.'
+				text: 'Mathematik, Softwarefächer, Technische Informatik: die fachliche Gruppierung von Modulen und Personen, unabhängig vom Semester. Die Leitung ist eine Berechtigung und wird nur an Personen mit der Rolle Fachgruppenleitung vergeben. Keine Fachgruppe ohne Leitung, die Seite zählt die offenen. Die Mitgliedschaft berechtigt zu nichts, alle können sie auch selbst pflegen.'
 			},
 			{
 				title: 'Module den Fachgruppen zuordnen',
@@ -140,7 +140,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/wuensche', label: 'Wünsche' }],
 				due: ['WISHES'],
 				when: 'Semesterwoche 6–7',
-				text: 'Jede:r trägt an den Instanzen ein, was er oder sie halten würde, mit Priorität und Notiz. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Leitung einer Fachgruppe öffnet und schließt die Wunschrunde ihrer Fachgruppe; wer schließt, arbeitet mit dem, was gesammelt wurde. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
+				text: 'Alle tragen an den Instanzen ein, was sie halten würden, mit Priorität und Notiz. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Leitung einer Fachgruppe öffnet und schließt die Wunschrunde ihrer Fachgruppe; wer schließt, arbeitet mit dem, was gesammelt wurde. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
 			},
 			{
 				title: 'Die Wunschrunde der Fachgruppe schließen',
@@ -156,7 +156,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['WISHES'],
 				when: 'Ende Semesterwoche 7',
-				text: 'Ab dann sieht jede:r alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
+				text: 'Ab dann sieht das ganze Kollegium alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
 			},
 			{
 				title: 'Die Instanzen besetzen',

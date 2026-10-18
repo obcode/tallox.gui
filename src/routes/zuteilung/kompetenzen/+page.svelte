@@ -27,13 +27,13 @@
 		<p class="text-base-content/80 max-w-3xl text-sm">
 			Wer die Module der Fachgruppe halten kann, wer sie gern halten würde, welche Module niemand
 			abdeckt — und wer noch unter den erbetenen drei Pflichtfächern liegt. Die Angaben machen die
-			Kolleg:innen selbst unter <a class="link" href={resolve('/konto/kompetenzen')}
+			Kolleginnen und Kollegen selbst unter <a class="link" href={resolve('/konto/kompetenzen')}
 				>Meine Kompetenzen</a
 			>; für Lehrende ohne Konto trägst Du sie hier ein.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Vertraulich: Sichtbar für die Leitung der Fachgruppe, die Leitung des Studiengangs eines
-			Moduls und das Dekanat — nicht für die Kolleg:innen untereinander.
+			Moduls und das Dekanat — nicht für das Kollegium untereinander.
 			<a class="link" href={resolve('/zuteilung')}>Zurück zur Zuteilung</a>
 		</p>
 	</div>
@@ -195,8 +195,8 @@
 		>
 			<h2 id="teacher" class="text-lg font-semibold">Für Lehrende ohne Konto eintragen</h2>
 			<p class="text-base-content/80 text-sm">
-				Lehrbeauftragte und Kolleg:innen anderer Hochschulen können sich nicht anmelden. Wer ein
-				Konto hat, trägt seine Kompetenzen selbst ein und erscheint deshalb in der Suche nicht.
+				Lehrbeauftragte und Lehrende anderer Hochschulen können sich nicht anmelden. Wer ein Konto
+				hat, trägt die eigenen Kompetenzen selbst ein und erscheint deshalb in der Suche nicht.
 			</p>
 
 			<form method="GET" class="flex flex-wrap items-end gap-2">

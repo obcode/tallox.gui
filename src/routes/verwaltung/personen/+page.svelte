@@ -117,8 +117,8 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Personen und Rollen</h1>
 		<p class="text-base-content/80 text-sm">
-			Wer sich bei Tallox anmelden darf, und was er oder sie dann tun kann. Ohne Eintrag hier kommt
-			niemand hinein — auch nicht mit gültiger HM-Kennung.
+			Wer sich bei Tallox anmelden darf, und was dann erlaubt ist. Ohne Eintrag hier kommt niemand
+			hinein — auch nicht mit gültiger HM-Kennung.
 		</p>
 	</div>
 
@@ -164,7 +164,7 @@
 	{#if data.view === 'zpa'}
 		<p class="text-base-content/80 text-sm">
 			Die Lehrenden, wie sie das ZPA veröffentlicht. Ein Klick auf <em>Konto</em> legt den Zugang an
-			und vergibt <em>Dozent:in</em>; jeder weitere Klick wird sofort gespeichert. Wer hier fehlt,
+			und vergibt <em>Dozierende</em>; jeder weitere Klick wird sofort gespeichert. Wer hier fehlt,
 			aber ein Konto braucht — Dekanat, Sekretariat, Externe — steht unter
 			<em>Alle Konten</em>.
 		</p>

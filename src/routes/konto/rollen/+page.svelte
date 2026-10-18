@@ -89,8 +89,8 @@
 		<h2 class="font-medium">Rollen</h2>
 		{#if held.length === 0}
 			<p class="text-base-content/90 mt-1 max-w-3xl text-sm">
-				Du hast ein Konto, aber keine Rolle. Das ist ungewöhnlich — fast alle haben mindestens
-				Dozent:in. Die Administration vergibt Rollen unter „Personen und Rollen".
+				Du hast ein Konto, aber keine Rolle. Das ist ungewöhnlich — fast alle haben mindestens die
+				Rolle Dozierende. Die Administration vergibt Rollen unter „Personen und Rollen".
 			</p>
 		{:else}
 			<ul class="mt-2 flex flex-col gap-2">

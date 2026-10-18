@@ -48,7 +48,7 @@
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Wer das sieht: Du selbst, die Leitung der Fachgruppe des Moduls, die Leitung seines
-			Studiengangs und das Dekanat. Kolleg:innen sehen es nicht — auch nicht später.
+			Studiengangs und das Dekanat. Das übrige Kollegium sieht es nicht — auch nicht später.
 		</p>
 	</div>
 

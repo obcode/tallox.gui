@@ -8,7 +8,7 @@ import type { Role } from '$lib/gql/__generated__/graphql';
  * in exactly two places — the doc comment on `policy.Role` and here. Two, never a third.
  */
 export const ROLE_LABELS: Record<Role, string> = {
-	LECTURER: 'Dozent:in',
+	LECTURER: 'Dozierende',
 	SUBJECT_GROUP_LEAD: 'Fachgruppenleitung',
 	PROGRAMME_LEAD: 'Studiengangsleitung',
 	DEANS_OFFICE: 'Dekanat',
@@ -20,7 +20,7 @@ export const ROLE_LABELS: Record<Role, string> = {
  * that "what am I actually giving this person" does not have to be guessed from the name.
  */
 export const ROLE_HINTS: Record<Role, string> = {
-	LECTURER: 'Eigenes Profil, eigene Kompetenzen, eigene Wünsche. Hat fast jede:r.',
+	LECTURER: 'Eigenes Profil, eigene Kompetenzen, eigene Wünsche. Haben fast alle.',
 	SUBJECT_GROUP_LEAD: 'Besetzt die Instanzen einer Fachgruppe.',
 	PROGRAMME_LEAD: 'Meldet den Bedarf eines Studiengangs an.',
 	DEANS_OFFICE: 'Liest studiengangsübergreifend, pflegt die Deputats-Ampel.',

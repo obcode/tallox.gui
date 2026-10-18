@@ -31,7 +31,7 @@ export const PHASE_LABELS: Record<Phase, string> = {
 
 export const PHASE_HINTS: Record<Phase, string> = {
 	DEMAND_PLANNING: 'Die Studiengangsleitungen legen fest, welche Instanzen angeboten werden.',
-	WISHES: 'Dozent:innen bekunden Interesse. Die Eintragungen sind vertraulich.',
+	WISHES: 'Dozierende bekunden Interesse. Die Eintragungen sind vertraulich.',
 	ASSIGNMENT: 'Die Fachgruppenleitungen besetzen die Instanzen.',
 	REVIEW:
 		'Die Studiengangsleitungen prüfen Zuschnitt, Besetzung und SWS-Controlling. Bis zum Semesterende bleibt alles änderbar.',
@@ -118,7 +118,7 @@ export type SemesterLike = {
  *
  * Two states only, and both are statements about the *process* rather than about content:
  * whether the cut-off has passed. Deliberately nothing about how many wishes there are, and no
- * hint as to whether there are any at all. "3 Kolleg:innen haben bereits Interesse" leaks the
+ * hint as to whether there are any at all. "3 aus dem Kollegium haben bereits Interesse" leaks the
  * confidential information completely without naming anybody, and a "has wishes" tick does the
  * same per person. See CLAUDE.md, "Things the UI must not do".
  */

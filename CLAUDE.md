@@ -17,6 +17,10 @@ enforce (hiding a button, filtering a list) is cosmetic. The backend is the gate
 
 UI language is German. Code, identifiers, comments and commit messages are English.
 
+The German is gender-neutral **without typographic marks**: "Dozierende", "das Kollegium",
+"alle", "Kolleginnen und Kollegen" — never "Dozent:in", "Kolleg\*innen", "jede:r" or "er oder
+sie". `src/lib/wording.test.ts` scans `src/` for the marks, comments included.
+
 **This repository is public.** No hostnames, no operational detail, no names of colleagues.
 
 ## Commands
