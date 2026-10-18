@@ -1,5 +1,11 @@
 import type { Phase, Role } from '$lib/gql/__generated__/graphql';
-import { ACCOUNT_ITEMS, NAV_ITEMS, visibleNavItems, type NavItem } from '$lib/navigation';
+import {
+	ACCOUNT_ITEMS,
+	NAV_ITEMS,
+	navigationPages,
+	visibleNavItems,
+	type NavItem
+} from '$lib/navigation';
 import type { PlanningState } from '$lib/planning';
 import { PHASE_LABELS, semesterName } from '$lib/semester';
 
@@ -188,8 +194,11 @@ export const GUIDE: readonly GuideSection[] = [
 	}
 ];
 
-/** Every navigation entry the guide may link to. */
-const KNOWN_ITEMS: readonly NavItem[] = [...NAV_ITEMS, ...ACCOUNT_ITEMS];
+/**
+ * Every navigation entry the guide may link to. Pages, not areas: "Meine Lehre" is not a
+ * destination, its three tabs are.
+ */
+const KNOWN_ITEMS: readonly NavItem[] = navigationPages([...NAV_ITEMS, ...ACCOUNT_ITEMS]);
 
 /**
  * Whether the navigation would show this route to somebody with these roles.

@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from './navigation';
+import {
+	ACCOUNT_ITEMS,
+	areaFor,
+	isActive,
+	NAV_ITEMS,
+	visibleNavItems,
+	type NavItem
+} from './navigation';
+
+/** Every destination in the navigation, children included. */
+function allHrefs(items: readonly NavItem[]): string[] {
+	return items.flatMap((i) => [...(i.href ? [i.href] : []), ...allHrefs(i.children ?? [])]);
+}
 
 describe('isActive', () => {
 	it('marks the start page only on exactly /', () => {
@@ -25,6 +37,66 @@ describe('NAV_ITEMS', () => {
 		const labels = NAV_ITEMS.map((i) => i.label);
 		expect(new Set(labels).size).toBe(labels.length);
 	});
+
+	it('leads to every destination only once, tabs included', () => {
+		// Two ways to the same place means one of them looks wrong as soon as the other is active.
+		const hrefs = allHrefs([...NAV_ITEMS, ...ACCOUNT_ITEMS]);
+		expect(new Set(hrefs).size).toBe(hrefs.length);
+	});
+
+	it('puts what every lecturer does for themselves in one area', () => {
+		const teaching = visibleNavItems(NAV_ITEMS, ['LECTURER']).find(
+			(i) => i.label === 'Meine Lehre'
+		)!;
+		expect(teaching.children!.map((c) => c.href)).toEqual([
+			'/wuensche',
+			'/konto/kompetenzen',
+			'/konto/fachgruppen'
+		]);
+		expect(teaching.href).toBe('/wuensche');
+	});
+});
+
+describe('areas with tabs', () => {
+	it('are active on any of their pages, and only there', () => {
+		const teaching = NAV_ITEMS.find((i) => i.label === 'Meine Lehre')!;
+		expect(isActive(teaching, '/konto/kompetenzen')).toBe(true);
+		expect(isActive(teaching, '/konto/tokens')).toBe(false);
+	});
+
+	it('keep the assignment tab off the competence pool below it', () => {
+		const area = areaFor('/zuteilung/kompetenzen', ['SUBJECT_GROUP_LEAD'])!;
+		const active = area.children!.filter((c) => isActive(c, '/zuteilung/kompetenzen'));
+		expect(active.map((c) => c.label)).toEqual(['Kompetenzen der Fachgruppe']);
+		expect(areaFor('/zuteilung', ['SUBJECT_GROUP_LEAD'])!.label).toBe('Zuteilung');
+	});
+
+	it('show the administration by role, and land on the first tab one may see', () => {
+		const admin = (roles: string[]) =>
+			visibleNavItems(NAV_ITEMS, roles).find((i) => i.label === 'Verwaltung');
+		expect(admin(['LECTURER'])).toBeUndefined();
+		// The overview of the groups is readable by everybody, but it is no reason for a bar entry.
+		expect(admin(['SUBJECT_GROUP_LEAD'])).toBeUndefined();
+
+		const deans = admin(['DEANS_OFFICE'])!;
+		expect(deans.href).toBe('/verwaltung/studiengaenge');
+		expect(deans.children!.map((c) => c.label)).toEqual([
+			'Studiengänge',
+			'Fachgruppen',
+			'ZPA-Import'
+		]);
+
+		const full = admin(['ADMIN'])!;
+		expect(full.href).toBe('/verwaltung/personen');
+		expect(full.children!.map((c) => c.label)).toContain('Diagnose');
+		expect(full.children!.map((c) => c.label)).not.toContain('Studiengänge');
+	});
+
+	it('give a tab bar inside an area, and none outside', () => {
+		expect(areaFor('/module', ['LECTURER'])).toBeNull();
+		expect(areaFor('/konto/tokens', ['LECTURER'])).toBeNull();
+		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(3);
+	});
 });
 
 describe('ACCOUNT_ITEMS', () => {
@@ -37,22 +109,9 @@ describe('ACCOUNT_ITEMS', () => {
 		}
 	});
 
-	it('does not overlap with the area bar', () => {
-		// Two ways to the same destination in one navigation means one of them looks wrong as
-		// soon as the other is marked active.
-		const areas = new Set(NAV_ITEMS.map((item) => item.href).filter(Boolean));
-		for (const item of ACCOUNT_ITEMS) {
-			expect(areas.has(item.href)).toBe(false);
-		}
-	});
-
-	it('marks sub-pages as active', () => {
-		const tokens = ACCOUNT_ITEMS.find((item) => item.href === '/konto/tokens')!;
-		expect(isActive(tokens, '/konto/tokens')).toBe(true);
-
-		const api = ACCOUNT_ITEMS.find((item) => item.href === '/api-doku')!;
-		expect(isActive(api, '/api-doku/schema')).toBe(true);
-		expect(isActive(api, '/')).toBe(false);
+	it('holds the account and nothing else', () => {
+		// The help, the API documentation and the administration moved out; the menu is "me".
+		expect(ACCOUNT_ITEMS.map((i) => i.href)).toEqual(['/konto/rollen', '/konto/tokens']);
 	});
 });
 
@@ -86,12 +145,24 @@ describe('visibleNavItems', () => {
 		expect(visibleNavItems(items, ['PROGRAMME_LEAD'])).toHaveLength(1);
 	});
 
-	it('shows the administration area to administrators only', () => {
-		// Cosmetic, not a lock — that is in policy.MayAdministerPeople and applies to the token
-		// door too. Checked anyway: somebody who sees the entry and gets a refusal on every click
-		// learns to ignore refusals.
-		const labels = (roles: string[]) => visibleNavItems(ACCOUNT_ITEMS, roles).map((i) => i.label);
-		expect(labels(['LECTURER'])).not.toContain('Verwaltung');
-		expect(labels(['ADMIN'])).toContain('Verwaltung');
+	it('drops an area none of whose tabs is left', () => {
+		const items: NavItem[] = [
+			{
+				emoji: '🛠️',
+				label: 'Verwaltung',
+				hint: 'x',
+				children: [
+					{
+						emoji: '🔍',
+						label: 'Diagnose',
+						href: '/verwaltung/diagnose',
+						hint: 'x',
+						roles: ['ADMIN']
+					}
+				]
+			}
+		];
+		expect(visibleNavItems(items, ['LECTURER'])).toEqual([]);
+		expect(visibleNavItems(items, ['ADMIN'])[0].href).toBe('/verwaltung/diagnose');
 	});
 });
