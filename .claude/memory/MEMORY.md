@@ -21,6 +21,7 @@ Kolleg:innen.
 - [Ablauf, „Jetzt dran“ und Hilfe-Leiste](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts` unter `/ablauf`, Startseite und Hilfe zeigen nur, was jetzt dran ist; verlinkt nur, was das Menü zeigt
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
 - [Semester-Export](semester-export.md) — Excel aus einer GraphQL-Operation in der GUI, keine Wünsche, Hinweissatz für alle
+- [Navigation: Bereiche mit Reitern](navigation-areas.md) — „Meine Lehre“, Verwaltung als Bereich, persönliches Menü nur Konto; URLs bleiben
 
 <!-- Weitere Notizen entstehen mit dem Code. Eine Datei = ein Sachverhalt, Frontmatter mit
      name/description/metadata.type, Querverweise als [[slug]]. -->

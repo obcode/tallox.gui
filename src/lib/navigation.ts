@@ -39,7 +39,8 @@ type StaticRoute = Exclude<
  * is done once and then left alone. Between "Module" and "Bedarf" it interrupted the sequence
  * the row exists to show.
  *
- * When an area comes into being: add the route, add the `href` here — nothing else.
+ * When an area comes into being: add the route, add the `href` here — nothing else. An area with
+ * `children` has no `href` of its own; `visibleNavItems` gives it the first visible child's.
  */
 export type NavItem = {
 	emoji: string;
@@ -56,9 +57,56 @@ export type NavItem = {
 	 *
 	 * What it is worth anyway: a lecturer who sees "Statistik" and "Bedarf" in the menu and
 	 * gets a refusal on every click learns to ignore refusals.
+	 *
+	 * On a child these are its own, and they are what decides whether a link to that page is
+	 * offered anywhere (`mayOpen` in `guide.ts`). The area's roles only decide whether the area is
+	 * in the bar — "Fachgruppen" under "Verwaltung" is readable by everybody, the bar entry is not.
 	 */
 	roles?: readonly Role[];
+	/**
+	 * The pages of an area, shown as tabs above them (`AreaTabs`) and indented in the narrow menu.
+	 *
+	 * Grouped here and not in the route tree: `/wuensche` and `/konto/kompetenzen` keep their
+	 * addresses, so bookmarks, the guide and the help keep working. An area with children is
+	 * active on any of them, and its `href` is the first child the reader may see.
+	 */
+	children?: readonly NavItem[];
+	/** Active on exactly this path only — for a child whose sibling lives below it. */
+	exact?: boolean;
 };
+
+/**
+ * What every lecturer does for themselves, in one place. They were spread over the bar (wishes)
+ * and the account menu (competences, subject groups), and the account menu is about the account.
+ */
+const TEACHING: NavItem = {
+	// No roles: everybody who teaches registers interest, and LECTURER is the baseline everybody
+	// in the planning holds. What is scoped is reading other people's, and that is a rule in the
+	// backend rather than a menu entry.
+	emoji: '✋',
+	label: 'Meine Lehre',
+	hint: 'Wünsche, Kompetenzen und Fachgruppen — was Du selbst angibst',
+	children: [
+		{ emoji: '✋', label: 'Wünsche', href: '/wuensche', hint: 'Interesse an Instanzen bekunden' },
+		{
+			emoji: '🧠',
+			label: 'Kompetenzen',
+			href: '/konto/kompetenzen',
+			hint: 'Welche Module Du halten kannst, und für welche Du Dich interessierst'
+		},
+		{
+			// Membership is not a permission, so this is the one thing about a subject group that
+			// belongs to the person rather than to the administration.
+			emoji: '🗂️',
+			label: 'Fachgruppen',
+			href: '/konto/fachgruppen',
+			hint: 'In welchen Fächern Du arbeitest — Vorauswahl für Wünsche und Kompetenzen'
+		}
+	]
+};
+
+/** Who finds the assignment — the area and each of its pages. */
+const ASSIGNING: readonly Role[] = ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'];
 
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ emoji: '📚', label: 'Module', href: '/module', hint: 'Modulkatalog mit Heimatstudiengang' },
@@ -71,21 +119,30 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		href: '/bedarf',
 		hint: 'Was wird angeboten? Studiengangsleitungen legen es fest'
 	},
-	{
-		// No roles: everybody who teaches registers interest, and LECTURER is the baseline
-		// everybody in the planning holds. What is scoped is reading other people's, and that is
-		// a rule in the backend rather than a menu entry.
-		emoji: '✋',
-		label: 'Wünsche',
-		href: '/wuensche',
-		hint: 'Interesse an Instanz-Teilen bekunden'
-	},
+	TEACHING,
 	{
 		emoji: '🧩',
 		label: 'Zuteilung',
-		href: '/zuteilung',
 		hint: 'Instanzen besetzen',
-		roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE']
+		roles: ASSIGNING,
+		children: [
+			// Exact: the competence pool lives below it and is a tab of its own.
+			{
+				emoji: '🧩',
+				label: 'Besetzen',
+				href: '/zuteilung',
+				hint: 'Instanzen besetzen',
+				roles: ASSIGNING,
+				exact: true
+			},
+			{
+				emoji: '🧠',
+				label: 'Kompetenzen der Fachgruppe',
+				href: '/zuteilung/kompetenzen',
+				hint: 'Wer was halten kann, welche Module niemand abdeckt',
+				roles: ASSIGNING
+			}
+		]
 	},
 	{
 		// The SWS controlling: what each programme's modules cost against its quota. The programme
@@ -103,34 +160,86 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		label: 'Semester',
 		href: '/semester',
 		hint: 'Planungssemester, Phasen und Meilensteine'
+	},
+	{
+		// Running the faculty's side of the installation: not a step of the planning, so it comes
+		// last. Its own roles say who finds it in the bar; each tab keeps the roles it had in the
+		// account menu, so the dean's office lands on "Studiengänge" and never sees "Zugriffe".
+		emoji: '🛠️',
+		label: 'Verwaltung',
+		hint: 'Personen, Studiengänge, Fachgruppen und Stammdaten',
+		roles: ['ADMIN', 'DEANS_OFFICE'],
+		children: [
+			{
+				emoji: '🛠️',
+				label: 'Personen',
+				href: '/verwaltung/personen',
+				hint: 'Wer Tallox benutzen darf, und mit welchen Rollen',
+				roles: ['ADMIN']
+			},
+			{
+				// The dean's office's, like the phases: which programmes the faculty plans is a
+				// statement about its process rather than about running the installation.
+				emoji: '🎓',
+				label: 'Studiengänge',
+				href: '/verwaltung/studiengaenge',
+				hint: 'Welche Studiengänge die Fakultät plant — und welche nicht mehr',
+				roles: ['DEANS_OFFICE']
+			},
+			{
+				// No roles: who leads which group is what the faculty's organisation looks like. A
+				// lecturer reaches it from "Meine Lehre → Fachgruppen"; the page renders its forms
+				// only for whoever `people` answers for.
+				emoji: '🗂️',
+				label: 'Fachgruppen',
+				href: '/verwaltung/fachgruppen',
+				hint: 'Wer arbeitet in welchen Fächern, und wer leitet sie'
+			},
+			{
+				emoji: '📥',
+				label: 'ZPA-Import',
+				href: '/verwaltung/zpa',
+				hint: 'Wann kamen die Modul-Stammdaten zuletzt, und was hat sich geändert',
+				roles: ['ADMIN', 'DEANS_OFFICE']
+			},
+			{
+				emoji: '📋',
+				label: 'Zugriffe',
+				href: '/verwaltung/zugriffe',
+				hint: 'Wer hat wann worauf zugegriffen — und wer wurde abgewiesen',
+				roles: ['ADMIN']
+			},
+			{
+				emoji: '🔍',
+				label: 'Diagnose',
+				href: '/verwaltung/diagnose',
+				hint: 'Warum sieht jemand etwas nicht? Entscheidungen, keine Inhalte',
+				roles: ['ADMIN']
+			}
+		]
 	}
 ];
 
-/** Exact matches only: otherwise every entry would be active on `/`. */
+function matches(href: StaticRoute, pathname: string, exact: boolean): boolean {
+	if (href === '/' || exact) return pathname === href;
+	return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Exact matches for `/` only: otherwise every entry would be active there. */
 export function isActive(item: NavItem, pathname: string): boolean {
+	if (item.children) return item.children.some((child) => isActive(child, pathname));
 	if (!item.href) return false;
-	if (item.href === '/') return pathname === '/';
-	return pathname === item.href || pathname.startsWith(`${item.href}/`);
+	return matches(item.href, pathname, item.exact ?? false);
 }
 
 /**
- * What does not belong to the planning process but still has to be reachable.
+ * The menu next to the identity: the account and nothing else.
  *
- * Separate from NAV_ITEMS because the area bar shows the *steps of the process* — the account
- * and the API are not steps but tools. Sorted into the bar they would make the order
- * unreadable, and that order is the whole point of it; so they live in the menu next to the
- * identity.
+ * It used to carry eleven entries — the account, the help, the API and the faculty's
+ * administration. The lecturer's own pages are now "Meine Lehre" in the bar, the process and the
+ * API documentation are in the help panel, and the administration is an area of its own.
  */
 export const ACCOUNT_ITEMS: readonly NavItem[] = [
-	{
-		// The whole process, step by step. Moved off the start page, where two sections of steps
-		// and a table met somebody on their first visit; it is reference, and reference belongs
-		// in the menu rather than in the way. No roles: every step says who does it.
-		emoji: '📜',
-		label: 'Ablauf',
-		href: '/ablauf',
-		hint: 'Die Einsatzplanung Schritt für Schritt: wer macht was, wo und wann'
-	},
 	{
 		// No roles: everybody has roles, and the answer "which ones do I have" was previously
 		// unavailable to anybody who is not an administrator — the role preview in the footer
@@ -145,88 +254,52 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		label: 'Tokens',
 		href: '/konto/tokens',
 		hint: 'Personal Access Tokens für eigene Auswertungen'
-	},
-	{
-		// No roles: membership is not a permission, so this is the one thing about a subject group
-		// that belongs to the person rather than to the administration.
-		emoji: '🗂️',
-		label: 'Meine Fachgruppen',
-		href: '/konto/fachgruppen',
-		hint: 'In welchen Fächern Du arbeitest — Vorauswahl für die Wunschseite'
-	},
-	{
-		emoji: '🧠',
-		label: 'Meine Kompetenzen',
-		href: '/konto/kompetenzen',
-		hint: 'Welche Module Du halten kannst, und für welche Du Dich interessierst'
-	},
-	{
-		emoji: '📖',
-		label: 'API-Doku',
-		href: '/api-doku',
-		hint: 'Wie man die API aus einem Skript benutzt'
-	},
-	{
-		emoji: '🛠️',
-		label: 'Verwaltung',
-		href: '/verwaltung/personen',
-		hint: 'Wer Tallox benutzen darf, und mit welchen Rollen',
-		roles: ['ADMIN']
-	},
-	{
-		// The dean's office's, like the phases: which programmes the faculty plans is a statement
-		// about its process rather than about running the installation, so ADMIN is not on the
-		// list. The page reads for everybody who reaches it; what is scoped is the button.
-		emoji: '🎓',
-		label: 'Studiengänge',
-		href: '/verwaltung/studiengaenge',
-		hint: 'Welche Studiengänge die Fakultät plant — und welche nicht mehr',
-		roles: ['DEANS_OFFICE']
-	},
-	{
-		// No roles, and that is deliberate rather than an oversight: who leads which subject group
-		// is what the faculty's organisation looks like, and a lecturer looking for the person to
-		// ask needs to be able to find it. What is administered is writing it, and the page renders
-		// its forms only for whoever `people` answers for.
-		emoji: '🗂️',
-		label: 'Fachgruppen',
-		href: '/verwaltung/fachgruppen',
-		hint: 'Wer arbeitet in welchen Fächern, und wer leitet sie'
-	},
-	{
-		emoji: '📥',
-		label: 'ZPA-Import',
-		href: '/verwaltung/zpa',
-		hint: 'Wann kamen die Modul-Stammdaten zuletzt, und was hat sich geändert',
-		roles: ['ADMIN', 'DEANS_OFFICE']
-	},
-	{
-		emoji: '📋',
-		label: 'Zugriffe',
-		href: '/verwaltung/zugriffe',
-		hint: 'Wer hat wann worauf zugegriffen — und wer wurde abgewiesen',
-		roles: ['ADMIN']
-	},
-	{
-		emoji: '🔍',
-		label: 'Diagnose',
-		href: '/verwaltung/diagnose',
-		hint: 'Warum sieht jemand etwas nicht? Entscheidungen, keine Inhalte',
-		roles: ['ADMIN']
 	}
 ];
 
 /**
- * Filters entries down to the ones these roles should see.
+ * Filters entries down to the ones these roles should see — the children too.
  *
  * Takes the **effective** roles from `session.effectiveRoles`, not the held ones: somebody who
  * has narrowed themselves should see the narrowed role's menu too — otherwise the preview
  * shows something other than what the server judges the request by, and thereby fails to
  * answer the very question it exists for.
+ *
+ * An area with children links to the first child left, and disappears when none is.
  */
 export function visibleNavItems(
 	items: readonly NavItem[],
 	roles: readonly string[]
 ): readonly NavItem[] {
-	return items.filter((item) => !item.roles || hasAnyRole(roles, item.roles));
+	const out: NavItem[] = [];
+	for (const item of items) {
+		if (item.roles && !hasAnyRole(roles, item.roles)) continue;
+		if (!item.children) {
+			out.push(item);
+			continue;
+		}
+		const children = visibleNavItems(item.children, roles);
+		if (children.length === 0) continue;
+		out.push({ ...item, href: children[0].href, children });
+	}
+	return out;
+}
+
+/**
+ * Every page the navigation leads to, areas resolved into their tabs — each with its own roles.
+ * For questions about a page rather than about the bar: may this person be sent there?
+ */
+export function navigationPages(items: readonly NavItem[]): NavItem[] {
+	return items.flatMap((item) => (item.children ? navigationPages(item.children) : [item]));
+}
+
+/**
+ * The area the reader is in, with the tabs they may see — or null outside every area with tabs.
+ * Fewer than two tabs is no tab bar either: a single tab is a heading pretending to be a choice.
+ */
+export function areaFor(pathname: string, roles: readonly string[]): NavItem | null {
+	const area = visibleNavItems(NAV_ITEMS, roles).find(
+		(item) => item.children && isActive(item, pathname)
+	);
+	return area && (area.children?.length ?? 0) >= 2 ? area : null;
 }

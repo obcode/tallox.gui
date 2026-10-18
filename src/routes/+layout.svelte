@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import AreaTabs from '$lib/components/AreaTabs.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import NarrowingBanner from '$lib/components/NarrowingBanner.svelte';
 	import NavBar from '$lib/components/NavBar.svelte';
@@ -31,6 +32,7 @@
 
 	<!-- Horizontal padding comes from the layout. New pages do not set a p-8 of their own. -->
 	<main class="mx-auto w-full max-w-6xl flex-1 px-3 py-6 sm:px-4 lg:px-8">
+		<AreaTabs {effectiveRoles} />
 		{@render children()}
 	</main>
 

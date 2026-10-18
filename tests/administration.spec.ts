@@ -297,7 +297,7 @@ test.describe('areas by role', () => {
 		// hamburger menu below that. That both carry the same entries is intentional and is
 		// checked in responsive.spec.ts.
 		const lecturerNav = lecturer.getByRole('navigation');
-		await expect(lecturerNav.getByText('Wünsche').first()).toBeVisible();
+		await expect(lecturerNav.getByText('Meine Lehre').first()).toBeVisible();
 		// The demand is on a lecturer's menu, and that is the change the read view made: it is
 		// what the wish phase is about, so somebody who cannot see which instances exist has
 		// nothing to register interest in. What they get there is the overview.

@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
+import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
 import { WISHES } from './seed';
 
@@ -27,16 +27,18 @@ test.beforeAll(reset);
 test.afterAll(reset);
 
 test.describe('my subject groups', () => {
-	test('the entry is in everybody’s own area', async ({ asPersona }) => {
+	test('is a tab of everybody’s „Meine Lehre“', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, '/');
 
-		await openDropdown(page, /Prof/);
 		// In the bar: the start page's walk-through links the same screen in its text, and this
-		// test is about the menu.
-		await expect(
-			page.getByRole('banner').getByRole('link', { name: 'Meine Fachgruppen', exact: true })
-		).toBeVisible();
+		// test is about the navigation.
+		await page.getByRole('banner').getByRole('link', { name: 'Meine Lehre' }).click();
+		await page
+			.getByRole('navigation', { name: 'Meine Lehre' })
+			.getByRole('link', { name: 'Fachgruppen', exact: true })
+			.click();
+		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
 	});
 
 	test('a lecturer joins one and it sticks, also after saving twice', async ({ asPersona }) => {
