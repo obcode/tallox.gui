@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	COMPETENCE_LEVELS,
+	COMPETENCE_LEVEL_HINTS,
 	COMPETENCE_LEVEL_LABELS,
+	COMPETENCE_LEVEL_OTHERS,
 	belowMinimum,
 	competenceByModule,
 	competenceChanges,
@@ -46,6 +48,17 @@ describe('levels', () => {
 		}
 		expect(isCompetenceChoice('')).toBe(true);
 		expect(isCompetenceChoice('EXPERT')).toBe(false);
+	});
+
+	// "würde ich gern" read like a wish and like the warmer level, and somebody who can teach a
+	// module picked it — and fell out of the pool and the minimum without noticing.
+	it('does not make the interest read like a wish or like the stronger level', () => {
+		for (const words of [COMPETENCE_LEVEL_LABELS.WOULD_LIKE, COMPETENCE_LEVEL_OTHERS.WOULD_LIKE]) {
+			expect(words).not.toMatch(/gern|Wunsch|möchte/i);
+			expect(words).toContain('noch nicht gehalten');
+		}
+		expect(COMPETENCE_LEVEL_HINTS.CAN_TEACH).toContain('gern');
+		expect(COMPETENCE_LEVEL_HINTS.CAN_TEACH).toContain('Pflichtfächer');
 	});
 });
 

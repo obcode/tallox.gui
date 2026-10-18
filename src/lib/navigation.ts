@@ -158,7 +158,7 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		emoji: '🧠',
 		label: 'Meine Kompetenzen',
 		href: '/konto/kompetenzen',
-		hint: 'Welche Module Du halten kannst, und welche Du gern halten würdest'
+		hint: 'Welche Module Du halten kannst, und für welche Du Dich interessierst'
 	},
 	{
 		emoji: '📖',
