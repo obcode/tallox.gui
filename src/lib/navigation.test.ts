@@ -79,8 +79,9 @@ describe('areas with tabs', () => {
 		expect(admin(['SUBJECT_GROUP_LEAD'])).toBeUndefined();
 
 		const deans = admin(['DEANS_OFFICE'])!;
-		expect(deans.href).toBe('/verwaltung/studiengaenge');
+		expect(deans.href).toBe('/semester');
 		expect(deans.children!.map((c) => c.label)).toEqual([
+			'Semester',
 			'Studiengänge',
 			'Fachgruppen',
 			'ZPA-Import'
@@ -90,6 +91,8 @@ describe('areas with tabs', () => {
 		expect(full.href).toBe('/verwaltung/personen');
 		expect(full.children!.map((c) => c.label)).toContain('Diagnose');
 		expect(full.children!.map((c) => c.label)).not.toContain('Studiengänge');
+		// ADMIN runs the installation, not the process: the phases are the dean's office's.
+		expect(full.children!.map((c) => c.label)).not.toContain('Semester');
 	});
 
 	it('give a tab bar inside an area, and none outside', () => {

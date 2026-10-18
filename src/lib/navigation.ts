@@ -156,20 +156,26 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
 	},
 	{
-		emoji: '🗓️',
-		label: 'Semester',
-		href: '/semester',
-		hint: 'Planungssemester, Phasen und Meilensteine'
-	},
-	{
 		// Running the faculty's side of the installation: not a step of the planning, so it comes
 		// last. Its own roles say who finds it in the bar; each tab keeps the roles it had in the
-		// account menu, so the dean's office lands on "Studiengänge" and never sees "Zugriffe".
+		// account menu, so the dean's office lands on "Semester" and never sees "Zugriffe".
 		emoji: '🛠️',
 		label: 'Verwaltung',
-		hint: 'Personen, Studiengänge, Fachgruppen und Stammdaten',
+		hint: 'Semester und Phasen, Personen, Studiengänge, Fachgruppen und Stammdaten',
 		roles: ['ADMIN', 'DEANS_OFFICE'],
 		children: [
+			{
+				// The dean's office's tool: the planning semester, the phase, the two publications.
+				// It was in the bar for everybody, because the phase answers "may I enter my wishes
+				// yet" — but the wish page and "Jetzt dran" say that where it is asked, and for a
+				// lecturer this page was a list of switches they cannot use. Still readable by
+				// everybody at its address; it is only no longer offered.
+				emoji: '🗓️',
+				label: 'Semester',
+				href: '/semester',
+				hint: 'Planungssemester, Phasen und Veröffentlichungen',
+				roles: ['DEANS_OFFICE']
+			},
 			{
 				emoji: '🛠️',
 				label: 'Personen',

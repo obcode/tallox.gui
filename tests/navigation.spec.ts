@@ -56,14 +56,14 @@ test.describe('areas and their tabs', () => {
 			admin.getByRole('navigation', { name: 'Verwaltung' }).getByRole('link')
 		).toHaveText(['Personen', 'Fachgruppen', 'ZPA-Import', 'Zugriffe', 'Diagnose']);
 
-		// The dean's office lands on the programmes and is offered none of the installation's own
+		// The dean's office lands on the semesters and is offered none of the installation's own
 		// screens — the log of accesses and the diagnosis are ADMIN's.
 		const deans = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(deans, '/');
 		await deans.getByRole('banner').getByRole('link', { name: 'Verwaltung' }).click();
-		await expect(deans).toHaveURL(/\/verwaltung\/studiengaenge$/);
+		await expect(deans).toHaveURL(/\/semester$/);
 		await expect(
 			deans.getByRole('navigation', { name: 'Verwaltung' }).getByRole('link')
-		).toHaveText(['Studiengänge', 'Fachgruppen', 'ZPA-Import']);
+		).toHaveText(['Semester', 'Studiengänge', 'Fachgruppen', 'ZPA-Import']);
 	});
 });

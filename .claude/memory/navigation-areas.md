@@ -12,20 +12,28 @@ Fakultätsverwaltung).
 
 ## Die Ordnung
 
-| Wo                   | Was                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| Leiste               | Module · Bedarf · **Meine Lehre** · Zuteilung · Statistik · Semester · **Verwaltung**   |
-| Reiter „Meine Lehre“ | Wünsche · Kompetenzen · Fachgruppen (für alle)                                          |
-| Reiter „Zuteilung“   | Besetzen · Kompetenzen der Fachgruppe                                                   |
-| Reiter „Verwaltung“  | Personen · Studiengänge · Fachgruppen · ZPA-Import · Zugriffe · Diagnose, je nach Rolle |
-| Persönliches Menü    | Meine Rollen · Tokens — sonst nichts                                                    |
-| „?“-Hilfe            | zusätzlich „Nachschlagen“: Ablauf, API-Doku                                             |
+| Wo                   | Was                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Leiste               | Module · Bedarf · **Meine Lehre** · Zuteilung · Statistik · **Verwaltung**                         |
+| Reiter „Meine Lehre“ | Wünsche · Kompetenzen · Fachgruppen (für alle)                                                     |
+| Reiter „Zuteilung“   | Besetzen · Kompetenzen der Fachgruppe                                                              |
+| Reiter „Verwaltung“  | Semester · Personen · Studiengänge · Fachgruppen · ZPA-Import · Zugriffe · Diagnose, je nach Rolle |
+| Persönliches Menü    | Meine Rollen · Tokens — sonst nichts                                                               |
+| „?“-Hilfe            | zusätzlich „Nachschlagen“: Ablauf, API-Doku                                                        |
+
+**Semester ist seit 2026-10-18 kein Leisteneintrag mehr**, sondern der erste Verwaltungsreiter,
+nur für das Dekanat (ADMIN nicht: die Phasen sind Prozess, nicht Betrieb). Früher stand es für
+alle in der Leiste, weil die Phase beantwortet, ob man schon Wünsche eintragen kann — das sagen
+inzwischen die Wunschseite und „Jetzt dran“ dort, wo es gefragt ist. Für Dozierende war die Seite
+eine Liste von Schaltern, die sie nicht bedienen können. `/semester` bleibt für alle lesbar und
+unter seiner Adresse; die Links von Wunsch- und Zuteilungsseite darauf sind weg („das Dekanat
+legt es fest“).
 
 ## Wie es gebaut ist
 
 - `NavItem.children` in `src/lib/navigation.ts`. `visibleNavItems` filtert die Kinder mit, gibt
-  dem Bereich das `href` des **ersten sichtbaren** Kinds (Dekanat landet auf Studiengänge, ADMIN
-  auf Personen) und lässt einen Bereich ohne sichtbares Kind weg.
+  dem Bereich das `href` des **ersten sichtbaren** Kinds (Dekanat landet auf Semester, ADMIN auf
+  Personen) und lässt einen Bereich ohne sichtbares Kind weg.
 - **Die Rollen eines Kinds sind seine eigenen**, die des Bereichs entscheiden nur über den
   Leisteneintrag. Deshalb tragen die Zuteilungsreiter `ASSIGNING` selbst, und „Fachgruppen“ unter
   Verwaltung hat keine: für alle lesbar (wen frage ich?), aber kein Grund für einen
@@ -48,7 +56,7 @@ und E2E-Links bleiben gültig, und es braucht keine Weiterleitungen.
 
 ## Gemessen
 
-Bei 1280 px passt die Leiste auch für das Dekanat mit allen sieben Einträgen. E2E:
+Bei 1280 px passt die Leiste auch für das Dekanat (damals sieben, seit dem Umzug von Semester sechs Einträge). E2E:
 `tests/navigation.spec.ts`.
 
 **`responsive.spec.ts` war grün und hat trotzdem nichts gesagt:** es misst nur die Startseite,

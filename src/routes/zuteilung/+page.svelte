@@ -233,8 +233,8 @@
 	Besetzt wird nach <strong>Fachgruppe</strong>: zuständig ist deren Leitung, daneben die
 	Studiengangsleitung des Studiengangs und das Dekanat. Welcher Fachgruppe ein Modul gehört, steht
 	im <a class="link" href={resolve('/module')}>Modulkatalog</a>. Auch Lehrende ohne Tallox-Konto
-	sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung unter
-	<a class="link" href={resolve('/semester')}>Semester und Phasen</a> veröffentlicht.
+	sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung
+	veröffentlicht.
 </p>
 <p class="text-base-content/80 mt-2 max-w-prose">
 	Nach den Wünschen bietet jede Auswahl an, wer das Modul laut
@@ -280,7 +280,7 @@
 	<div class="card bg-base-200 mt-4 max-w-prose">
 		<div class="card-body">
 			<h2 class="card-title text-base">Es ist kein Planungssemester festgelegt</h2>
-			<p>Unter <a class="link" href={resolve('/semester')}>Semester</a> lässt sich eines wählen.</p>
+			<p>Das Dekanat legt es fest.</p>
 		</div>
 	</div>
 {:else}

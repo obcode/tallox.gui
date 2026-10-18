@@ -349,8 +349,7 @@
 				Es ist kein Planungssemester festgelegt.
 			</p>
 			<p class="text-base-content/80 mt-1 text-sm">
-				Welches geplant wird, steht unter <a class="link" href={resolve('/semester')}>Semester</a>
-				— oder wähle oben eines aus.
+				Welches geplant wird, legt das Dekanat fest — bis dahin wähle oben eines aus.
 			</p>
 		</div>
 	{:else}
@@ -368,8 +367,7 @@
 					{closedPhaseHint(phase)}
 				</p>
 				<p class="text-base-content/80 mt-1 text-sm">
-					Bereits eingetragene Wünsche bleiben sichtbar. In welcher Phase ein Semester steht, steht
-					unter <a class="link" href={resolve('/semester')}>Semester</a>.
+					Bereits eingetragene Wünsche bleiben sichtbar.
 				</p>
 			{/if}
 		</div>

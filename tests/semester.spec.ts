@@ -187,12 +187,22 @@ test.describe('semesters and phases', () => {
 		await checkA11y(page);
 	});
 
-	test('appears in the navigation for everybody', async ({ asPersona }) => {
-		// Not gated by a role: the phase is the answer to "may I enter my wishes yet", and a
-		// lecturer who cannot see it gets a tool that refuses writes without saying why.
-		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, '/');
+	test('is the dean’s office’s tab in the administration, and no lecturer’s area', async ({
+		asPersona
+	}) => {
+		// It used to be in the bar for everybody, because the phase answers "may I enter my
+		// wishes yet". The wish page and "Jetzt dran" say that where it is asked (wishes.spec.ts);
+		// for a lecturer this page was a list of switches they cannot use.
+		const lecturer = await asPersona(PERSONAS.eins);
+		await gotoRendered(lecturer, '/');
+		await expect(lecturer.getByRole('banner').getByRole('link', { name: /Semester/ })).toHaveCount(
+			0
+		);
 
-		await expect(page.getByRole('navigation').getByText('Semester').first()).toBeVisible();
+		const deans = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(deans, '/');
+		await deans.getByRole('banner').getByRole('link', { name: 'Verwaltung' }).click();
+		await expect(deans).toHaveURL(/\/semester$/);
+		await expect(deans.getByRole('heading', { name: 'Semester und Phasen' })).toBeVisible();
 	});
 });
