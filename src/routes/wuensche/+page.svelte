@@ -26,6 +26,7 @@
 		settledProgrammes,
 		rowClosedReason,
 		demandStateHint,
+		desiredHoursLabel,
 		wishRowLabel,
 		wishRows,
 		wishTint,
@@ -373,6 +374,59 @@
 		</div>
 	{/if}
 
+	{#if data.semester}
+		<section
+			class="border-base-300 bg-base-100 rounded-lg border p-4"
+			aria-labelledby="desired-hours"
+		>
+			<h2 id="desired-hours" class="font-medium">Wie viel möchtest Du halten?</h2>
+			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+				Wie viele SWS Du in {semesterName(data.semester.code)} insgesamt halten möchtest. Das lesen nur
+				Du, die Leitungen Deiner Fachgruppen und das Dekanat — nie das übrige Kollegium, auch nicht nach
+				der Veröffentlichung. Leer heißt „nicht angegeben“; 0 ist eine Angabe.
+			</p>
+			<form
+				method="POST"
+				action="?/desiredHours"
+				use:enhance
+				class="mt-3 flex flex-wrap items-end gap-2"
+			>
+				<input type="hidden" name="semester" value={data.semester.code} />
+				<label class="flex flex-col gap-1">
+					<span class="label-text text-sm">SWS</span>
+					<input
+						name="hours"
+						class="input input-sm w-24"
+						inputmode="decimal"
+						value={data.desiredHours ? desiredHoursLabel(data.desiredHours.hours) : ''}
+						disabled={!open}
+					/>
+				</label>
+				<label class="flex min-w-48 flex-1 flex-col gap-1">
+					<span class="label-text text-sm">Notiz (optional)</span>
+					<input
+						name="note"
+						class="input input-sm w-full max-w-md"
+						maxlength="500"
+						value={data.desiredHours?.note ?? ''}
+						disabled={!open}
+					/>
+				</label>
+				<button type="submit" class="btn btn-sm" disabled={!open}>Speichern</button>
+			</form>
+			{#if form && 'desiredHoursMessage' in form}
+				<p class="text-base-content/90 mt-2 text-sm" role="alert">
+					<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
+					{form.desiredHoursMessage}
+				</p>
+			{:else if form && 'desiredHoursSaved' in form}
+				<p class="text-base-content/90 mt-2 text-sm" role="status">
+					<span class="badge badge-ghost badge-sm align-middle">Gespeichert</span>
+				</p>
+			{/if}
+		</section>
+	{/if}
+
 	{#if refusal}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<p class="text-base-content/90 text-sm">
@@ -386,7 +440,7 @@
 				<span class="badge badge-ghost badge-sm align-middle">Gespeichert</span>
 				{savedHint(form.saved ?? 0)}
 				{#if (form.refusals?.length ?? 0) > 0}
-					{form.refusals.length} Zelle{form.refusals.length === 1 ? '' : 'n'} nicht — die Meldung steht
+					{form.refusals?.length} Zelle{form.refusals?.length === 1 ? '' : 'n'} nicht — die Meldung steht
 					in der Zeile.
 				{/if}
 			</p>

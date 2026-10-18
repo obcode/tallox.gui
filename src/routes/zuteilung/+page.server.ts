@@ -126,6 +126,14 @@ const AssignmentDocument = graphql(`
 				id
 			}
 		}
+		# How many hours a week people would like to teach — the members of the subject groups this
+		# person leads, or everybody for the dean's office. Already filtered by the backend.
+		desiredTeachingHours(semester: $semester) @include(if: $withSemester) {
+			hours
+			person {
+				id
+			}
+		}
 		wishes(semester: $semester) @include(if: $withSemester) {
 			id
 			priority
@@ -347,6 +355,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		instances: data.courseInstances ?? [],
 		assignments: data.assignments ?? [],
 		wishes: data.wishes ?? [],
+		desired: data.desiredTeachingHours ?? [],
 		found: data.teachers ?? [],
 		competences: data.competences ?? [],
 		windows: data.wishWindows ?? [],

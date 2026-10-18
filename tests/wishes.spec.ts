@@ -23,6 +23,8 @@ function reset(): void {
 	runSql(
 		`DELETE FROM wish WHERE course_instance_id IN
 		   ('${WISHES.instance}', '${WISHES.laterInstance}');
+		 DELETE FROM desired_teaching_hours WHERE semester_id IN
+		   (SELECT id FROM semester WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}'));
 		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES'
 		  WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}');`,
 		'clearing the test wishes'
@@ -290,6 +292,39 @@ test.describe('the wish phase', () => {
 
 			await expect(page.getByText(`Außerdem: ${PERSONAS.eins.name}`)).toBeVisible();
 		}
+	});
+
+	// How much somebody would like to teach: stated on the wish page, read by the lead of their
+	// subject group beside their name when filling an instance.
+	test('a lecturer states how many hours, and the lead of their group reads it', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
+
+		const card = page.getByRole('region', { name: 'Wie viel möchtest Du halten?' });
+		const hours = card.getByRole('textbox', { name: 'SWS' });
+
+		await hours.fill('7,3');
+		await card.getByRole('button', { name: 'Speichern' }).click();
+		await expect(card.getByRole('alert')).toContainText('zwischen 0 und 40');
+
+		await hours.fill('12,5');
+		await card.getByRole('button', { name: 'Speichern' }).click();
+		await expect(card.getByRole('status')).toContainText('Gespeichert');
+		await gotoRendered(page, URL);
+		await expect(hours).toHaveValue('12,5');
+
+		const lead = await asPersona(PERSONAS.drei);
+		await gotoRendered(
+			lead,
+			`/zuteilung?semester=${WISHES.semester}&fachgruppe=${WISHES.subjectGroup}`
+		);
+		await expect(
+			lead.locator('option', { hasText: `${PERSONAS.eins.name} (` }).filter({
+				hasText: 'möchte 12,5 SWS'
+			})
+		).not.toHaveCount(0);
 	});
 
 	test('publication opens it to everybody', async ({ asPersona }) => {

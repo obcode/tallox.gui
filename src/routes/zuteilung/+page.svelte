@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import {
 		candidateValue,
+		candidateLabel,
 		candidatesFor,
 		commonNote,
 		commonValue,
@@ -70,6 +71,7 @@
 	);
 
 	const members = $derived(data.group?.members ?? []);
+	const desired = $derived(new Map(data.desired.map((d) => [d.person.id, d.hours] as const)));
 
 	/**
 	 * Whether this subject group is still taking wishes.
@@ -605,7 +607,7 @@
 													<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
 													{#each candidates as candidate (candidateValue(candidate))}
 														<option value={candidateValue(candidate)}>
-															{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
+															{candidateLabel(candidate, desired)}
 														</option>
 													{/each}
 												</select>
@@ -771,7 +773,7 @@
 															<option value="">— nicht besetzt —</option>
 															{#each candidates as candidate (candidateValue(candidate))}
 																<option value={candidateValue(candidate)}>
-																	{candidate.name}{candidate.hint ? ` (${candidate.hint})` : ''}
+																	{candidateLabel(candidate, desired)}
 																</option>
 															{/each}
 														</select>

@@ -144,6 +144,11 @@ const PASS_THROUGH = new Set([
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
 	'WISH_PRIORITY_INVALID',
+	// The desired teaching hours: a range and a finished semester. Both are about the caller's own
+	// figure, which nobody else can write, so neither says anything about a colleague.
+	'DESIRED_HOURS_OUT_OF_RANGE',
+	'DESIRED_HOURS_PHASE_CLOSED',
+	'SEMESTER_REQUIRED',
 	// The assignment phase, read the same way and with one entry that needed arguing.
 	//
 	// ASSIGNMENT_NOT_FOUND covers "there is no such assignment" *and* "not yours to see", and the

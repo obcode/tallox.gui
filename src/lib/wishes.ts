@@ -661,3 +661,24 @@ export function demandStateHint(
 	if (settled.has(row.programme.code)) return null;
 	return 'Bedarf noch in Arbeit';
 }
+
+/**
+ * What somebody typed into "how many hours would you like to teach": a number in half hours from
+ * 0 to 40, with a comma or a point, or nothing to take the figure back.
+ *
+ * The backend refuses the same range; this is here so the field can say what is wrong before a
+ * round trip, and so "12,5" — how the faculty writes it — is not read as a typo.
+ */
+export function parseDesiredHours(text: string): number | null | 'invalid' {
+	const trimmed = text.trim().replace(',', '.');
+	if (trimmed === '') return null;
+	if (!/^\d{1,2}(\.\d)?$/.test(trimmed)) return 'invalid';
+	const hours = Number(trimmed);
+	if (hours > 40 || (hours * 2) % 1 !== 0) return 'invalid';
+	return hours;
+}
+
+/** A figure the way the faculty writes it: "12", "12,5". */
+export function desiredHoursLabel(hours: number): string {
+	return hours.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+}

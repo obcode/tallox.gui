@@ -285,6 +285,24 @@ export type Candidate = {
 	hint?: string;
 };
 
+/**
+ * A candidate as the dropdown shows them: the name, why they are listed, and — where they stated
+ * it and the reader may see it — how many hours they would like to teach this semester.
+ *
+ * The figure comes from the backend already filtered: the lead of their subject group and the
+ * dean's office read it, nobody else. A candidate not in the map has not stated one, or the reader
+ * may not see it, and the two look the same on purpose.
+ */
+export function candidateLabel(candidate: Candidate, desired: ReadonlyMap<string, number>): string {
+	const notes: string[] = [];
+	if (candidate.hint) notes.push(candidate.hint);
+	const hours = candidate.personId === undefined ? undefined : desired.get(candidate.personId);
+	if (hours !== undefined) {
+		notes.push(`möchte ${hours.toLocaleString('de-DE', { maximumFractionDigits: 1 })} SWS`);
+	}
+	return notes.length === 0 ? candidate.name : `${candidate.name} (${notes.join(', ')})`;
+}
+
 /** How much somebody wants an instance, in words. */
 const WISH_WORDS: Record<string, string> = {
 	FIRST_CHOICE: 'unbedingt',

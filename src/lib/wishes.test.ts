@@ -31,7 +31,9 @@ import {
 	wishRowLabel,
 	wishRows,
 	wishTint,
-	wishesAreOpen
+	wishesAreOpen,
+	desiredHoursLabel,
+	parseDesiredHours
 } from './wishes';
 
 function instance(
@@ -614,5 +616,32 @@ describe('demandStateHint', () => {
 		// sensible. A sentence that told somebody to wait would be wrong about the process.
 		const hint = demandStateHint({ programme: { code: 'IF' } }, new Set()) ?? '';
 		expect(hint).not.toMatch(/warte|noch nicht möglich|gesperrt/i);
+	});
+});
+
+describe('the desired teaching hours', () => {
+	it('reads a figure in half hours, with a comma or a point', () => {
+		expect(parseDesiredHours('12')).toBe(12);
+		expect(parseDesiredHours(' 12,5 ')).toBe(12.5);
+		expect(parseDesiredHours('9.5')).toBe(9.5);
+		expect(parseDesiredHours('0')).toBe(0);
+		expect(parseDesiredHours('40')).toBe(40);
+	});
+
+	// Empty is "not stated", which takes the figure back — not 0.
+	it('reads nothing as taking the figure back', () => {
+		expect(parseDesiredHours('')).toBeNull();
+		expect(parseDesiredHours('   ')).toBeNull();
+	});
+
+	it('refuses what the backend would refuse', () => {
+		for (const text of ['-1', '40,5', '7,3', 'zwölf', '12,50', '100']) {
+			expect(parseDesiredHours(text), text).toBe('invalid');
+		}
+	});
+
+	it('writes a figure the way the faculty does', () => {
+		expect(desiredHoursLabel(12.5)).toBe('12,5');
+		expect(desiredHoursLabel(18)).toBe('18');
 	});
 });

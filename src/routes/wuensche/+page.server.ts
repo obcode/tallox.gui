@@ -3,7 +3,7 @@ import { graphql } from '$lib/gql/__generated__';
 import type { WishPriority } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import { isWishChoice, wishChanges, type WishEntry } from '$lib/wishes';
+import { isWishChoice, parseDesiredHours, wishChanges, type WishEntry } from '$lib/wishes';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -176,6 +176,12 @@ const WishesDocument = graphql(`
 				name
 			}
 		}
+		# How many hours a week this person would like to teach in the semester on screen. Their own,
+		# so no confidentiality question; empty until stated.
+		myDesiredTeachingHours(semester: $semester) @include(if: $withSemester) {
+			hours
+			note
+		}
 		demandCompletions(semester: $semester) @include(if: $withSemester) {
 			completedAt
 			programme {
@@ -223,6 +229,14 @@ const SetWishDocument = graphql(`
 			id
 			priority
 			note
+		}
+	}
+`);
+
+const SetDesiredHoursDocument = graphql(`
+	mutation SetDesiredHours($semester: String!, $hours: Float, $note: String) {
+		setDesiredTeachingHours(semester: $semester, hours: $hours, note: $note) {
+			hours
 		}
 	}
 `);
@@ -289,6 +303,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		wishes: data.wishes ?? [],
 		windows: data.wishWindows ?? [],
 		completions: data.demandCompletions ?? [],
+		desiredHours: data.myDesiredTeachingHours?.[0] ?? null,
 		me: data.me,
 		leadsGroups: (data.me?.subjectGroupsLed ?? []).length > 0,
 		unusable
@@ -380,5 +395,33 @@ export const actions: Actions = {
 		}
 
 		return { saved, refusals };
+	},
+
+	/**
+	 * State, change or take back the hours a week this person would like to teach.
+	 *
+	 * Its own action rather than a field of the table's: it is one figure about the semester, not
+	 * a cell, and a refused figure must not read as "3 Zellen nicht gespeichert".
+	 */
+	desiredHours: async ({ request }) => {
+		const form = await request.formData();
+		const semester = String(form.get('semester') ?? '');
+		const hours = parseDesiredHours(String(form.get('hours') ?? ''));
+		const note = String(form.get('note') ?? '').trim();
+		if (hours === 'invalid') {
+			return fail(400, {
+				desiredHoursMessage: 'Bitte eine Zahl zwischen 0 und 40 eingeben, in halben Stunden.'
+			});
+		}
+		try {
+			await backendRequest(SetDesiredHoursDocument, {
+				semester,
+				hours,
+				note: note === '' ? null : note
+			});
+		} catch (err) {
+			return fail(400, { desiredHoursMessage: toRefusal(err).message });
+		}
+		return { desiredHoursSaved: true };
 	}
 };

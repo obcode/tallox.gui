@@ -25,7 +25,8 @@ import {
 	ownRows,
 	isArranged,
 	divisionDefault,
-	parseHours
+	parseHours,
+	candidateLabel
 } from './assignment';
 
 const instance = (over: Partial<InstanceLike> = {}): InstanceLike => ({
@@ -674,5 +675,26 @@ describe('who may see the gap list', () => {
 	it('is never the unfiled tab, whose modules reach no lead at all', () => {
 		expect(mayShowGaps(UNFILED, ['DEANS_OFFICE'], led)).toBe(false);
 		expect(mayShowGaps(null, ['DEANS_OFFICE'], led)).toBe(false);
+	});
+});
+
+describe('the candidate in the dropdown', () => {
+	const desired = new Map([['p1', 12.5]]);
+
+	it('adds the hours somebody would like to teach, after why they are listed', () => {
+		expect(candidateLabel({ personId: 'p1', name: 'Eins', hint: 'gerne' }, desired)).toBe(
+			'Eins (gerne, möchte 12,5 SWS)'
+		);
+		expect(candidateLabel({ personId: 'p1', name: 'Eins' }, desired)).toBe(
+			'Eins (möchte 12,5 SWS)'
+		);
+	});
+
+	// Not stated and not visible are the same: nothing.
+	it('says nothing for somebody without a visible figure, or a teacher without an account', () => {
+		expect(candidateLabel({ personId: 'p2', name: 'Zwei', hint: 'Fachgruppe' }, desired)).toBe(
+			'Zwei (Fachgruppe)'
+		);
+		expect(candidateLabel({ teacherId: 't1', name: 'Extern' }, desired)).toBe('Extern');
 	});
 });
