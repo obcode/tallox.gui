@@ -68,9 +68,15 @@ Code stehen und einzeln getestet sind:
 3. **Keine Zahl.** Namen von Zügen, nichts gezählt, nichts eingefärbt, nichts danach sortiert.
    Eine Lücke ist „hier keiner", nie „dort drei".
 
+Seit 2026-10-19 steht dieselbe Auskunft zusätzlich **in der Zeile**: ein Badge „ganz offen" am Zug
+(`isWideOpen`), unter denselben drei Bedingungen. „Ganz offen" heißt kein Wunsch **und** noch
+niemand eingeteilt — ein Zug, den die Leitung schon ohne Wunsch besetzt hat, ist nicht mehr offen.
+Gewünscht, weil die Leitung sofort sehen soll, was noch ganz offen ist, ohne die Zeilen aus der
+Liste oben wiederzufinden. Badge statt Einfärbung, weil semantische Farben hier Hintergrund sind.
+
 **Why:** Die Fachgruppenleitung hat im Beta-Test danach gefragt, mit einem konkreten Grund —
 Lehrbeauftragte früh ansprechen, eine Woche entscheidet über die Verfügbarkeit. Die Regel schützt
-vor dem Windhundverfahren zwischen Kolleg:innen, nicht vor der Person, die die Fachgruppe besetzt.
+vor dem Windhundverfahren im Kollegium, nicht vor der Person, die die Fachgruppe besetzt.
 
 **How to apply:** Diese Ausnahme ist **kein Freibrief**. Sie gilt für diesen einen Abschnitt auf
 dieser einen Seite. Jede weitere Stelle, die etwas über fremde Wünsche aggregieren will, braucht

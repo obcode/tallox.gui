@@ -715,7 +715,8 @@ export function mayFillUnfiled(roles: readonly string[]): boolean {
  * 3. **No number.** Names of cohorts, nothing counted, nothing coloured, nothing sorted by
  *    interest. A gap is "this one has none", never "that one has three".
  *
- * Everything outside that is unchanged: no badge in the table, no tint, no ordering.
+ * The same rows are marked in the table as well, under the same three conditions — see
+ * `isWideOpen`. Still no tint and no ordering by interest.
  */
 export function cohortsWithoutInterest<
 	T extends {
@@ -728,6 +729,25 @@ export function cohortsWithoutInterest<
 	// Instances with no parts are left out, exactly as the table leaves them out: there is
 	// nothing to fill, so "nobody wants it" is not a gap somebody can act on.
 	return instances.filter((i) => i.parts.length > 0 && !wanted.has(i.id));
+}
+
+/**
+ * Whether a cohort is still entirely open: nobody has registered interest and nobody holds it.
+ *
+ * Asked for on 2026-10-19 — the lead wants to see at a glance, in the row, what still needs a
+ * person, rather than reading a separate list and finding the rows again. Both halves matter: a
+ * cohort the lead has already filled without a wish (somebody asked in the corridor) is no longer
+ * open, and a cohort with a wish but no assignment yet has a name to start from.
+ *
+ * Under the same conditions as `cohortsWithoutInterest` — the caller checks `mayShowGaps` first,
+ * because for anybody else the wishes are their own alone and "nobody" would be false and leaky.
+ */
+export function isWideOpen(
+	wishesHere: readonly unknown[],
+	held: readonly unknown[],
+	hasPartsToFill: boolean
+): boolean {
+	return hasPartsToFill && wishesHere.length === 0 && held.length === 0;
 }
 
 /**

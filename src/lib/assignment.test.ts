@@ -21,6 +21,7 @@ import {
 	mayFillUnfiled,
 	UNFILED,
 	cohortsWithoutInterest,
+	isWideOpen,
 	mayShowGaps,
 	ownRows,
 	isArranged,
@@ -654,6 +655,28 @@ describe('the cohorts nobody has registered interest in', () => {
 			[{ instance: { id: 'i1' } }, { instance: { id: 'i1' } }]
 		);
 		expect(gaps).toEqual([b]);
+	});
+});
+
+describe('a cohort that is entirely open', () => {
+	const wish = { instance: { id: 'i1' } };
+	const held = { id: 'a1' };
+
+	it('is one with neither a wish nor anybody holding it', () => {
+		expect(isWideOpen([], [], true)).toBe(true);
+	});
+
+	it('is not open once somebody wants it — there is a name to start from', () => {
+		expect(isWideOpen([wish], [], true)).toBe(false);
+	});
+
+	it('is not open once the lead has filled it, wish or no wish', () => {
+		expect(isWideOpen([], [held], true)).toBe(false);
+	});
+
+	it('is not open where nothing here is ours to fill', () => {
+		// A cohort another faculty teaches is arranged, not staffed.
+		expect(isWideOpen([], [], false)).toBe(false);
 	});
 });
 

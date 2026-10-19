@@ -15,6 +15,7 @@
 		partsSummary,
 		savedHint,
 		cohortsWithoutInterest,
+		isWideOpen,
 		instancesOfTab,
 		mayFillUnfiled,
 		mayShowGaps,
@@ -588,7 +589,18 @@
 												value={own.map((row) => row.part.id).join(',')}
 											/>
 										</td>
-										<td class="align-top font-medium whitespace-nowrap">{group.label}</td>
+										<td class="align-top font-medium whitespace-nowrap">
+											{group.label}
+											<!-- Only for the lead of this group, who reads every entry on it anyway —
+											     the same three conditions as the list above. A badge rather than a
+											     tint: semantic colours are background colours here. -->
+											{#if showGaps && isWideOpen(wishesHere, held, own.length > 0)}
+												<span
+													class="badge badge-warning badge-sm mt-1 block w-fit"
+													title="Noch kein Wunsch und noch niemand eingeteilt">ganz offen</span
+												>
+											{/if}
+										</td>
 										<td class="align-top text-right whitespace-nowrap">
 											{hoursLabel(group.instance.teachingHours)}
 										</td>

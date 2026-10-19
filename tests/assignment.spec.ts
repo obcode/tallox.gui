@@ -315,6 +315,10 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		await expect(
 			page.getByRole('listitem').filter({ hasText: ASSIGNMENTS.moduleName })
 		).toBeVisible();
+		// And in the row itself, where it is filled — the list alone meant finding it again.
+		await expect(
+			page.locator(`tbody[data-cohort="${ASSIGNMENTS.instance}"]`).getByText('ganz offen')
+		).toBeVisible();
 	});
 
 	// The condition the whole thing rests on. A colleague who may open this screen and choose
@@ -333,6 +337,7 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		await expect(page.getByRole('heading', { name: 'Zuteilung' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
 		await expect(page.getByText(/niemand eingetragen/)).toHaveCount(0);
+		await expect(page.getByText('ganz offen')).toHaveCount(0);
 	});
 
 	// And nothing appears where every cohort has somebody: the list is the exceptions, not a
@@ -344,6 +349,7 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		await gotoRendered(page, URL);
 
 		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
+		await expect(page.getByText('ganz offen')).toHaveCount(0);
 	});
 });
 
