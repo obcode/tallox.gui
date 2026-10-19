@@ -357,12 +357,32 @@ export function myWishByInstance(wishes: readonly WishLike[]): Map<string, WishL
 }
 
 /**
+ * The rows of the backend's wish list that the wish screen may show: none before publication.
+ *
+ * The backend's rule is owner ∨ published ∨ responsible, and it is right — the subject group lead
+ * and the programme lead need the unpublished entries to assign. But the wish screen is where they
+ * register **their own** interest, as lecturers, alongside everybody else. Showing them there who
+ * else wants the same cohort is the head start the confidentiality exists to prevent: a lead who
+ * sees a newcomer's name before entering is exactly the race the rule was written against.
+ *
+ * So the permission is used on the assignment screen and not here. Dropped in the server load, so
+ * the rows never reach the browser — this is not a security boundary (the API still answers the
+ * lead), it is the choice of which screen exercises a permission somebody holds.
+ */
+export function othersForWishScreen<T>(
+	publishedAt: string | null | undefined,
+	wishes: readonly T[] | null | undefined
+): T[] {
+	return publishedAt ? [...(wishes ?? [])] : [];
+}
+
+/**
  * Other people's entries, per instance.
  *
  * Built by dropping the caller's own rows from what the backend returned — **never by counting**.
- * Before the publication date this is empty for everybody who is not responsible for the instance,
- * and that emptiness is the rule working rather than a fact about who is interested. The page says
- * so in words rather than rendering a zero.
+ * On the wish screen this is empty for everybody before the publication date (see
+ * `othersForWishScreen`), and that emptiness is the rule working rather than a fact about who is
+ * interested. The page says so in words rather than rendering a zero.
  *
  * A plain record rather than a Map: it is rebuilt whole on every change and never mutated in
  * place, and `svelte/prefer-svelte-reactivity` has no way to tell the two apart.
@@ -444,32 +464,27 @@ export function othersHint(
 	/**
 	 * Whether this person leads at least one subject group.
 	 *
-	 * The third branch, and the reason this function grew an argument. The rule is owner ∨
-	 * published ∨ responsible — so a subject group lead reads the entries on her groups' modules
-	 * **before** publication, in a browser, and always could. This page nevertheless told her
-	 * flatly that nobody's entries were visible, while rendering them underneath.
-	 *
-	 * Saying so is not a leak and not a softening of the rule: it describes a permission she
-	 * already holds. What stays unsaid is anything about the entries themselves — no count, no
-	 * "somebody is already registered", for her groups or anybody else's.
+	 * A lead reads the unpublished entries on her groups' modules — on the assignment screen, not
+	 * here (see `othersForWishScreen`). The sentence says where, so that the absence on this page
+	 * does not read as a missing permission; it says nothing about the entries themselves.
 	 */
 	leadsGroups = false
 ): string {
 	if (publishedAt) {
 		return 'Die Wünsche sind veröffentlicht: hier steht, wer sich außerdem eingetragen hat.';
 	}
+	const rule =
+		'Bis zur Veröffentlichung sind die Eintragungen anderer hier nicht sichtbar — auch nicht als ' +
+		'Anzahl. Das ist Absicht: niemand soll sich fragen müssen, ob ein Fach schon „besetzt" ist, ' +
+		'bevor man sich einträgt.';
 	if (leadsGroups) {
 		return (
-			'Für die Fachgruppen, die Du leitest, siehst Du die Eintragungen schon jetzt — das ' +
-			'gehört zur Fachgruppenleitung. Für alle anderen gilt: bis zur Veröffentlichung sind ' +
-			'die Eintragungen anderer nicht sichtbar, auch nicht als Anzahl.'
+			rule +
+			' Das gilt auch für Fachgruppenleitungen: die Eintragungen für Deine Fachgruppen stehen ' +
+			'unter Zuteilung, nicht auf der Seite, auf der Du Dich selbst einträgst.'
 		);
 	}
-	return (
-		'Bis zur Veröffentlichung sind die Eintragungen anderer nicht sichtbar — auch nicht als ' +
-		'Anzahl. Das ist Absicht: niemand soll sich fragen müssen, ob ein Fach schon „besetzt" ist, ' +
-		'bevor er sich einträgt.'
-	);
+	return rule;
 }
 
 /** One semester's worth of somebody's own entries. */

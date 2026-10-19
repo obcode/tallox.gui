@@ -75,6 +75,6 @@ vor dem Windhundverfahren zwischen Kolleg:innen, nicht vor der Person, die die F
 **How to apply:** Diese Ausnahme ist **kein Freibrief**. Sie gilt für diesen einen Abschnitt auf
 dieser einen Seite. Jede weitere Stelle, die etwas über fremde Wünsche aggregieren will, braucht
 dieselben drei Bedingungen einzeln nachgewiesen — insbesondere die erste, ohne die die anderen
-beiden nichts wert sind. Auf `/wuensche` gilt die Ausnahme ausdrücklich **nicht**: dort steht nur
-ein Satz darüber, _dass_ die Leitung die Eintragungen ihrer Fachgruppen sieht, und nie etwas
-darüber, was darin steht.
+beiden nichts wert sind. Auf `/wuensche` gilt die Ausnahme ausdrücklich **nicht**: dort sieht
+die Leitung vor der Veröffentlichung gar keine fremden Eintragungen, nur einen Satz, dass sie unter
+Zuteilung stehen (seit 2026-10-19, siehe [[wish-page]]).

@@ -13,6 +13,7 @@ import {
 	myWishByInstance,
 	openPhaseHint,
 	othersByInstance,
+	othersForWishScreen,
 	othersHint,
 	ownWishesBySemester,
 	rowClosedReason,
@@ -539,16 +540,13 @@ describe('othersHint', () => {
 		expect(othersHint('2026-10-27T12:00:00Z')).toMatch(/veröffentlicht/);
 	});
 
-	// The sentence was flatly wrong for one group of readers, and they are the ones who asked.
-	// The rule is owner ∨ published ∨ responsible: a subject group lead reads the entries on her
-	// groups' modules before publication, in a browser, and always could — while this page told
-	// her nobody's entries were visible and rendered them underneath.
-	it('does not tell a subject group lead that she cannot see what she is looking at', () => {
+	// A lead may read the unpublished entries — on the assignment screen. The wish screen shows
+	// her nothing of them, and the sentence says where they are instead of implying they are gone.
+	it('tells a subject group lead where her entries are, not what they contain', () => {
 		const lead = othersHint(null, true);
 
-		expect(lead).toMatch(/Fachgruppen, die Du leitest/);
-		// Still no aggregate, for her groups or anybody else's: what it describes is a
-		// permission, never what the entries contain.
+		expect(lead).toMatch(/Zuteilung/);
+		expect(lead).toMatch(/nicht sichtbar/);
 		expect(lead).not.toMatch(/niemand hat|noch niemand|keine Interess/i);
 		expect(lead).toMatch(/Anzahl/);
 	});
@@ -558,6 +556,25 @@ describe('othersHint', () => {
 		// Publication is the wider statement and wins: once everybody sees everything, "your
 		// groups" is no longer the distinction worth drawing.
 		expect(othersHint('2026-10-27T12:00:00Z', true)).toBe(othersHint('2026-10-27T12:00:00Z'));
+	});
+});
+
+describe('othersForWishScreen', () => {
+	const rows = [
+		wish('w1', 'i1', 'eins@example.org', 'Eins'),
+		wish('w2', 'i1', 'zwei@example.org', 'Zwei')
+	];
+
+	// The case that was reported: a lead registering interest saw "Außerdem: <name>" under the
+	// cohort she was about to choose, because the backend rightly hands her the rows to assign.
+	it('drops everything before publication, whatever the backend returned', () => {
+		expect(othersForWishScreen(null, rows)).toEqual([]);
+		expect(othersForWishScreen(undefined, rows)).toEqual([]);
+	});
+
+	it('keeps everything once published', () => {
+		expect(othersForWishScreen('2026-10-27T12:00:00Z', rows)).toEqual(rows);
+		expect(othersForWishScreen('2026-10-27T12:00:00Z', null)).toEqual([]);
 	});
 });
 

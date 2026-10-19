@@ -42,8 +42,7 @@
 		/**
 		 * Who else has registered — names, never a number.
 		 *
-		 * Empty before the publication date for everybody who is not responsible for the instance,
-		 * and that emptiness is deliberately not rendered as anything. "Noch niemand" is a
+		 * Empty before the publication date for everybody, the leads included, and that emptiness is deliberately not rendered as anything. "Noch niemand" is a
 		 * statement about other people's wishes, which is the one thing this screen may not make.
 		 */
 		others: readonly WishLike[];
@@ -90,8 +89,8 @@
 
 	{#if others.length > 0}
 		<!--
-			Nur nach der Veröffentlichung nicht leer: davor liefert das Backend fremde Zeilen gar
-			nicht erst aus. Namen, keine Zahl — eine Zahl wäre genau das Aggregat, das hier nie
+			Nur nach der Veröffentlichung nicht leer: davor gibt der Load fremde Zeilen nicht
+			weiter, auch nicht an die Leitungen. Namen, keine Zahl — eine Zahl wäre genau das Aggregat, das hier nie
 			stehen darf.
 		-->
 		<p class="text-base-content/80 text-xs">

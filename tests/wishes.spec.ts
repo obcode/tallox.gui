@@ -281,16 +281,20 @@ test.describe('the wish phase', () => {
 		await expect(zwei.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
 	});
 
-	test('the lead of the programme sees it, the lead of a subject group too', async ({
+	test('the leads do not see it here either — they register on this page themselves', async ({
 		asPersona
 	}) => {
 		// Vier leads the study programme this instance belongs to; Drei leads the subject group
-		// its module is in. Two orthogonal ways to be responsible for the same row.
+		// its module is in. Both may read the entry, and do so on the assignment screen. On the
+		// wish screen they are lecturers like everybody else, and a name under the cohort they are
+		// about to choose is the head start the confidentiality exists to prevent.
 		for (const persona of [PERSONAS.vier, PERSONAS.drei]) {
 			const page = await asPersona(persona);
 			await gotoRendered(page, URL);
 
-			await expect(page.getByText(`Außerdem: ${PERSONAS.eins.name}`)).toBeVisible();
+			const body = await page.locator('main').innerText();
+			expect(body).not.toContain(PERSONAS.eins.name);
+			expect(body).not.toMatch(/Außerdem:/);
 		}
 	});
 

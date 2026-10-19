@@ -65,6 +65,17 @@ nicht „noch niemand hat sich eingetragen"** — eine leere Liste vor dem Stich
 es nicht sehen", nicht „es ist niemand da". `othersHint()` sagt genau das, und `wishes.test.ts`
 behauptet, dass der Satz die verbotenen Formulierungen _nicht_ enthält.
 
+**Vor der Veröffentlichung zeigt diese Seite niemandem fremde Eintragungen — auch nicht den
+Leitungen** (2026-10-19). Das Backend liefert einer Fachgruppen- oder Studiengangsleitung die
+Wünsche auf ihren Modulen schon vorher, und das ist richtig: sie braucht sie zum Zuteilen. Aber
+hier trägt sie sich selbst als Dozierende ein, und ein „Außerdem: <Name>" unter dem Zug, den sie
+gerade wählen will, ist genau der Vorsprung, den die Vertraulichkeit verhindern soll. Gemeldet als
+Screenshot einer Fachgruppenleitung, die den Eintrag eines Kollegen sah. `othersForWishScreen()`
+verwirft die Zeilen im Server-Load, sie erreichen den Browser nicht; die Leitung liest sie unter
+`/zuteilung`. Keine Sicherheitsgrenze (die API antwortet ihr weiter), sondern die Wahl, auf welcher
+Seite eine Berechtigung ausgeübt wird. `othersHint(…, leadsGroups)` sagt der Leitung, wo die
+Eintragungen stehen, nicht was darin steht.
+
 Fremde Eintragungen werden gebaut, indem aus dem, was das Backend geliefert hat, die eigenen
 Zeilen entfernt werden — **nie durch Zählen**. Was das Backend liefert, ist bereits gefiltert; eine
 hier gebaute Zahl wäre falsch _und_ verräterisch, weil sie davon abhinge, wer schaut.

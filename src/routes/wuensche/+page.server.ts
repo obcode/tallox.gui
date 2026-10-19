@@ -3,7 +3,13 @@ import { graphql } from '$lib/gql/__generated__';
 import type { WishPriority } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import { isWishChoice, parseDesiredHours, wishChanges, type WishEntry } from '$lib/wishes';
+import {
+	isWishChoice,
+	othersForWishScreen,
+	parseDesiredHours,
+	wishChanges,
+	type WishEntry
+} from '$lib/wishes';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -135,8 +141,9 @@ const WishesDocument = graphql(`
 			}
 		}
 		# Everything the caller may see. Before publication that is their own entries and whatever
-		# they are responsible for; after it, everybody's. The page renders the difference as
-		# "other people" by dropping its own rows — never by counting.
+		# they are responsible for; after it, everybody's. The load drops all of it before
+		# publication — a lead registering interest here must not see who else did — and the page
+		# renders the rest as "other people" by dropping its own rows, never by counting.
 		wishes(semester: $semester) @include(if: $withSemester) {
 			id
 			priority
@@ -190,11 +197,10 @@ const WishesDocument = graphql(`
 		}
 		me {
 			mail
-			# Which subject groups this person leads. Not decoration: a scoped lead reads the
-			# unpublished entries on her groups' modules already — the backend's wish rule is
-			# owner ∨ published ∨ responsible-and-interactive — and this page told her flatly
-			# that nobody's entries were visible. The rows were on the screen while the
-			# sentence above them said they could not be.
+			# Which subject groups this person leads. A lead may read the unpublished entries on
+			# her groups' modules — the backend's wish rule is owner ∨ published ∨
+			# responsible-and-interactive — but does so on the assignment screen. The hint on
+			# this page says where, so the absence here does not read as a missing permission.
 			subjectGroupsLed {
 				id
 				code
@@ -300,7 +306,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		// Every semester, so the summary above the table is the whole picture. The cells pick
 		// their own row out of it by instance id, which is semester-specific anyway.
 		myWishes: data.myWishes,
-		wishes: data.wishes ?? [],
+		// Other people's entries only once they are published — also for the leads, who may read
+		// them before, but do that on the assignment screen. See `othersForWishScreen`.
+		wishes: othersForWishScreen(data.semester?.wishesPublishedAt, data.wishes),
 		windows: data.wishWindows ?? [],
 		completions: data.demandCompletions ?? [],
 		desiredHours: data.myDesiredTeachingHours?.[0] ?? null,
