@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { autosave } from '$lib/saveOnLeave';
 	import { personLabel } from '$lib/subjectGroups';
 
 	/**
@@ -23,10 +23,15 @@
 	 * thing for it to show after a save is that state.
 	 *
 	 * The other half: `checked={…}` lets Svelte control the box, and a box somebody has clicked is
-	 * one the browser owns. The ticks are local state here, bound rather than assigned, and the
-	 * page remounts this component when the stored set changes — see the `{#key}` around it. So
-	 * "show what is stored" happens on mount and "let somebody change it" happens between mounts,
-	 * instead of the two overwriting each other.
+	 * one the browser owns. The ticks are local state here, bound rather than assigned, and they
+	 * are re-read from `selected` at exactly one moment: when a save has come back and no newer
+	 * tick is waiting behind it. After a refusal that shows what is stored rather than what was
+	 * refused.
+	 *
+	 * Every tick saves itself (since 2026-10-20 — it had a button, and a tick that only lives in
+	 * the browser looks exactly like a saved one). Until then the page remounted this component
+	 * under a `{#key}` on the stored set; with saving on every click that remount would wipe a
+	 * second tick made while the first was on the wire.
 	 */
 	type Person = { id: string; mail: string; name: string; sortName?: string | null };
 
@@ -36,7 +41,6 @@
 		legend,
 		people,
 		selected,
-		submitLabel,
 		scrollable = false
 	}: {
 		groupId: string;
@@ -44,30 +48,41 @@
 		action: string;
 		legend: string;
 		people: readonly Person[];
-		/** The ids that are ticked when this mounts. */
+		/** The stored ids. Read on mount and again after every save. */
 		selected: readonly string[];
-		submitLabel: string;
 		/** Long lists scroll inside the card rather than pushing everything else off the screen. */
 		scrollable?: boolean;
 	} = $props();
 
-	// Initialised once, and `untrack` says so. The page remounts this component when the stored
-	// set changes, which is what keeps it in step without an effect that fights the person
-	// clicking.
-	let ticked = $state<Record<string, boolean>>(
-		Object.fromEntries(untrack(() => selected).map((id) => [id, true]))
-	);
+	// Initialised once, and `untrack` says so — an effect following `selected` would fight the
+	// person clicking. The save callback below is what keeps it in step.
+	const fromIds = (ids: readonly string[]) => Object.fromEntries(ids.map((id) => [id, true]));
+	let ticked = $state<Record<string, boolean>>(fromIds(untrack(() => selected)));
+	let saving = $state(false);
+	let saved = $state(false);
+	/** Changes made while a save was running; the ticks are theirs until they are sent too. */
+	let changedSince = 0;
 </script>
 
 <form
 	method="POST"
 	{action}
-	use:enhance={() =>
-		// reset: false — see the note above. Resetting would restore the ticks to the state at the
-		// last render, which after a save is the state before it.
-		async ({ update }) => {
-			await update({ reset: false });
-		}}
+	onchange={() => {
+		if (saving) changedSince++;
+	}}
+	use:autosave={{
+		label: legend,
+		submit: () => {
+			saving = true;
+			changedSince = 0;
+			return async ({ update, result }) => {
+				await update({ reset: false });
+				saving = false;
+				saved = result.type === 'success';
+				if (changedSince === 0) ticked = fromIds(selected);
+			};
+		}
+	}}
 	class="flex flex-col gap-1"
 >
 	<input type="hidden" name="id" value={groupId} />
@@ -88,5 +103,14 @@
 		{/each}
 	</div>
 
-	<button type="submit" class="btn btn-sm self-start">{submitLabel}</button>
+	<p class="text-base-content/80 text-xs" aria-live="polite">
+		{#if saving}
+			<span class="loading loading-spinner loading-xs align-middle"></span> wird gespeichert …
+		{:else if saved}
+			<span class="badge badge-ghost badge-sm align-middle">gespeichert</span>
+		{/if}
+	</p>
+	<noscript
+		><button type="submit" class="btn btn-sm self-start">{legend} speichern</button></noscript
+	>
 </form>

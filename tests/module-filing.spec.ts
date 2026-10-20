@@ -74,17 +74,16 @@ test.describe('a subject group lead filing modules', () => {
 
 		const card = page.locator('form[action="?/subjectGroup"]');
 		const picker = card.getByRole('combobox', { name: 'Fachgruppe' });
-		const store = card.getByRole('button', { name: 'Speichern' });
+		// The choice saves itself.
+		await expect(card.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 
 		await expect(picker.locator('option', { hasText: FILING.foreignGroupCode })).toHaveCount(0);
 
 		await picker.selectOption('');
-		await store.click();
 		await expect(page.getByText('Aus der Fachgruppe herausgenommen')).toBeVisible();
 		await expect(page.getByText('noch keiner Fachgruppe zugeordnet')).toBeVisible();
 
 		await picker.selectOption({ label: OWN_TARGET });
-		await store.click();
 		await expect(page.getByText(`Jetzt in ${FILING.ownGroupCode}`)).toBeVisible();
 	});
 

@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { SvelteSet, SvelteURL, SvelteURLSearchParams } from 'svelte/reactivity';
 	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
 	import { ALL_ROLES, ROLE_HINTS, ROLE_LABELS, displayName, sortRoles } from '$lib/roles';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import {
@@ -501,7 +502,7 @@
 			<form
 				method="POST"
 				action="?/create"
-				use:enhance
+				use:askBeforeLeave={{ label: 'Neues Konto' }}
 				class="grid grid-cols-1 gap-3 sm:grid-cols-3"
 			>
 				<label class="form-control sm:col-span-1">
@@ -653,7 +654,21 @@
 										</p>
 									{/if}
 
-									<form method="POST" action="?/roles" use:enhance class="flex flex-col gap-3 py-2">
+									<!--
+										Every tick saves itself, like the switches on the ZPA tab. The date does
+										not: on its own it changes nothing, it only applies to roles ticked after
+										it — so it is set first.
+									-->
+									<form
+										method="POST"
+										action="?/roles"
+										use:autosave={{
+											label: `Rollen von ${displayName(person)}`,
+											accepts: (field) =>
+												field instanceof HTMLInputElement && field.type === 'checkbox'
+										}}
+										class="flex flex-col gap-3 py-2"
+									>
 										<input type="hidden" name="id" value={person.id} />
 
 										<fieldset class="flex flex-col gap-1">
@@ -683,21 +698,21 @@
 												class="input input-bordered input-sm"
 											/>
 											<span class="text-base-content/80 mt-1 text-xs">
-												Gilt nur für Rollen, die jetzt neu dazukommen. Gedacht für „einmal
-												hineinsehen“ — die Rolle läuft dann von selbst aus, statt bis Februar stehen
-												zu bleiben.
+												Erst das Datum setzen, dann die Rolle ankreuzen: es gilt nur für Rollen, die
+												danach dazukommen. Gedacht für „einmal hineinsehen“ — die Rolle läuft dann
+												von selbst aus, statt bis Februar stehen zu bleiben.
 											</span>
 										</label>
 
-										<div class="flex flex-wrap gap-2">
+										<noscript>
 											<button type="submit" class="btn btn-sm btn-primary">Rollen speichern</button>
-										</div>
+										</noscript>
 									</form>
 
 									<form
 										method="POST"
 										action="?/programmes"
-										use:enhance
+										use:autosave={{ label: `Studiengänge von ${displayName(person)}` }}
 										class="border-base-300 flex flex-col gap-3 border-t py-3"
 									>
 										<input type="hidden" name="id" value={person.id} />
@@ -725,16 +740,18 @@
 											</div>
 										</fieldset>
 
-										<div class="flex flex-wrap gap-2">
+										<noscript>
 											<button type="submit" class="btn btn-sm">Studiengänge speichern</button>
-										</div>
+										</noscript>
 									</form>
 
 									{#if person.roles.includes('PARTNER_READER')}
 										<form
 											method="POST"
 											action="?/programmes"
-											use:enhance
+											use:autosave={{
+												label: `Partner-Studiengänge von ${displayName(person)}`
+											}}
 											class="border-base-300 flex flex-col gap-3 border-t py-3"
 										>
 											<input type="hidden" name="id" value={person.id} />
@@ -768,11 +785,11 @@
 												</div>
 											</fieldset>
 
-											<div class="flex flex-wrap gap-2">
+											<noscript>
 												<button type="submit" class="btn btn-sm"
 													>Partner-Studiengänge speichern</button
 												>
-											</div>
+											</noscript>
 										</form>
 									{/if}
 

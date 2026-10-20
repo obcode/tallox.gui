@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { autosave } from '$lib/saveOnLeave';
 	import { leadNames } from '$lib/subjectGroups';
 	import type { ActionData, PageData } from './$types';
 
@@ -9,6 +9,7 @@
 
 	const refusal = $derived(form && 'message' in form ? form : null);
 	const saved = $derived(form !== null && refusal === null);
+	let saving = $state(false);
 
 	// Local, initialised once — the same arrangement the membership picker in the administration
 	// uses, and for the same reason: a checkbox somebody has clicked is one the browser owns, and
@@ -50,10 +51,6 @@
 				{refusal.message}
 			</p>
 		</div>
-	{:else if saved}
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<p class="text-base-content/90 text-sm">Gespeichert.</p>
-		</div>
 	{/if}
 
 	{#if groups.length === 0}
@@ -61,16 +58,26 @@
 			Es gibt noch keine Fachgruppen. Angelegt werden sie in der Verwaltung.
 		</p>
 	{:else}
+		<!--
+			Every tick is saved the moment it is made. It had a "Speichern" button until 2026-10-20,
+			when somebody ticked a group, went on to the competences page and found it not ticked:
+			a tick that only lives in the browser looks exactly like one that was saved.
+		-->
 		<form
 			method="POST"
 			action="?/setMine"
-			use:enhance={() =>
-				// reset: false — ein Reset stellt die Kästchen auf den Stand des letzten Renderns
-				// zurück, und das ist nach dem Speichern der Stand davor. Dieses Formular ist kein
-				// Eingabefeld, das man leert, sondern ein Zustand, den es zeigt.
-				async ({ update }) => {
-					await update({ reset: false });
-				}}
+			use:autosave={{
+				label: 'Meine Fachgruppen',
+				// reset: false — a reset puts the boxes back to the state of
+				// the last render, which after a save is the state before it.
+				submit: () => {
+					saving = true;
+					return async ({ update }) => {
+						await update({ reset: false });
+						saving = false;
+					};
+				}
+			}}
 			class="flex flex-col gap-3"
 		>
 			<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -119,10 +126,19 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
-				<button type="submit" class="btn btn-sm btn-primary">Speichern</button>
-				<span class="text-base-content/80 text-sm">
+				<!-- Without JavaScript nothing saves itself, and this is the way to send. -->
+				<noscript><button type="submit" class="btn btn-sm btn-primary">Speichern</button></noscript>
+				<span class="text-base-content/80 text-sm" aria-live="polite">
 					{chosen}
-					{chosen === 1 ? 'Fachgruppe' : 'Fachgruppen'} ausgewählt
+					{chosen === 1 ? 'Fachgruppe' : 'Fachgruppen'} ausgewählt —
+					{#if saving}
+						<span class="loading loading-spinner loading-xs align-middle"></span>
+						wird gespeichert …
+					{:else if saved}
+						<span class="badge badge-ghost badge-sm align-middle">gespeichert</span>
+					{:else}
+						jedes Häkchen wird sofort gespeichert.
+					{/if}
 				</span>
 			</div>
 		</form>

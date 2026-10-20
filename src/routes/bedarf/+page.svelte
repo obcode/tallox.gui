@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { resolve } from '$app/paths';
 	import {
 		ALL_COURSE_TYPES,
@@ -38,6 +39,7 @@
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import NoteIcon from '$lib/components/NoteIcon.svelte';
 	import { hasAnyRole } from '$lib/roles';
+	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
 	import {
 		PHASE_HINTS,
 		PHASE_LABELS,
@@ -500,6 +502,38 @@
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(() => formEl?.requestSubmit(), 600);
 	}
+
+	/**
+	 * The edit counter as it was when the last save left. Differs from `editSeq` exactly while
+	 * something is waiting to be sent — the timer, or a note still being typed — which is what
+	 * leaving the page has to wait for.
+	 */
+	let sentSeq = 0;
+
+	const planSubmit: SubmitFunction = () => {
+		const seq = editSeq;
+		sentSeq = seq;
+		saving = true;
+		// Ein Zeilenmenü, aus dem heraus abgeschickt wurde, schließt. Ohne das bleibt das
+		// Popover über dem neu geladenen Tisch stehen, und der nächste Klick auf „⋯"
+		// schließt es, statt es zu öffnen — der Umschalter kennt nur die eine Richtung.
+		closeRowMenus();
+		return async ({ result, update }) => {
+			const preview =
+				result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
+			// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
+			// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
+			// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
+			if (!preview && editSeq === seq) edits = {};
+			// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
+			// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
+			// hat, liest sich, als wäre nichts passiert.
+			editingSplit = null;
+			await update({ reset: false });
+			saving = false;
+			if (editSeq !== seq) scheduleSave();
+		};
+	};
 
 	/** Closes every open row menu. Popovers are browser state, not component state. */
 	function closeRowMenus() {
@@ -1070,7 +1104,7 @@
 			<form
 				method="POST"
 				action="?/createLocal"
-				use:enhance
+				use:askBeforeLeave={{ label: 'Eigene Lehrveranstaltung oder FWP-Platzhalter' }}
 				class="mt-3 flex flex-wrap items-end gap-3"
 			>
 				<input type="hidden" name="semester" value={data.selected.semester} />
@@ -1512,28 +1546,13 @@
 				bind:this={formEl}
 				method="POST"
 				action="?/plan"
-				use:enhance={() => {
-					const seq = editSeq;
-					saving = true;
-					// Ein Zeilenmenü, aus dem heraus abgeschickt wurde, schließt. Ohne das bleibt das
-					// Popover über dem neu geladenen Tisch stehen, und der nächste Klick auf „⋯"
-					// schließt es, statt es zu öffnen — der Umschalter kennt nur die eine Richtung.
-					closeRowMenus();
-					return async ({ result, update }) => {
-						const preview =
-							result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
-						// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
-						// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
-						// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
-						if (!preview && editSeq === seq) edits = {};
-						// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
-						// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
-						// hat, liest sich, als wäre nichts passiert.
-						editingSplit = null;
-						await update({ reset: false });
-						saving = false;
-						if (editSeq !== seq) scheduleSave();
-					};
+				use:trackSaves={{
+					waiting: () => editing && editSeq !== sentSeq,
+					flush: () => {
+						clearTimeout(saveTimer);
+						formEl?.requestSubmit();
+					},
+					submit: planSubmit
 				}}
 				class="flex flex-col gap-4"
 			>
