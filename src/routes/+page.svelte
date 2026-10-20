@@ -2,17 +2,11 @@
 	import { resolve } from '$app/paths';
 	import DueNow from '$lib/components/DueNow.svelte';
 	import WhoLeadsWhat from '$lib/components/WhoLeadsWhat.svelte';
-	import { NAV_ITEMS, visibleNavItems } from '$lib/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const roles = $derived(data.session?.effectiveRoles ?? []);
-
-	// Through the same filter as the area bar. Otherwise this list announces an area that the
-	// navigation directly above it hides — which does not look like a role rule but like a
-	// defect.
-	const planned = $derived(visibleNavItems(NAV_ITEMS, roles).filter((item) => !item.href));
 </script>
 
 <svelte:head><title>Einsatzplanung · Tallox</title></svelte:head>
@@ -55,33 +49,6 @@
 			bleiben der angemeldeten Sitzung im Browser vorbehalten, und den Bedarf ändert man ebenfalls
 			nur hier.
 		</p>
-	</div>
-
-	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-		<h2 class="mb-2 flex items-center gap-2 font-medium">
-			<span aria-hidden="true">🚧</span> Was noch entsteht
-		</h2>
-		<ul class="text-base-content/90 flex flex-col gap-1 text-sm">
-			{#each planned as item (item.label)}
-				<li>
-					<span aria-hidden="true">{item.emoji}</span>
-					{item.label}
-					<span class="text-base-content/80">— {item.hint}</span>
-				</li>
-			{/each}
-			<li>
-				<span aria-hidden="true">🧭</span>
-				Kompetenzprofil
-				<span class="text-base-content/80">— welche Module jemand halten kann und möchte</span>
-			</li>
-			<li>
-				<span aria-hidden="true">🚦</span>
-				Deputat
-				<span class="text-base-content/80"
-					>— Lehrverpflichtung und die Überstunden-Ampel, nur im Browser</span
-				>
-			</li>
-		</ul>
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

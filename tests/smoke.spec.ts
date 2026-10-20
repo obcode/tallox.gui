@@ -154,6 +154,8 @@ test.describe('the start page as a starting point', () => {
 		await expect(main.getByRole('link', { name: /Gesamten Ablauf ansehen/ })).toBeVisible();
 		await expect(main.getByRole('heading', { name: 'Einmal einrichten' })).toHaveCount(0);
 		await expect(main.getByRole('heading', { name: 'Wer macht was' })).toHaveCount(0);
+		// Removed on request: a list of what does not exist yet is not what somebody arriving needs.
+		await expect(main.getByRole('heading', { name: /Was noch entsteht/ })).toHaveCount(0);
 
 		await main.getByRole('link', { name: /Gesamten Ablauf ansehen/ }).click();
 		await expect(page).toHaveURL(/\/ablauf$/);
