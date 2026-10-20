@@ -838,7 +838,7 @@
 				<!--
 					Alle geplanten Studiengänge als Knöpfe, nicht nur die eigenen mit einer
 					Auswahlliste daneben. Die Liste ist kurz genug dafür, seit sie nur noch die
-					enthält, die die Fakultät wirklich plant: die des Prüfungsamts, die jemand
+					enthält, die die Fakultät wirklich plant: die übrigen aus dem ZPA, die jemand
 					anderes betreibt oder die ausgelaufen sind, stehen gar nicht mehr darin.
 				-->
 				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
@@ -1658,9 +1658,9 @@
 																	außerhalb des Filters
 																</span>
 															{/if}
-															<!-- Eine Zeile, die das Prüfungsamt nicht kennt. Der
+															<!-- Eine Zeile, die das ZPA nicht kennt. Der
 															     Unterschied ist kein Nebenschauplatz: „aktiv" und
-															     „zurückgezogen" sind Aussagen des Prüfungsamts, und über
+															     „zurückgezogen" sind Aussagen des ZPA, und über
 															     eine eigene Zeile macht es keine. -->
 															{#if row.module.kind === 'FWP_PLACEHOLDER'}
 																<span class="badge badge-accent badge-sm">

@@ -54,7 +54,7 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Studiengänge</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
-			Welche Studiengänge die Fakultät plant. Der Modulkatalog des Prüfungsamts enthält jeden
+			Welche Studiengänge die Fakultät plant. Der Modulkatalog aus dem ZPA enthält jeden
 			Studiengang, den irgendeine SPO erwähnt — auch solche, die jemand anderes betreibt, und
 			solche, die ausgelaufen sind. <strong>Aus den ZPA-Daten geht das nicht hervor:</strong> die neuesten
 			SPOs zweier geplanter Studiengänge sind von 2010 und damit älter als die jedes nicht geplanten.

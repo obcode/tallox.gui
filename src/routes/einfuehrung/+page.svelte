@@ -154,7 +154,7 @@
 			<div class="text-base-content/90 mt-1 flex flex-col gap-2 text-sm">
 				<p>
 					Ein Server hält alle Daten und alle Regeln. Diese Oberfläche zeigt nur an, was er
-					herausgibt, und hat selbst keine Regeln. Die Moduldaten kommen aus dem Prüfungsamt.
+					herausgibt, und hat selbst keine Regeln. Die Moduldaten kommen aus dem ZPA.
 				</p>
 				<p>
 					Zum Server führen zwei Türen: die Anmeldung mit der HM-Kennung im Browser und ein

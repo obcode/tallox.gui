@@ -83,7 +83,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Festlegen, welche Studiengänge die Fakultät plant',
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/verwaltung/studiengaenge', label: 'Studiengänge' }],
-				text: 'Der Modulkatalog des Prüfungsamts kennt jeden Studiengang, den irgendeine SPO erwähnt. Was davon hier geplant wird und was ausgelaufen ist, entscheidet das Dekanat. Nur geplante Studiengänge tauchen in Auswahlen auf und lassen sich einer Studiengangsleitung zuordnen.'
+				text: 'Der Modulkatalog aus dem ZPA kennt jeden Studiengang, den irgendeine SPO erwähnt. Was davon hier geplant wird und was ausgelaufen ist, entscheidet das Dekanat. Nur geplante Studiengänge tauchen in Auswahlen auf und lassen sich einer Studiengangsleitung zuordnen.'
 			},
 			{
 				title: 'Fachgruppen anlegen, Leitung und Mitglieder eintragen',
