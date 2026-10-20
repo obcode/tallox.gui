@@ -30,7 +30,8 @@
 		sharingState,
 		separatelyPlannedIn,
 		splitSummary,
-		trackLetters
+		trackLetters,
+		MAX_TRACKS
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import GearIcon from '$lib/components/GearIcon.svelte';
@@ -528,7 +529,7 @@
 	 */
 	function setTracks(row: Row, count: number) {
 		const current = draft(row);
-		const tracks = Math.min(8, Math.max(1, count));
+		const tracks = Math.min(MAX_TRACKS, Math.max(1, count));
 		const groups = [...current.groups];
 		while (groups.length < tracks) groups.push(groups[groups.length - 1] ?? defaultGroups(row));
 		groups.length = tracks;
@@ -2045,7 +2046,7 @@
 													<input
 														type="number"
 														min="1"
-														max="8"
+														max={MAX_TRACKS}
 														name="tracks:{row.module.id}"
 														value={draft(row).tracks}
 														oninput={(e) => setTracks(row, numberOf(e.currentTarget))}

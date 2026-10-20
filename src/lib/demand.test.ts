@@ -30,6 +30,7 @@ import {
 	splitSummary,
 	sharingState,
 	trackLetters,
+	MAX_TRACKS,
 	type DemandRow,
 	type InstanceLike,
 	type ModuleLike,
@@ -362,6 +363,15 @@ describe('trackLetters', () => {
 		expect(trackLetters(3, ['B', 'C'])).toEqual(['B', 'C', 'A']);
 		expect(trackLetters(2, ['B'])).toEqual(['B', 'A']);
 		expect(new Set(trackLetters(4, ['C'])).size).toBe(4);
+	});
+
+	// An umbrella seminar planned as one cohort per seminar uses the whole alphabet, and every
+	// letter it proposes has to be one the backend accepts: a single capital, none twice.
+	it('letters as many cohorts as the backend allows', () => {
+		const letters = trackLetters(MAX_TRACKS, ['N', 'A']);
+		expect(letters).toHaveLength(26);
+		expect(new Set(letters).size).toBe(26);
+		expect(letters.every((l) => /^[A-Z]$/.test(l))).toBe(true);
 	});
 
 	it('keeps a single cohort as it is', () => {

@@ -497,6 +497,15 @@ function groupByModule<M extends { id: string }>(
 }
 
 /**
+ * The most cohorts one module may have in a semester: one letter each, A to Z.
+ *
+ * Follows `MaxTracksPerModule` in the backend, which refuses more. Most modules run one or two;
+ * an umbrella seminar runs one cohort per seminar actually offered, and that is what needs the
+ * whole alphabet.
+ */
+export const MAX_TRACKS = 26;
+
+/**
  * The cohort letters for a given number of cohorts.
  *
  * One cohort has no letter at all — that is the ordinary case and the one the label reads best
