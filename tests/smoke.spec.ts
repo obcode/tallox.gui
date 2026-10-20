@@ -141,6 +141,71 @@ test.describe('the walk-through', () => {
 });
 
 /**
+ * The introduction, for somebody who teaches and plans nothing.
+ *
+ * The phase mark moves with the planning semester, which other specs change while these run —
+ * so which phase is marked is pinned in vitest (`intro.test.ts`), and here only what holds in
+ * every phase: the sections are there, the confidentiality promise is said, and the links follow
+ * the menu.
+ */
+test.describe('the introduction', () => {
+	test('tells the ideas, the phases and what a lecturer does', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, '/einfuehrung');
+		const main = page.getByRole('main');
+
+		await expect(
+			main.getByRole('heading', { name: 'Einführung in Tallox', level: 1 })
+		).toBeVisible();
+		await expect(
+			main.getByRole('heading', { name: 'Drei Versprechen an das Kollegium' })
+		).toBeVisible();
+		await expect(
+			main
+				.getByRole('region', { name: 'Drei Versprechen an das Kollegium' })
+				.getByText(/auch keine Anzahl/)
+		).toBeVisible();
+		await expect(main.getByRole('heading', { name: 'Ein Semester in fünf Phasen' })).toBeVisible();
+		for (const phase of [
+			'Bedarfsplanung',
+			'Wunschphase',
+			'Zuteilung',
+			'Studiengangs-Review',
+			'Abgeschlossen'
+		]) {
+			await expect(
+				main.getByRole('heading', { name: new RegExp(`^${phase}`), level: 3 })
+			).toBeVisible();
+		}
+		await expect(main.getByRole('heading', { name: 'Was Du tust' })).toBeVisible();
+		await expect(
+			main.getByText('Wie trage ich einen Wunsch ein, und wie ziehe ich ihn zurück?')
+		).toBeVisible();
+		// The how-tos are a lecturer's: nothing about closing a subject group's wish round.
+		await expect(main.getByText(/Wunschrunde meiner Fachgruppe/)).toHaveCount(0);
+		await expect(main.getByRole('link', { name: 'Wünsche', exact: true }).first()).toBeVisible();
+		await checkA11y(page);
+	});
+
+	test('is in the help panel and on the start page', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+		await page.getByRole('main').getByRole('link', { name: 'Einführung', exact: true }).click();
+		await expect(page).toHaveURL(/\/einfuehrung$/);
+
+		await page.getByRole('banner').getByRole('button', { name: 'Hilfe', exact: true }).click();
+		await page
+			.getByRole('dialog')
+			.getByRole('link', { name: /Einführung in Tallox/ })
+			.click();
+		await expect(
+			page.getByRole('heading', { name: 'Einführung in Tallox', level: 1 })
+		).toBeVisible();
+		await expect(page.getByRole('dialog')).toBeHidden();
+	});
+});
+
+/**
  * The start page no longer tells the whole process: two sections of steps and a table met
  * somebody on their first visit. It says what is due now and points at the rest.
  */
