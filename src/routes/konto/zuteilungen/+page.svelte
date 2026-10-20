@@ -1,14 +1,29 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { formatHours } from '$lib/catalogue';
 	import { cohortLabel, formatBadges, partLabel } from '$lib/demand';
 	import { teachingBySemester } from '$lib/myAssignments';
 	import { semesterName } from '$lib/semester';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const semesters = $derived(teachingBySemester(data.assignments, new Set(data.published)));
+
+	type AssignmentSortKey = 'module' | 'cohort' | 'part';
+	type Assignment = (typeof semesters)[number]['assignments'][number];
+	// One state for every semester's table, so a click orders them all alike.
+	let assignmentSort = $state<SortState<AssignmentSortKey>>(null);
+	const onAssignmentSort = (key: AssignmentSortKey) =>
+		(assignmentSort = nextSort(assignmentSort, key));
+	const assignmentKeys = {
+		module: (a: Assignment) => a.instance.module.name,
+		cohort: (a: Assignment) =>
+			cohortLabel(a.instance.programme.code, a.instance.programmeSemester, a.instance.track),
+		part: (a: Assignment) => partLabel(a.part)
+	};
 </script>
 
 <svelte:head>
@@ -61,14 +76,24 @@
 				<table class="table-sm table">
 					<thead>
 						<tr>
-							<th>Modul</th>
-							<th>Kohorte</th>
-							<th>Teil</th>
+							<SortHeader
+								label="Modul"
+								key="module"
+								sort={assignmentSort}
+								onsort={onAssignmentSort}
+							/>
+							<SortHeader
+								label="Kohorte"
+								key="cohort"
+								sort={assignmentSort}
+								onsort={onAssignmentSort}
+							/>
+							<SortHeader label="Teil" key="part" sort={assignmentSort} onsort={onAssignmentSort} />
 							<th>Notiz</th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each semester.assignments as a (a.id)}
+						{#each sortRows(semester.assignments, assignmentSort, assignmentKeys) as a (a.id)}
 							<tr>
 								<td>
 									<a

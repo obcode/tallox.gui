@@ -3,7 +3,9 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { SvelteSet, SvelteURL, SvelteURLSearchParams } from 'svelte/reactivity';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { ALL_ROLES, ROLE_HINTS, ROLE_LABELS, displayName, sortRoles } from '$lib/roles';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import {
 		ACCOUNT_STATES,
 		ACCOUNT_STATE_LABELS,
@@ -58,7 +60,20 @@
 	const saving = new SvelteSet<string>();
 
 	const accounts = $derived(data.accounts as TeacherAccountRow[]);
-	const shown = $derived(filterTeacherAccounts(accounts, filter));
+	// Only by name: the other columns change with the toggles in them, and a row that jumped away
+	// on every click would be a row nobody can finish editing.
+	let teacherSort = $state<SortState<'name'>>(null);
+	const shown = $derived(
+		sortRows(filterTeacherAccounts(accounts, filter), teacherSort, {
+			name: (row) => row.teacher.sortName
+		})
+	);
+	let personSort = $state<SortState<'name'>>(null);
+	const people = $derived(
+		sortRows(data.people, personSort, {
+			name: (person) => person.sortName ?? displayName(person)
+		})
+	);
 	const faculties = $derived(facultiesIn(accounts));
 	const facultyCounts = $derived(facetCounts(accounts, (row) => [facultyOf(row)]));
 	const employmentCounts = $derived(facetCounts(accounts, employmentsOf));
@@ -314,7 +329,12 @@
 			<table class="table table-sm">
 				<thead>
 					<tr>
-						<th>Lehrperson</th>
+						<SortHeader
+							label="Lehrperson"
+							key="name"
+							sort={teacherSort}
+							onsort={(key) => (teacherSort = nextSort(teacherSort, key))}
+						/>
 						<th>Konto</th>
 						<th>Rechte</th>
 					</tr>
@@ -539,13 +559,18 @@
 			<table class="table table-sm">
 				<thead>
 					<tr>
-						<th>Person</th>
+						<SortHeader
+							label="Person"
+							key="name"
+							sort={personSort}
+							onsort={(key) => (personSort = nextSort(personSort, key))}
+						/>
 						<th>Rollen</th>
 						<th class="text-right">Ändern</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.people as person (person.id)}
+					{#each people as person (person.id)}
 						<tr>
 							<td>
 								<!-- Der Nachname zuerst, wo das ZPA ihn kennt: die Liste ist danach

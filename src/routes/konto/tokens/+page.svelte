@@ -10,10 +10,26 @@
 		areaFieldName,
 		describeScopes
 	} from '$lib/scopes';
+	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { expiresIn, formatMoment, STATUS_BADGE, STATUS_LABEL, tokenStatus } from '$lib/tokens';
 	import type { ActionData, PageData } from './$types';
 
+	type TokenSortKey = 'description' | 'status' | 'created' | 'expires' | 'used';
+	let tokenSort = $state<SortState<TokenSortKey>>(null);
+	const onTokenSort = (key: TokenSortKey) => (tokenSort = nextSort(tokenSort, key));
+
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	const tokens = $derived(
+		sortRows(data.tokens, tokenSort, {
+			description: (token) => token.description,
+			status: (token) => STATUS_LABEL[tokenStatus(token)],
+			created: (token) => token.createdAt,
+			expires: (token) => token.expiresAt,
+			used: (token) => token.lastUsedAt
+		})
+	);
 
 	// The freshly created token lives in this variable alone until the page is reloaded. It is
 	// not put into localStorage and not written into the URL: both would outlive the moment it
@@ -212,17 +228,27 @@
 				<table class="table-zebra table text-sm">
 					<thead>
 						<tr>
-							<th>Beschreibung</th>
+							<SortHeader
+								label="Beschreibung"
+								key="description"
+								sort={tokenSort}
+								onsort={onTokenSort}
+							/>
 							<th>Reichweite</th>
-							<th>Status</th>
-							<th>Angelegt</th>
-							<th>Läuft ab</th>
-							<th>Zuletzt benutzt</th>
+							<SortHeader label="Status" key="status" sort={tokenSort} onsort={onTokenSort} />
+							<SortHeader label="Angelegt" key="created" sort={tokenSort} onsort={onTokenSort} />
+							<SortHeader label="Läuft ab" key="expires" sort={tokenSort} onsort={onTokenSort} />
+							<SortHeader
+								label="Zuletzt benutzt"
+								key="used"
+								sort={tokenSort}
+								onsort={onTokenSort}
+							/>
 							<th><span class="sr-only">Aktion</span></th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.tokens as token (token.id)}
+						{#each tokens as token (token.id)}
 							{@const status = tokenStatus(token)}
 							<tr>
 								<td>
