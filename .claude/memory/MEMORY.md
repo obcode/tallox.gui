@@ -12,6 +12,7 @@ Kolleginnen und Kollegen.
 - [Toolchain-Stolperfallen](toolchain-gotchas.md) — pnpm allowBuilds, vitest.config, resolve() bei Links
 - [Die Bedarfsseite](demand-page.md) — zwei Sichten unter einer Adresse, die Formularregel, an der drei Fehler an einem Tag hingen, und die Deckung über Studiengänge
 - [Aufteilung übertragen (Modulseite)](module-split-ui.md) — Vorschau gleich nach dem Speichern, Übertragen als zweiter Submit; E2E-IDs und Kürzel vor dem Anlegen greppen
+- [Nichts geht beim Seitenwechsel verloren](leave-guard.md) — Register + `autosave`/`askBeforeLeave`/`trackSaves` statt `use:enhance`, Guard im Layout, wann der Dialog nicht speichern darf
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
 - [Thema je Zug](seminar-topics.md) — Seminare als eigene Zeilen in Wunschtabelle und Übersicht, `moduleRowKey`, bis 26 Züge

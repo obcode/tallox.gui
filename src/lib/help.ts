@@ -73,9 +73,21 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Muss ich irgendwo auf „Speichern“ drücken?',
+		answer:
+			'Fast nie. Häkchen und Auswahlfelder werden gespeichert, sobald Du sie setzt, Textfelder, sobald Du das Feld verlässt. Wer gleich danach die Seite wechselt, verliert nichts: der Wechsel wartet, bis alles angekommen ist. Einen Knopf gibt es nur, wo etwas neu angelegt wird, etwa ein Token, ein Konto oder eine SWS-Aufteilung. Hast Du dort etwas eingetragen und verlässt die Seite, fragt Tallox, ob es gespeichert oder verworfen werden soll.',
+		who: [],
+		where: [
+			{ href: '/wuensche', label: 'Wünsche' },
+			{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' },
+			{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }
+		],
+		stage: 'ONCE'
+	},
+	{
 		question: 'Wo gebe ich an, in welchen Fächern ich arbeite?',
 		answer:
-			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Das ist eine Aussage über Dich und keine Berechtigung: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall.',
+			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Jedes Häkchen ist sofort gespeichert. Das ist eine Aussage über Dich und keine Berechtigung: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall.',
 		who: [],
 		where: [{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }],
 		stage: 'ONCE'
@@ -205,7 +217,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',
 		answer:
-			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät vergeben, speichern, dann die Studiengänge ankreuzen, denen die Person folgt. Ohne Studiengang liest sie nichts. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht alles wie alle anderen.',
+			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht alles wie alle anderen.',
 		who: ['ADMIN'],
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	}
