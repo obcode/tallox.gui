@@ -27,3 +27,11 @@ fand dadurch eine fremde Instanz, und `setModuleComponents` hatte dem Sortier-Mo
 Aufteilung verpasst, die von Hand aus der Entwicklungsdatenbank entfernt werden musste.
 **Vor einem neuen Fixture `grep` über `tests/*.ts` nach ID _und_ Studiengangskürzel.** Freie
 IDs lagen ab `…0c1`.
+
+## Module über zwei Semester (2026-10-20, gleicher Tag)
+
+Zu [[go/two-semester-modules]]. In der Karte „SWS-Aufteilung“ gibt es oben den Knopf „Läuft über
+zwei Semester“, für dieselben Personen wie die Aufteilung. Danach zeigen Kopf und Katalog „8 SWS
+über 2 Semester“, und `componentMismatch` vergleicht mit dem Wert je Semester. Nach dem
+Umschalten füllt sich der Editor neu, weil der Vorschlag von der Dauer abhängt. Fixture
+`TWO_SEMESTERS` (E2V, `…0c3`).

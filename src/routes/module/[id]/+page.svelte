@@ -8,6 +8,7 @@
 		teacherRole,
 		PART_KIND_LABELS,
 		componentMismatch,
+		contactHoursLabel,
 		filingGroupsFor,
 		componentSummary,
 		formatHours,
@@ -99,9 +100,12 @@
 	const mismatch = $derived(
 		componentMismatch(
 			rows.some((r) => r.hours.trim() !== '') ? enteredHours : null,
-			data.module.contactHoursPerWeek
+			data.module.contactHoursPerWeek,
+			data.module.semesterSpan
 		)
 	);
+
+	const overTwoSemesters = $derived(data.module.semesterSpan > 1);
 
 	// What carrying the split over to the existing instances would do, or did. Saving the split
 	// asks for the preview by itself, so the gap shows the moment it opens.
@@ -141,7 +145,10 @@
 			· {COURSE_TYPE_LABELS[data.module.courseType]}
 			· {FREQUENCY_LABELS[data.module.frequency]}
 			{#if data.module.contactHoursPerWeek != null}
-				· {data.module.contactHoursPerWeek} SWS laut Modulkatalog
+				· {contactHoursLabel(data.module.contactHoursPerWeek, data.module.semesterSpan)} laut Modulkatalog
+				{#if overTwoSemesters && data.module.contactHoursPerSemester != null}
+					({formatHours(data.module.contactHoursPerSemester)} je Semester)
+				{/if}
 			{/if}
 			{#if data.module.credits != null}
 				· {data.module.credits} ECTS
@@ -358,6 +365,40 @@
 			sich danach normalerweise nicht. Fehlt sie, lässt sich das Modul nicht planen — die Schätzung
 			unten ist ein Vorschlag zum Bestätigen.
 		</p>
+
+		<section class="mb-3" aria-labelledby="semester-span">
+			<h3 id="semester-span" class="sr-only">Dauer</h3>
+			{#if overTwoSemesters}
+				<p class="text-base-content/90 text-sm">
+					<span class="badge badge-secondary badge-sm align-middle">2 Semester</span>
+					Dieses Modul läuft über zwei Semester. Die Aufteilung gilt je Semester, und geplant wird in
+					jedem der beiden Semester eine eigene Instanz.
+				</p>
+			{:else if maySplit}
+				<p class="text-base-content/80 text-sm">
+					Läuft das Modul über zwei Semester (der Modulkatalog nennt dann die SWS beider Semester
+					zusammen), hier markieren — die Aufteilung wird dann je Semester eingetragen.
+				</p>
+			{/if}
+			{#if maySplit}
+				<!-- Neu füllen wie nach dem Speichern der Aufteilung: der Vorschlag hängt an der Dauer. -->
+				<form
+					method="POST"
+					action="?/semesterSpan"
+					use:enhance={() =>
+						async ({ update }) => {
+							await update({ reset: false });
+							rows = initialRows();
+						}}
+					class="mt-2"
+				>
+					<input type="hidden" name="semesters" value={overTwoSemesters ? '1' : '2'} />
+					<button type="submit" class="btn btn-sm">
+						{overTwoSemesters ? 'Läuft nur über ein Semester' : 'Läuft über zwei Semester'}
+					</button>
+				</form>
+			{/if}
+		</section>
 
 		{#if proposed}
 			<p class="text-base-content/90 mb-3 text-sm">

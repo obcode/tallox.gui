@@ -182,11 +182,27 @@ export function componentSummary(
  */
 export function componentMismatch(
 	componentHours: number | null | undefined,
-	contactHours: number | null | undefined
+	contactHours: number | null | undefined,
+	semesters = 1
 ): string | null {
 	if (componentHours == null || contactHours == null) return null;
-	if (Math.abs(componentHours - contactHours) < 0.001) return null;
-	return `Die Aufteilung ergibt ${formatHours(componentHours)} SWS, der Modulkatalog nennt ${contactHours}.`;
+	// A module over two semesters is split per semester: 2 + 2 against a catalogue figure of 8
+	// is the ordinary case, not a discrepancy.
+	const perSemester = contactHours / Math.max(semesters, 1);
+	if (Math.abs(componentHours - perSemester) < 0.001) return null;
+	const catalogue =
+		semesters > 1
+			? `${contactHours}, also ${formatHours(perSemester)} je Semester`
+			: String(contactHours);
+	return `Die Aufteilung ergibt ${formatHours(componentHours)} SWS, der Modulkatalog nennt ${catalogue}.`;
+}
+
+/**
+ * The catalogue's hours as a phrase: `8 SWS`, or `8 SWS über 2 Semester` for a module the
+ * faculty marked as running over two — so nobody reads the 8 as one semester's teaching.
+ */
+export function contactHoursLabel(contactHours: number, semesters = 1): string {
+	return semesters > 1 ? `${contactHours} SWS über ${semesters} Semester` : `${contactHours} SWS`;
 }
 
 /**

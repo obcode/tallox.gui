@@ -7,6 +7,7 @@
 		FREQUENCY_LABELS,
 		PROGRAMME_STATUS_LABELS,
 		componentSummary,
+		contactHoursLabel,
 		dutyBadge,
 		filingGroupsFor,
 		mayFileModules,
@@ -442,7 +443,9 @@
 							<td class="text-base-content/90">
 								{COURSE_TYPE_LABELS[module.courseType]}
 								{#if module.contactHoursPerWeek != null}
-									<span class="text-base-content/80">, {module.contactHoursPerWeek} SWS</span>
+									<span class="text-base-content/80"
+										>, {contactHoursLabel(module.contactHoursPerWeek, module.semesterSpan)}</span
+									>
 								{/if}
 							</td>
 							<td>

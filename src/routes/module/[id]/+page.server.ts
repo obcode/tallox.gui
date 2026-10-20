@@ -38,6 +38,8 @@ const ModuleDocument = graphql(`
 			courseType
 			frequency
 			contactHoursPerWeek
+			semesterSpan
+			contactHoursPerSemester
 			credits
 			componentHours
 			homeProgramme {
@@ -112,6 +114,15 @@ const SetProjectBasedDocument = graphql(`
 		setModuleProjectBased(moduleId: $moduleId, projectBased: $projectBased) {
 			id
 			projectBased
+		}
+	}
+`);
+
+const SetSemesterSpanDocument = graphql(`
+	mutation SetModuleSemesterSpan($moduleId: ID!, $semesters: Int!) {
+		setModuleSemesterSpan(moduleId: $moduleId, semesters: $semesters) {
+			id
+			semesterSpan
 		}
 	}
 `);
@@ -215,6 +226,21 @@ export const actions: Actions = {
 			return fail(400, toRefusal(err));
 		}
 		return { projectBasedSaved: true };
+	},
+
+	/**
+	 * Over how many semesters the module runs — one, or two for a module the catalogue states with
+	 * both semesters' hours added up. The same people as the split.
+	 */
+	semesterSpan: async ({ request, params }) => {
+		const form = await request.formData();
+		const semesters = form.get('semesters') === '2' ? 2 : 1;
+		try {
+			await backendRequest(SetSemesterSpanDocument, { moduleId: params.id, semesters });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { semesterSpanSaved: true };
 	},
 
 	components: async ({ request, params }) => {
