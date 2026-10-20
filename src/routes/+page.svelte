@@ -20,6 +20,10 @@
 			ein Modul in einem Semester für einen Studiengang und einen Zug, und zugeteilt wird, wer die
 			Vorlesung und wer das Praktikum hält.
 		</p>
+		<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
+			Neu hier? Die <a class="link" href={resolve('/einfuehrung')}>Einführung</a> erklärt die Grundideen,
+			die Phasen eines Semesters und was Du dabei tust.
+		</p>
 	</div>
 
 	<DueNow planning={data.planning} {roles} />

@@ -198,7 +198,10 @@ These follow from the domain, not from taste. Full reasoning in the backend's
 
 ## Tests
 
-No step, feature or fix is finished without tests.
+No step, feature or fix is finished without tests — and none that changes what somebody does,
+sees or may do is finished without the help: `src/lib/help.ts`, `src/lib/guide.ts`,
+`src/lib/intro.ts` and the navigation `hint`s. The how-tos on `/einfuehrung` are the `help.ts`
+entries that carry a `stage`, so a missing one is added there, once.
 
 - **vitest** for pure logic in `src/lib/**`. Convention: pull logic out of `.svelte` into a
   `lib` module, test the module, import it back. Coverage has thresholds (see

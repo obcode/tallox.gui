@@ -57,7 +57,8 @@
 			Der ganze Prozess Schritt für Schritt: wer etwas macht, wo, und was man dabei wissen muss. Was
 			davon für Dich gerade dran ist, steht kürzer auf der <a class="link" href={resolve('/')}
 				>Startseite</a
-			>; die Schritte der aktuellen Phase sind hier markiert.
+			>; die Schritte der aktuellen Phase sind hier markiert. Kürzer und aus Sicht der Dozierenden
+			erklärt es die <a class="link" href={resolve('/einfuehrung')}>Einführung</a>.
 		</p>
 	</div>
 

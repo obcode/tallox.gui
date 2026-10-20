@@ -20,7 +20,18 @@ export type HelpEntry = {
 	who: readonly Role[];
 	/** Where it is done. The first entry is also the page the answer belongs to. */
 	where: readonly GuideLink[];
+	/**
+	 * When in a lecturer's year the question comes up, for the how-tos on the introduction page.
+	 * Only on entries that concern lecturers; absent means the introduction leaves it out.
+	 */
+	stage?: HelpStage;
 };
+
+/**
+ * Once (and corrected afterwards), every semester while wishes are collected, and after the
+ * assignment. The three moments a lecturer meets Tallox at all.
+ */
+export type HelpStage = 'ONCE' | 'EACH_SEMESTER' | 'AFTERWARDS';
 
 export const HELP: readonly HelpEntry[] = [
 	{
@@ -62,18 +73,36 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wo gebe ich an, in welchen Fächern ich arbeite?',
+		answer:
+			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Das ist eine Aussage über Dich und keine Berechtigung: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall.',
+		who: [],
+		where: [{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }],
+		stage: 'ONCE'
+	},
+	{
+		question: 'Wie trage ich einen Wunsch ein, und wie ziehe ich ihn zurück?',
+		answer:
+			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist.',
+		who: [],
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
+	},
+	{
 		question: 'Wer sieht meine Wünsche?',
 		answer:
 			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium alle Eintragungen des Semesters.',
 		who: [],
-		where: [{ href: '/wuensche', label: 'Wünsche' }]
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
 	},
 	{
 		question: 'Wie sage ich, dass ich nur die Vorlesung oder nur ein Praktikum halten möchte?',
 		answer:
 			'In der Notiz zum Wunsch. Gewünscht wird die Instanz, also etwa ein Modul für einen Zug; wer welchen Teil hält, legt die Fachgruppenleitung erst bei der Zuteilung fest, weil das eine Absprache zwischen mehreren ist.',
 		who: [],
-		where: [{ href: '/wuensche', label: 'Wünsche' }]
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
 	},
 	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
@@ -132,28 +161,32 @@ export const HELP: readonly HelpEntry[] = [
 		answer:
 			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
 		who: [],
-		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }]
+		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
+		stage: 'ONCE'
 	},
 	{
 		question: 'Wo sehe ich, was ich tatsächlich halte?',
 		answer:
 			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“ — die Fachgruppenleitung kann noch umplanen.',
 		who: ['LECTURER'],
-		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
+		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }],
+		stage: 'AFTERWARDS'
 	},
 	{
 		question: 'Wer hält welche Veranstaltung?',
 		answer:
 			'Unter „Zuteilung → Übersicht“, nur zum Lesen: je Studiengang, Modul und Kohorte, wer welchen Teil hält. Sichtbar, sobald das Dekanat die Zuteilung des Semesters veröffentlicht hat; vorher ist sie ein Entwurf, und nur die eigenen Teile stehen unter „Meine Zuteilungen“.',
 		who: [],
-		where: [{ href: '/zuteilung/uebersicht', label: 'Zuteilung, Übersicht' }]
+		where: [{ href: '/zuteilung/uebersicht', label: 'Zuteilung, Übersicht' }],
+		stage: 'AFTERWARDS'
 	},
 	{
 		question: 'Wo gebe ich an, wie viele SWS ich halten möchte?',
 		answer:
 			'Auf der Wunschseite, über der Tabelle, je Semester. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Das lesen nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; bei der Zuteilung steht es neben Deinem Namen.',
 		who: ['LECTURER'],
-		where: [{ href: '/wuensche', label: 'Wünsche' }]
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
 	},
 	{
 		question: 'Wie kennzeichne ich ein Modul als PBLV?',
@@ -179,7 +212,7 @@ export const HELP: readonly HelpEntry[] = [
 ];
 
 /** Whether an entry concerns somebody with these roles. */
-function concerns(entry: HelpEntry, roles: readonly string[]): boolean {
+export function concerns(entry: HelpEntry, roles: readonly string[]): boolean {
 	return entry.who.length === 0 || entry.who.some((role) => roles.includes(role));
 }
 

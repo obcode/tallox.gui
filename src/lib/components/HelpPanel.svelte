@@ -118,6 +118,12 @@
 				<h3 id="help-reference-title" class="font-medium">Nachschlagen</h3>
 				<ul class="flex flex-col gap-1 text-sm">
 					<li>
+						<a class="link" href={resolve('/einfuehrung')}>
+							<span aria-hidden="true">🧭</span> Einführung in Tallox
+						</a>
+						— Grundideen, Phasen und was Du tust
+					</li>
+					<li>
 						<a class="link" href={resolve('/ablauf')}>
 							<span aria-hidden="true">📜</span> Ablauf der Einsatzplanung
 						</a>
