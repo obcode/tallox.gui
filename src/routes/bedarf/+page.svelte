@@ -30,7 +30,9 @@
 		sharingState,
 		separatelyPlannedIn,
 		splitSummary,
-		trackLetters
+		trackLetters,
+		MAX_TRACKS,
+		MAX_TOPIC_LENGTH
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import GearIcon from '$lib/components/GearIcon.svelte';
@@ -528,7 +530,7 @@
 	 */
 	function setTracks(row: Row, count: number) {
 		const current = draft(row);
-		const tracks = Math.min(8, Math.max(1, count));
+		const tracks = Math.min(MAX_TRACKS, Math.max(1, count));
 		const groups = [...current.groups];
 		while (groups.length < tracks) groups.push(groups[groups.length - 1] ?? defaultGroups(row));
 		groups.length = tracks;
@@ -2045,7 +2047,7 @@
 													<input
 														type="number"
 														min="1"
-														max="8"
+														max={MAX_TRACKS}
 														name="tracks:{row.module.id}"
 														value={draft(row).tracks}
 														oninput={(e) => setTracks(row, numberOf(e.currentTarget))}
@@ -2185,6 +2187,33 @@
 																	/>
 																	EN
 																</label>
+																<!-- Which seminar this cohort is, for an umbrella module planned as
+																     one cohort per seminar. Only where there are several cohorts or a
+																     topic is already set, so the ordinary row does not carry one more
+																     empty field. -->
+																{#if letters.length > 1 || format.topic}
+																	<input
+																		type="hidden"
+																		name="topic0:{format.id}"
+																		value={format.topic ?? ''}
+																	/>
+																	<input
+																		type="text"
+																		name="topic:{format.id}"
+																		value={format.topic ?? ''}
+																		maxlength={MAX_TOPIC_LENGTH}
+																		placeholder="Thema"
+																		title="Welches Seminar dieser Zug ist, etwa bei einem Sammelmodul. Erscheint in der Wunschphase und in der Zuteilung."
+																		class="input input-bordered input-xs w-48"
+																		aria-label="Thema von {moduleName(row.module)} in {cohortLabel(
+																			data.selected.programme,
+																			yearOf(row),
+																			letter
+																		)}"
+																		disabled={!mayPlan}
+																		onchange={scheduleSave}
+																	/>
+																{/if}
 															{/if}
 														</div>
 													{/each}

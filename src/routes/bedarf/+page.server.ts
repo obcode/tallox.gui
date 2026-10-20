@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
-import { formatChanges, previousComparableSemester } from '$lib/demand';
+import { formatChanges, previousComparableSemester, topicChanges } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
 	CourseType,
@@ -142,6 +142,7 @@ const DemandDocument = graphql(`
 			delivery
 			taughtInEnglish
 			taughtInEnglishOverridden
+			topic
 			programme {
 				code
 				title
@@ -318,6 +319,14 @@ const DemandDocument = graphql(`
 const SetFormatDocument = graphql(`
 	mutation SetCohortFormatFromDemand($id: ID!, $delivery: DeliveryFormat!, $english: Boolean) {
 		setCourseInstanceFormat(id: $id, delivery: $delivery, taughtInEnglish: $english) {
+			id
+		}
+	}
+`);
+
+const SetTopicDocument = graphql(`
+	mutation SetCohortTopicFromDemand($id: ID!, $topic: String!) {
+		setCourseInstanceTopic(id: $id, topic: $topic) {
 			id
 		}
 	}
@@ -788,6 +797,11 @@ export const actions: Actions = {
 					delivery: change.delivery,
 					english: change.taughtInEnglish
 				});
+			}
+			// Which seminar a cohort of an umbrella module is — the same pattern, and the same
+			// reason it is not part of planDemand: the subject group lead may write it too.
+			for (const change of topicChanges(form)) {
+				await backendRequest(SetTopicDocument, { id: change.instanceId, topic: change.topic });
 			}
 		} catch (err) {
 			return fail(400, refusalFor(err));

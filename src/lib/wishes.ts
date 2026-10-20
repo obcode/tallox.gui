@@ -2,6 +2,7 @@ import {
 	cohortLabel,
 	moduleRows,
 	taughtEntirelyElsewhere,
+	withTopic,
 	type ModuleRow,
 	type ReadInstanceLike,
 	type SeparateLike
@@ -160,6 +161,8 @@ export type WishInstanceLike = {
 	teachingHours?: number | null;
 	programme: { code: string };
 	module: { id: string; name: string };
+	/** Which seminar the cohort is, for an umbrella module. */
+	topic?: string | null;
 };
 
 export type WishLike = {
@@ -177,7 +180,10 @@ export type WishLike = {
  * id is not, and in the table itself the module name is already the row.
  */
 export function wishRowLabel(instance: WishInstanceLike): string {
-	return `${cohortLabel(instance.programme.code, instance.programmeSemester, instance.track)} · ${instance.module.name}`;
+	return withTopic(
+		`${cohortLabel(instance.programme.code, instance.programmeSemester, instance.track)} · ${instance.module.name}`,
+		instance.topic
+	);
 }
 
 /** The module fields the wish table reads, on top of what the overview needs. */
@@ -281,7 +287,8 @@ export function trackColumn(track: string): string {
 export function trackColumns(rows: readonly WishRow[]): string[] {
 	const tracks = new Set<string>();
 	for (const row of rows) {
-		for (const cohort of row.cohorts) tracks.add(trackColumn(cohort.track));
+		// A seminar's row holds its one cohort in the first column, whatever its letter.
+		for (const cohort of row.cohorts) tracks.add(row.topic ? 'A' : trackColumn(cohort.track));
 	}
 	return [...tracks].sort((a, b) => a.localeCompare(b, 'de'));
 }
@@ -300,6 +307,7 @@ export function trackHeading(track: string): string {
  * nobody can enter a wish into is worse than an error.
  */
 export function cohortIn(row: WishRow, track: string) {
+	if (row.topic) return track === 'A' ? row.cohorts[0] : undefined;
 	return (
 		row.cohorts.find((cohort) => cohort.track === track) ??
 		row.cohorts.find((cohort) => trackColumn(cohort.track) === track)

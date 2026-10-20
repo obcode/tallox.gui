@@ -501,6 +501,50 @@ test.describe('the demand table', () => {
 		await expect(row.getByText('E2E?C')).toBeVisible();
 	});
 
+	// The umbrella seminar: the examination office holds one module, the faculty runs one seminar
+	// per cohort, and the topic says which. Saved with the table, read back after a reload, and a
+	// row of its own in the overview — fourteen seminars as columns would widen every row.
+	test('an umbrella seminar names each of its cohorts', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('E2E Sammelseminar');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+
+		const row = page.getByRole('row', { name: /E2E Sammelseminar/ });
+		await row.getByRole('spinbutton', { name: /^Züge von/ }).fill('3');
+		await expect(page.getByText(/angelegt/)).toBeVisible({ timeout: 15_000 });
+
+		const topic = row.getByRole('textbox', { name: /^Thema von E2E Sammelseminar in E2E\?B$/ });
+		// The table saves itself a moment after a field is left; wait for that save, not for a
+		// message the cohorts' creation already left on the screen.
+		const saved = page.waitForResponse(
+			(r) => r.request().method() === 'POST' && r.url().includes('/plan'),
+			{ timeout: 15_000 }
+		);
+		await topic.fill('Design Thinking');
+		await topic.blur();
+		await saved;
+
+		await gotoRendered(page, DEMAND_URL);
+		await expect(
+			page
+				.getByRole('row', { name: /E2E Sammelseminar/ })
+				.getByRole('textbox', { name: /in E2E\?B$/ })
+		).toHaveValue('Design Thinking');
+
+		// The overview: the named cohort is a row of its own, the other two stay together.
+		await gotoRendered(
+			page,
+			`/bedarf?semester=${DEMAND.semester}&studiengang=${CATALOGUE.programme}`
+		);
+		await expect(page.getByRole('row', { name: /E2E Sammelseminar Design Thinking/ })).toHaveCount(
+			1
+		);
+		await expect(page.getByRole('row', { name: /E2E Sammelseminar/ })).toHaveCount(2);
+	});
+
 	// The hole this whole round of feedback uncovered, walked end to end.
 	//
 	// A locally created course is how a short-notice FWP is declared, and it arrives in **no**

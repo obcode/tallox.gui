@@ -1,7 +1,7 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
-import type { DeliveryFormat } from '$lib/demand';
+import { withTopic, type DeliveryFormat } from '$lib/demand';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -50,6 +50,8 @@ export type InstanceLike = {
 	taughtInEnglish?: boolean;
 	/** Whether the language is a decision about this cohort rather than the catalogue's. */
 	taughtInEnglishOverridden?: boolean;
+	/** Which seminar the cohort is, for an umbrella module; see `withTopic` in `$lib/demand`. */
+	topic?: string | null;
 	/**
 	 * The other study programmes' demands this cohort meets, where any are agreed.
 	 *
@@ -238,7 +240,7 @@ export function cohortGroups(
 			return { part, heading, assignment: byPart.get(part.id) ?? null };
 		});
 
-		groups.push({ instance, label: cohortLabel(instance), rows });
+		groups.push({ instance, label: withTopic(cohortLabel(instance), instance.topic), rows });
 	}
 	return groups;
 }

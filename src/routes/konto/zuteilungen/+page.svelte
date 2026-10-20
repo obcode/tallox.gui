@@ -101,6 +101,10 @@
 										href={resolve('/module/[id]', { id: a.instance.module.id })}
 										>{a.instance.module.name}</a
 									>
+									<!-- Which seminar, for an umbrella module taught many times a semester. -->
+									{#if a.instance.topic}
+										<span class="block">{a.instance.topic}</span>
+									{/if}
 								</td>
 								<td class="whitespace-nowrap">
 									{cohortLabel(

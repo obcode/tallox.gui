@@ -269,6 +269,25 @@ describe('the table', () => {
 		expect(studyGroupLabel(row)).toBe('IF3');
 	});
 
+	// The umbrella seminar: one module, one cohort per seminar, each with a topic. Each seminar
+	// is a row of its own in the first column — as columns, fourteen of them would widen the
+	// whole table for one row.
+	it('gives every seminar of an umbrella module its own row in the first column', () => {
+		const rows = wishRows([
+			{ ...instance('1', 'm1', 'Seminar', 'A'), topic: 'Design Thinking' },
+			{ ...instance('2', 'm1', 'Seminar', 'N'), topic: 'AI Fundamentals' },
+			instance('3', 'm2', 'Analysis', 'A'),
+			instance('4', 'm2', 'Analysis', 'B')
+		]);
+
+		const seminars = rows.filter((r) => r.topic);
+		expect(seminars.map((r) => r.topic)).toEqual(['Design Thinking', 'AI Fundamentals']);
+		expect(seminars.map((r) => cohortIn(r, 'A')?.instanceId)).toEqual(['1', '2']);
+		expect(cohortIn(seminars[1], 'N')).toBeUndefined();
+		// Fourteen seminars add no column: A and B are Analysis's.
+		expect(trackColumns(rows)).toEqual(['A', 'B']);
+	});
+
 	it('finds the cohort in a column, and nothing where the module does not run', () => {
 		const [row] = wishRows([instance('1', 'm1', 'Analysis', 'A')]);
 

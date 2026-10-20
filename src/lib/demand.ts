@@ -261,6 +261,8 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
 	taughtInEnglishOverridden?: boolean;
+	/** Which seminar this cohort is, for an umbrella module; `null` for nearly every cohort. */
+	topic?: string | null;
 };
 
 /** One cohort in a row of the table. */
@@ -470,14 +472,18 @@ function rowFor<M extends ModuleLike>(
 }
 
 function formatOf(
-	instance: Pick<InstanceLike, 'id' | 'delivery' | 'taughtInEnglish' | 'taughtInEnglishOverridden'>
+	instance: Pick<
+		InstanceLike,
+		'id' | 'delivery' | 'taughtInEnglish' | 'taughtInEnglishOverridden' | 'topic'
+	>
 ): FormatLike | undefined {
 	if (instance.delivery === undefined) return undefined;
 	return {
 		id: instance.id,
 		delivery: instance.delivery,
 		taughtInEnglish: instance.taughtInEnglish ?? false,
-		taughtInEnglishOverridden: instance.taughtInEnglishOverridden ?? false
+		taughtInEnglishOverridden: instance.taughtInEnglishOverridden ?? false,
+		topic: instance.topic ?? null
 	};
 }
 
@@ -495,6 +501,15 @@ function groupByModule<M extends { id: string }>(
 	}
 	return byModule;
 }
+
+/**
+ * The most cohorts one module may have in a semester: one letter each, A to Z.
+ *
+ * Follows `MaxTracksPerModule` in the backend, which refuses more. Most modules run one or two;
+ * an umbrella seminar runs one cohort per seminar actually offered, and that is what needs the
+ * whole alphabet.
+ */
+export const MAX_TRACKS = 26;
 
 /**
  * The cohort letters for a given number of cohorts.
@@ -762,6 +777,7 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
 	taughtInEnglishOverridden?: boolean;
+	topic?: string | null;
 };
 
 /**
@@ -817,6 +833,8 @@ export type InstanceRow<M extends RowModule = ModuleLike> = {
 	alsoPlannedSeparately?: readonly SeparateLike[];
 	/** How the cohort is taught, where the instance exists and the page asked. */
 	format?: FormatLike;
+	/** Which seminar the cohort is, for an umbrella module; see `withTopic`. */
+	topic: string | null;
 };
 
 /**
@@ -904,7 +922,8 @@ export function instanceRows<M extends RowModule>(
 				coveredBy: instance.coveredBy ?? null,
 				covers: instance.covers ?? [],
 				alsoPlannedSeparately: instance.alsoPlannedSeparately ?? [],
-				format: formatOf(instance)
+				format: formatOf(instance),
+				topic: instance.topic?.trim() || null
 			};
 		})
 		.sort(
@@ -943,6 +962,14 @@ export type ModuleRow<M extends RowModule = ModuleLike> = {
 	cohorts: InstanceRow<M>[];
 	/** What all the cohorts together cost the faculty. A shared lecture is counted once. */
 	teachingHours: number;
+	/**
+	 * The seminar this row is, where it is one cohort of an umbrella module with a topic.
+	 *
+	 * Such a cohort is a row of its own rather than a column of the module's row: fourteen
+	 * seminars of one module are fourteen different things to want, and as columns they would
+	 * widen the whole table to fourteen cohorts for the sake of one row.
+	 */
+	topic?: string;
 };
 
 /**
@@ -959,7 +986,9 @@ export function moduleRows<M extends RowModule>(
 
 	const byModule = new Map<string, ModuleRow<M>>();
 	for (const row of rows) {
-		const key = `${row.programme.code}\u0000${row.module.id}`;
+		const key = row.topic
+			? `${row.programme.code}\u0000${row.module.id}\u0000${row.instanceId}`
+			: `${row.programme.code}\u0000${row.module.id}`;
 		const existing = byModule.get(key);
 		if (existing) {
 			existing.cohorts.push(row);
@@ -972,12 +1001,27 @@ export function moduleRows<M extends RowModule>(
 			programmeSemester: row.programmeSemester,
 			note: row.note,
 			cohorts: [row],
-			teachingHours: row.teachingHours
+			teachingHours: row.teachingHours,
+			...(row.topic ? { topic: row.topic } : {})
 		});
 	}
 	// instanceRows already sorted by year, module and cohort, and a Map keeps insertion order —
 	// so the rows come out in that order and each row's cohorts are in theirs.
 	return [...byModule.values()];
+}
+
+/**
+ * A key for a row that is unique in a list of them: the programme and the module, and for a
+ * seminar's own row its cohort as well — several seminars of one module are several rows.
+ */
+export function moduleRowKey(row: {
+	programme: { code: string };
+	module: { id: string };
+	cohorts: readonly { instanceId: string }[];
+	topic?: string;
+}): string {
+	const base = `${row.programme.code}\u0000${row.module.id}`;
+	return row.topic ? `${base}\u0000${row.cohorts[0]?.instanceId ?? ''}` : base;
 }
 
 /** One cohort year of the overview. */
@@ -1063,7 +1107,50 @@ export type FormatLike = {
 	delivery: DeliveryFormat;
 	taughtInEnglish: boolean;
 	taughtInEnglishOverridden: boolean;
+	/** Which seminar the cohort is; see `withTopic`. */
+	topic?: string | null;
 };
+
+/** The longest topic the backend accepts: a heading, not a paragraph. */
+export const MAX_TOPIC_LENGTH = 120;
+
+/**
+ * A cohort's label with the seminar it is: `WI3A · Design Thinking`.
+ *
+ * For the umbrella module the examination office holds once and the faculty runs many times a
+ * semester, the letter alone says nothing — fourteen cohorts of one seminar module are fourteen
+ * different seminars. Every other cohort has no topic and reads as before.
+ */
+export function withTopic(label: string, topic: string | null | undefined): string {
+	const t = topic?.trim();
+	return t ? `${label} · ${t}` : label;
+}
+
+/** What one cohort's topic field says, if it differs from what the page rendered. */
+export type TopicChange = { instanceId: string; topic: string };
+
+/**
+ * The cohorts whose topic changed, read out of a submitted form.
+ *
+ * Same shape as `formatChanges`: each cohort renders `topic0:<id>` with the topic it was drawn
+ * with beside the field `topic:<id>`, and only a cohort whose field differs is written — so a save
+ * of the whole table does not restate a stale topic over a colleague's newer one. Compared
+ * trimmed, because the backend trims: a trailing space is not a change. An emptied field is a
+ * change to no topic, and travels as the empty string the backend reads that way.
+ */
+export function topicChanges(form: FormData): TopicChange[] {
+	const out: TopicChange[] = [];
+	for (const [key, original] of form) {
+		if (!key.startsWith('topic0:')) continue;
+		const id = key.slice('topic0:'.length);
+		const field = form.get(`topic:${id}`);
+		if (field === null) continue;
+		const topic = String(field).trim();
+		if (topic === String(original).trim()) continue;
+		out.push({ instanceId: id, topic });
+	}
+	return out;
+}
 
 /**
  * The short marks a cohort carries where it is only read: nothing for the ordinary weekly German

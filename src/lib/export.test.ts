@@ -46,6 +46,22 @@ function held(partId: string, name: string, note = ''): ExportAssignment {
 const col = (name: string) => PLANNING_HEADER.indexOf(name);
 
 describe('planningRows', () => {
+	// A seminar of an umbrella module: the spreadsheet says which one, beside the module.
+	it('writes the topic of a cohort beside its module', () => {
+		const rows = planningRows(
+			[
+				instance('i', {
+					track: 'C',
+					topic: 'Green Software Engineering',
+					module: { name: 'Seminar', zpaId: '2001' }
+				})
+			],
+			[]
+		);
+		expect(rows[0][col('Modul')]).toBe('Seminar');
+		expect(rows[0][col('Thema')]).toBe('Green Software Engineering');
+	});
+
 	it('writes one row per part with whoever holds it', () => {
 		const rows = planningRows(
 			[
@@ -65,7 +81,8 @@ describe('planningRows', () => {
 		expect(rows.map((r) => r[col('Teil')])).toEqual(['Vorlesung', 'Praktikum 1', 'Praktikum 2']);
 		expect(rows.map((r) => r[col('Besetzt durch')])).toEqual(['Prof. Eins', '', 'Prof. Zwei']);
 		expect(rows[0][col('Notiz Zuteilung')]).toBe('nur erste Hälfte');
-		expect(rows[0].slice(0, 6)).toEqual(['IF', 1, 'IF1A', 'Analysis', '1001', 'MA']);
+		// No topic: the column is there and empty, as for every cohort that is not a seminar.
+		expect(rows[0].slice(0, 7)).toEqual(['IF', 1, 'IF1A', 'Analysis', '', '1001', 'MA']);
 	});
 
 	it('keeps hours as numbers and an unstated figure empty rather than zero', () => {

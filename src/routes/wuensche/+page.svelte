@@ -6,7 +6,14 @@
 	import WishCell from '$lib/components/WishCell.svelte';
 	import { applyOrder, nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { formatHours } from '$lib/catalogue';
-	import { facultiesElsewhere, formatBadges, heldForLabel, hoursLabel } from '$lib/demand';
+	import {
+		facultiesElsewhere,
+		formatBadges,
+		heldForLabel,
+		hoursLabel,
+		moduleRowKey,
+		withTopic
+	} from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
 	import {
 		heldForOthers,
@@ -211,7 +218,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each sectionRows as row (row.programme.code + row.module.id)}
+				{#each sectionRows as row (moduleRowKey(row))}
 					{@const rowTint = wishTint(
 						strongestPriority(row.cohorts.map((c) => mine.get(c.instanceId)?.priority))
 					)}
@@ -223,6 +230,10 @@
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
 								{row.module.name}
 							</a>
+							<!-- One seminar of an umbrella module: the topic is what is being wished for. -->
+							{#if row.topic}
+								<span class="block font-medium">{row.topic}</span>
+							{/if}
 							{#if heldForOthers(row).length > 0}
 								<!--
 									Eine Veranstaltung, mehrere Studiengänge. Der gedeckte Zug steht nicht
@@ -284,7 +295,7 @@
 									{#key `${wish?.id ?? ''}:${wish?.priority ?? ''}:${wish?.note ?? ''}`}
 										<WishCell
 											instanceId={cohort.instanceId}
-											label="{cohort.label} · {row.module.name}"
+											label={withTopic(`${cohort.label} · ${row.module.name}`, row.topic)}
 											{wish}
 											others={others[cohort.instanceId] ?? []}
 											open={open && closedReason === null}
