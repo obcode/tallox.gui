@@ -11,7 +11,7 @@ import {
 	type CombinedEntry,
 	UNFILED
 } from '$lib/assignment';
-import { formatChanges } from '$lib/demand';
+import { formatChanges, topicChanges } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -77,6 +77,7 @@ const AssignmentDocument = graphql(`
 			delivery
 			taughtInEnglish
 			taughtInEnglishOverridden
+			topic
 			programme {
 				code
 				title
@@ -235,6 +236,14 @@ const SetDocument = graphql(`
 			note: $note
 			replacing: $replacing
 		) {
+			id
+		}
+	}
+`);
+
+const SetTopicDocument = graphql(`
+	mutation SetCohortTopicFromAssignment($id: ID!, $topic: String!) {
+		setCourseInstanceTopic(id: $id, topic: $topic) {
 			id
 		}
 	}
@@ -480,6 +489,16 @@ export const actions: Actions = {
 				saved += 1;
 			} catch (err) {
 				refusals.push({ partId: `format:${change.instanceId}`, message: toRefusal(err).message });
+			}
+		}
+
+		// Which seminar a cohort is, the same way: only the cohorts whose field changed.
+		for (const change of topicChanges(form)) {
+			try {
+				await backendRequest(SetTopicDocument, { id: change.instanceId, topic: change.topic });
+				saved += 1;
+			} catch (err) {
+				refusals.push({ partId: `topic:${change.instanceId}`, message: toRefusal(err).message });
 			}
 		}
 

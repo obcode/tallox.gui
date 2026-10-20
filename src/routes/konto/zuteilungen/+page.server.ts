@@ -26,6 +26,7 @@ const MyAssignmentsDocument = graphql(`
 				id
 				semester
 				track
+				topic
 				programmeSemester
 				delivery
 				taughtInEnglish

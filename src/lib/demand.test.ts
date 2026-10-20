@@ -30,6 +30,8 @@ import {
 	splitSummary,
 	sharingState,
 	trackLetters,
+	topicChanges,
+	withTopic,
 	MAX_TRACKS,
 	type DemandRow,
 	type InstanceLike,
@@ -874,6 +876,22 @@ describe('moduleRows', () => {
 		expect(rows[0].cohorts[1].parts.at(-1)?.count).toBe(2);
 	});
 
+	// A cohort with a topic is one seminar of an umbrella module, and a row of its own; the
+	// module's cohorts without one stay together.
+	it('gives a cohort with a topic a row of its own', () => {
+		const rows = moduleRows([
+			readInstance('m', 'A', 0, { topic: 'Design Thinking' }),
+			readInstance('m', 'B', 0, { topic: 'AI Fundamentals' }),
+			readInstance('m', 'C', 0),
+			readInstance('m', 'D', 0, { topic: '  ' })
+		]);
+		expect(rows.map((r) => [r.topic, r.cohorts.map((c) => c.label)])).toEqual([
+			['Design Thinking', ['IF1A']],
+			['AI Fundamentals', ['IF1B']],
+			[undefined, ['IF1C', 'IF1D']]
+		]);
+	});
+
 	// Two programmes offering one module are two demands — the difference between them is what
 	// the dean's office's import/export figures are about.
 	it('keeps the same module apart when two programmes offer it', () => {
@@ -948,6 +966,49 @@ describe('the note beside the row', () => {
 			'IF4 (alt) und IF2 (neu)',
 			'IF4 (alt) und IF2 (neu)'
 		]);
+	});
+});
+
+describe('withTopic', () => {
+	// The umbrella seminar: fourteen cohorts of one module are fourteen different seminars.
+	it('names the seminar beside the cohort', () => {
+		expect(withTopic('WI3A', 'Design Thinking')).toBe('WI3A · Design Thinking');
+	});
+
+	it('leaves every other cohort as it was', () => {
+		expect(withTopic('IF3A', null)).toBe('IF3A');
+		expect(withTopic('IF3A', undefined)).toBe('IF3A');
+		expect(withTopic('IF3A', '  ')).toBe('IF3A');
+	});
+});
+
+describe('topicChanges', () => {
+	const formOf = (entries: [string, string][]) => {
+		const form = new FormData();
+		for (const [k, v] of entries) form.append(k, v);
+		return form;
+	};
+
+	it('reports only the cohorts whose topic changed, trimmed', () => {
+		const form = formOf([
+			['topic0:a', 'AI Fundamentals'],
+			['topic:a', 'AI Fundamentals '],
+			['topic0:b', ''],
+			['topic:b', ' Design Thinking'],
+			['topic0:c', 'Green Software Engineering'],
+			['topic:c', '']
+		]);
+		expect(topicChanges(form)).toEqual([
+			{ instanceId: 'b', topic: 'Design Thinking' },
+			// Emptied is a change, to no topic.
+			{ instanceId: 'c', topic: '' }
+		]);
+	});
+
+	// A cohort the page drew without the field (a disabled one sends nothing) is not an
+	// instruction to clear it.
+	it('ignores a cohort whose field was not sent', () => {
+		expect(topicChanges(formOf([['topic0:a', 'AI Fundamentals']]))).toEqual([]);
 	});
 });
 

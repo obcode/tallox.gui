@@ -17,6 +17,7 @@
 		cohortCount,
 		hoursLabel,
 		instancesByYear,
+		moduleRowKey,
 		moduleRows,
 		partGroupLabel,
 		type ModuleRow,
@@ -87,12 +88,16 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each list as row (row.programme.code + row.module.id)}
+				{#each list as row (moduleRowKey(row))}
 					<tr>
 						<td class="align-top">
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
 								{moduleName(row.module)}
 							</a>
+							<!-- One seminar of an umbrella module, a row of its own. -->
+							{#if row.topic}
+								<span class="block font-medium">{row.topic}</span>
+							{/if}
 							<span class="flex flex-wrap items-center gap-1">
 								{#if row.module.dutyStatus}
 									<span class="badge {dutyBadge(row.module.dutyStatus)} badge-sm">

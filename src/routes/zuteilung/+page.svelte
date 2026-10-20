@@ -31,7 +31,7 @@
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
-	import { DELIVERY_LABELS, hoursLabel } from '$lib/demand';
+	import { DELIVERY_LABELS, MAX_TOPIC_LENGTH, hoursLabel, withTopic } from '$lib/demand';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -445,7 +445,9 @@
 				<ul class="mt-2 flex flex-col gap-1">
 					{#each gaps as instance (instance.id)}
 						<li class="text-sm">
-							<span class="font-mono font-medium">{cohortLabel(instance)}</span>
+							<span class="font-mono font-medium"
+								>{withTopic(cohortLabel(instance), instance.topic)}</span
+							>
 							<span class="text-base-content/90">— {instance.module.name}</span>
 						</li>
 					{/each}
@@ -720,6 +722,34 @@
 												{#if formatRefusal}
 													<span class="badge badge-error mt-1 whitespace-normal"
 														>{formatRefusal}</span
+													>
+												{/if}
+											{/if}
+											<!-- Which seminar the cohort is, for an umbrella module planned as one cohort
+											     per seminar: the title is often settled with the lecturer at the
+											     staffing. Only where the module has several cohorts here or a topic is
+											     already set, like on the demand page. -->
+											{#if block.cohorts.length > 1 || group.instance.topic}
+												{@const topicRefusal = refusalFor.get(`topic:${group.instance.id}`)}
+												<input
+													type="hidden"
+													name="topic0:{group.instance.id}"
+													value={group.instance.topic ?? ''}
+												/>
+												<input
+													type="text"
+													name="topic:{group.instance.id}"
+													value={group.instance.topic ?? ''}
+													maxlength={MAX_TOPIC_LENGTH}
+													placeholder="Thema"
+													title="Welches Seminar dieser Zug ist, etwa bei einem Sammelmodul."
+													class="input input-bordered input-xs mt-1 w-full"
+													aria-label="Thema von {block.name} in {group.label}"
+													disabled={!open}
+												/>
+												{#if topicRefusal}
+													<span class="badge badge-error mt-1 whitespace-normal"
+														>{topicRefusal}</span
 													>
 												{/if}
 											{/if}

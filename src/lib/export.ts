@@ -65,6 +65,8 @@ export type ExportInstance = {
 	covers: readonly CoverageLike[];
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
+	/** Which seminar the cohort is, for an umbrella module. */
+	topic?: string | null;
 };
 
 export type ExportAssignment = {
@@ -78,6 +80,7 @@ export const PLANNING_HEADER = [
 	'Fachsemester',
 	'Zug',
 	'Modul',
+	'Thema',
 	'ZPA-Nr.',
 	'Fachgruppe',
 	'Durchführung',
@@ -115,6 +118,7 @@ export function planningRows(
 			instance.programmeSemester ?? null,
 			cohortLabel(instance.programme.code, instance.programmeSemester, instance.track),
 			instance.module.name,
+			instance.topic ?? '',
 			instance.module.zpaId ?? '',
 			instance.module.subjectGroup?.code ?? '',
 			instance.delivery ? DELIVERY_LABELS[instance.delivery] : '',
@@ -313,7 +317,7 @@ export function exportSheets(input: ExportInput): ExportSheet[] {
 			name: 'Planung',
 			header: PLANNING_HEADER,
 			rows: planningRows(input.instances, input.assignments),
-			widths: [11, 12, 8, 40, 10, 11, 18, 9, 14, 10, 10, 28, 28, 28, 30]
+			widths: [11, 12, 8, 40, 28, 10, 11, 18, 9, 14, 10, 10, 28, 28, 28, 30]
 		},
 		{
 			name: 'SWS je Studiengang',

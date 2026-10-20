@@ -62,6 +62,7 @@ const WishesDocument = graphql(`
 			teachingHours
 			delivery
 			taughtInEnglish
+			topic
 			programme {
 				code
 				title
@@ -129,6 +130,7 @@ const WishesDocument = graphql(`
 				id
 				semester
 				track
+				topic
 				programmeSemester
 				teachingHours
 				programme {
@@ -156,6 +158,7 @@ const WishesDocument = graphql(`
 				id
 				semester
 				track
+				topic
 				programmeSemester
 				teachingHours
 				programme {

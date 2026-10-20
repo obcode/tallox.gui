@@ -14,6 +14,7 @@ Kolleg:innen.
 - [Aufteilung übertragen (Modulseite)](module-split-ui.md) — Vorschau gleich nach dem Speichern, Übertragen als zweiter Submit; E2E-IDs und Kürzel vor dem Anlegen greppen
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
+- [Thema je Zug](seminar-topics.md) — Seminare als eigene Zeilen in Wunschtabelle und Übersicht, `moduleRowKey`, bis 26 Züge
 - [Planungsmarken in der GUI](planning-marks-ui.md) — wo Fertigmeldung und Wunschphase geschaltet werden, und die Action-URL-Falle
 - [Die Zuteilungsseite](assignment-page.md) — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, und zwei Fallen
 - [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, die Leitung sortiert Module selbst ein und gibt sie frei, und zwei Befunde aus dem ersten E2E-Lauf
