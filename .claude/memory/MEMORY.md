@@ -27,3 +27,4 @@ Kolleg:innen.
      name/description/metadata.type, Querverweise als [[slug]]. -->
 
 - [Partnerfakultät in der GUI](partner-faculty-ui.md) — „Meine Lehre“ und die Schritte für alle sind für Partner allein ausgeblendet, Statistik eingeblendet, eigener Studiengangs-Picker
+- [Sortieren per Spaltenkopf](sortable-tables.md) — Dreierzyklus, kein URL-Zustand, eingefrorene Reihenfolge beim Bearbeiten, Zug-Spalten nur nach eigener Priorität
