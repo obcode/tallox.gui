@@ -19,6 +19,7 @@
 	} from '$lib/catalogue';
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 	import HandbookLink from '$lib/components/HandbookLink.svelte';
+	import { changedLines, refusedLines, splitSummary } from '$lib/splitApplication';
 	import { hasAnyRole } from '$lib/roles';
 	import type { ActionData, PageData } from './$types';
 
@@ -101,6 +102,18 @@
 			data.module.contactHoursPerWeek
 		)
 	);
+
+	// What carrying the split over to the existing instances would do, or did. Saving the split
+	// asks for the preview by itself, so the gap shows the moment it opens.
+	const splitReport = $derived(
+		form && 'splitApplication' in form
+			? form.splitApplication
+			: form && 'splitPreview' in form
+				? form.splitPreview
+				: null
+	);
+	const splitChanged = $derived(splitReport ? changedLines(splitReport) : []);
+	const splitRefused = $derived(splitReport ? refusedLines(splitReport) : []);
 
 	// Grouped by programme, because "where does this count" is a question about programmes and
 	// the versions are the detail underneath.
@@ -428,6 +441,58 @@
 					</p>
 				{/if}
 			</form>
+		{/if}
+
+		{#if maySplit && data.module.components.length > 0}
+			<section class="border-base-300 mt-4 border-t pt-4" aria-labelledby="split-instances">
+				<h3 id="split-instances" class="mb-1 font-medium">Bestehende Instanzen</h3>
+				<p class="text-base-content/80 mb-3 max-w-3xl text-sm">
+					Instanzen behalten ihre Teile, wenn sich die Aufteilung später ändert — auch die aus dem
+					Vorjahr übernommenen. Hier lässt sich die Aufteilung auf alle Instanzen dieses Moduls in
+					laufenden Semestern übertragen, in allen Studiengängen. Von Hand geänderte SWS werden
+					dabei überschrieben, besetzte Teile werden nicht entfernt. Die Vorschau zeigt vorher, was
+					sich ändert.
+				</p>
+
+				{#if splitReport}
+					<p class="text-base-content/90 text-sm">
+						{#if splitReport.dryRun}
+							<span class="badge badge-info badge-sm align-middle">Vorschau</span>
+						{:else}
+							<span class="badge badge-ghost badge-sm align-middle">Übertragen</span>
+						{/if}
+						{splitSummary(splitReport)}
+					</p>
+					{#if splitChanged.length > 0}
+						<ul class="text-base-content/90 mt-2 flex flex-col gap-1 text-sm">
+							{#each splitChanged as line, i (i)}
+								<li><span class="font-medium">{line.label}:</span> {line.text}</li>
+							{/each}
+						</ul>
+					{/if}
+					{#if splitRefused.length > 0}
+						<p class="text-base-content/90 mt-3 text-sm">
+							<span class="badge badge-warning badge-sm align-middle">Bleibt, wie es ist</span>
+						</p>
+						<ul class="text-base-content/90 mt-1 flex flex-col gap-1 text-sm">
+							{#each splitRefused as line, i (i)}
+								<li><span class="font-medium">{line.label}:</span> {line.text}</li>
+							{/each}
+						</ul>
+					{/if}
+				{/if}
+
+				<form method="POST" action="?/applySplit" use:enhance class="mt-3 flex flex-wrap gap-2">
+					{#if splitReport?.dryRun && splitReport.changed.length > 0}
+						<button type="submit" name="dryRun" value="0" class="btn btn-sm btn-primary">
+							Jetzt übertragen
+						</button>
+					{/if}
+					<button type="submit" name="dryRun" value="1" class="btn btn-sm">
+						{splitReport ? 'Vorschau aktualisieren' : 'Vorschau: auf Instanzen übertragen'}
+					</button>
+				</form>
+			</section>
 		{/if}
 	</div>
 

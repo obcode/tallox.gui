@@ -965,6 +965,49 @@ export function dividedStatements(): string[] {
 }
 
 /**
+ * The split fixture: a module whose split is about to be corrected, with one cohort that holds the
+ * old one — a lecture of 2 and two laboratory groups of 2. Its own programme and ids, so nothing
+ * else on the page or in another spec moves when the split does.
+ */
+export const SPLIT = {
+	semester: ASSIGNMENTS.semester,
+	programme: 'E2W',
+	module: '0e2e0000-0000-4000-8000-0000000000c1',
+	moduleName: 'E2E Aufteilung übertragen',
+	instance: '0e2e0000-0000-4000-8000-0000000000c2'
+} as const;
+
+export function splitStatements(): string[] {
+	const programme = quote(SPLIT.programme);
+	return [
+		`DELETE FROM course_instance WHERE id = '${SPLIT.instance}';`,
+		`DELETE FROM module_component WHERE module_id = '${SPLIT.module}';`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(SPLIT.semester)}, 'ASSIGNMENT')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Aufteilungsübertrag-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${SPLIT.module}', p.id, ${quote(SPLIT.moduleName)}, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
+		 VALUES ('${SPLIT.module}', 'LECTURE', 2, 0), ('${SPLIT.module}', 'LAB', 2, 1);`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${SPLIT.instance}', s.id, '${SPLIT.module}', pr.id, '', 2
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(SPLIT.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${SPLIT.instance}', 'LECTURE', 0, 2),
+		        ('${SPLIT.instance}', 'LAB', 1, 2),
+		        ('${SPLIT.instance}', 'LAB', 2, 2);`
+	];
+}
+
+/**
  * The sorting fixture: two modules on the wish screen, so a column head has an order to change.
  *
  * Its own semester and programme, for the reason the assignment fixture gives — the wish fixture
