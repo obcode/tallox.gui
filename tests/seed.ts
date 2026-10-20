@@ -522,7 +522,8 @@ export function seedSql(): string {
 		...assignmentStatements(),
 		...competenceStatements(),
 		...filingStatements(),
-		...dividedStatements()
+		...dividedStatements(),
+		...sortingStatements()
 	].join('\n');
 }
 
@@ -960,5 +961,62 @@ export function dividedStatements(): string[] {
 		 SELECT '${DIVIDED.instance}', p.id, 1, '' FROM person p
 		  WHERE p.mail = 'dekanat@example.org'
 		 ON CONFLICT DO NOTHING;`
+	];
+}
+
+/**
+ * The sorting fixture: two modules on the wish screen, so a column head has an order to change.
+ *
+ * Its own semester and programme, for the reason the assignment fixture gives — the wish fixture
+ * has exactly one module, and its spec asserts that. Alpha comes first in the page's own order and
+ * costs less; Omega comes last and costs more, so every sort visibly turns the two round.
+ *
+ * Eins registers for Omega in the spec, and Zwei must not be able to tell from the order.
+ */
+export const SORTING = {
+	semester: '2035-SS',
+	programme: 'E2S',
+	alpha: '0e2e0000-0000-4000-8000-000000000091',
+	alphaName: 'E2S Alpha',
+	omega: '0e2e0000-0000-4000-8000-000000000092',
+	omegaName: 'E2S Omega',
+	alphaInstance: '0e2e0000-0000-4000-8000-000000000093',
+	omegaInstance: '0e2e0000-0000-4000-8000-000000000094',
+	alphaPart: '0e2e0000-0000-4000-8000-000000000095',
+	omegaPart: '0e2e0000-0000-4000-8000-000000000096'
+} as const;
+
+export function sortingStatements(): string[] {
+	const programme = quote(SORTING.programme);
+	const instances = `'${SORTING.alphaInstance}', '${SORTING.omegaInstance}'`;
+	return [
+		`DELETE FROM wish WHERE course_instance_id IN (${instances});`,
+		`DELETE FROM course_instance WHERE id IN (${instances});`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(SORTING.semester)}, 'WISHES')
+		 ON CONFLICT (code) DO UPDATE SET phase = 'WISHES', wishes_published_at = NULL;`,
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Sortier-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT m.id, p.id, m.name, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p,
+		        (VALUES ('${SORTING.alpha}'::uuid, ${quote(SORTING.alphaName)}),
+		                ('${SORTING.omega}'::uuid, ${quote(SORTING.omegaName)}))
+		          AS m(id, name)
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT c.id, s.id, c.module, pr.id, '', 3
+		   FROM semester s, programme pr,
+		        (VALUES ('${SORTING.alphaInstance}'::uuid, '${SORTING.alpha}'::uuid),
+		                ('${SORTING.omegaInstance}'::uuid, '${SORTING.omega}'::uuid))
+		          AS c(id, module)
+		  WHERE s.code = ${quote(SORTING.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${SORTING.alphaPart}', '${SORTING.alphaInstance}', 'LECTURE', 0, 2),
+		        ('${SORTING.omegaPart}', '${SORTING.omegaInstance}', 'LECTURE', 0, 4);`
 	];
 }

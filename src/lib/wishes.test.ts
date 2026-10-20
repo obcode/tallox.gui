@@ -34,8 +34,13 @@ import {
 	wishTint,
 	wishesAreOpen,
 	desiredHoursLabel,
-	parseDesiredHours
+	parseDesiredHours,
+	OWN_WISH_SORT,
+	ownPriorityRank,
+	trackSortKey,
+	wishSortValue
 } from './wishes';
+import { sortRows } from './sorting';
 
 function instance(
 	id: string,
@@ -660,5 +665,57 @@ describe('the desired teaching hours', () => {
 	it('writes a figure the way the faculty does', () => {
 		expect(desiredHoursLabel(12.5)).toBe('12,5');
 		expect(desiredHoursLabel(18)).toBe('18');
+	});
+});
+
+describe('sorting the wish table', () => {
+	const rows = wishRows(
+		[
+			instance('i1', 'm1', 'Datenbanken', 'A'),
+			instance('i2', 'm2', 'Analysis', 'A'),
+			instance('i3', 'm3', 'Betriebssysteme', 'A'),
+			instance('i4', 'm3', 'Betriebssysteme', 'B')
+		],
+		new Set()
+	);
+
+	it('ranks the own priority strongest first, and nothing as nothing', () => {
+		expect(ownPriorityRank('FIRST_CHOICE')).toBe(0);
+		expect(ownPriorityRank('IF_NEEDED')).toBe(2);
+		expect(ownPriorityRank(undefined)).toBeUndefined();
+	});
+
+	it('sorts by module name and by study group', () => {
+		const byName = sortRows(rows, { key: 'module', dir: 'asc' }, wishSortValue(new Map()));
+		expect(byName.map((r) => r.module.name)).toEqual([
+			'Analysis',
+			'Betriebssysteme',
+			'Datenbanken'
+		]);
+		const byGroup = wishSortValue(new Map())('group');
+		expect(byGroup(rows[0])).toBe(studyGroupLabel(rows[0]));
+		expect(wishSortValue(new Map())('hours')(rows[0])).toBe(rows[0].teachingHours);
+	});
+
+	it('sorts a track column by the own priority in that cohort, rows without one last', () => {
+		const mine = myWishByInstance([
+			{ ...wish('w1', 'i1', 'eins@example.org', 'Eins'), priority: 'IF_NEEDED' },
+			{ ...wish('w2', 'i4', 'eins@example.org', 'Eins'), priority: 'FIRST_CHOICE' }
+		]);
+		const inB = sortRows(rows, { key: trackSortKey('B'), dir: 'asc' }, wishSortValue(mine));
+		expect(inB[0].module.name).toBe('Betriebssysteme');
+		const inA = sortRows(rows, { key: trackSortKey('A'), dir: 'asc' }, wishSortValue(mine));
+		expect(inA[0].module.name).toBe('Datenbanken');
+		// No own entry in Zug A for the other two: they keep the page order, after the entry.
+		expect(inA.slice(1).map((r) => r.module.name)).toEqual(
+			rows.filter((r) => r.module.name !== 'Datenbanken').map((r) => r.module.name)
+		);
+	});
+
+	it('sorts the own list by label, priority and note', () => {
+		const w = { ...wish('w1', 'i1', 'eins@example.org', 'Eins'), note: 'nur VL' };
+		expect(OWN_WISH_SORT.label(w)).toBe(wishRowLabel(w.instance));
+		expect(OWN_WISH_SORT.priority(w)).toBe(1);
+		expect(OWN_WISH_SORT.note(w)).toBe('nur VL');
 	});
 });
