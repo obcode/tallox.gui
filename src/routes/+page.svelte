@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import DueNow from '$lib/components/DueNow.svelte';
+	import WhoLeadsWhat from '$lib/components/WhoLeadsWhat.svelte';
 	import { NAV_ITEMS, visibleNavItems } from '$lib/navigation';
 	import type { PageData } from './$types';
 
@@ -28,6 +29,13 @@
 	</div>
 
 	<DueNow planning={data.planning} {roles} />
+
+	{#if data.overview}
+		<WhoLeadsWhat
+			programmes={data.overview.programmes}
+			subjectGroups={data.overview.subjectGroups}
+		/>
+	{/if}
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="mb-2 flex items-center gap-2 font-medium">
