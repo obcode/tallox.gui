@@ -90,3 +90,15 @@ erzwungen** — keine Phase schaltet nach Kalender. Der Unit-Test verlangt `when
 Semesterschritte. Dazu zwei Sätze, die aus derselben Rückmeldung kommen: der Bedarf bleibt in
 Wunsch- und Zuteilungsphase änderbar (Schreibmatrix `DEMAND` in `WISHES`/`ASSIGNMENT`), und nur
 das nächste Semester planen, weil das übernächste selten trägt.
+
+## „Wer leitet was“ (2026-10-20)
+
+Unter „Jetzt dran“ stehen jetzt alle Studiengänge und Fachgruppen mit ihren Leitungen. Bei den
+Fachgruppen lassen sich die Module per `<details>` aufklappen. Die Startseite hat dafür erstmals
+ein eigenes `+page.server.ts` mit einer Anfrage, `StartOverview`. Schlägt sie fehl, fällt der
+Abschnitt weg und die Startseite bleibt stehen. Ohne Konto antwortet ohnehin das Root-Layout.
+
+`Programme.leads` ist dafür im Backend neu und für jedes Konto lesbar, siehe `go/programme-leads.md`.
+Die Abschnittsüberschriften „Studiengänge“ und „Fachgruppen“ sind `h3` und keine Links, sie
+kollidieren also nicht mit den Menütests. Der Link zur eigenen Auswahl heißt „Meine
+Fachgruppen“. E2E: `smoke.spec.ts` › „shows who leads which programme and subject group“.

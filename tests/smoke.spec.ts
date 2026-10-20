@@ -1,4 +1,5 @@
 import { PERSONAS, test, expect, gotoRendered } from './fixtures';
+import { CATALOGUE, COMPETENCES } from './seed';
 
 /**
  * The smoke test. Runs against a real stack: SvelteKit SSR → GraphQL backend → PostgreSQL.
@@ -156,5 +157,32 @@ test.describe('the start page as a starting point', () => {
 
 		await main.getByRole('link', { name: /Gesamten Ablauf ansehen/ }).click();
 		await expect(page).toHaveURL(/\/ablauf$/);
+	});
+
+	// Who leads what is for everybody — Eins holds no planning role and sees both lists, with the
+	// leads the seed gave the programme and the group.
+	test('shows who leads which programme and subject group', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/');
+		const main = page.getByRole('main');
+
+		await expect(main.getByRole('heading', { name: 'Wer leitet was' })).toBeVisible();
+
+		const programmes = main.getByRole('list', { name: 'Studiengänge und ihre Leitung' });
+		const programme = programmes
+			.getByRole('listitem')
+			.filter({ has: page.getByText(CATALOGUE.programme, { exact: true }) });
+		await expect(programme).toContainText(PERSONAS.vier.name);
+
+		const groups = main.getByRole('list', { name: 'Fachgruppen und ihre Leitung' });
+		const group = groups.locator(':scope > li').filter({ hasText: COMPETENCES.subjectGroupCode });
+		await expect(group).toContainText(`Leitung: ${PERSONAS.drei.name}`);
+
+		const module = group.getByRole('link', { name: COMPETENCES.compulsoryName });
+		await expect(module).toBeHidden();
+		await group.getByText('2 Module').click();
+		await expect(module).toBeVisible();
+
+		await checkA11y(page);
 	});
 });
