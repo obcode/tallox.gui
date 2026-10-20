@@ -105,8 +105,8 @@ test.describe('creating people and setting roles', () => {
 		// Roles are a step of their own, LECTURER included: who may do what should be a list
 		// somebody wrote, not a default nobody chose.
 		await row.getByRole('button', { name: 'Bearbeiten' }).click();
+		// The tick saves itself.
 		await page.getByRole('checkbox', { name: /Dozierende/ }).check();
-		await page.getByRole('button', { name: 'Rollen speichern' }).click();
 
 		await expect(page.getByRole('row').filter({ hasText: mail })).toContainText('Dozierende');
 	});

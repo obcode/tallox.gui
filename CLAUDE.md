@@ -157,6 +157,15 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   placement, because every other test finds the buttons by name wherever they sit.
 - **Prettier:** tabs, single quotes, no trailing commas, printWidth 100.
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
+- **A form that shows a state saves itself; nothing is lost by navigating away** (asked for on
+  2026-10-20, after a tick on a page with a "Speichern" button was gone on the next page). Every
+  POST form uses one of the actions in `$lib/saveOnLeave` **instead of** `use:enhance`:
+  `autosave` (ticks, choices, fields saved on change/leaving; the button moves into
+  `<noscript>`), `askBeforeLeave` (creating something — token, account, split — keeps its button,
+  and leaving with input asks save/discard/stay), or `trackSaves` (pages with their own saving
+  logic). One-click action buttons keep plain `use:enhance`. `LeaveGuard` in the root layout
+  holds every navigation until self-saving forms have arrived. A form with plain `use:enhance`
+  and fields is a bug: the register cannot see it.
 - **A filter of dropdowns switches on change**, not on an "Anzeigen" button (asked for on
   2026-10-18): `onchange={(e) => e.currentTarget.form?.requestSubmit()}` on each `<select>`, and
   the button inside `<noscript>`. Where a text or search field sits in the same form, the button

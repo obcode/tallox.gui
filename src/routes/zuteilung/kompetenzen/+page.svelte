@@ -11,6 +11,7 @@
 		sortModules
 	} from '$lib/competences';
 	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '$lib/saveOnLeave';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ActionData, PageData } from './$types';
 
@@ -238,7 +239,7 @@
 				<form
 					method="POST"
 					action="?/setTeacher"
-					use:enhance
+					use:askBeforeLeave={{ label: 'Kompetenz für eine Person ohne Konto' }}
 					class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"
 				>
 					<label class="flex flex-col gap-1 text-sm">

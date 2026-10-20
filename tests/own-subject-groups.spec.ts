@@ -41,24 +41,33 @@ test.describe('my subject groups', () => {
 		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
 	});
 
-	test('a lecturer joins one and it sticks, also after saving twice', async ({ asPersona }) => {
+	test('a tick is saved by itself, also when leaving the page at once', async ({ asPersona }) => {
+		// Reported on 2026-10-20: a group ticked here, then straight on to the competences page —
+		// and it was not ticked there. The page had a "Speichern" button, and nothing said the
+		// tick was only in the browser. Now there is no button, and the test walks exactly that
+		// way: tick, and leave without waiting for anything.
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, '/konto/fachgruppen');
 
 		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 
 		const box = page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) });
 		await expect(box).not.toBeChecked();
 
 		await box.check();
-		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Gespeichert.')).toBeVisible();
-		await expect(box).toBeChecked();
+		await page
+			.getByRole('navigation', { name: 'Meine Lehre' })
+			.getByRole('link', { name: 'Kompetenzen', exact: true })
+			.click();
 
-		// The second save is where a form reset would show the state from before the first one.
-		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(box).toBeChecked();
+		await expect(page.getByRole('heading', { name: 'Meine Kompetenzen' })).toBeVisible();
+		await expect(
+			page.getByRole('heading', { name: new RegExp(WISHES.subjectGroupCode) })
+		).toBeVisible();
 
+		// And the tick is still a tick on the way back — a form reset after the save would show
+		// the state from before it.
 		await gotoRendered(page, '/konto/fachgruppen');
 		await expect(
 			page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) })
@@ -91,8 +100,7 @@ test.describe('my subject groups', () => {
 
 		const box = page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) });
 		await box.uncheck();
-		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Gespeichert.')).toBeVisible();
+		await expect(page.getByText('gespeichert', { exact: true })).toBeVisible();
 		await expect(box).not.toBeChecked();
 
 		// And the wish screen stops offering it first — the preselection follows the membership.

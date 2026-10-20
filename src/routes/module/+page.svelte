@@ -16,9 +16,9 @@
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
-	import { enhance } from '$app/forms';
 	import HandbookLink from '$lib/components/HandbookLink.svelte';
 	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '$lib/saveOnLeave';
 	import { hasAnyRole } from '$lib/roles';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ActionData, PageData } from './$types';
@@ -279,7 +279,16 @@
 		</div>
 	{/if}
 
-	<form method="POST" action="?/assignSubjectGroup" use:enhance>
+	<!--
+		Ticked modules are a selection, not a state — sending them is the decision the button
+		stands for, and the target is whatever the drop-down happens to show. So leaving with some
+		ticked asks, and the dialog does not offer to send them.
+	-->
+	<form
+		method="POST"
+		action="?/assignSubjectGroup"
+		use:askBeforeLeave={{ label: 'Ausgewählte Module, noch nicht zugeordnet', canSave: false }}
+	>
 		{#if mayAssign}
 			<!--
 				Über der Tabelle und nicht darunter. Die Kästchen stehen bei 500 Zeilen ganz oben, und

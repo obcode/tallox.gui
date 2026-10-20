@@ -309,12 +309,14 @@ test.describe('the wish phase', () => {
 		const card = page.getByRole('region', { name: 'Wie viel möchtest Du halten?' });
 		const hours = card.getByRole('textbox', { name: 'SWS' });
 
+		// Saved on leaving the field — there is no button.
+		await expect(card.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 		await hours.fill('7,3');
-		await card.getByRole('button', { name: 'Speichern' }).click();
+		await hours.press('Tab');
 		await expect(card.getByRole('alert')).toContainText('zwischen 0 und 40');
 
 		await hours.fill('12,5');
-		await card.getByRole('button', { name: 'Speichern' }).click();
+		await hours.press('Tab');
 		await expect(card.getByRole('status')).toContainText('Gespeichert');
 		await gotoRendered(page, URL);
 		await expect(hours).toHaveValue('12,5');

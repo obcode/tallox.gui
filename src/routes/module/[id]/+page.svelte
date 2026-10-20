@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
 	import { resolve } from '$app/paths';
 	import {
 		ALL_PART_KINDS,
@@ -218,7 +219,7 @@
 			<form
 				method="POST"
 				action="?/subjectGroup"
-				use:enhance
+				use:autosave={{ label: 'Fachgruppe' }}
 				class="mt-3 flex flex-wrap items-end gap-2"
 			>
 				<label class="form-control">
@@ -234,7 +235,8 @@
 						{/each}
 					</select>
 				</label>
-				<button type="submit" class="btn btn-sm">Speichern</button>
+				<!-- Saved on choosing. Without JavaScript this is the way to send. -->
+				<noscript><button type="submit" class="btn btn-sm">Speichern</button></noscript>
 			</form>
 
 			{#if asLead}
@@ -427,11 +429,15 @@
 			<form
 				method="POST"
 				action="?/components"
-				use:enhance={() =>
-					async ({ update }) => {
-						await update({ reset: false });
-						rows = initialRows();
-					}}
+				use:askBeforeLeave={{
+					label: 'SWS-Aufteilung',
+					submit:
+						() =>
+						async ({ update }) => {
+							await update({ reset: false });
+							rows = initialRows();
+						}
+				}}
 				class="flex flex-col gap-3"
 			>
 				{#each rows as row, i (i)}

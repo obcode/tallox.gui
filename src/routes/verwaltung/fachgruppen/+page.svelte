@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import PeoplePicker from '$lib/components/PeoplePicker.svelte';
+	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
 	import {
 		isPlausibleCode,
 		leadNames,
@@ -86,7 +87,7 @@
 			<form
 				method="POST"
 				action="?/create"
-				use:enhance
+				use:askBeforeLeave={{ label: 'Neue Fachgruppe' }}
 				class="grid grid-cols-1 gap-2 sm:grid-cols-[10rem_1fr_auto]"
 			>
 				<label class="flex flex-col gap-1">
@@ -165,10 +166,11 @@
 							</p>
 
 							{#if mayAdminister}
+								<!-- Saved when the field is left or Enter is pressed, like every other field here. -->
 								<form
 									method="POST"
 									action="?/rename"
-									use:enhance
+									use:autosave={{ label: `Name von ${group.code}` }}
 									class="flex flex-wrap items-end gap-2"
 								>
 									<input type="hidden" name="id" value={group.id} />
@@ -181,7 +183,7 @@
 											class="input input-bordered input-sm w-full"
 										/>
 									</label>
-									<button type="submit" class="btn btn-sm">Umbenennen</button>
+									<noscript><button type="submit" class="btn btn-sm">Umbenennen</button></noscript>
 								</form>
 
 								{#if possibleLeads.length === 0}
@@ -195,33 +197,27 @@
 									</div>
 								{:else}
 									<!--
-										Der Schlüssel ist die gespeicherte Menge: die Komponente hält den
-										Ankreuzstand lokal und soll genau dann neu aufsetzen, wenn sich das
-										Gespeicherte geändert hat — nach dem Speichern also, und nicht währenddessen.
+										Kein {#key} auf der gespeicherten Menge mehr: der Picker speichert jedes
+										Häkchen selbst und liest die Menge danach selbst neu ein — ein Neuaufbau
+										mitten im Klicken löschte das nächste Häkchen.
 									-->
-									{#key group.leads.map((l) => l.id).join(',')}
-										<PeoplePicker
-											groupId={group.id}
-											action="?/setLeads"
-											legend="Leitung"
-											people={possibleLeads}
-											selected={group.leads.map((l) => l.id)}
-											submitLabel="Leitung speichern"
-										/>
-									{/key}
-								{/if}
-
-								{#key group.members.map((m) => m.id).join(',')}
 									<PeoplePicker
 										groupId={group.id}
-										action="?/setMembers"
-										legend="Mitglieder"
-										people={sortedPeople}
-										selected={group.members.map((m) => m.id)}
-										submitLabel="Mitglieder speichern"
-										scrollable
+										action="?/setLeads"
+										legend="Leitung"
+										people={possibleLeads}
+										selected={group.leads.map((l) => l.id)}
 									/>
-								{/key}
+								{/if}
+
+								<PeoplePicker
+									groupId={group.id}
+									action="?/setMembers"
+									legend="Mitglieder"
+									people={sortedPeople}
+									selected={group.members.map((m) => m.id)}
+									scrollable
+								/>
 								<form method="POST" action="?/setActive" use:enhance>
 									<input type="hidden" name="id" value={group.id} />
 									<input type="hidden" name="active" value={group.active ? 'false' : 'true'} />

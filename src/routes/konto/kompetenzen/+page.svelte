@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import CompetenceRow from '$lib/components/CompetenceRow.svelte';
+	import { trackSaves } from '$lib/saveOnLeave';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import {
@@ -124,17 +125,21 @@
 			onchange={saveNow}
 			oninput={() => (dirty = true)}
 			onfocusout={saveIfDirty}
-			use:enhance={() => {
-				saving = true;
-				return async ({ update }) => {
-					// reset: false — the fields show a state, not an input to be cleared.
-					await update({ reset: false });
-					saving = false;
-					if (queued) {
-						queued = false;
-						saveNow();
-					}
-				};
+			use:trackSaves={{
+				waiting: () => dirty || queued,
+				flush: saveNow,
+				submit: () => {
+					saving = true;
+					return async ({ update }) => {
+						// reset: false — the fields show a state, not an input to be cleared.
+						await update({ reset: false });
+						saving = false;
+						if (queued) {
+							queued = false;
+							saveNow();
+						}
+					};
+				}
 			}}
 			class="flex flex-col gap-4"
 		>

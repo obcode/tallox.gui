@@ -9,6 +9,7 @@
 	import { formatHours } from '$lib/catalogue';
 	import { studyYearLabel } from '$lib/controlling';
 	import { hasAnyRole } from '$lib/roles';
+	import { autosave } from '$lib/saveOnLeave';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
 	import type { ActionData, PageData } from './$types';
@@ -156,9 +157,7 @@
 											<form
 												method="POST"
 												action="?/setQuota"
-												use:enhance={() =>
-													({ update }) =>
-														update({ reset: false })}
+												use:autosave={{ label: `Kontingent ${programme.code}` }}
 												class="flex items-center gap-1"
 											>
 												<input type="hidden" name="programme" value={programme.code} />
@@ -172,7 +171,10 @@
 													placeholder="–"
 													class="input input-xs w-20 text-right tabular-nums"
 												/>
-												<button type="submit" class="btn btn-xs">Speichern</button>
+												<!-- Saved on leaving the field or Enter; the button is for no JavaScript. -->
+												<noscript
+													><button type="submit" class="btn btn-xs">Speichern</button></noscript
+												>
 											</form>
 										{:else}
 											<span class="tabular-nums">

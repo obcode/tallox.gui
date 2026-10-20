@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
 		candidateValue,
@@ -28,6 +27,7 @@
 		isArranged,
 		divisionDefault
 	} from '$lib/assignment';
+	import { trackSaves } from '$lib/saveOnLeave';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
@@ -486,21 +486,25 @@
 				onfocusout={(event) => {
 					if (!inRowMenu(event.target)) saveIfDirty();
 				}}
-				use:enhance={({ action }) => {
-					saving = true;
-					const fromMenu = !action.search.startsWith('?/save');
-					return async ({ update }) => {
-						// reset:false — a reset puts every field back to its rendered default, which
-						// is the state before the save rather than after it.
-						await update({ reset: false });
-						if (fromMenu) closeRowMenus();
-						saving = false;
-						savedOnce = true;
-						if (queued) {
-							queued = false;
-							saveNow();
-						}
-					};
+				use:trackSaves={{
+					waiting: () => open && (dirty || queued),
+					flush: saveNow,
+					submit: ({ action }) => {
+						saving = true;
+						const fromMenu = !action.search.startsWith('?/save');
+						return async ({ update }) => {
+							// reset:false — a reset puts every field back to its rendered default, which
+							// is the state before the save rather than after it.
+							await update({ reset: false });
+							if (fromMenu) closeRowMenus();
+							saving = false;
+							savedOnce = true;
+							if (queued) {
+								queued = false;
+								saveNow();
+							}
+						};
+					}
 				}}
 			>
 				<!-- The action's query string replaces the page's, so the semester has to travel in

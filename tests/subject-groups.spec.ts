@@ -77,12 +77,11 @@ test.describe('subject groups', () => {
 		// Membership is open to everybody, because it is not a grant.
 		await expect(members.getByRole('checkbox', { name: /Zwei/ })).toBeVisible();
 
+		// Each tick saves itself — there is no button any more.
 		await leads.getByRole('checkbox', { name: /Drei/ }).check();
-		await leads.getByRole('button', { name: 'Leitung speichern' }).click();
 		await expect(card.getByText(`Leitung: ${PERSONAS.drei.name}`)).toBeVisible();
 
 		await members.getByRole('checkbox', { name: /Zwei/ }).check();
-		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
 		await expect(card.getByText('Mitglieder: 1')).toBeVisible();
 	});
 
@@ -103,7 +102,6 @@ test.describe('subject groups', () => {
 		// Zwei is already a member from the test above; add Eins beside them.
 		await expect(box(/Zwei/)).toBeChecked();
 		await box(/Eins/).check();
-		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
 		await expect(card.getByText('Mitglieder: 2')).toBeVisible();
 
 		// Everybody in the group is ticked — this is the assertion the report is about.
@@ -112,7 +110,6 @@ test.describe('subject groups', () => {
 
 		// And again, because the second save is where the reset shows the first render.
 		await box(/Vier/).check();
-		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
 		await expect(card.getByText('Mitglieder: 3')).toBeVisible();
 
 		for (const who of [/Eins/, /Zwei/, /Vier/]) {
@@ -121,7 +118,6 @@ test.describe('subject groups', () => {
 
 		// Taking somebody out is the same form and the same rule.
 		await box(/Zwei/).uncheck();
-		await members.getByRole('button', { name: 'Mitglieder speichern' }).click();
 		await expect(card.getByText('Mitglieder: 2')).toBeVisible();
 		await expect(box(/Zwei/)).not.toBeChecked();
 		await expect(box(/Eins/)).toBeChecked();
@@ -145,7 +141,7 @@ test.describe('subject groups', () => {
 		// organisation looks like, and somebody looking for the person to ask needs it.
 		await expect(page.locator('article', { hasText: CODE })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Anlegen' })).toHaveCount(0);
-		await expect(page.getByRole('button', { name: 'Leitung speichern' })).toHaveCount(0);
+		await expect(page.getByRole('checkbox', { name: /Drei/ })).toHaveCount(0);
 	});
 
 	test('the overview is reachable for everybody, unlike the other administration screens', async ({
@@ -230,28 +226,25 @@ test.describe('subject groups', () => {
 
 		await expect(page.getByRole('heading', { name: /Fachgruppe/ })).toBeVisible();
 
-		// Scoped to its own form: the split editor further down the page has a save button too,
-		// and a locator that found either would pass while pressing the wrong one.
+		// Scoped to its own form: the split editor further down the page has a select too. The
+		// choice saves itself, so there is no button to press.
 		const card = page.locator('form[action="?/subjectGroup"]');
 		const picker = () => card.getByRole('combobox', { name: 'Fachgruppe' });
-		const store = () => card.getByRole('button', { name: 'Speichern' });
+		await expect(card.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 
 		// It arrives showing where the module actually is, rather than at the top of the list.
 		await expect(picker()).toHaveValue(/.+/);
 
 		await picker().selectOption({ label: `${SPLIT} — E2E Mathematik (ML)` });
-		await store().click();
 		await expect(page.getByText(`Jetzt in ${SPLIT}`)).toBeVisible();
 
 		// Taking it out is the same form's other answer, not a missing one.
 		await picker().selectOption('');
-		await store().click();
 		await expect(page.getByText('Aus der Fachgruppe herausgenommen')).toBeVisible();
 		await expect(page.getByText('noch keiner Fachgruppe zugeordnet')).toBeVisible();
 
 		// Back where the test after this one expects it.
 		await picker().selectOption({ label: `${CODE} — E2E Mathematik` });
-		await store().click();
 		await expect(page.getByText(`Jetzt in ${CODE}`)).toBeVisible();
 	});
 

@@ -362,10 +362,12 @@ test.describe('the SWS controlling', () => {
 		const dean = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(dean, path);
 		const row = dean.getByRole('row', { name: new RegExp(`^${CONTROLLING.home.code} `) });
+		// Saved on leaving the field — no button.
 		await row.getByRole('textbox', { name: field }).fill('12,5');
-		await row.getByRole('button', { name: 'Speichern' }).click();
+		await row.getByRole('textbox', { name: field }).press('Tab');
 		await expect(row.getByRole('textbox', { name: field })).toHaveValue('12,5');
 
+		// Reloaded straight away: the reload waits for the save rather than overtaking it.
 		await gotoRendered(dean, path);
 		await expect(
 			dean

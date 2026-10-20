@@ -11,6 +11,7 @@
 		describeScopes
 	} from '$lib/scopes';
 	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '$lib/saveOnLeave';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { expiresIn, formatMoment, STATUS_BADGE, STATUS_LABEL, tokenStatus } from '$lib/tokens';
 	import type { ActionData, PageData } from './$types';
@@ -111,7 +112,12 @@
 			id="create-token"
 			method="POST"
 			action="?/create"
-			use:enhance
+			use:askBeforeLeave={{
+				label: 'Neues Token',
+				// Not from the leave dialog: the secret is shown once, on this page, right after it
+				// is created. Creating it on the way out mints a token nobody ever sees.
+				canSave: false
+			}}
 			class="flex flex-col gap-3 sm:flex-row"
 		>
 			<label class="flex flex-1 flex-col gap-1">

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
 	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { autosave, trackSaves } from '$lib/saveOnLeave';
 	import WishCell from '$lib/components/WishCell.svelte';
 	import { applyOrder, nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { formatHours } from '$lib/catalogue';
@@ -452,7 +452,7 @@
 			<form
 				method="POST"
 				action="?/desiredHours"
-				use:enhance
+				use:autosave={{ label: 'Wie viel möchtest Du halten?' }}
 				class="mt-3 flex flex-wrap items-end gap-2"
 			>
 				<input type="hidden" name="semester" value={data.semester.code} />
@@ -476,7 +476,10 @@
 						disabled={!open}
 					/>
 				</label>
-				<button type="submit" class="btn btn-sm" disabled={!open}>Speichern</button>
+				<!-- Saved on leaving a field or Enter. Without JavaScript this is the way to send. -->
+				<noscript>
+					<button type="submit" class="btn btn-sm" disabled={!open}>Speichern</button>
+				</noscript>
 			</form>
 			{#if form && 'desiredHoursMessage' in form}
 				<p class="text-base-content/90 mt-2 text-sm" role="alert">
@@ -625,17 +628,22 @@
 			onchange={saveNow}
 			oninput={() => (dirty = true)}
 			onfocusout={saveIfDirty}
-			use:enhance={() => {
-				saving = true;
-				return async ({ update }) => {
-					await update({ reset: false });
-					saving = false;
-					savedOnce = true;
-					if (queued) {
-						queued = false;
-						saveNow();
-					}
-				};
+			use:trackSaves={{
+				// `open` because saveNow sends nothing in a closed round, and waiting on it would hang.
+				waiting: () => open && (dirty || queued),
+				flush: saveNow,
+				submit: () => {
+					saving = true;
+					return async ({ update }) => {
+						await update({ reset: false });
+						saving = false;
+						savedOnce = true;
+						if (queued) {
+							queued = false;
+							saveNow();
+						}
+					};
+				}
 			}}
 			class="flex flex-col gap-4"
 		>

@@ -59,4 +59,11 @@ describe('the short answers in the help panel', () => {
 		const entry = HELP.find((e) => e.question === 'Wer sieht meine Wünsche?');
 		expect(entry?.answer).toMatch(/auch keine Anzahl/);
 	});
+
+	it('says that changes save themselves, and when it asks instead', () => {
+		const entry = HELP.find((e) => e.question.includes('Speichern'));
+		expect(entry?.who).toEqual([]);
+		expect(entry?.answer).toMatch(/sobald Du sie setzt/);
+		expect(entry?.answer).toMatch(/gespeichert oder verworfen/);
+	});
 });
