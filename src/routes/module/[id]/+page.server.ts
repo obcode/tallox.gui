@@ -130,6 +130,59 @@ const SetComponentsDocument = graphql(`
 	}
 `);
 
+const ApplySplitDocument = graphql(`
+	mutation ApplyModuleSplitToInstances($moduleId: ID!, $dryRun: Boolean!) {
+		applyModuleSplitToInstances(moduleId: $moduleId, dryRun: $dryRun) {
+			dryRun
+			unchanged
+			changed {
+				instance {
+					id
+					semester
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+				teachingHoursBefore
+				teachingHoursAfter
+			}
+			refused {
+				instance {
+					id
+					semester
+					track
+					programmeSemester
+					programme {
+						code
+					}
+				}
+				kind
+				code
+				message
+			}
+		}
+	}
+`);
+
+/**
+ * What carrying the split over would do, or `null` where there is nothing to ask about.
+ *
+ * Asked right after a split is saved, so the person sees in the same moment that the existing
+ * instances did not change with it — the gap the faculty reported was that nobody could tell.
+ * A refusal here is no reason to spoil a save that worked: the split is stored, and the preview
+ * button below the form asks again and shows the refusal there.
+ */
+async function previewSplit(moduleId: string) {
+	try {
+		const data = await backendRequest(ApplySplitDocument, { moduleId, dryRun: true });
+		return data.applyModuleSplitToInstances;
+	} catch {
+		return null;
+	}
+}
+
 export const load: PageServerLoad = async ({ params }) => {
 	try {
 		const data = await backendRequest(ModuleDocument, { id: params.id });
@@ -199,7 +252,26 @@ export const actions: Actions = {
 			// generic refusal that would send them to ask for a role they already hold.
 			return fail(400, toRefusal(err));
 		}
-		return { saved: true };
+		// An empty split cleared the module; there is nothing to carry over.
+		const splitPreview = components.length > 0 ? await previewSplit(params.id) : null;
+		return { saved: true, splitPreview };
+	},
+
+	/**
+	 * Carry the split over to the existing instances — `dryRun=1` for the preview, `0` to do it.
+	 *
+	 * Two submits of one form rather than a client-side confirmation: the preview is the same
+	 * transaction rolled back in the backend, so what was shown is what the second click does.
+	 */
+	applySplit: async ({ request, params }) => {
+		const form = await request.formData();
+		const dryRun = form.get('dryRun') !== '0';
+		try {
+			const data = await backendRequest(ApplySplitDocument, { moduleId: params.id, dryRun });
+			return { splitApplication: data.applyModuleSplitToInstances };
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
 	},
 
 	/**
