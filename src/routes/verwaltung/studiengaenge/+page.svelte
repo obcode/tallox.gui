@@ -5,9 +5,11 @@
 		PROGRAMME_STATUS_LABELS,
 		programmeStatusBadge
 	} from '$lib/catalogue';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { formatHours } from '$lib/catalogue';
 	import { studyYearLabel } from '$lib/controlling';
 	import { hasAnyRole } from '$lib/roles';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
 	import type { ActionData, PageData } from './$types';
 
@@ -23,10 +25,27 @@
 	/** The order the list is read in: what is planned first, then why the rest is not. */
 	const ORDER: ProgrammeStatus[] = ['PLANNED', 'DISCONTINUED', 'NOT_OURS'];
 
+	// Sorted inside each status group, never across them: the groups are the answer to "is it
+	// planned", and that stays the first thing the page says.
+	type ProgrammeSortKey = 'code' | 'title' | 'spo';
+	let programmeSort = $state<SortState<ProgrammeSortKey>>(null);
+	const onProgrammeSort = (key: ProgrammeSortKey) => (programmeSort = nextSort(programmeSort, key));
+	type Programme = PageData['programmes'][number];
+	const programmeKeys = {
+		code: (p: Programme) => p.code,
+		title: (p: Programme) => p.title,
+		spo: (p: Programme) =>
+			p.spos.length === 0 ? undefined : Math.max(...p.spos.map((s) => s.version))
+	};
+
 	const groups = $derived(
 		ORDER.map((status) => ({
 			status,
-			rows: data.programmes.filter((p) => p.planningStatus === status)
+			rows: sortRows(
+				data.programmes.filter((p) => p.planningStatus === status),
+				programmeSort,
+				programmeKeys
+			)
 		})).filter((g) => g.rows.length > 0)
 	);
 </script>
@@ -77,9 +96,9 @@
 				<table class="table table-sm w-full min-w-[640px]">
 					<thead>
 						<tr>
-							<th>Kürzel</th>
-							<th>Name</th>
-							<th>SPO</th>
+							<SortHeader label="Kürzel" key="code" sort={programmeSort} onsort={onProgrammeSort} />
+							<SortHeader label="Name" key="title" sort={programmeSort} onsort={onProgrammeSort} />
+							<SortHeader label="SPO" key="spo" sort={programmeSort} onsort={onProgrammeSort} />
 							<th>Wird geplant?</th>
 							{#if group.status === 'PLANNED' && data.studyYear !== null}
 								<th>

@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { untrack } from 'svelte';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import WishCell from '$lib/components/WishCell.svelte';
+	import { applyOrder, nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { formatHours } from '$lib/catalogue';
 	import { facultiesElsewhere, formatBadges, heldForLabel, hoursLabel } from '$lib/demand';
 	import { semesterName, semesterShortName } from '$lib/semester';
@@ -30,7 +33,12 @@
 		wishRowLabel,
 		wishRows,
 		wishTint,
-		type WishRow
+		OWN_WISH_SORT,
+		trackSortKey,
+		wishSortValue,
+		type OwnWishSortKey,
+		type WishRow,
+		type WishSortKey
 	} from '$lib/wishes';
 	import type { ActionData, PageData } from './$types';
 
@@ -63,9 +71,33 @@
 	// an entry made before the coupling would have nowhere to be withdrawn.
 	const rows = $derived(wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id))));
 	const myGroupCodes = $derived(data.mySubjectGroups.map((g) => g.code));
-	const split = $derived(splitByMySubjects(rows, myGroupCodes));
-
 	const mine = $derived(myWishByInstance(data.myWishes));
+
+	/**
+	 * Sorting by column head, one state for both sections.
+	 *
+	 * The order is recorded on the click rather than recomputed live: sorted by the own priority, a
+	 * row would otherwise move away from under the cursor the moment its entry is saved. It is
+	 * sorted again on the next click and when the semester changes; whatever turns up in between
+	 * goes last.
+	 *
+	 * Sorted by `mine` only, never by other people's entries — see `wishSortValue`.
+	 */
+	let wishSort = $state<SortState<WishSortKey>>(null);
+	const rowKey = (row: WishRow) => `${row.programme.code}\u0000${row.module.id}`;
+	const wishOrder = $derived.by(() => {
+		const sort = wishSort;
+		void data.semester?.code;
+		return untrack(() =>
+			sort === null ? null : sortRows(rows, sort, wishSortValue(mine)).map(rowKey)
+		);
+	});
+	const sortedRows = $derived(wishOrder === null ? rows : applyOrder(rows, rowKey, wishOrder));
+	const split = $derived(splitByMySubjects(sortedRows, myGroupCodes));
+	const onWishSort = (key: WishSortKey) => (wishSort = nextSort(wishSort, key));
+
+	let ownSort = $state<SortState<OwnWishSortKey>>(null);
+	const onOwnSort = (key: OwnWishSortKey) => (ownSort = nextSort(ownSort, key));
 	const others = $derived(othersByInstance(data.wishes, data.me?.mail));
 
 	// Every semester, grouped by it — not only the one the picker is on. Somebody who entered
@@ -149,11 +181,32 @@
 					jeder zweite Titel vierzeilig umbricht, kostet mehr, als die Notiz gewinnt.
 				-->
 				<tr>
-					<th class="w-28">Studiengruppe</th>
-					<th class="w-72">Modul</th>
-					<th class="w-16 text-right" title="Was alle Züge zusammen kosten.">SWS</th>
+					<SortHeader
+						class="w-28"
+						label="Studiengruppe"
+						key="group"
+						sort={wishSort}
+						onsort={onWishSort}
+					/>
+					<SortHeader class="w-72" label="Modul" key="module" sort={wishSort} onsort={onWishSort} />
+					<SortHeader
+						class="w-16 text-right"
+						label="SWS"
+						key="hours"
+						align="right"
+						title="Was alle Züge zusammen kosten."
+						sort={wishSort}
+						onsort={onWishSort}
+					/>
 					{#each tracks as track (track)}
-						<th>{trackHeading(track)}</th>
+						<!-- By the reader's own priority in this track, never by anybody else's. -->
+						<SortHeader
+							label={trackHeading(track)}
+							key={trackSortKey(track)}
+							title="Nach der eigenen Priorität sortieren"
+							sort={wishSort}
+							onsort={onWishSort}
+						/>
 					{/each}
 				</tr>
 			</thead>
@@ -497,9 +550,21 @@
 							<table class="table table-sm w-full min-w-[480px]">
 								<thead>
 									<tr>
-										<th class="w-56">Zug und Modul</th>
-										<th class="w-24">Priorität</th>
-										<th>Notiz</th>
+										<SortHeader
+											class="w-56"
+											label="Zug und Modul"
+											key="label"
+											sort={ownSort}
+											onsort={onOwnSort}
+										/>
+										<SortHeader
+											class="w-24"
+											label="Priorität"
+											key="priority"
+											sort={ownSort}
+											onsort={onOwnSort}
+										/>
+										<SortHeader label="Notiz" key="note" sort={ownSort} onsort={onOwnSort} />
 									</tr>
 								</thead>
 								<tbody>
@@ -512,7 +577,7 @@
 										die Untergrenze" ist gegen `base-100` gemessen, nicht gegen die
 										getönte Fläche.
 									-->
-									{#each group.wishes as wish (wish.id)}
+									{#each sortRows(group.wishes, ownSort, OWN_WISH_SORT) as wish (wish.id)}
 										<tr class={wishTint(wish.priority)}>
 											<td class="font-medium">{wishRowLabel(wish.instance)}</td>
 											<td>{WISH_PRIORITY_LABELS[wish.priority]}</td>

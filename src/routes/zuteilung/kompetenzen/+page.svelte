@@ -10,13 +10,20 @@
 		poolsByModule,
 		sortModules
 	} from '$lib/competences';
+	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const refusal = $derived(form && 'message' in form ? form.message : null);
 	const pools = $derived(poolsByModule(data.competences));
-	const modules = $derived(sortModules(data.group?.modules ?? []));
+	// By module only, never by the pool columns: who can or would like to teach what is
+	// confidential, and an order by how many have said so is the count without the number.
+	let moduleSort = $state<SortState<'module'>>(null);
+	const modules = $derived(
+		sortRows(sortModules(data.group?.modules ?? []), moduleSort, { module: (m) => m.name })
+	);
 	const below = $derived(data.members.filter(belowMinimum));
 	const groups = $derived([...data.groups].sort((a, b) => a.code.localeCompare(b.code, 'de')));
 </script>
@@ -89,7 +96,12 @@
 					<table class="table-sm table">
 						<thead>
 							<tr>
-								<th>Modul</th>
+								<SortHeader
+									label="Modul"
+									key="module"
+									sort={moduleSort}
+									onsort={(key) => (moduleSort = nextSort(moduleSort, key))}
+								/>
 								<th>{COMPETENCE_LEVEL_OTHERS.CAN_TEACH}</th>
 								<th>{COMPETENCE_LEVEL_OTHERS.WOULD_LIKE}</th>
 							</tr>

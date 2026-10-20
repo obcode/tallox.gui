@@ -697,3 +697,57 @@ export function parseDesiredHours(text: string): number | null | 'invalid' {
 export function desiredHoursLabel(hours: number): string {
 	return hours.toLocaleString('de-DE', { maximumFractionDigits: 1 });
 }
+
+/**
+ * How strongly the reader wants a priority, as a sort key: 0 for unbedingt, then 1, then 2.
+ *
+ * Undefined without an entry, so the row goes last in both directions. Ascending therefore puts
+ * the strongest first, which is what a click on the column head should show.
+ *
+ * **Only ever fed with the reader's own wishes.** Sorting by anybody else's would show, by order
+ * alone, where the others have entered something — see [[no-wish-aggregates]].
+ */
+export function ownPriorityRank(priority: WishPriorityValue | undefined): number | undefined {
+	return priority === undefined ? undefined : WISH_PRIORITIES.indexOf(priority);
+}
+
+/** The sortable columns of the wish table: the three fixed ones and one per track. */
+export type WishSortKey = 'group' | 'module' | 'hours' | `track:${string}`;
+
+/** The sort key of a track column. */
+export function trackSortKey(track: string): WishSortKey {
+	return `track:${track}`;
+}
+
+/**
+ * What a column of the wish table sorts by.
+ *
+ * A track column sorts by the reader's **own** priority in that cohort, from `mine` — never from
+ * the other people's entries, which this function deliberately does not take.
+ */
+export function wishSortValue(
+	mine: ReadonlyMap<string, Pick<WishLike, 'priority'>>
+): (key: WishSortKey) => (row: WishRow) => string | number | undefined {
+	return (key) => {
+		if (key === 'group') return studyGroupLabel;
+		if (key === 'module') return (row) => row.module.name;
+		if (key === 'hours') return (row) => row.teachingHours;
+		const track = key.slice('track:'.length);
+		return (row) => {
+			const cohort = cohortIn(row, track);
+			return ownPriorityRank(cohort ? mine.get(cohort.instanceId)?.priority : undefined);
+		};
+	};
+}
+
+/** The sortable columns of the caller's own list. */
+export type OwnWishSortKey = 'label' | 'priority' | 'note';
+
+export const OWN_WISH_SORT: Record<
+	OwnWishSortKey,
+	(wish: WishLike) => string | number | undefined
+> = {
+	label: (wish) => wishRowLabel(wish.instance),
+	priority: (wish) => ownPriorityRank(wish.priority),
+	note: (wish) => wish.note
+};

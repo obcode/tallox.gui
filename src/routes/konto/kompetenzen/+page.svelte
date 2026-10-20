@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import CompetenceRow from '$lib/components/CompetenceRow.svelte';
+	import SortHeader from '$lib/components/SortHeader.svelte';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import {
 		COMPETENCE_LEVEL_HINTS,
 		COMPETENCE_LEVEL_LABELS,
@@ -24,10 +26,16 @@
 
 	const mineByModule = $derived(competenceByModule(data.mine));
 	const statusByGroup = $derived(new Map(data.status.map((s) => [s.subjectGroup.id, s])));
+	// By module name only: the level is edited in place, and a row sorted by it would move away
+	// from under the cursor the moment it saved. One state for every group's table.
+	let moduleSort = $state<SortState<'module'>>(null);
 	const groups = $derived(
 		[...data.groups]
 			.sort((a, b) => a.code.localeCompare(b.code, 'de'))
-			.map((g) => ({ ...g, modules: sortModules(g.modules) }))
+			.map((g) => ({
+				...g,
+				modules: sortRows(sortModules(g.modules), moduleSort, { module: (m) => m.name })
+			}))
 	);
 	const inMyGroups = $derived(new Set(groups.flatMap((g) => g.modules.map((m) => m.id))));
 	const outside = $derived(outsideStatements(data.mine, inMyGroups));
@@ -157,7 +165,12 @@
 							<table class="table-sm table">
 								<thead>
 									<tr>
-										<th>Modul</th>
+										<SortHeader
+											label="Modul"
+											key="module"
+											sort={moduleSort}
+											onsort={(key) => (moduleSort = nextSort(moduleSort, key))}
+										/>
 										<th>Stufe</th>
 										<th>Notiz</th>
 									</tr>

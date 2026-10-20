@@ -17,8 +17,22 @@
 	} from '$lib/catalogue';
 	import { enhance } from '$app/forms';
 	import HandbookLink from '$lib/components/HandbookLink.svelte';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { hasAnyRole } from '$lib/roles';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ActionData, PageData } from './$types';
+
+	type ModuleSortKey = 'name' | 'home' | 'group' | 'responsible' | 'frequency';
+	type CatalogueModule = PageData['modules'][number];
+	let moduleSort = $state<SortState<ModuleSortKey>>(null);
+	const onModuleSort = (key: ModuleSortKey) => (moduleSort = nextSort(moduleSort, key));
+	const moduleKeys = {
+		name: (m: CatalogueModule) => moduleName(m),
+		home: (m: CatalogueModule) => m.homeProgramme.code,
+		group: (m: CatalogueModule) => m.subjectGroup?.code,
+		responsible: (m: CatalogueModule) => m.responsible?.sortName,
+		frequency: (m: CatalogueModule) => FREQUENCY_LABELS[m.frequency]
+	};
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -326,20 +340,25 @@
 							-->
 							<th>Auswahl</th>
 						{/if}
-						<th>Modul</th>
-						<th>Heimat</th>
-						<th>Fachgruppe</th>
+						<SortHeader label="Modul" key="name" sort={moduleSort} onsort={onModuleSort} />
+						<SortHeader label="Heimat" key="home" sort={moduleSort} onsort={onModuleSort} />
+						<SortHeader label="Fachgruppe" key="group" sort={moduleSort} onsort={onModuleSort} />
 						{#if data.filter.programme !== ''}
 							<th>Art</th>
 						{/if}
-						<th>Verantwortlich</th>
-						<th>Turnus</th>
+						<SortHeader
+							label="Verantwortlich"
+							key="responsible"
+							sort={moduleSort}
+							onsort={onModuleSort}
+						/>
+						<SortHeader label="Turnus" key="frequency" sort={moduleSort} onsort={onModuleSort} />
 						<th>Lehrform</th>
 						<th>SWS-Aufteilung</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.modules as module (module.id)}
+					{#each sortRows(data.modules, moduleSort, moduleKeys) as module (module.id)}
 						<tr>
 							{#if mayAssign}
 								{@const filable = mayRefileModule(roles, data.led, module.subjectGroup?.id)}

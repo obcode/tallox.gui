@@ -12,8 +12,16 @@
 		who,
 		withParam
 	} from '$lib/access';
+	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { roleLabel } from '$lib/roles';
+	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { PageData } from './$types';
+
+	// The refusals only. The access log below is loaded page by page, newest first, and sorting
+	// one page of it would look like sorting the log while leaving out everything on the others.
+	type RefusalSortKey = 'who' | 'reason' | 'door' | 'attempts' | 'last';
+	let refusalSort = $state<SortState<RefusalSortKey>>(null);
+	const onRefusalSort = (key: RefusalSortKey) => (refusalSort = nextSort(refusalSort, key));
 
 	let { data }: { data: PageData } = $props();
 
@@ -163,15 +171,15 @@
 				</caption>
 				<thead>
 					<tr>
-						<th>Wer</th>
-						<th>Grund</th>
-						<th>Tür</th>
-						<th>Versuche</th>
-						<th>Zuletzt</th>
+						<SortHeader label="Wer" key="who" sort={refusalSort} onsort={onRefusalSort} />
+						<SortHeader label="Grund" key="reason" sort={refusalSort} onsort={onRefusalSort} />
+						<SortHeader label="Tür" key="door" sort={refusalSort} onsort={onRefusalSort} />
+						<SortHeader label="Versuche" key="attempts" sort={refusalSort} onsort={onRefusalSort} />
+						<SortHeader label="Zuletzt" key="last" sort={refusalSort} onsort={onRefusalSort} />
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.summary.refused as r (r.mail + r.tokenId + r.reason + r.door)}
+					{#each sortRows( data.summary.refused, refusalSort, { who: (r) => who(r.mail, r.tokenId), reason: (r) => r.reason, door: (r) => DOOR_LABELS[r.door], attempts: (r) => r.attempts, last: (r) => r.lastAt } ) as r (r.mail + r.tokenId + r.reason + r.door)}
 						<tr>
 							<td class="font-mono text-xs">{who(r.mail, r.tokenId)}</td>
 							<td class="font-mono text-xs">{r.reason || '—'}</td>
