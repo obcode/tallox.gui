@@ -32,6 +32,7 @@ const CatalogueDocument = graphql(`
 			courseType
 			frequency
 			contactHoursPerWeek
+			semesterSpan
 			credits
 			componentHours
 			homeProgramme {

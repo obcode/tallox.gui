@@ -8,6 +8,7 @@ import {
 	FREQUENCY_LABELS,
 	PART_KIND_LABELS,
 	componentMismatch,
+	contactHoursLabel,
 	componentSummary,
 	basketLabel,
 	dutyBadge,
@@ -119,6 +120,21 @@ describe('componentMismatch', () => {
 	// warning about a rounding error.
 	it('tolerates the last bit of a floating point sum', () => {
 		expect(componentMismatch(0.1 + 0.2 + 3.7, 4)).toBeNull();
+	});
+
+	// "Wirtschaftsinformatik": 8 SWS in the catalogue, taught 2 + 2 in each of two semesters.
+	it('compares a module over two semesters with one semester', () => {
+		expect(componentMismatch(4, 8, 2)).toBeNull();
+		expect(componentMismatch(8, 8, 2)).toBe(
+			'Die Aufteilung ergibt 8 SWS, der Modulkatalog nennt 8, also 4 je Semester.'
+		);
+	});
+});
+
+describe('contactHoursLabel', () => {
+	it('says over how many semesters the hours run, and only where it is more than one', () => {
+		expect(contactHoursLabel(4)).toBe('4 SWS');
+		expect(contactHoursLabel(8, 2)).toBe('8 SWS über 2 Semester');
 	});
 });
 

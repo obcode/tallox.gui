@@ -1008,6 +1008,32 @@ export function splitStatements(): string[] {
 }
 
 /**
+ * A module over two semesters: 8 SWS in the catalogue as SU mit Übung, taught 2 + 2 in each
+ * semester. No split yet, so the page proposes one — and what it proposes depends on the mark.
+ */
+export const TWO_SEMESTERS = {
+	programme: 'E2V',
+	module: '0e2e0000-0000-4000-8000-0000000000c3',
+	moduleName: 'E2E Modul über zwei Semester'
+} as const;
+
+export function twoSemesterStatements(): string[] {
+	const programme = quote(TWO_SEMESTERS.programme);
+	return [
+		`DELETE FROM module_component WHERE module_id = '${TWO_SEMESTERS.module}';`,
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Zwei-Semester-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${TWO_SEMESTERS.module}', p.id, ${quote(TWO_SEMESTERS.moduleName)},
+		        'SU_WITH_EXERCISE', 'EVERY_SEMESTER', 8, 10
+		   FROM programme p WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`UPDATE module SET semester_span = 1 WHERE id = '${TWO_SEMESTERS.module}';`
+	];
+}
+
+/**
  * The sorting fixture: two modules on the wish screen, so a column head has an order to change.
  *
  * Its own semester and programme, for the reason the assignment fixture gives — the wish fixture
