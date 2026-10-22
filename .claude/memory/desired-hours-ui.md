@@ -43,7 +43,7 @@ setzt auch die beiden Marken zurück, denn der CHECK verlangt: nicht veröffentl
 eingefroren. Tests, die mehrere Felder nacheinander verlassen, warten vor einem
 `gotoRendered` auf `networkidle`, sonst kommt die letzte Speicherung nach dem Neuladen an.
 
-Vorbestehend, nicht von hier: Vier Specs (`administration` „last administrator“, `assignment`
-„told nothing about who holds what“, `demand` „keeps a sentence“, `module` „state the split“)
-scheitern am 2026-10-22 auch auf `main`, weil `getByText('Nicht gespeichert')` zusätzlich den
-Text aus dem `LeaveGuard`-Dialog findet.
+**Der geschlossene `LeaveGuard`-Dialog steht immer im DOM**, außerhalb von `<main>`, mit „Noch
+nicht gespeichert“. `getByText` sucht ohne Groß/Klein, als Teilstring und auch in versteckten
+Elementen. Meldungen der Seite sucht man deshalb in `page.locator('main')`. Vier Specs scheiterten
+daran und sind am 2026-10-22 so repariert (GUI `9398ade`).
