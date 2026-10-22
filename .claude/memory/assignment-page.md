@@ -1,6 +1,6 @@
 ---
 name: assignment-page
-description: Die Zuteilungsseite — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, und zwei Fallen
+description: Die Zuteilungsseite — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, Abschluss-Filter und Gruppierung nach Studiengang, und zwei Fallen
 metadata:
   type: project
 ---
@@ -163,7 +163,7 @@ Teilzeilen hat und sonst nichts aufzuteilen wäre.
 
 Die Knöpfe gehören zum Tabellenformular und schicken mit `formaction` an `?/divide`, `?/rejoin`
 und `?/taughtBy`. Ihre Felder heißen nach dem Teil (`divide:<id>`, `taughtBy:<id>`). Die
-Semester- und Fachgruppen-Parameter stehen in der `formaction` (`menuAction`), weil die Seite
+ganze Ansicht steht in der `formaction` (`actionUrl`, gespeist aus `filterFields`), weil die Seite
 ohne JavaScript sonst ohne sie zurückkommt. Änderungen im Popover lösen **kein** Autosave aus
 (`inRowMenu`). Nach einer Menü-Aktion schließt `closeRowMenus` den Popover.
 
@@ -201,5 +201,39 @@ sein, nicht nur die IDs.
 Namen stehen hier in einer Schreibweise, ohne Titel — die Seite zeigt beide Arten von Zugeteilten
 untereinander und war deshalb die Stelle, an der das aufgefallen ist. Siehe `name-register` im
 geteilten Memory.
+
+## Abschluss und Gruppierung nach Studiengang (seit 2026-10-22)
+
+Aus Collab: Unter der Fachgruppe WI stehen Bachelor- und Mastermodule gemischt, besetzt werden sie
+aber getrennt. Der Abschluss ist seitdem ein Feld am Studiengang. Das Dekanat pflegt es unter
+Verwaltung → Studiengänge, Hintergrund in `programme-degree` (`go/`).
+
+- **`?abschluss=bachelor|master`** filtert **im Browser** (`instancesOfDegree`), wie der
+  Fachgruppen-Filter. Gründe:
+  - Die Seite braucht den ungefilterten Reiter ohnehin, um zu sagen, was fehlt.
+  - Die Abfrage bleibt dieselbe.
+  - Das Backend kann es trotzdem: `courseInstances(degree:)` gibt es für Skripte.
+- **Studiengänge ohne eingetragenen Abschluss** fallen aus beiden Filtern heraus. Die Seite
+  **nennt sie** über der Tabelle (`programmesWithoutDegree`) und sagt, wer den Abschluss pflegt.
+  Eine Option „ohne Angabe“ gibt es bewusst nicht: sie machte aus einer vorübergehenden
+  Datenlücke ein dauerhaftes Bedienelement.
+- **`?nach=studiengang`** ist **opt-in** (`programmeSections`). Standard bleiben die
+  Modulblöcke, weil z. B. Mathe ein Modul über mehrere Studiengänge in einem Block besetzt. Mit
+  Gruppierung steht ein Modul mehrerer Studiengänge in jedem Abschnitt, jeweils mit dessen
+  Zügen. PBLVs bleiben je Abschnitt am Ende.
+  - Das Themenfeld hängt an `cohortsOfModule` über den ganzen Reiter, nicht an
+    `block.cohorts`: sonst verschwände es, sobald die Gruppierung die Züge eines Moduls auf
+    Abschnitte verteilt.
+- **`filterFields` und `carriedOver`** wie auf `/bedarf`, siehe [[demand-page]]. Vorher trug jedes
+  GET-Formular seine Begleitfelder von Hand, und die Fachgruppen-Reiter hätten den Abschluss
+  verloren.
+- **`actionUrl(name)`** gilt für `?/save`, `?/window` und die Zahnrad-Aktionen. Damit ist auch
+  die Falle oben („`?/save` ersetzt den Query-String“) für alle Parameter erledigt; das Semester
+  reist trotzdem weiter im Rumpf, weil die Action es von dort liest.
+
+E2E: `tests/degree.spec.ts` mit eigener Fixture `DEGREES` (E2B/E2M/E2O, Fachgruppe `E2EDFG`).
+Nicht an die Zuteilungs-Fixture gehängt: deren Locators suchen das Modul über seinen Namen, und
+ein zweiter Zug hätte jeden davon mehrdeutig gemacht. Vorsicht bei `getByRole('combobox', {
+name: 'Abschluss' })`: ohne `exact` trifft das auch „…E2E Abschlussmodul…“.
 
 Siehe auch [[wish-page]], [[demand-page]], [[no-wish-aggregates]].

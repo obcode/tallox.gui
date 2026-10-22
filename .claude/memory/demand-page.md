@@ -41,7 +41,8 @@ _zusätzlich versteckt_: zwei Bedienelemente gleichen Namens, `searchParams.get`
 
 Daraus: **ein Formular je Leiste**, und `{#snippet carriedOver(own)}`, dem jedes Formular sagt,
 welche Parameter es selbst als sichtbares Bedienelement trägt. Alles andere reist versteckt mit.
-`filterFields` ist die eine Liste, aus der sich das speist.
+`filterFields` ist die eine Liste, aus der sich das speist. `/zuteilung` macht es seit 2026-10-22 genauso, dort zusätzlich
+`actionUrl` für die POST-Aktionen ([[assignment-page]]).
 
 **Nicht** „verstecktes Feld hinter das sichtbare stellen und die DOM-Reihenfolge entscheiden
 lassen". Das funktioniert und bricht beim nächsten Umbau lautlos — es ist genau der Weg, auf dem
