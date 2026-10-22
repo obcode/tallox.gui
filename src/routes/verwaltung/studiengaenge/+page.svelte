@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import {
+		ALL_DEGREES,
+		DEGREE_LABELS,
 		PROGRAMME_STATUS_HINTS,
 		PROGRAMME_STATUS_LABELS,
+		degreeParam,
 		programmeStatusBadge
 	} from '$lib/catalogue';
 	import SortHeader from '$lib/components/SortHeader.svelte';
@@ -28,7 +31,7 @@
 
 	// Sorted inside each status group, never across them: the groups are the answer to "is it
 	// planned", and that stays the first thing the page says.
-	type ProgrammeSortKey = 'code' | 'title' | 'spo';
+	type ProgrammeSortKey = 'code' | 'title' | 'spo' | 'degree';
 	let programmeSort = $state<SortState<ProgrammeSortKey>>(null);
 	const onProgrammeSort = (key: ProgrammeSortKey) => (programmeSort = nextSort(programmeSort, key));
 	type Programme = PageData['programmes'][number];
@@ -36,7 +39,8 @@
 		code: (p: Programme) => p.code,
 		title: (p: Programme) => p.title,
 		spo: (p: Programme) =>
-			p.spos.length === 0 ? undefined : Math.max(...p.spos.map((s) => s.version))
+			p.spos.length === 0 ? undefined : Math.max(...p.spos.map((s) => s.version)),
+		degree: (p: Programme) => (p.degree ? DEGREE_LABELS[p.degree] : undefined)
 	};
 
 	const groups = $derived(
@@ -60,6 +64,11 @@
 			solche, die ausgelaufen sind. <strong>Aus den ZPA-Daten geht das nicht hervor:</strong> die neuesten
 			SPOs zweier geplanter Studiengänge sind von 2010 und damit älter als die jedes nicht geplanten.
 			Also wird es hier entschieden.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Auch der <strong>Abschluss</strong> — Bachelor oder Master — steht nicht in den ZPA-Daten und wird
+			hier einmal je Studiengang eingetragen. Zuteilung und Modulkatalog filtern danach; ein Studiengang
+			ohne Eintrag fällt aus beiden Filtern heraus.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Ein nicht geplanter Studiengang steht in keiner Auswahl und lässt sich keiner
@@ -100,6 +109,12 @@
 							<SortHeader label="Kürzel" key="code" sort={programmeSort} onsort={onProgrammeSort} />
 							<SortHeader label="Name" key="title" sort={programmeSort} onsort={onProgrammeSort} />
 							<SortHeader label="SPO" key="spo" sort={programmeSort} onsort={onProgrammeSort} />
+							<SortHeader
+								label="Abschluss"
+								key="degree"
+								sort={programmeSort}
+								onsort={onProgrammeSort}
+							/>
 							<th>Wird geplant?</th>
 							{#if group.status === 'PLANNED' && data.studyYear !== null}
 								<th>
@@ -119,6 +134,39 @@
 										keine
 									{:else}
 										{Math.max(...programme.spos.map((s) => s.version))}
+									{/if}
+								</td>
+								<td>
+									{#if mayDecide}
+										<form
+											method="POST"
+											action="?/setDegree"
+											use:autosave={{ label: `Abschluss ${programme.code}` }}
+										>
+											<input type="hidden" name="code" value={programme.code} />
+											<select
+												name="degree"
+												aria-label="Abschluss {programme.code}"
+												class="select select-bordered select-xs"
+											>
+												<option value="" selected={!programme.degree}>nicht eingetragen</option>
+												{#each ALL_DEGREES as degree (degree)}
+													<option
+														value={degreeParam(degree)}
+														selected={programme.degree === degree}
+													>
+														{DEGREE_LABELS[degree]}
+													</option>
+												{/each}
+											</select>
+											<noscript
+												><button type="submit" class="btn btn-xs">Speichern</button></noscript
+											>
+										</form>
+									{:else if programme.degree}
+										{DEGREE_LABELS[programme.degree]}
+									{:else}
+										<span class="badge badge-ghost badge-sm">nicht eingetragen</span>
 									{/if}
 								</td>
 								<td>

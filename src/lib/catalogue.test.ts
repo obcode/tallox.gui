@@ -17,6 +17,9 @@ import {
 	filingGroupsFor,
 	filterGroupOptions,
 	formatHours,
+	degreeParam,
+	parseDegreeParam,
+	DEGREE_LABELS,
 	handbookHref,
 	mayFileModules,
 	mayRefileModule,
@@ -376,6 +379,31 @@ describe('a programme in a choice', () => {
 		expect(programmeLabel({ code: 'IF', title: 'Informatik' })).toBe('IF – Informatik');
 		expect(programmeLabel({ code: 'DPH', title: '' })).toBe('DPH');
 		expect(programmeLabel({ code: 'DPH' })).toBe('DPH');
+	});
+});
+
+describe('the degree in a URL', () => {
+	it('reads both degrees, in any case', () => {
+		expect(parseDegreeParam('bachelor')).toBe('BACHELOR');
+		expect(parseDegreeParam('Master')).toBe('MASTER');
+		expect(parseDegreeParam(' master ')).toBe('MASTER');
+	});
+
+	it('reads anything else as every degree, so a stale link still opens the page', () => {
+		expect(parseDegreeParam(null)).toBeNull();
+		expect(parseDegreeParam('')).toBeNull();
+		expect(parseDegreeParam('diplom')).toBeNull();
+	});
+
+	it('writes what it reads', () => {
+		for (const degree of ['BACHELOR', 'MASTER'] as const) {
+			expect(parseDegreeParam(degreeParam(degree))).toBe(degree);
+		}
+		expect(degreeParam(null)).toBe('');
+	});
+
+	it('has a label for every degree', () => {
+		expect(DEGREE_LABELS).toEqual({ BACHELOR: 'Bachelor', MASTER: 'Master' });
 	});
 });
 

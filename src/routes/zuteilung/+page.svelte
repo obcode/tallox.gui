@@ -16,6 +16,9 @@
 		cohortsWithoutInterest,
 		isWideOpen,
 		instancesOfTab,
+		instancesOfDegree,
+		programmeSections,
+		programmesWithoutDegree,
 		mayFillUnfiled,
 		mayShowGaps,
 		MIXED_CHOICE,
@@ -27,6 +30,7 @@
 		isArranged,
 		divisionDefault
 	} from '$lib/assignment';
+	import { ALL_DEGREES, DEGREE_LABELS, degreeParam, programmeLabel } from '$lib/catalogue';
 	import { trackSaves } from '$lib/saveOnLeave';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
@@ -67,8 +71,42 @@
 	/** Whether to offer that tab at all — the two roles that may fill such an instance. */
 	const offerUnfiled = $derived(mayFillUnfiled(data.session?.effectiveRoles ?? []));
 
-	const groups: CohortGroup[] = $derived(
-		cohortGroups(instancesOfTab(data.instances, tab), data.assignments as AssignmentLike[])
+	/** The instances of the tab, before the degree filter: what the notice below is about. */
+	const tabInstances = $derived(instancesOfTab(data.instances, tab));
+
+	/** What the table shows: the tab, cut to one degree where somebody chose one. */
+	const shown = $derived(instancesOfDegree(tabInstances, data.selected.degree));
+
+	const groups: CohortGroup[] = $derived(cohortGroups(shown, data.assignments as AssignmentLike[]));
+
+	/**
+	 * The programmes a degree filter leaves out because nobody has recorded theirs. Named on the
+	 * page rather than dropped without a word: a cohort that vanished is a cohort nobody fills.
+	 */
+	const withoutDegree = $derived(
+		data.selected.degree === null ? [] : programmesWithoutDegree(tabInstances)
+	);
+
+	/**
+	 * The table's sections: one per study programme where somebody asked for that, otherwise one
+	 * without a heading — the module blocks as they always were. Opt-in, because a group such as
+	 * mathematics fills one module across several programmes in a single block.
+	 */
+	const sections = $derived(
+		data.selected.byProgramme
+			? programmeSections(groups)
+			: [{ programme: null, blocks: moduleBlocks(groups) }]
+	);
+
+	/**
+	 * How many cohorts each module has on this tab, across sections. Whether a cohort offers a
+	 * topic field depends on it, and cutting the table by programme must not take the field away.
+	 */
+	const cohortsOfModule = $derived(
+		groups.reduce(
+			(count, g) => count.set(g.instance.module.id, (count.get(g.instance.module.id) ?? 0) + 1),
+			new Map<string, number>()
+		)
 	);
 
 	const members = $derived(data.group?.members ?? []);
@@ -108,9 +146,7 @@
 	 */
 	const showGaps = $derived(mayShowGaps(tab, data.session?.effectiveRoles ?? [], data.led));
 
-	const gaps = $derived(
-		showGaps ? cohortsWithoutInterest(instancesOfTab(data.instances, tab), data.wishes) : []
-	);
+	const gaps = $derived(showGaps ? cohortsWithoutInterest(shown, data.wishes) : []);
 
 	/** Which row a refusal belongs to, so it can be rendered in that row and nowhere else. */
 	const refusalFor = $derived(new Map((form?.refusals ?? []).map((r) => [r.partId, r.message])));
@@ -173,12 +209,32 @@
 	}
 
 	/**
-	 * The row menus' buttons post to their own actions. Without JavaScript the browser navigates
-	 * there, and `?/divide` replaces the page's query string — the semester and the subject group
-	 * travel in the action's address so that the page comes back where it was.
+	 * The view, as the query parameters it is made of — the same arrangement as on `/bedarf`.
+	 *
+	 * Every GET form on this page owns some of these and has to carry the rest across, or choosing
+	 * a subject group silently drops the degree. Written once here so that "what is the view made
+	 * of" has a single answer, and each form says which parts it provides itself. An empty value
+	 * is left out: absent and empty mean the same for all of them.
 	 */
-	const menuAction = (name: string) =>
-		`?/${name}&semester=${data.semester?.code ?? ''}&fachgruppe=${data.selected.group}`;
+	const filterFields = $derived([
+		{ name: 'semester', value: data.semester?.code ?? data.selected.semester },
+		{ name: 'fachgruppe', value: data.selected.group },
+		{ name: 'q', value: data.selected.search },
+		{ name: 'abschluss', value: degreeParam(data.selected.degree) },
+		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' }
+	]);
+
+	/**
+	 * The address a POST goes to. Without JavaScript the browser navigates there, and `?/save`
+	 * replaces the page's query string — so the whole view travels in the action's address, and
+	 * the page comes back where it was rather than on the planning semester with no group.
+	 */
+	const actionUrl = (name: string) =>
+		`?/${name}` +
+		filterFields
+			.filter((field) => field.value !== '')
+			.map((field) => `&${field.name}=${encodeURIComponent(field.value)}`)
+			.join('');
 
 	/**
 	 * Which cohorts show their parts, where somebody has said so.
@@ -249,9 +305,7 @@
      its form with another would send its own field and nothing else. -->
 <form method="GET" class="mt-6 flex flex-col gap-1">
 	<span class="label-text text-sm">Semester</span>
-	{#if data.selected.group !== ''}
-		<input type="hidden" name="fachgruppe" value={data.selected.group} />
-	{/if}
+	{@render carriedOver(['semester'])}
 	<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
 		{#each semesterTabs as semester (semester.code)}
 			{@const active = semester.code === data.semester?.code}
@@ -306,7 +360,7 @@
 
 	<form method="GET" class="mt-5 flex flex-col gap-1">
 		<span class="label-text text-sm">Fachgruppe</span>
-		<input type="hidden" name="semester" value={data.semester.code} />
+		{@render carriedOver(['fachgruppe'])}
 		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
 			{#each groupTabs as group (group.id)}
 				{@const active = group.id === data.group?.id}
@@ -360,6 +414,53 @@
 		</div>
 	{:else}
 		<!--
+			Die Ansicht: nur Bachelor oder nur Master, und auf Wunsch je Studiengang gruppiert. Beides
+			schneidet nur, was die Seite schon geladen hat — für eine Fachgruppe wie WI, deren
+			Leitung Bachelor- und Mastermodule getrennt besetzt.
+		-->
+		<form method="GET" class="mt-5 flex flex-wrap items-end gap-3">
+			{@render carriedOver(['abschluss', 'nach'])}
+			<label class="form-control">
+				<span class="label-text text-sm">Abschluss</span>
+				<select
+					name="abschluss"
+					aria-label="Abschluss"
+					class="select select-bordered select-sm"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				>
+					<option value="">alle</option>
+					{#each ALL_DEGREES as degree (degree)}
+						<option value={degreeParam(degree)} selected={data.selected.degree === degree}>
+							{DEGREE_LABELS[degree]}
+						</option>
+					{/each}
+				</select>
+			</label>
+			<label class="form-control">
+				<span class="label-text text-sm">Gruppiert nach</span>
+				<select
+					name="nach"
+					aria-label="Gruppiert nach"
+					class="select select-bordered select-sm"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				>
+					<option value="">Modul</option>
+					<option value="studiengang" selected={data.selected.byProgramme}>Studiengang</option>
+				</select>
+			</label>
+			<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
+		</form>
+
+		{#if withoutDegree.length > 0}
+			<p class="text-base-content/80 mt-2 max-w-prose text-sm">
+				<span class="badge badge-warning badge-sm align-middle">Abschluss fehlt</span>
+				Ohne eingetragenen Abschluss und deshalb nicht im Filter:
+				{withoutDegree.map((p) => programmeLabel(p)).join(', ')}. Den Abschluss trägt das Dekanat
+				unter <a class="link" href={resolve('/verwaltung/studiengaenge')}>Studiengänge</a> ein.
+			</p>
+		{/if}
+
+		<!--
 			Der Schalter für die Wunschphase dieser Fachgruppe. Ein eigenes Formular und eine eigene
 			Action: das Speichern der Tabelle ist ein Bündel kleiner Entscheidungen, dies ist eine
 			Entscheidung über die Runde selbst — und ein versehentlicher Klick soll nicht bei jedem
@@ -372,11 +473,7 @@
 			trägt sie trotzdem, weil die Action sie von dort liest.
 		-->
 		{#if hasWishRound && data.group}
-			<form
-				method="POST"
-				action="?/window&semester={data.semester.code}&fachgruppe={data.group.id}"
-				class="mt-5"
-			>
+			<form method="POST" action={actionUrl('window')} class="mt-5">
 				<input type="hidden" name="semester" value={data.semester.code} />
 				<input type="hidden" name="fachgruppe" value={data.group.id} />
 				<input type="hidden" name="open" value={roundOpen ? 'false' : 'true'} />
@@ -407,8 +504,7 @@
 		{/if}
 
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-2">
-			<input type="hidden" name="semester" value={data.semester.code} />
-			<input type="hidden" name="fachgruppe" value={data.selected.group} />
+			{@render carriedOver(['q'])}
 			<label class="form-control">
 				<span class="label-text text-sm">Weitere Person suchen</span>
 				<input
@@ -455,7 +551,18 @@
 			</div>
 		{/if}
 
-		{#if groups.length === 0}
+		{#if groups.length === 0 && data.selected.degree !== null && tabInstances.length > 0}
+			<div class="card bg-base-200 mt-4 max-w-prose">
+				<div class="card-body">
+					<h2 class="card-title text-base">Nichts zu besetzen</h2>
+					<p>
+						Im Abschluss <strong>{DEGREE_LABELS[data.selected.degree]}</strong> hat
+						<strong>{data.group?.name ?? 'diese Auswahl'}</strong> in diesem Semester keine Instanz. Mit
+						„alle“ stehen die übrigen wieder da.
+					</p>
+				</div>
+			</div>
+		{:else if groups.length === 0}
 			<div class="card bg-base-200 mt-4 max-w-prose">
 				<div class="card-body">
 					<h2 class="card-title text-base">Nichts zu besetzen</h2>
@@ -473,7 +580,7 @@
 		{:else}
 			<form
 				method="POST"
-				action="?/save"
+				action={actionUrl('save')}
 				bind:this={formElement}
 				onchange={(event) => {
 					if (inRowMenu(event.target)) return;
@@ -531,329 +638,348 @@
 								<th class="w-24 text-right">Teile</th>
 							</tr>
 						</thead>
-						{#each moduleBlocks(groups) as block (block.id)}
-							{#each block.cohorts as group, position (group.instance.id)}
-								{@const wishesHere = data.wishes.filter((w) => w.instance.id === group.instance.id)}
-								{@const pooled = pooledInstances(group.instance)}
-								{@const held = group.rows
-									.map((row) => row.assignment)
-									.filter((a): a is AssignmentLike => a !== null)}
-								<!-- One candidate list for the whole cohort, so that a name offered for the
+						{#each sections as section (section.programme?.code ?? '')}
+							{#if section.programme}
+								<!-- Eine Überschrift je Studiengang, wenn danach gruppiert ist. Ein eigener
+								     tbody, weil jeder Zug darunter seinen eigenen braucht. -->
+								<tbody class="border-base-300 border-t-2">
+									<tr>
+										<th colspan="6" scope="colgroup" class="bg-base-200 pt-4 text-base">
+											{programmeLabel(section.programme)} ·
+											{section.programme.degree
+												? DEGREE_LABELS[section.programme.degree]
+												: 'Abschluss nicht eingetragen'}
+										</th>
+									</tr>
+								</tbody>
+							{/if}
+							{#each section.blocks as block (block.id)}
+								{#each block.cohorts as group, position (group.instance.id)}
+									{@const wishesHere = data.wishes.filter(
+										(w) => w.instance.id === group.instance.id
+									)}
+									{@const pooled = pooledInstances(group.instance)}
+									{@const held = group.rows
+										.map((row) => row.assignment)
+										.filter((a): a is AssignmentLike => a !== null)}
+									<!-- One candidate list for the whole cohort, so that a name offered for the
 								     lecture is offered for its laboratories too. The cohort is filled by one
 								     dropdown; a list that differed between the rows could not be written down
 								     onto them. -->
-								{@const candidates = candidatesFor(
-									pooled.ids,
-									wishesHere,
-									members,
-									data.found,
-									held,
-									pooled.programmes,
-									data.competences.filter((c) => c.module.id === group.instance.module.id)
-								)}
-								<!-- What the cohort's own dropdown stands for: our share of it. A part
+									{@const candidates = candidatesFor(
+										pooled.ids,
+										wishesHere,
+										members,
+										data.found,
+										held,
+										pooled.programmes,
+										data.competences.filter((c) => c.module.id === group.instance.module.id)
+									)}
+									<!-- What the cohort's own dropdown stands for: our share of it. A part
 								     another faculty teaches is arranged, not staffed. -->
-								{@const own = ownRows(group.rows)}
-								{@const elsewhere = facultiesElsewhere(group.instance.parts)}
-								{@const shared = commonValue(own)}
-								{@const sharedNote = commonNote(own)}
-								{@const refusals = group.rows
-									.map((row) => refusalFor.get(row.part.id))
-									.filter((message) => message !== undefined)}
-								{@const divisible = group.rows.length > 1}
-								{@const split = expandedFor(
-									group.instance.id,
-									shared === null || refusals.length > 0 || isArranged(group.rows)
-								)}
-								<!--
+									{@const own = ownRows(group.rows)}
+									{@const elsewhere = facultiesElsewhere(group.instance.parts)}
+									{@const shared = commonValue(own)}
+									{@const sharedNote = commonNote(own)}
+									{@const refusals = group.rows
+										.map((row) => refusalFor.get(row.part.id))
+										.filter((message) => message !== undefined)}
+									{@const divisible = group.rows.length > 1}
+									{@const split = expandedFor(
+										group.instance.id,
+										shared === null || refusals.length > 0 || isArranged(group.rows)
+									)}
+									<!--
 									A tbody per cohort, which is what scopes the disclosure below: the part rows
 									are shown by `tbody:has(.split-toggle:checked)`, so the checkbox reaches its own
 									parts and no others. A checkbox rather than a <details> because <details> cannot
 									hold table rows — and rather than a button, because this way the fold works with
 									no JavaScript, exactly like the rest of the screen.
 								-->
-								<tbody
-									data-cohort={group.instance.id}
-									class="border-base-300 {position === 0 ? 'border-t-2' : 'border-t'}"
-								>
-									<tr>
-										<td class="align-top font-medium">
-											{position === 0 ? block.name : ''}
-											{#if position === 0 && block.projectBased}
-												<span
-													class="badge badge-secondary badge-sm ml-1 align-middle"
-													title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
-													>PBLV</span
-												>
-											{/if}
-											<!-- Which parts the cohort's dropdown stands for. The server writes one
+									<tbody
+										data-cohort={group.instance.id}
+										class="border-base-300 {position === 0 ? 'border-t-2' : 'border-t'}"
+									>
+										<tr>
+											<td class="align-top font-medium">
+												{position === 0 ? block.name : ''}
+												{#if position === 0 && block.projectBased}
+													<span
+														class="badge badge-secondary badge-sm ml-1 align-middle"
+														title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
+														>PBLV</span
+													>
+												{/if}
+												<!-- Which parts the cohort's dropdown stands for. The server writes one
 											     choice onto all of them, and reading them out of the form is what lets
 											     it do that without any JavaScript on this page. -->
-											<input
-												type="hidden"
-												name="parts:{group.instance.id}"
-												value={own.map((row) => row.part.id).join(',')}
-											/>
-										</td>
-										<td class="align-top font-medium whitespace-nowrap">
-											{group.label}
-											<!-- Only for the lead of this group, who reads every entry on it anyway —
+												<input
+													type="hidden"
+													name="parts:{group.instance.id}"
+													value={own.map((row) => row.part.id).join(',')}
+												/>
+											</td>
+											<td class="align-top font-medium whitespace-nowrap">
+												{group.label}
+												<!-- Only for the lead of this group, who reads every entry on it anyway —
 											     the same three conditions as the list above. A badge rather than a
 											     tint: semantic colours are background colours here. -->
-											{#if showGaps && isWideOpen(wishesHere, held, own.length > 0)}
-												<span
-													class="badge badge-warning badge-sm mt-1 block w-fit"
-													title="Noch kein Wunsch und noch niemand eingeteilt">ganz offen</span
-												>
-											{/if}
-										</td>
-										<td class="align-top text-right whitespace-nowrap">
-											{hoursLabel(group.instance.teachingHours)}
-										</td>
-										<td>
-											{#if own.length === 0}
-												<!-- Nothing here is ours to fill. Said rather than left blank, or the
+												{#if showGaps && isWideOpen(wishesHere, held, own.length > 0)}
+													<span
+														class="badge badge-warning badge-sm mt-1 block w-fit"
+														title="Noch kein Wunsch und noch niemand eingeteilt">ganz offen</span
+													>
+												{/if}
+											</td>
+											<td class="align-top text-right whitespace-nowrap">
+												{hoursLabel(group.instance.teachingHours)}
+											</td>
+											<td>
+												{#if own.length === 0}
+													<!-- Nothing here is ours to fill. Said rather than left blank, or the
 												     cohort reads as one nobody has staffed yet. -->
-												<span class="badge badge-ghost whitespace-normal">
-													hält {elsewhere.join(', ')}
-												</span>
-											{:else}
-												<select
-													name="all:{group.instance.id}"
-													class="select select-bordered select-sm w-full"
-													aria-label="Wer hält alle Teile von {block.name} in {group.label}"
-													disabled={!open}
-													value={shared ?? MIXED_CHOICE}
-												>
-													<option value="">— nicht besetzt —</option>
-													<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
+													<span class="badge badge-ghost whitespace-normal">
+														hält {elsewhere.join(', ')}
+													</span>
+												{:else}
+													<select
+														name="all:{group.instance.id}"
+														class="select select-bordered select-sm w-full"
+														aria-label="Wer hält alle Teile von {block.name} in {group.label}"
+														disabled={!open}
+														value={shared ?? MIXED_CHOICE}
+													>
+														<option value="">— nicht besetzt —</option>
+														<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
 												     dropdown has to be able to *show* it: a cohort whose parts are held
 												     by different people has no one name to put here. -->
-													<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
-													{#each candidates as candidate (candidateValue(candidate))}
-														<option value={candidateValue(candidate)}>
-															{candidateLabel(candidate, desired)}
-														</option>
-													{/each}
-												</select>
-												{#if elsewhere.length > 0}
-													<p class="text-base-content/80 mt-1 text-xs">
-														Ein Teil hält {elsewhere.join(', ')}.
-													</p>
-												{/if}
-											{/if}
-											{#if wishesHere.length > 0}
-												<p class="text-base-content/80 mt-1 text-xs">
-													Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
-												</p>
-											{/if}
-											<!-- A refusal belongs to a part, and the parts may be folded away. Where
-											     they are, it is said here instead of nowhere. -->
-											{#if !split}
-												{#each [...new Set(refusals)] as message (message)}
-													<span class="badge badge-error mt-1 whitespace-normal">{message}</span>
-												{/each}
-											{/if}
-										</td>
-										<td>
-											<!-- Only where the parts carry the same note: where they do not, there is
-											     no one note to edit, and a field showing an empty one would claim
-											     otherwise. -->
-											{#if own.length === 0}
-												<!-- No note to give: nobody here holds anything. -->
-											{:else if sharedNote !== null}
-												<input
-													type="text"
-													name="allnote:{group.instance.id}"
-													value={sharedNote}
-													maxlength="500"
-													placeholder="z. B. vertretungsweise"
-													class="input input-bordered input-sm w-full"
-													aria-label="Notiz zu allen Teilen von {block.name} in {group.label}"
-													disabled={!open}
-												/>
-											{:else}
-												<span class="text-base-content/80 text-xs">Notizen stehen je Teil.</span>
-											{/if}
-											<!-- How the cohort is taught, for all of its parts. The originals travel
-											     beside the controls: an unticked box sends nothing, and the save only
-											     writes a cohort whose controls differ from what was drawn. -->
-											{#if group.instance.delivery}
-												{@const formatRefusal = refusalFor.get(`format:${group.instance.id}`)}
-												<input
-													type="hidden"
-													name="fmt0:{group.instance.id}"
-													value={group.instance.delivery}
-												/>
-												<input
-													type="hidden"
-													name="en0:{group.instance.id}"
-													value={String(group.instance.taughtInEnglish ?? false)}
-												/>
-												<div class="mt-1 flex flex-wrap items-center gap-3">
-													<select
-														name="fmt:{group.instance.id}"
-														class="select select-bordered select-xs"
-														aria-label="Durchführung von {block.name} in {group.label}"
-														disabled={!open}
-														value={group.instance.delivery}
-													>
-														{#each Object.entries(DELIVERY_LABELS) as [value, label] (value)}
-															<option {value}>{label}</option>
+														<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
+														{#each candidates as candidate (candidateValue(candidate))}
+															<option value={candidateValue(candidate)}>
+																{candidateLabel(candidate, desired)}
+															</option>
 														{/each}
 													</select>
-													<label
-														class="flex items-center gap-1 text-xs"
-														title={group.instance.taughtInEnglishOverridden
-															? 'Für diesen Zug festgelegt.'
-															: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
-													>
-														<input
-															type="checkbox"
-															name="en:{group.instance.id}"
-															value="true"
-															class="checkbox checkbox-xs"
-															aria-label="{block.name} in {group.label} auf Englisch"
-															disabled={!open}
-															checked={group.instance.taughtInEnglish}
-														/>
-														Englisch
-														{#if !group.instance.taughtInEnglishOverridden}
-															<span class="text-base-content/70">(Standard)</span>
-														{/if}
-													</label>
-												</div>
-												{#if formatRefusal}
-													<span class="badge badge-error mt-1 whitespace-normal"
-														>{formatRefusal}</span
-													>
+													{#if elsewhere.length > 0}
+														<p class="text-base-content/80 mt-1 text-xs">
+															Ein Teil hält {elsewhere.join(', ')}.
+														</p>
+													{/if}
 												{/if}
-											{/if}
-											<!-- Which seminar the cohort is, for an umbrella module planned as one cohort
+												{#if wishesHere.length > 0}
+													<p class="text-base-content/80 mt-1 text-xs">
+														Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
+													</p>
+												{/if}
+												<!-- A refusal belongs to a part, and the parts may be folded away. Where
+											     they are, it is said here instead of nowhere. -->
+												{#if !split}
+													{#each [...new Set(refusals)] as message (message)}
+														<span class="badge badge-error mt-1 whitespace-normal">{message}</span>
+													{/each}
+												{/if}
+											</td>
+											<td>
+												<!-- Only where the parts carry the same note: where they do not, there is
+											     no one note to edit, and a field showing an empty one would claim
+											     otherwise. -->
+												{#if own.length === 0}
+													<!-- No note to give: nobody here holds anything. -->
+												{:else if sharedNote !== null}
+													<input
+														type="text"
+														name="allnote:{group.instance.id}"
+														value={sharedNote}
+														maxlength="500"
+														placeholder="z. B. vertretungsweise"
+														class="input input-bordered input-sm w-full"
+														aria-label="Notiz zu allen Teilen von {block.name} in {group.label}"
+														disabled={!open}
+													/>
+												{:else}
+													<span class="text-base-content/80 text-xs">Notizen stehen je Teil.</span>
+												{/if}
+												<!-- How the cohort is taught, for all of its parts. The originals travel
+											     beside the controls: an unticked box sends nothing, and the save only
+											     writes a cohort whose controls differ from what was drawn. -->
+												{#if group.instance.delivery}
+													{@const formatRefusal = refusalFor.get(`format:${group.instance.id}`)}
+													<input
+														type="hidden"
+														name="fmt0:{group.instance.id}"
+														value={group.instance.delivery}
+													/>
+													<input
+														type="hidden"
+														name="en0:{group.instance.id}"
+														value={String(group.instance.taughtInEnglish ?? false)}
+													/>
+													<div class="mt-1 flex flex-wrap items-center gap-3">
+														<select
+															name="fmt:{group.instance.id}"
+															class="select select-bordered select-xs"
+															aria-label="Durchführung von {block.name} in {group.label}"
+															disabled={!open}
+															value={group.instance.delivery}
+														>
+															{#each Object.entries(DELIVERY_LABELS) as [value, label] (value)}
+																<option {value}>{label}</option>
+															{/each}
+														</select>
+														<label
+															class="flex items-center gap-1 text-xs"
+															title={group.instance.taughtInEnglishOverridden
+																? 'Für diesen Zug festgelegt.'
+																: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
+														>
+															<input
+																type="checkbox"
+																name="en:{group.instance.id}"
+																value="true"
+																class="checkbox checkbox-xs"
+																aria-label="{block.name} in {group.label} auf Englisch"
+																disabled={!open}
+																checked={group.instance.taughtInEnglish}
+															/>
+															Englisch
+															{#if !group.instance.taughtInEnglishOverridden}
+																<span class="text-base-content/70">(Standard)</span>
+															{/if}
+														</label>
+													</div>
+													{#if formatRefusal}
+														<span class="badge badge-error mt-1 whitespace-normal"
+															>{formatRefusal}</span
+														>
+													{/if}
+												{/if}
+												<!-- Which seminar the cohort is, for an umbrella module planned as one cohort
 											     per seminar: the title is often settled with the lecturer at the
 											     staffing. Only where the module has several cohorts here or a topic is
 											     already set, like on the demand page. -->
-											{#if block.cohorts.length > 1 || group.instance.topic}
-												{@const topicRefusal = refusalFor.get(`topic:${group.instance.id}`)}
-												<input
-													type="hidden"
-													name="topic0:{group.instance.id}"
-													value={group.instance.topic ?? ''}
-												/>
-												<input
-													type="text"
-													name="topic:{group.instance.id}"
-													value={group.instance.topic ?? ''}
-													maxlength={MAX_TOPIC_LENGTH}
-													placeholder="Thema"
-													title="Welches Seminar dieser Zug ist, etwa bei einem Sammelmodul."
-													class="input input-bordered input-xs mt-1 w-full"
-													aria-label="Thema von {block.name} in {group.label}"
-													disabled={!open}
-												/>
-												{#if topicRefusal}
-													<span class="badge badge-error mt-1 whitespace-normal"
-														>{topicRefusal}</span
-													>
+												{#if (cohortsOfModule.get(block.id) ?? 0) > 1 || group.instance.topic}
+													{@const topicRefusal = refusalFor.get(`topic:${group.instance.id}`)}
+													<input
+														type="hidden"
+														name="topic0:{group.instance.id}"
+														value={group.instance.topic ?? ''}
+													/>
+													<input
+														type="text"
+														name="topic:{group.instance.id}"
+														value={group.instance.topic ?? ''}
+														maxlength={MAX_TOPIC_LENGTH}
+														placeholder="Thema"
+														title="Welches Seminar dieser Zug ist, etwa bei einem Sammelmodul."
+														class="input input-bordered input-xs mt-1 w-full"
+														aria-label="Thema von {block.name} in {group.label}"
+														disabled={!open}
+													/>
+													{#if topicRefusal}
+														<span class="badge badge-error mt-1 whitespace-normal"
+															>{topicRefusal}</span
+														>
+													{/if}
 												{/if}
-											{/if}
-										</td>
-										<td class="align-top text-right">
-											<div class="flex items-center justify-end gap-2">
-												{#if divisible}
-													<label
-														class="flex items-center justify-end gap-1 text-xs whitespace-nowrap"
-														title={partsSummary(group.rows)}
-													>
-														<input
-															type="checkbox"
-															class="split-toggle checkbox checkbox-xs"
-															aria-label="Die {group.rows
-																.length} Teile von {group.label} einzeln besetzen"
-															checked={split}
-															onchange={(event) =>
-																(expanded[group.instance.id] = event.currentTarget.checked)}
-														/>
-														{group.rows.length} Teile
-													</label>
-												{/if}
-												{#if open}
-													{@render rowMenu(group, block.name)}
-												{/if}
-											</div>
-										</td>
-									</tr>
+											</td>
+											<td class="align-top text-right">
+												<div class="flex items-center justify-end gap-2">
+													{#if divisible}
+														<label
+															class="flex items-center justify-end gap-1 text-xs whitespace-nowrap"
+															title={partsSummary(group.rows)}
+														>
+															<input
+																type="checkbox"
+																class="split-toggle checkbox checkbox-xs"
+																aria-label="Die {group.rows
+																	.length} Teile von {group.label} einzeln besetzen"
+																checked={split}
+																onchange={(event) =>
+																	(expanded[group.instance.id] = event.currentTarget.checked)}
+															/>
+															{group.rows.length} Teile
+														</label>
+													{/if}
+													{#if open}
+														{@render rowMenu(group, block.name)}
+													{/if}
+												</div>
+											</td>
+										</tr>
 
-									{#if divisible}
-										{#each group.rows as row (row.part.id)}
-											{@const refusal = refusalFor.get(row.part.id)}
-											<!-- Rendered whether or not they are shown: the save carries every field,
+										{#if divisible}
+											{#each group.rows as row (row.part.id)}
+												{@const refusal = refusalFor.get(row.part.id)}
+												<!-- Rendered whether or not they are shown: the save carries every field,
 											     and it is that which lets the cohort's dropdown and the parts be
 											     ranked by what they say. -->
-											<tr class="hidden [tbody:has(.split-toggle:checked)_&]:table-row">
-												<td class="text-base-content/80 pl-8 align-top text-sm">
-													{row.heading}
-													{#if row.part.sharedAcrossTracks}
-														<span
-															class="badge badge-ghost badge-xs ml-1"
-															title="Wird für beide Züge gehalten und zählt einmal."
-														>
-															zugübergreifend
-														</span>
-													{/if}
-												</td>
-												<td></td>
-												<td class="align-top text-right text-sm whitespace-nowrap">
-													{partHours(row.part)}
-												</td>
-												<td>
-													{#if row.part.taughtBy}
-														<!-- Another faculty's: no dropdown, because there is nobody here to
+												<tr class="hidden [tbody:has(.split-toggle:checked)_&]:table-row">
+													<td class="text-base-content/80 pl-8 align-top text-sm">
+														{row.heading}
+														{#if row.part.sharedAcrossTracks}
+															<span
+																class="badge badge-ghost badge-xs ml-1"
+																title="Wird für beide Züge gehalten und zählt einmal."
+															>
+																zugübergreifend
+															</span>
+														{/if}
+													</td>
+													<td></td>
+													<td class="align-top text-right text-sm whitespace-nowrap">
+														{partHours(row.part)}
+													</td>
+													<td>
+														{#if row.part.taughtBy}
+															<!-- Another faculty's: no dropdown, because there is nobody here to
 														     put on it, and the backend would refuse a name. -->
-														<span class="badge badge-ghost whitespace-normal">
-															hält {row.part.taughtBy}
-														</span>
-													{:else}
-														<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly one
+															<span class="badge badge-ghost whitespace-normal">
+																hält {row.part.taughtBy}
+															</span>
+														{:else}
+															<!-- The value is `p:<id>` or `t:<id>`; the backend takes exactly one
 													     of the two and canonicalises a teacher who has an account. -->
-														<select
-															name="who:{row.part.id}"
-															class="select select-bordered select-sm w-full"
-															aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
-															disabled={!open}
-															value={currentValue(row.assignment)}
-														>
-															<option value="">— nicht besetzt —</option>
-															{#each candidates as candidate (candidateValue(candidate))}
-																<option value={candidateValue(candidate)}>
-																	{candidateLabel(candidate, desired)}
-																</option>
-															{/each}
-														</select>
-													{/if}
-													{#if refusal}
-														<span class="badge badge-error mt-1 whitespace-normal">{refusal}</span>
-													{/if}
-												</td>
-												<td>
-													{#if !row.part.taughtBy}
-														<input
-															type="text"
-															name="note:{row.part.id}"
-															value={row.assignment?.note ?? ''}
-															maxlength="500"
-															placeholder="z. B. vertretungsweise"
-															class="input input-bordered input-sm w-full"
-															aria-label="Notiz zu {row.heading} in {group.label}"
-															disabled={!open}
-														/>
-													{/if}
-												</td>
-												<td></td>
-											</tr>
-										{/each}
-									{/if}
-								</tbody>
+															<select
+																name="who:{row.part.id}"
+																class="select select-bordered select-sm w-full"
+																aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
+																disabled={!open}
+																value={currentValue(row.assignment)}
+															>
+																<option value="">— nicht besetzt —</option>
+																{#each candidates as candidate (candidateValue(candidate))}
+																	<option value={candidateValue(candidate)}>
+																		{candidateLabel(candidate, desired)}
+																	</option>
+																{/each}
+															</select>
+														{/if}
+														{#if refusal}
+															<span class="badge badge-error mt-1 whitespace-normal">{refusal}</span
+															>
+														{/if}
+													</td>
+													<td>
+														{#if !row.part.taughtBy}
+															<input
+																type="text"
+																name="note:{row.part.id}"
+																value={row.assignment?.note ?? ''}
+																maxlength="500"
+																placeholder="z. B. vertretungsweise"
+																class="input input-bordered input-sm w-full"
+																aria-label="Notiz zu {row.heading} in {group.label}"
+																disabled={!open}
+															/>
+														{/if}
+													</td>
+													<td></td>
+												</tr>
+											{/each}
+										{/if}
+									</tbody>
+								{/each}
 							{/each}
 						{/each}
 					</table>
@@ -896,6 +1022,14 @@
 	Bewusst ohne die Wörter der Tabellenzeile in den Knöpfen: der Inhalt ist versteckt, steht aber im
 	Dokument, und ein zweites „3 Teile" machte jeden Locator darauf mehrdeutig.
 -->
+{#snippet carriedOver(own: readonly string[])}
+	{#each filterFields as field (field.name)}
+		{#if !own.includes(field.name) && field.value !== ''}
+			<input type="hidden" name={field.name} value={field.value} />
+		{/if}
+	{/each}
+{/snippet}
+
 {#snippet rowMenu(group: CohortGroup, moduleName: string)}
 	{@const menuId = `part-menu-${group.instance.id}`}
 	<button
@@ -944,7 +1078,7 @@
 							<span>Hält {row.part.taughtBy}.</span>
 							<button
 								type="submit"
-								formaction={menuAction('taughtBy')}
+								formaction={actionUrl('taughtBy')}
 								name="clearPart"
 								value={row.part.id}
 								class="btn btn-xs"
@@ -970,7 +1104,7 @@
 								</label>
 								<button
 									type="submit"
-									formaction={menuAction('divide')}
+									formaction={actionUrl('divide')}
 									name="partId"
 									value={row.part.id}
 									class="btn btn-xs"
@@ -996,7 +1130,7 @@
 							/>
 							<button
 								type="submit"
-								formaction={menuAction('taughtBy')}
+								formaction={actionUrl('taughtBy')}
 								name="partId"
 								value={row.part.id}
 								class="btn btn-xs"
@@ -1014,7 +1148,7 @@
 						<div>
 							<button
 								type="submit"
-								formaction={menuAction('rejoin')}
+								formaction={actionUrl('rejoin')}
 								name="partId"
 								value={row.part.id}
 								class="btn btn-xs"

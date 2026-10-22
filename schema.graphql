@@ -942,6 +942,17 @@ input DeclareCourseInstanceInput {
   note: String = ""
 }
 
+"""
+What a study programme leads to.
+
+Two values and no third: a programme whose degree nobody has recorded has a null `degree`
+rather than an `UNKNOWN` one, so that a filter for one of these never quietly includes it.
+"""
+enum Degree {
+  BACHELOR
+  MASTER
+}
+
 """How a cohort's teaching is spread over the semester."""
 enum DeliveryFormat {
   """Across the semester, week by week. The default."""
@@ -1787,6 +1798,15 @@ input ModuleFilter {
 
   """Keep only the modules of one subject group, by id."""
   subjectGroup: ID
+
+  """
+  Keep only the modules relevant for a programme of this degree.
+  
+  The same two halves as `programme`, over every programme of the degree: at home in one, or
+  counting in one of its regulations. A module that counts in a bachelor's and a master's
+  matches both. A programme whose `degree` is null matches neither.
+  """
+  degree: Degree
 }
 
 """What a catalogue row stands for."""
@@ -2252,6 +2272,21 @@ type Mutation {
     """The programme's short code. Upper-cased and trimmed for you."""
     code: String!
     status: ProgrammeStatus!
+  ): Programme!
+
+  """
+  Record whether a study programme leads to a bachelor's or a master's. `null` takes it back.
+  
+  Nothing the examination office delivers says it, so the faculty records it once per programme;
+  until then `Programme.degree` is null and the programme matches neither degree in a filter.
+  
+  The dean's office, through both doors, like `setProgrammePlanningStatus`. Not the programme
+  leads: the degree decides what other people's filtered screens show.
+  """
+  setProgrammeDegree(
+    """The programme's short code. Upper-cased and trimmed for you."""
+    code: String!
+    degree: Degree
   ): Programme!
 
   """
@@ -3224,6 +3259,16 @@ type Programme {
   """
   planningStatus: ProgrammeStatus!
 
+  """
+  Whether the programme leads to a bachelor's or a master's, or null while nobody has recorded it.
+  
+  Recorded by the dean's office with `setProgrammeDegree`, because nothing else knows: the
+  examination office delivers a code and nothing more, and the codes do not encode it. The
+  nightly import never writes it. Null matches neither degree in a filter — treat it as "not
+  recorded yet", not as a third kind of programme.
+  """
+  degree: Degree
+
   """Its versions of the examination regulations, newest first."""
   spos: [Spo!]!
 
@@ -3683,6 +3728,12 @@ type Query {
     cost this programme nothing and say so in `coveredBy`.
     """
     foreignHome: Boolean = false
+
+    """
+    Only the instances of programmes of this degree. A programme whose `degree` is null matches
+    neither, so a filtered answer can be smaller than the two filtered answers suggest.
+    """
+    degree: Degree
   ): [CourseInstance!]!
 
   """One course instance by its id, or `null`."""
@@ -4102,7 +4153,7 @@ enum ScopeArea {
   `assignments`, `myAssignments`, `setAssignment`, `clearAssignment`, `setCourseInstanceFormat`,
   `setModuleComponents`, `applyModuleSplitToInstances`, `setModuleProjectBased`,
   `setModuleSemesterSpan`, `createLocalModule`, `changeLocalModule`,
-  `setProgrammePlanningStatus`, `declareCourseInstance`, `duplicateCourseInstance`,
+  `setProgrammePlanningStatus`, `setProgrammeDegree`, `declareCourseInstance`, `duplicateCourseInstance`,
   `changeCourseInstance`, `setCourseInstanceTopic`, `withdrawCourseInstance`, `addInstancePart`, `changeInstancePart`,
   `removeInstancePart`, `shareInstancePartAcrossTracks`, `splitInstancePartAcrossTracks`,
   

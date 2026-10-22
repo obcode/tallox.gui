@@ -18,6 +18,9 @@ import {
 	type InstanceLike,
 	type WishLike,
 	instancesOfTab,
+	instancesOfDegree,
+	programmesWithoutDegree,
+	programmeSections,
 	mayFillUnfiled,
 	UNFILED,
 	cohortsWithoutInterest,
@@ -584,6 +587,91 @@ describe('moduleBlocks', () => {
 			cohort('m2', 'Algorithmen', 'IF', 'A')
 		]);
 		expect(blocks.map((b) => b.name)).toEqual(['Algorithmen', 'Übersetzerbau']);
+	});
+});
+
+describe('the degree filter', () => {
+	const bachelor = { programme: { code: 'IF', degree: 'BACHELOR' as const } };
+	const master = { programme: { code: 'IN', degree: 'MASTER' as const } };
+	const unrecorded = { programme: { code: 'XY', title: 'Ohne Eintrag', degree: null } };
+	const alsoUnrecorded = { programme: { code: 'XY', degree: null } };
+
+	it('keeps everything where no degree is chosen', () => {
+		expect(instancesOfDegree([bachelor, master, unrecorded], null)).toEqual([
+			bachelor,
+			master,
+			unrecorded
+		]);
+	});
+
+	// The backend's rule: a programme nobody recorded a degree for matches neither.
+	it('keeps only the programmes of the chosen degree', () => {
+		expect(instancesOfDegree([bachelor, master, unrecorded], 'MASTER')).toEqual([master]);
+		expect(instancesOfDegree([bachelor, master, unrecorded], 'BACHELOR')).toEqual([bachelor]);
+	});
+
+	it('names each programme the filter leaves out once', () => {
+		expect(programmesWithoutDegree([master, unrecorded, bachelor, alsoUnrecorded])).toEqual([
+			{ code: 'XY', title: 'Ohne Eintrag' }
+		]);
+		expect(programmesWithoutDegree([bachelor, master])).toEqual([]);
+	});
+});
+
+describe('programmeSections', () => {
+	const cohort = (
+		module: string,
+		name: string,
+		programme: { code: string; degree?: 'BACHELOR' | 'MASTER' | null },
+		over: Partial<InstanceLike['module']> = {}
+	) =>
+		cohortGroups(
+			[
+				instance({
+					id: `${module}-${programme.code}`,
+					programme,
+					module: { id: module, name, ...over }
+				})
+			],
+			[]
+		)[0];
+
+	const IF = { code: 'IF', degree: 'BACHELOR' as const };
+	const IB = { code: 'IB', degree: 'BACHELOR' as const };
+	const IN = { code: 'IN', degree: 'MASTER' as const };
+	const XY = { code: 'XY', degree: null };
+
+	it('runs bachelor, master, then unrecorded, and by code within each', () => {
+		const sections = programmeSections([
+			cohort('m1', 'Analysis', XY),
+			cohort('m1', 'Analysis', IN),
+			cohort('m1', 'Analysis', IF),
+			cohort('m1', 'Analysis', IB)
+		]);
+		expect(sections.map((s) => s.programme.code)).toEqual(['IB', 'IF', 'IN', 'XY']);
+	});
+
+	// The point of cutting by programme: a module serving two of them is in both sections, each
+	// time with that programme's cohort only.
+	it('puts a module that serves two programmes into both', () => {
+		const sections = programmeSections([
+			cohort('m1', 'Datenbanken', IF),
+			cohort('m1', 'Datenbanken', IN)
+		]);
+		expect(
+			sections.map((s) => [s.programme.code, s.blocks.map((b) => b.cohorts.map((c) => c.label))])
+		).toEqual([
+			['IF', [['IF1A']]],
+			['IN', [['IN1A']]]
+		]);
+	});
+
+	it('keeps the PBLVs last inside each section', () => {
+		const sections = programmeSections([
+			cohort('p', 'Agiles Projekt', IF, { projectBased: true }),
+			cohort('m1', 'Übersetzerbau', IF)
+		]);
+		expect(sections[0].blocks.map((b) => b.name)).toEqual(['Übersetzerbau', 'Agiles Projekt']);
 	});
 });
 

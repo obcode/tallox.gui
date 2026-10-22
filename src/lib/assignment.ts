@@ -1,6 +1,6 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
 
 /**
@@ -36,7 +36,8 @@ export type InstanceLike = {
 	track: string;
 	programmeSemester?: number | null;
 	teachingHours: number;
-	programme: { code: string; title?: string };
+	/** `degree` is null where the dean's office has not recorded one yet. */
+	programme: { code: string; title?: string; degree?: Degree | null };
 	module: {
 		id: string;
 		name: string;
@@ -292,6 +293,47 @@ export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
 	return [...blocks.values()].sort(
 		(a, b) => Number(a.projectBased) - Number(b.projectBased) || a.name.localeCompare(b.name, 'de')
 	);
+}
+
+/** The cohorts of one study programme, gathered under their modules like the whole table. */
+export type ProgrammeSection = {
+	programme: { code: string; title?: string; degree?: Degree | null };
+	blocks: ModuleBlock[];
+};
+
+/**
+ * The table cut by study programme: one section per programme, the module blocks inside it.
+ *
+ * For somebody who fills a subject group's bachelor's and master's modules as two separate jobs.
+ * A module that serves two programmes appears in both sections, each time with that programme's
+ * cohorts: that is the point of cutting by programme, and a module held across both is still one
+ * name per cohort. Inside a section `moduleBlocks` decides the order, so the PBLVs stay last.
+ *
+ * The sections run bachelor's, master's, then the programmes nobody has recorded a degree for —
+ * the order the faculty reads its programmes in — and by code within each.
+ */
+export function programmeSections(groups: readonly CohortGroup[]): ProgrammeSection[] {
+	const byCode = new Map<
+		string,
+		{ programme: ProgrammeSection['programme']; groups: CohortGroup[] }
+	>();
+	for (const group of groups) {
+		const programme = group.instance.programme;
+		const entry = byCode.get(programme.code) ?? { programme, groups: [] };
+		entry.groups.push(group);
+		byCode.set(programme.code, entry);
+	}
+
+	const rank = (degree: Degree | null | undefined) =>
+		degree === 'BACHELOR' ? 0 : degree === 'MASTER' ? 1 : 2;
+
+	return [...byCode.values()]
+		.sort(
+			(a, b) =>
+				rank(a.programme.degree) - rank(b.programme.degree) ||
+				a.programme.code.localeCompare(b.programme.code, 'de')
+		)
+		.map((entry) => ({ programme: entry.programme, blocks: moduleBlocks(entry.groups) }));
 }
 
 /** Somebody who can be put on a part. */
@@ -678,6 +720,42 @@ export function instancesOfTab<T extends { module: { subjectGroup?: { id: string
 	if (tab === null) return [];
 	if (tab === UNFILED) return instances.filter((i) => !i.module.subjectGroup);
 	return instances.filter((i) => i.module.subjectGroup?.id === tab);
+}
+
+/**
+ * The instances of the programmes of one degree; every instance where no degree is chosen.
+ *
+ * A programme whose degree nobody has recorded matches neither, the same rule the backend's
+ * filters follow. The page names those programmes instead of dropping them silently — see
+ * `programmesWithoutDegree`.
+ *
+ * Filtered here and not in the query for the reason the subject group is: the screen needs the
+ * whole tab anyway, to say which programmes the filter left out.
+ */
+export function instancesOfDegree<T extends { programme: { degree?: Degree | null } }>(
+	instances: readonly T[],
+	degree: Degree | null
+): T[] {
+	if (degree === null) return [...instances];
+	return instances.filter((i) => i.programme.degree === degree);
+}
+
+/**
+ * The programmes among these instances whose degree nobody has recorded, each once, by code.
+ *
+ * What a degree filter leaves out. Shown as a sentence rather than hidden, because a cohort that
+ * vanished from the screen without a word is a cohort nobody fills.
+ */
+export function programmesWithoutDegree<
+	T extends { programme: { code: string; title?: string; degree?: Degree | null } }
+>(instances: readonly T[]): { code: string; title?: string }[] {
+	const out = new Map<string, { code: string; title?: string }>();
+	for (const i of instances) {
+		if (!i.programme.degree && !out.has(i.programme.code)) {
+			out.set(i.programme.code, { code: i.programme.code, title: i.programme.title });
+		}
+	}
+	return [...out.values()].sort((a, b) => a.code.localeCompare(b.code, 'de'));
 }
 
 /**

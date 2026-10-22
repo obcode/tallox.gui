@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
-import { CATALOGUE, FILING } from './seed';
+import { CATALOGUE, DEGREES, FILING } from './seed';
 
 test.describe('the module catalogue', () => {
 	test('a lecturer sees it — the catalogue is not confidential', async ({
@@ -93,6 +93,40 @@ test.describe('the module catalogue', () => {
 		// And "nach Ankündigung" says nothing about the term, so it stays — hiding it would
 		// remove more than half the real catalogue in the name of a filter meant to help.
 		await expect(page.getByRole('link', { name: 'E2E Modul nur zu Hause' })).toBeVisible();
+	});
+
+	// The degree is recorded per programme; the fixture's module is at home in a bachelor's and
+	// counts in no master's.
+	test('the degree filter keeps a bachelor’s module out of the master’s list', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		const search = encodeURIComponent(DEGREES.moduleName);
+
+		await gotoRendered(page, `/module?abschluss=bachelor&q=${search}`);
+		await expect(page.getByRole('link', { name: DEGREES.moduleName })).toBeVisible();
+
+		await gotoRendered(page, `/module?abschluss=master&q=${search}`);
+		await expect(page.getByRole('link', { name: DEGREES.moduleName })).toHaveCount(0);
+		// And it says which programmes the filter cannot place, rather than leaving them out quietly.
+		await expect(page.getByText('Ohne eingetragenen Abschluss')).toContainText(DEGREES.unrecorded);
+	});
+
+	// The filter used to offer only the groups somebody may file modules into — for a lecturer,
+	// none at all. Reading a group's modules is not filing into it.
+	test('a lecturer may filter by any subject group', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/module');
+
+		const filter = page.getByRole('combobox', { name: 'Fachgruppe' });
+		await expect(
+			filter.getByRole('option', { name: new RegExp(DEGREES.subjectGroupCode) })
+		).toHaveCount(1);
+
+		await filter.selectOption({ label: `${DEGREES.subjectGroupCode} — Abschluss-Testfachgruppe` });
+		await page.getByRole('button', { name: 'Anwenden' }).click();
+		await expect(page).toHaveURL(new RegExp(`fachgruppe=${DEGREES.subjectGroup}`));
+		await expect(page.getByRole('link', { name: DEGREES.moduleName })).toBeVisible();
 	});
 
 	test('without an account the page is refused rather than empty', async ({ browser }) => {

@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { frequenciesForTerm } from '$lib/catalogue';
+import { degreeParam, frequenciesForTerm, parseDegreeParam } from '$lib/catalogue';
 import { graphql } from '$lib/gql/__generated__';
 import type { DutyStatus } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
@@ -17,6 +17,7 @@ const CatalogueDocument = graphql(`
 			title
 			active
 			planningStatus
+			degree
 			spos {
 				id
 				version
@@ -121,6 +122,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const withoutComponents = url.searchParams.get('ohne-aufteilung') === '1';
 	const withoutSubjectGroup = url.searchParams.get('ohne-fachgruppe') === '1';
 	const subjectGroup = url.searchParams.get('fachgruppe') ?? '';
+	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
 
 	const frequency = frequenciesForTerm(term);
 	const dutyFilter = DUTY_VALUES.includes(duty as DutyStatus) ? (duty as DutyStatus) : null;
@@ -139,7 +141,8 @@ export const load: PageServerLoad = async ({ url }) => {
 				includeInactive,
 				withoutComponents,
 				withoutSubjectGroup,
-				subjectGroup: subjectGroup === '' ? null : subjectGroup
+				subjectGroup: subjectGroup === '' ? null : subjectGroup,
+				degree
 			}
 		});
 
@@ -159,7 +162,8 @@ export const load: PageServerLoad = async ({ url }) => {
 				includeInactive,
 				withoutComponents,
 				withoutSubjectGroup,
-				subjectGroup
+				subjectGroup,
+				degree: degreeParam(degree)
 			}
 		};
 	} catch (err) {

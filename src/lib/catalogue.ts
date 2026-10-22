@@ -11,6 +11,7 @@
 
 import type {
 	CourseType,
+	Degree,
 	DutyStatus,
 	Frequency,
 	InstancePartKind,
@@ -292,6 +293,36 @@ export const PROGRAMME_STATUS_HINTS: Record<ProgrammeStatus, string> = {
 		'War unserer und ist ausgelaufen. Der bereits angemeldete Bedarf bleibt lesbar, neuer ' +
 		'kommt nicht mehr dazu.'
 };
+
+/**
+ * What a study programme leads to, as the faculty says it.
+ *
+ * The dean's office records it per programme, because nothing the examination office delivers
+ * says it. A programme without one has a null degree and matches neither in a filter.
+ */
+export const DEGREE_LABELS: Record<Degree, string> = {
+	BACHELOR: 'Bachelor',
+	MASTER: 'Master'
+};
+
+/** The degrees in the order a choice offers them. */
+export const ALL_DEGREES: readonly Degree[] = ['BACHELOR', 'MASTER'];
+
+/**
+ * The degree a URL asks for: `?abschluss=bachelor` or `?abschluss=master`.
+ *
+ * Lower case in the URL, like every other parameter of these screens, and anything else reads as
+ * "every degree" rather than as an error — a link that has gone stale should still open the page.
+ */
+export function parseDegreeParam(value: string | null | undefined): Degree | null {
+	const v = (value ?? '').trim().toUpperCase();
+	return ALL_DEGREES.find((d) => d === v) ?? null;
+}
+
+/** The URL spelling of a degree; the inverse of `parseDegreeParam`. */
+export function degreeParam(degree: Degree | null): string {
+	return degree === null ? '' : degree.toLowerCase();
+}
 
 /**
  * The badge a status gets.

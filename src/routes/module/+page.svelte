@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import {
+		ALL_DEGREES,
 		COURSE_TYPE_LABELS,
+		DEGREE_LABELS,
 		DUTY_LABELS,
 		basketLabel,
 		FREQUENCY_LABELS,
@@ -9,6 +11,7 @@
 		componentSummary,
 		contactHoursLabel,
 		dutyBadge,
+		degreeParam,
 		filingGroupsFor,
 		filterGroupOptions,
 		mayFileModules,
@@ -79,6 +82,13 @@
 	// modules is not filing into it, and that list is empty for anybody who files nothing.
 	const filterGroups = $derived(filterGroupOptions(data.subjectGroups, data.filter.subjectGroup));
 
+	// Which programmes the degree filter leaves out because nobody has recorded theirs.
+	const withoutDegree = $derived(
+		data.filter.degree === ''
+			? []
+			: data.programmes.filter((p) => p.planningStatus === 'PLANNED' && !p.degree)
+	);
+
 	// The number of columns, so that the empty row spans the table however it is configured.
 	const columnCount = $derived(7 + (data.filter.programme !== '' ? 1 : 0) + (mayAssign ? 1 : 0));
 </script>
@@ -128,9 +138,23 @@
 					<option value={programme.code} selected={programme.code === data.filter.programme}>
 						{programme.code}{programme.title ? ` — ${programme.title}` : ''}{programme.active
 							? ''
-							: ' (ohne SPO)'}{programme.planningStatus === 'PLANNED'
+							: ' (ohne SPO)'}{programme.degree
+							? ` · ${DEGREE_LABELS[programme.degree]}`
+							: ''}{programme.planningStatus === 'PLANNED'
 							? ''
 							: ` (${PROGRAMME_STATUS_LABELS[programme.planningStatus]})`}
+					</option>
+				{/each}
+			</select>
+		</label>
+
+		<label class="form-control">
+			<span class="label-text text-sm">Abschluss</span>
+			<select name="abschluss" aria-label="Abschluss" class="select select-bordered select-sm">
+				<option value="">alle</option>
+				{#each ALL_DEGREES as degree (degree)}
+					<option value={degreeParam(degree)} selected={data.filter.degree === degreeParam(degree)}>
+						{DEGREE_LABELS[degree]}
 					</option>
 				{/each}
 			</select>
@@ -232,6 +256,15 @@
 
 		<button type="submit" class="btn btn-sm">Anwenden</button>
 	</form>
+
+	{#if withoutDegree.length > 0}
+		<p class="text-base-content/80 text-sm">
+			<span class="badge badge-warning badge-sm align-middle">Abschluss fehlt</span>
+			Ohne eingetragenen Abschluss und deshalb nicht im Filter:
+			{withoutDegree.map((p) => p.code).join(', ')}. Den Abschluss trägt das Dekanat unter
+			<a class="link" href={resolve('/verwaltung/studiengaenge')}>Studiengänge</a> ein.
+		</p>
+	{/if}
 
 	<div class="text-base-content/80 flex flex-wrap gap-x-4 gap-y-1 text-sm">
 		<span>{data.modules.length} Module</span>
