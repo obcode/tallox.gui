@@ -13,6 +13,8 @@ const SemestersDocument = graphql(`
 			isPlanningSemester
 			reachablePhases
 			wishesPublishedAt
+			desiredHoursFrozenAt
+			desiredHoursPublishedAt
 		}
 	}
 `);
@@ -40,6 +42,24 @@ const PublishWishesDocument = graphql(`
 		publishWishes(code: $code) {
 			code
 			wishesPublishedAt
+		}
+	}
+`);
+
+const FreezeDesiredHoursDocument = graphql(`
+	mutation FreezeDesiredHours($code: String!) {
+		freezeDesiredHours(code: $code) {
+			code
+			desiredHoursFrozenAt
+		}
+	}
+`);
+
+const PublishDesiredHoursDocument = graphql(`
+	mutation PublishDesiredHours($code: String!) {
+		publishDesiredHours(code: $code) {
+			code
+			desiredHoursPublishedAt
 		}
 	}
 `);
@@ -121,5 +141,32 @@ export const actions: Actions = {
 			return fail(400, toRefusal(err));
 		}
 		return { published: code };
+	},
+
+	/**
+	 * Freeze the desired teaching hours: from now on only the dean's office changes a figure.
+	 * Irreversible, so behind the same disclosure as publishing.
+	 */
+	freezeDesiredHours: async ({ request }) => {
+		const form = await request.formData();
+		const code = String(form.get('code') ?? '');
+		try {
+			await backendRequest(FreezeDesiredHoursDocument, { code });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { frozen: code };
+	},
+
+	/** Make the frozen desired teaching hours visible to everybody — the ranges, not the notes. */
+	publishDesiredHours: async ({ request }) => {
+		const form = await request.formData();
+		const code = String(form.get('code') ?? '');
+		try {
+			await backendRequest(PublishDesiredHoursDocument, { code });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { desiredHoursPublished: code };
 	}
 };

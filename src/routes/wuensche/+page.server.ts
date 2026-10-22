@@ -3,13 +3,8 @@ import { graphql } from '$lib/gql/__generated__';
 import type { WishPriority } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import {
-	isWishChoice,
-	othersForWishScreen,
-	parseDesiredHours,
-	wishChanges,
-	type WishEntry
-} from '$lib/wishes';
+import { parseDesiredRange } from '$lib/desiredHours';
+import { isWishChoice, othersForWishScreen, wishChanges, type WishEntry } from '$lib/wishes';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -42,6 +37,9 @@ const WishesDocument = graphql(`
 			code
 			phase
 			wishesPublishedAt
+			assignmentsPublishedAt
+			desiredHoursFrozenAt
+			desiredHoursPublishedAt
 		}
 		# Own subjects first — a preselection and not a rule, so the rest stays on the page.
 		mySubjectGroups {
@@ -189,8 +187,24 @@ const WishesDocument = graphql(`
 		# How many hours a week this person would like to teach in the semester on screen. Their own,
 		# so no confidentiality question; empty until stated.
 		myDesiredTeachingHours(semester: $semester) @include(if: $withSemester) {
-			hours
+			minHours
+			maxHours
 			note
+			correctedBy
+		}
+		# What they already hold, to set beside it. Everybody's whom this person may see comes back —
+		# a lead reads the members of their groups — and the page picks its own row.
+		assignedTeachingHours(semester: $semester) @include(if: $withSemester) {
+			total
+			bySubjectGroup {
+				hours
+				subjectGroup {
+					code
+				}
+			}
+			person {
+				id
+			}
 		}
 		demandCompletions(semester: $semester) @include(if: $withSemester) {
 			completedAt
@@ -199,6 +213,7 @@ const WishesDocument = graphql(`
 			}
 		}
 		me {
+			id
 			mail
 			# Which subject groups this person leads. A lead may read the unpublished entries on
 			# her groups' modules — the backend's wish rule is owner ∨ published ∨
@@ -243,9 +258,15 @@ const SetWishDocument = graphql(`
 `);
 
 const SetDesiredHoursDocument = graphql(`
-	mutation SetDesiredHours($semester: String!, $hours: Float, $note: String) {
-		setDesiredTeachingHours(semester: $semester, hours: $hours, note: $note) {
-			hours
+	mutation SetDesiredHours($semester: String!, $minHours: Float, $maxHours: Float, $note: String) {
+		setDesiredTeachingHours(
+			semester: $semester
+			minHours: $minHours
+			maxHours: $maxHours
+			note: $note
+		) {
+			minHours
+			maxHours
 		}
 	}
 `);
@@ -315,6 +336,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		windows: data.wishWindows ?? [],
 		completions: data.demandCompletions ?? [],
 		desiredHours: data.myDesiredTeachingHours?.[0] ?? null,
+		ownLoad: (data.assignedTeachingHours ?? []).find((l) => l.person.id === data.me?.id) ?? null,
 		me: data.me,
 		leadsGroups: (data.me?.subjectGroupsLed ?? []).length > 0,
 		unusable
@@ -417,17 +439,19 @@ export const actions: Actions = {
 	desiredHours: async ({ request }) => {
 		const form = await request.formData();
 		const semester = String(form.get('semester') ?? '');
-		const hours = parseDesiredHours(String(form.get('hours') ?? ''));
+		const range = parseDesiredRange(
+			String(form.get('minHours') ?? ''),
+			String(form.get('maxHours') ?? '')
+		);
 		const note = String(form.get('note') ?? '').trim();
-		if (hours === 'invalid') {
-			return fail(400, {
-				desiredHoursMessage: 'Bitte eine Zahl zwischen 0 und 40 eingeben, in halben Stunden.'
-			});
+		if (range !== null && 'error' in range) {
+			return fail(400, { desiredHoursMessage: range.error });
 		}
 		try {
 			await backendRequest(SetDesiredHoursDocument, {
 				semester,
-				hours,
+				minHours: range?.min ?? null,
+				maxHours: range?.max ?? null,
 				note: note === '' ? null : note
 			});
 		} catch (err) {

@@ -4,6 +4,7 @@
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { autosave, trackSaves } from '$lib/saveOnLeave';
 	import WishCell from '$lib/components/WishCell.svelte';
+	import DesiredRangeFields from '$lib/components/DesiredRangeFields.svelte';
 	import { applyOrder, nextSort, sortRows, type SortState } from '$lib/sorting';
 	import { formatHours } from '$lib/catalogue';
 	import {
@@ -47,6 +48,7 @@
 		type WishRow,
 		type WishSortKey
 	} from '$lib/wishes';
+	import { desiredHoursStage, loadBreakdown, STAGE_HINTS, STAGE_LABELS } from '$lib/desiredHours';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -60,6 +62,26 @@
 
 	const phase = $derived(data.semester?.phase ?? null);
 	const open = $derived(wishesAreOpen(phase));
+	const desiredStage = $derived(data.semester ? desiredHoursStage(data.semester) : 'OPEN');
+	// Open for one's own figure until the dean's office freezes it, and never once the semester is
+	// over. The backend decides; this only saves a refusal on every keystroke.
+	const desiredEditable = $derived(open && desiredStage === 'OPEN');
+
+	// The note keeps its own text for the reason DesiredRangeFields gives: the page reloads after
+	// every save, and must not rewrite a field somebody is typing into.
+	const storedNote = () => data.desiredHours?.note ?? '';
+	let desiredNote = $state(untrack(storedNote));
+	let syncedNote = untrack(storedNote);
+	let noteField: HTMLInputElement | undefined = $state();
+	$effect(() => {
+		const stored = storedNote();
+		untrack(() => {
+			if (desiredNote === syncedNote && document.activeElement !== noteField) {
+				desiredNote = stored;
+			}
+			syncedNote = stored;
+		});
+	});
 
 	/**
 	 * Which subject groups have shut their round, and which programmes have settled their demand.
@@ -445,42 +467,61 @@
 		>
 			<h2 id="desired-hours" class="font-medium">Wie viel möchtest Du halten?</h2>
 			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
-				Wie viele SWS Du in {semesterName(data.semester.code)} insgesamt halten möchtest. Das lesen nur
-				Du, die Leitungen Deiner Fachgruppen und das Dekanat — nie das übrige Kollegium, auch nicht nach
-				der Veröffentlichung. Leer heißt „nicht angegeben“; 0 ist eine Angabe.
+				Wie viele SWS modulbehaftete Lehre Du in {semesterName(data.semester.code)} übernehmen möchtest
+				— ohne Abschlussarbeiten, als Bereich von–bis oder als eine Zahl. Bis zur Veröffentlichung lesen
+				das nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; danach sehen alle den Bereich unter
+				<a class="link" href={resolve('/wuensche/kollegium')}>SWS im Kollegium</a>, die Notiz nie.
+				Leer heißt „nicht angegeben“; 0 ist eine Angabe.
 			</p>
-			<form
-				method="POST"
-				action="?/desiredHours"
-				use:autosave={{ label: 'Wie viel möchtest Du halten?' }}
-				class="mt-3 flex flex-wrap items-end gap-2"
-			>
-				<input type="hidden" name="semester" value={data.semester.code} />
-				<label class="flex flex-col gap-1">
-					<span class="label-text text-sm">SWS</span>
-					<input
-						name="hours"
-						class="input input-sm w-24"
-						inputmode="decimal"
-						value={data.desiredHours ? desiredHoursLabel(data.desiredHours.hours) : ''}
-						disabled={!open}
+			<p class="text-base-content/90 mt-1 text-sm">
+				<span class="badge badge-ghost badge-sm align-middle">{STAGE_LABELS[desiredStage]}</span>
+				{STAGE_HINTS[desiredStage]}
+			</p>
+			<!-- Created afresh for each semester: the fields hold their own text, see DesiredRangeFields. -->
+			{#key data.semester.code}
+				<form
+					method="POST"
+					action="?/desiredHours"
+					use:autosave={{ label: 'Wie viel möchtest Du halten?' }}
+					class="mt-3 flex flex-wrap items-end gap-2"
+				>
+					<input type="hidden" name="semester" value={data.semester.code} />
+					<DesiredRangeFields
+						min={data.desiredHours?.minHours}
+						max={data.desiredHours?.maxHours}
+						disabled={!desiredEditable}
 					/>
-				</label>
-				<label class="flex min-w-48 flex-1 flex-col gap-1">
-					<span class="label-text text-sm">Notiz (optional)</span>
-					<input
-						name="note"
-						class="input input-sm w-full max-w-md"
-						maxlength="500"
-						value={data.desiredHours?.note ?? ''}
-						disabled={!open}
-					/>
-				</label>
-				<!-- Saved on leaving a field or Enter. Without JavaScript this is the way to send. -->
-				<noscript>
-					<button type="submit" class="btn btn-sm" disabled={!open}>Speichern</button>
-				</noscript>
-			</form>
+					<label class="flex min-w-48 flex-1 flex-col gap-1">
+						<span class="label-text text-sm">Notiz (optional, wird nicht veröffentlicht)</span>
+						<input
+							name="note"
+							class="input input-sm w-full max-w-md"
+							maxlength="500"
+							bind:value={desiredNote}
+							bind:this={noteField}
+							disabled={!desiredEditable}
+						/>
+					</label>
+					<!-- Saved on leaving a field or Enter. Without JavaScript this is the way to send. -->
+					<noscript>
+						<button type="submit" class="btn btn-sm" disabled={!desiredEditable}>Speichern</button>
+					</noscript>
+				</form>
+			{/key}
+			{#if data.desiredHours?.correctedBy}
+				<p class="text-base-content/80 mt-2 text-sm">
+					Nach Absprache geändert durch {data.desiredHours.correctedBy} (Dekanat).
+				</p>
+			{/if}
+			<p class="text-base-content/80 mt-2 text-sm">
+				Bereits eingeplant:
+				{#if data.ownLoad}
+					<strong>{desiredHoursLabel(data.ownLoad.total)} SWS</strong>
+					({loadBreakdown(data.ownLoad)}){#if !data.semester.assignmentsPublishedAt}, vorläufig{/if}
+				{:else}
+					noch nichts
+				{/if}
+			</p>
 			{#if form && 'desiredHoursMessage' in form}
 				<p class="text-base-content/90 mt-2 text-sm" role="alert">
 					<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>

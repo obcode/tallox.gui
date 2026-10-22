@@ -150,10 +150,15 @@ const PASS_THROUGH = new Set([
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
 	'WISH_PRIORITY_INVALID',
-	// The desired teaching hours: a range and a finished semester. Both are about the caller's own
-	// figure, which nobody else can write, so neither says anything about a colleague.
+	// The desired teaching hours: the range, a finished semester, the freeze. All are about the
+	// caller's own figure or about the semester's state, which every colleague reads, so none says
+	// anything about a colleague. The correction by the dean's office can answer PERSON_NOT_FOUND,
+	// which says only that an id is no account.
 	'DESIRED_HOURS_OUT_OF_RANGE',
+	'DESIRED_HOURS_RANGE',
 	'DESIRED_HOURS_PHASE_CLOSED',
+	'DESIRED_HOURS_FROZEN',
+	'DESIRED_HOURS_NOT_FROZEN',
 	'SEMESTER_REQUIRED',
 	// The assignment phase, read the same way and with one entry that needed arguing.
 	//

@@ -110,7 +110,10 @@
 	);
 
 	const members = $derived(data.group?.members ?? []);
-	const desired = $derived(new Map(data.desired.map((d) => [d.person.id, d.hours] as const)));
+	const desired = $derived(
+		new Map(data.desired.map((d) => [d.person.id, { min: d.minHours, max: d.maxHours }] as const))
+	);
+	const load = $derived(new Map(data.load.map((l) => [l.person.id, l.total] as const)));
 
 	/**
 	 * Whether this subject group is still taking wishes.
@@ -756,7 +759,7 @@
 														<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
 														{#each candidates as candidate (candidateValue(candidate))}
 															<option value={candidateValue(candidate)}>
-																{candidateLabel(candidate, desired)}
+																{candidateLabel(candidate, desired, load)}
 															</option>
 														{/each}
 													</select>
@@ -950,7 +953,7 @@
 																<option value="">— nicht besetzt —</option>
 																{#each candidates as candidate (candidateValue(candidate))}
 																	<option value={candidateValue(candidate)}>
-																		{candidateLabel(candidate, desired)}
+																		{candidateLabel(candidate, desired, load)}
 																	</option>
 																{/each}
 															</select>

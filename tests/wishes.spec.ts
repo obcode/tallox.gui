@@ -25,7 +25,9 @@ function reset(): void {
 		   ('${WISHES.instance}', '${WISHES.laterInstance}');
 		 DELETE FROM desired_teaching_hours WHERE semester_id IN
 		   (SELECT id FROM semester WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}'));
-		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES'
+		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES',
+		        desired_hours_published_at = NULL, desired_hours_published_by = NULL,
+		        desired_hours_frozen_at = NULL, desired_hours_frozen_by = NULL
 		  WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}');`,
 		'clearing the test wishes'
 	);
@@ -298,28 +300,46 @@ test.describe('the wish phase', () => {
 		}
 	});
 
-	// How much somebody would like to teach: stated on the wish page, read by the lead of their
-	// subject group beside their name when filling an instance.
-	test('a lecturer states how many hours, and the lead of their group reads it', async ({
-		asPersona
-	}) => {
+	// How much somebody would like to teach: stated on the wish page as a range, read by the lead of
+	// their subject group beside their name when filling an instance.
+	test('a lecturer states a range, and the lead of their group reads it', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, URL);
 
 		const card = page.getByRole('region', { name: 'Wie viel möchtest Du halten?' });
-		const hours = card.getByRole('textbox', { name: 'SWS' });
+		const low = card.getByRole('textbox', { name: 'SWS von' });
+		const high = card.getByRole('textbox', { name: 'bis' });
 
 		// Saved on leaving the field — there is no button.
 		await expect(card.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
-		await hours.fill('7,3');
-		await hours.press('Tab');
+		await low.fill('7,3');
+		await low.press('Tab');
 		await expect(card.getByRole('alert')).toContainText('zwischen 0 und 40');
 
-		await hours.fill('12,5');
-		await hours.press('Tab');
+		// "von" alone is a single figure, saved on leaving it; then "bis" below it is refused.
+		await low.fill('12');
+		await low.press('Tab');
+		await expect(card.getByRole('status')).toContainText('Gespeichert');
+		// Tab moved into "bis", and a field somebody is in is not rewritten by the reload.
+		await expect(high).toHaveValue('');
+		await high.fill('10');
+		await high.press('Tab');
+		await expect(card.getByRole('alert')).toContainText('Minimum');
+		// The refused figure stays in the field, so it can be corrected rather than retyped.
+		await expect(high).toHaveValue('10');
+
+		await low.fill('6');
+		await high.fill('12,5');
+		await card.getByRole('textbox', { name: /Notiz/ }).fill('E2E-Notiz, nur für Zuständige');
+		await card.getByRole('textbox', { name: /Notiz/ }).press('Tab');
+		// Three fields left in a row are three saves, one after the other; a full reload before the
+		// last has landed would read the one before it.
+		await page.waitForLoadState('networkidle');
 		await expect(card.getByRole('status')).toContainText('Gespeichert');
 		await gotoRendered(page, URL);
-		await expect(hours).toHaveValue('12,5');
+		await expect(low).toHaveValue('6');
+		await expect(high).toHaveValue('12,5');
+		await expect(card).toContainText('offen');
 
 		const lead = await asPersona(PERSONAS.drei);
 		await gotoRendered(
@@ -328,9 +348,83 @@ test.describe('the wish phase', () => {
 		);
 		await expect(
 			lead.locator('option', { hasText: `${PERSONAS.eins.name} (` }).filter({
-				hasText: 'möchte 12,5 SWS'
+				hasText: 'möchte 6–12,5 SWS'
 			})
 		).not.toHaveCount(0);
+	});
+
+	// The overview of the faculty before publication: a sentence for a colleague, not a table of
+	// empty cells — and nothing of Eins's figure anywhere on the page.
+	test('before publication a colleague sees no figure in the overview', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, `/wuensche/kollegium?semester=${WISHES.semester}`);
+
+		await expect(page.getByText(/noch nicht veröffentlicht/).first()).toBeVisible();
+		const body = await page.locator('main').innerText();
+		expect(body).not.toContain('6–12,5');
+		expect(body).not.toContain(PERSONAS.eins.name);
+	});
+
+	// The dean's office freezes at the deadline; from then on the lecturer reads and the dean's
+	// office corrects, and the correction keeps the person's note and says who made it.
+	test('the dean’s office freezes the figures and corrects one', async ({ asPersona }) => {
+		const deans = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(deans, '/semester');
+		const semesterCard = deans
+			.locator('div.rounded-lg')
+			.filter({ has: deans.getByRole('heading', { name: semesterName(WISHES.semester) }) });
+		await semesterCard.getByText('Wunsch-SWS einfrieren …').click();
+		await semesterCard
+			.getByRole('button', {
+				name: `Ja, Wunsch-SWS für ${semesterName(WISHES.semester)} einfrieren`
+			})
+			.click();
+		await expect(semesterCard).toContainText('Wunsch-SWS eingefroren');
+
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, URL);
+		const card = page.getByRole('region', { name: 'Wie viel möchtest Du halten?' });
+		await expect(card.getByRole('textbox', { name: 'bis' })).toBeDisabled();
+		await expect(card).toContainText('eingefroren');
+
+		await gotoRendered(deans, `/wuensche/kollegium?semester=${WISHES.semester}`);
+		const upper = deans.getByRole('textbox', { name: `SWS bis, ${PERSONAS.eins.name}` });
+		await expect(upper).toHaveValue('12,5');
+		await upper.fill('14');
+		await upper.press('Tab');
+		await gotoRendered(deans, `/wuensche/kollegium?semester=${WISHES.semester}`);
+		await expect(upper).toHaveValue('14');
+
+		await gotoRendered(page, URL);
+		await expect(card).toContainText(`Nach Absprache geändert durch`);
+		await expect(card.getByRole('textbox', { name: /Notiz/ })).toHaveValue(
+			'E2E-Notiz, nur für Zuständige'
+		);
+	});
+
+	test('publishing the figures shows everybody the range, never the note', async ({
+		asPersona
+	}) => {
+		const deans = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(deans, '/semester');
+		const semesterCard = deans
+			.locator('div.rounded-lg')
+			.filter({ has: deans.getByRole('heading', { name: semesterName(WISHES.semester) }) });
+		await semesterCard.getByText('Wunsch-SWS veröffentlichen …').click();
+		await semesterCard
+			.getByRole('button', {
+				name: `Ja, Wunsch-SWS für ${semesterName(WISHES.semester)} veröffentlichen`
+			})
+			.click();
+		await expect(semesterCard).toContainText('Wunsch-SWS veröffentlicht');
+
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, `/wuensche/kollegium?semester=${WISHES.semester}`);
+		const row = page.getByRole('row').filter({ hasText: PERSONAS.eins.name });
+		await expect(row).toContainText('6–14');
+		await expect(page.locator('main')).not.toContainText('E2E-Notiz');
+		// No correction controls for a colleague.
+		await expect(page.getByRole('textbox', { name: /SWS bis,/ })).toHaveCount(0);
 	});
 
 	test('publication opens it to everybody', async ({ asPersona }) => {
@@ -401,5 +495,17 @@ test.describe('the wish phase', () => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, URL);
 		await checkA11y(page);
+	});
+
+	test('the overview of the faculty is accessible, with and without the table', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		for (const persona of [PERSONAS.zwei, PERSONAS.fuenf]) {
+			const page = await asPersona(persona);
+			await gotoRendered(page, `/wuensche/kollegium?semester=${WISHES.semester}`);
+			await expect(page.getByRole('heading', { name: 'SWS im Kollegium', level: 1 })).toBeVisible();
+			await checkA11y(page);
+		}
 	});
 });

@@ -11,6 +11,7 @@
 		wishesAreVisible
 	} from '$lib/semester';
 	import { formatMoment } from '$lib/tokens';
+	import { desiredHoursStage, STAGE_LABELS } from '$lib/desiredHours';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -81,6 +82,23 @@
 				{/if}
 			</div>
 
+			<div class="text-base-content/90 text-sm">
+				<span class="badge badge-ghost badge-sm align-middle">
+					Wunsch-SWS {STAGE_LABELS[desiredHoursStage(semester)]}
+				</span>
+				{#if semester.desiredHoursPublishedAt}
+					seit {formatMoment(semester.desiredHoursPublishedAt)} — alle sehen die Bereiche, die Notizen
+					nicht
+				{:else if semester.desiredHoursFrozenAt}
+					seit {formatMoment(semester.desiredHoursFrozenAt)} — Korrekturen unter
+					<a class="link" href="{resolve('/wuensche/kollegium')}?semester={semester.code}"
+						>SWS im Kollegium</a
+					>
+				{:else}
+					— alle können ihre Angabe noch ändern
+				{/if}
+			</div>
+
 			{#if mayAdminister}
 				<div class="border-base-300 flex flex-wrap items-center gap-2 border-t pt-3">
 					<!--
@@ -110,6 +128,41 @@
 								Als Planungssemester setzen
 							</button>
 						</form>
+					{/if}
+
+					{#if desiredHoursStage(semester) === 'OPEN'}
+						<!-- Irreversible like publishing, so behind the same disclosure. -->
+						<details>
+							<summary class="btn btn-sm btn-outline">Wunsch-SWS einfrieren …</summary>
+							<div class="border-base-300 bg-base-100 mt-2 max-w-md rounded-lg border p-3">
+								<p class="text-base-content/90 mb-3 text-sm">
+									Der Stichtag: Danach kann niemand die eigene Angabe mehr ändern, nur noch das
+									Dekanat. <strong>Das lässt sich nicht zurücknehmen.</strong>
+								</p>
+								<form method="POST" action="?/freezeDesiredHours" use:enhance>
+									<input type="hidden" name="code" value={semester.code} />
+									<button type="submit" class="btn btn-sm btn-primary">
+										Ja, Wunsch-SWS für {semesterName(semester.code)} einfrieren
+									</button>
+								</form>
+							</div>
+						</details>
+					{:else if desiredHoursStage(semester) === 'FROZEN'}
+						<details>
+							<summary class="btn btn-sm btn-outline">Wunsch-SWS veröffentlichen …</summary>
+							<div class="border-base-300 bg-base-100 mt-2 max-w-md rounded-lg border p-3">
+								<p class="text-base-content/90 mb-3 text-sm">
+									Danach sieht das ganze Kollegium die Bereiche aller — die Notizen nicht.
+									<strong>Das lässt sich nicht zurücknehmen.</strong>
+								</p>
+								<form method="POST" action="?/publishDesiredHours" use:enhance>
+									<input type="hidden" name="code" value={semester.code} />
+									<button type="submit" class="btn btn-sm btn-primary">
+										Ja, Wunsch-SWS für {semesterName(semester.code)} veröffentlichen
+									</button>
+								</form>
+							</div>
+						</details>
 					{/if}
 
 					{#if mayStillPublish(semester)}

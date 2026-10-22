@@ -2,6 +2,8 @@ import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
+import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
+import { desiredHoursLabel } from '$lib/wishes';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -347,20 +349,26 @@ export type Candidate = {
 };
 
 /**
- * A candidate as the dropdown shows them: the name, why they are listed, and — where they stated
- * it and the reader may see it — how many hours they would like to teach this semester.
+ * A candidate as the dropdown shows them: the name, why they are listed, and — where the reader may
+ * see them — the range of hours they would like to teach this semester and what they already hold.
  *
- * The figure comes from the backend already filtered: the lead of their subject group and the
- * dean's office read it, nobody else. A candidate not in the map has not stated one, or the reader
- * may not see it, and the two look the same on purpose.
+ * Both figures come from the backend already filtered: the leads of the person's subject groups
+ * and the dean's office read them while the planning runs, everybody once they are published. A
+ * candidate not in a map has no figure, or the reader may not see it, and the two look the same on
+ * purpose. The load counts every subject group, so "8 eingeplant" may well be somebody else's
+ * group — that is what it is for.
  */
-export function candidateLabel(candidate: Candidate, desired: ReadonlyMap<string, number>): string {
+export function candidateLabel(
+	candidate: Candidate,
+	desired: ReadonlyMap<string, DesiredRange>,
+	load: ReadonlyMap<string, number> = new Map()
+): string {
 	const notes: string[] = [];
 	if (candidate.hint) notes.push(candidate.hint);
-	const hours = candidate.personId === undefined ? undefined : desired.get(candidate.personId);
-	if (hours !== undefined) {
-		notes.push(`möchte ${hours.toLocaleString('de-DE', { maximumFractionDigits: 1 })} SWS`);
-	}
+	const range = candidate.personId === undefined ? undefined : desired.get(candidate.personId);
+	if (range !== undefined) notes.push(`möchte ${desiredRangeLabel(range.min, range.max)} SWS`);
+	const held = candidate.personId === undefined ? undefined : load.get(candidate.personId);
+	if (held !== undefined) notes.push(`${desiredHoursLabel(held)} eingeplant`);
 	return notes.length === 0 ? candidate.name : `${candidate.name} (${notes.join(', ')})`;
 }
 
