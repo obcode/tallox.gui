@@ -67,13 +67,13 @@ export const PHASES: readonly IntroPhase[] = [
 		happens:
 			'Das Kollegium bekundet Interesse an den Instanzen. Jede Fachgruppe sammelt in ihrer eigenen Wunschrunde; die ist offen, bis die Fachgruppenleitung sie schließt.',
 		forYou:
-			'Jetzt bist Du dran: an jeder Instanz, die Du halten würdest, „unbedingt“, „gerne“ oder „notfalls“ setzen, und wenn Du nur die Vorlesung oder nur ein Praktikum möchtest, das in die Notiz schreiben. Über der Tabelle gibst Du an, wie viele SWS Du in dem Semester insgesamt halten möchtest. Bis zur Veröffentlichung sieht das niemand außer den Zuständigen.',
+			'Jetzt bist Du dran: an jeder Instanz, die Du halten würdest, „unbedingt“, „gerne“ oder „notfalls“ setzen, und wenn Du nur die Vorlesung oder nur ein Praktikum möchtest, das in die Notiz schreiben. Über der Tabelle gibst Du an, wie viele SWS modulbehaftete Lehre Du in dem Semester übernehmen möchtest, als Bereich von–bis, bis zum Stichtag des Dekanats. Bis zur Veröffentlichung sieht das niemand außer den Zuständigen; danach sieht das ganze Kollegium die Bereiche unter „SWS im Kollegium“.',
 		where: [{ href: '/wuensche', label: 'Wünsche' }]
 	},
 	{
 		phase: 'ASSIGNMENT',
 		happens:
-			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum. Dabei sehen sie die Wünsche, die Kompetenzen und die gewünschten SWS.',
+			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum. Dabei sehen sie die Wünsche, die Kompetenzen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
 		forYou:
 			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert. Bis zur Veröffentlichung kann sich das noch ändern.',
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
@@ -127,6 +127,10 @@ export const GLOSSARY: readonly IntroTerm[] = [
 	{
 		term: 'SWS',
 		text: 'Semesterwochenstunden. Gezählt wird, was eine Lehrperson für einen Teil gutgeschrieben bekommt, also jede Praktikumsgruppe einzeln. Ein 4-SWS-Modul mit einer Vorlesung und drei Praktikumsgruppen kostet die Fakultät deshalb mehr als 4 SWS je Zug.'
+	},
+	{
+		term: 'Wunsch-SWS',
+		text: 'Wie viele SWS modulbehaftete Lehre jemand in einem Semester übernehmen möchte, ohne Abschlussarbeiten, als Bereich von–bis. Zum Stichtag friert das Dekanat die Angaben ein, die Fakultätsleitung prüft sie, dann sieht sie das ganze Kollegium. Keine Ampel und kein Deputat: nur die eigene Angabe.'
 	},
 	{
 		term: 'Fachgruppe',

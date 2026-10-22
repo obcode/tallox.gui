@@ -215,10 +215,45 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, wie viele SWS ich halten möchte?',
 		answer:
-			'Auf der Wunschseite, über der Tabelle, je Semester. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Das lesen nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; bei der Zuteilung steht es neben Deinem Namen.',
+			'Auf der Wunschseite, über der Tabelle, je Semester: wie viele SWS modulbehaftete Lehre Du übernehmen möchtest, ohne Abschlussarbeiten, als Bereich von–bis oder als eine Zahl. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Ändern kannst Du sie, bis das Dekanat sie zum Stichtag einfriert. Bis zur Veröffentlichung lesen sie nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; danach sieht das ganze Kollegium den Bereich. Die Notiz daneben bleibt immer bei Dir, Deinen Fachgruppenleitungen und dem Dekanat.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
+	},
+	{
+		question: 'Wo sehe ich, wer wie viele SWS halten möchte?',
+		answer:
+			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat; vorher sehen sie nur die Leitungen der jeweiligen Fachgruppen und das Dekanat. „Eingeplant“ ist bis zur Veröffentlichung der Zuteilung ein Entwurf.',
+		who: [],
+		where: [{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }],
+		stage: 'EACH_SEMESTER'
+	},
+	{
+		question: 'Meine SWS-Angabe ist eingefroren, stimmt aber nicht mehr. Was nun?',
+		answer:
+			'Nach dem Stichtag ändert nur noch das Dekanat eine Angabe, nach Absprache mit Dir. Die Fakultätsleitung geht die Angaben ohnehin auf Plausibilität durch und meldet sich bei groben Abweichungen. Eine Korrektur steht danach mit dem Namen der Person aus dem Dekanat neben Deiner Angabe; Deine Notiz bleibt.',
+		who: ['LECTURER'],
+		where: [{ href: '/wuensche', label: 'Wünsche' }]
+	},
+	{
+		question: 'Wie sehe ich, ob jemand schon in einer anderen Fachgruppe verplant ist?',
+		answer:
+			'Beim Besetzen steht neben dem Namen, wie viele SWS die Person halten möchte und wie viele schon eingeplant sind, über alle Fachgruppen. Die Aufteilung je Fachgruppe zeigt „SWS im Kollegium“: Du siehst sie für die Mitglieder Deiner Fachgruppen schon während der Planung, ohne zu sehen, welche Module das sind. Dann weißt Du, mit welcher Leitung Du sprechen musst.',
+		who: ['SUBJECT_GROUP_LEAD'],
+		where: [
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }
+		]
+	},
+	{
+		question: 'Wie friere ich die Wunsch-SWS ein und veröffentliche sie?',
+		answer:
+			'Unter „Semester und Phasen“, je Semester. „Wunsch-SWS einfrieren“ ist der Stichtag: Danach kann niemand die eigene Angabe mehr ändern. Unter „SWS im Kollegium“ korrigiert das Dekanat dann, was mit den Betroffenen abgesprochen ist. „Wunsch-SWS veröffentlichen“ macht die Bereiche für alle sichtbar, die Notizen nicht. Beides lässt sich nicht zurücknehmen und geht nur im Browser.',
+		who: ['DEANS_OFFICE'],
+		where: [
+			{ href: '/semester', label: 'Semester und Phasen' },
+			{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }
+		]
 	},
 	{
 		question: 'Wie kennzeichne ich ein Modul als PBLV?',

@@ -50,6 +50,7 @@ describe('NAV_ITEMS', () => {
 		)!;
 		expect(teaching.children!.map((c) => c.href)).toEqual([
 			'/wuensche',
+			'/wuensche/kollegium',
 			'/konto/zuteilungen',
 			'/konto/kompetenzen',
 			'/konto/fachgruppen'
@@ -99,7 +100,15 @@ describe('areas with tabs', () => {
 	it('give a tab bar inside an area, and none outside', () => {
 		expect(areaFor('/module', ['LECTURER'])).toBeNull();
 		expect(areaFor('/konto/tokens', ['LECTURER'])).toBeNull();
-		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(4);
+		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(5);
+	});
+
+	// Below /wuensche, so the wish tab is exact: on the overview only the overview is marked.
+	it('marks the overview of the faculty, not the wishes, on its own page', () => {
+		const area = areaFor('/wuensche/kollegium', ['LECTURER'])!;
+		expect(area.label).toBe('Meine Lehre');
+		const wishes = area.children!.find((c) => c.href === '/wuensche')!;
+		expect(wishes.exact).toBe(true);
 	});
 });
 

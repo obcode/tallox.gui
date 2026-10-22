@@ -31,3 +31,4 @@ Kolleginnen und Kollegen.
 
 - [Partnerfakultät in der GUI](partner-faculty-ui.md) — „Meine Lehre“ und die Schritte für alle sind für Partner allein ausgeblendet, Statistik eingeblendet, eigener Studiengangs-Picker
 - [Sortieren per Spaltenkopf](sortable-tables.md) — Dreierzyklus, kein URL-Zustand, eingefrorene Reihenfolge beim Bearbeiten, Zug-Spalten nur nach eigener Priorität
+- [Wunsch-SWS in der GUI](desired-hours-ui.md) — von/bis, „SWS im Kollegium“, Einfrieren/Veröffentlichen; selbstspeichernde Felder halten eigenen Text, weil das Neuladen sonst überschreibt

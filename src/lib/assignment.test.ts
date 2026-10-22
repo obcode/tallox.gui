@@ -803,7 +803,11 @@ describe('who may see the gap list', () => {
 });
 
 describe('the candidate in the dropdown', () => {
-	const desired = new Map([['p1', 12.5]]);
+	const desired = new Map([
+		['p1', { min: 12.5, max: 12.5 }],
+		['p3', { min: 6, max: 10 }]
+	]);
+	const load = new Map([['p3', 8]]);
 
 	it('adds the hours somebody would like to teach, after why they are listed', () => {
 		expect(candidateLabel({ personId: 'p1', name: 'Eins', hint: 'gerne' }, desired)).toBe(
@@ -814,11 +818,20 @@ describe('the candidate in the dropdown', () => {
 		);
 	});
 
+	it('shows a range, and what somebody already holds in every subject group', () => {
+		expect(candidateLabel({ personId: 'p3', name: 'Drei' }, desired, load)).toBe(
+			'Drei (möchte 6–10 SWS, 8 eingeplant)'
+		);
+		expect(candidateLabel({ personId: 'p4', name: 'Vier' }, desired, new Map([['p4', 2]]))).toBe(
+			'Vier (2 eingeplant)'
+		);
+	});
+
 	// Not stated and not visible are the same: nothing.
 	it('says nothing for somebody without a visible figure, or a teacher without an account', () => {
 		expect(candidateLabel({ personId: 'p2', name: 'Zwei', hint: 'Fachgruppe' }, desired)).toBe(
 			'Zwei (Fachgruppe)'
 		);
-		expect(candidateLabel({ teacherId: 't1', name: 'Extern' }, desired)).toBe('Extern');
+		expect(candidateLabel({ teacherId: 't1', name: 'Extern' }, desired, load)).toBe('Extern');
 	});
 });

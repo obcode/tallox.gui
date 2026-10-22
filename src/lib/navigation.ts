@@ -108,8 +108,18 @@ const TEACHING: NavItem = {
 			emoji: '✋',
 			label: 'Wünsche',
 			href: '/wuensche',
-			hint: 'Interesse an Instanzen bekunden',
-			colleaguesOnly: true
+			hint: 'Interesse an Instanzen bekunden und angeben, wie viele SWS Du halten möchtest',
+			colleaguesOnly: true,
+			// The overview of the faculty lives below it and is a tab of its own.
+			exact: true
+		},
+		{
+			// No colleaguesOnly and no roles: everybody reads the published figures, and before
+			// publication the page says so instead of showing a table of empty cells.
+			emoji: '⚖️',
+			label: 'SWS im Kollegium',
+			href: '/wuensche/kollegium',
+			hint: 'Wer wie viele SWS halten möchte und wer schon wie viel eingeplant ist'
 		},
 		{
 			emoji: '📅',

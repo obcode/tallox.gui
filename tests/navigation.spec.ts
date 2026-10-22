@@ -20,11 +20,24 @@ test.describe('areas and their tabs', () => {
 		const tabs = page.getByRole('navigation', { name: 'Meine Lehre' });
 		await expect(tabs.getByRole('link')).toHaveText([
 			'Wünsche',
+			'SWS im Kollegium',
 			'Zuteilungen',
 			'Kompetenzen',
 			'Fachgruppen'
 		]);
 		await expect(tabs.getByRole('link', { name: 'Wünsche' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+
+		// The overview lives below /wuensche; on it only its own tab is marked.
+		await tabs.getByRole('link', { name: 'SWS im Kollegium' }).click();
+		await expect(page.getByRole('heading', { name: 'SWS im Kollegium', level: 1 })).toBeVisible();
+		await expect(tabs.getByRole('link', { name: 'SWS im Kollegium' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+		await expect(tabs.getByRole('link', { name: 'Wünsche' })).not.toHaveAttribute(
 			'aria-current',
 			'page'
 		);

@@ -131,9 +131,19 @@ const AssignmentDocument = graphql(`
 			}
 		}
 		# How many hours a week people would like to teach — the members of the subject groups this
-		# person leads, or everybody for the dean's office. Already filtered by the backend.
+		# person leads, or everybody for the dean's office, or everybody once published. Already
+		# filtered by the backend.
 		desiredTeachingHours(semester: $semester) @include(if: $withSemester) {
-			hours
+			minHours
+			maxHours
+			person {
+				id
+			}
+		}
+		# What people already hold this semester, across every subject group — the one sum over
+		# assignments the lead of their group reads before publication. Already filtered.
+		assignedTeachingHours(semester: $semester) @include(if: $withSemester) {
+			total
 			person {
 				id
 			}
@@ -371,6 +381,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		assignments: data.assignments ?? [],
 		wishes: data.wishes ?? [],
 		desired: data.desiredTeachingHours ?? [],
+		load: data.assignedTeachingHours ?? [],
 		found: data.teachers ?? [],
 		competences: data.competences ?? [],
 		windows: data.wishWindows ?? [],
