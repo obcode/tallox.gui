@@ -133,7 +133,7 @@ test.describe('creating people and setting roles', () => {
 		await row.getByRole('button', { name: 'Bearbeiten' }).click();
 		await page.getByRole('button', { name: 'Konto deaktivieren' }).click();
 
-		await expect(page.getByText('Nicht gespeichert')).toBeVisible();
+		await expect(page.locator('main').getByText('Nicht gespeichert')).toBeVisible();
 		await expect(page.getByText(/ohne Administration/)).toBeVisible();
 	});
 });

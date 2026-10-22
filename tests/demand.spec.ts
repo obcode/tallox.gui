@@ -141,7 +141,7 @@ test.describe('the demand table', () => {
 
 		const note = page.getByRole('textbox', { name: 'Notiz zu E2E Modul mit Aufteilung' });
 		await note.fill('E2E: IF4 (alt) und IF2 (neu)');
-		await expect(page.getByText('noch nicht gespeichert')).toBeVisible();
+		await expect(page.locator('main').getByText('noch nicht gespeichert')).toBeVisible();
 		await note.press('Tab');
 		await expect(page.getByText('Gespeichert', { exact: true })).toBeVisible({ timeout: 15_000 });
 

@@ -239,7 +239,7 @@ test.describe('one module', () => {
 
 		await page.getByRole('button', { name: 'Aufteilung speichern' }).click();
 		await expect(page.getByText('geschätzt')).toHaveCount(0);
-		await expect(page.getByText('Nicht gespeichert')).toHaveCount(0);
+		await expect(page.locator('main').getByText('Nicht gespeichert')).toHaveCount(0);
 	});
 
 	// The lock is policy.MayWriteModuleSplit, on both doors. What this asserts is the interface's

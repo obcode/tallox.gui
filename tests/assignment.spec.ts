@@ -136,11 +136,13 @@ test.describe('the assignment screen', () => {
 		await gotoRendered(lead, URL);
 		await openParts(lead);
 		await chooser(lead, 'Praktikum 1').selectOption({ index: 1 });
-		await expect(lead.getByText(/gespeichert/)).toBeVisible();
+		await expect(lead.locator('main').getByText(/gespeichert/)).toBeVisible();
 
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, URL);
-		const body = (await page.textContent('body')) ?? '';
+		// The page, not the body: the body also holds the closed "unsaved changes" dialog of the
+		// layout, whose "noch nicht gespeichert" is about the reader's own form and nobody's part.
+		const body = (await page.locator('main').textContent()) ?? '';
 
 		// Not the name — and not a number about it either. The second half is the one that gets
 		// added as a convenience: "2 von 3 besetzt" is the confidential fact with the names taken
