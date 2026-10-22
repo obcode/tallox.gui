@@ -403,6 +403,23 @@ export function filingGroupsFor(
 	return all.filter((g) => ids.has(g.id));
 }
 
+/**
+ * The subject groups a *filter* offers: every active one, whoever is looking.
+ *
+ * Not `filingGroupsFor`: which groups somebody may file a module into is a write permission, and
+ * reading the catalogue of a group is not one. Using the filing list here left a lecturer or a
+ * programme lead with nothing but "alle". A retired group still appears while it is the one
+ * selected, so a link to it shows what it filters by instead of silently showing everything.
+ */
+export function filterGroupOptions<G extends FilingGroup & { active: boolean }>(
+	all: readonly G[],
+	selectedId: string
+): G[] {
+	return all
+		.filter((g) => g.active || g.id === selectedId)
+		.sort((a, b) => a.code.localeCompare(b.code, 'de'));
+}
+
 /** ADMIN and the dean's office file across every group — `policy.FilingScope`'s `All`. */
 function filingReachesEveryGroup(roles: readonly string[]): boolean {
 	return roles.includes('ADMIN') || roles.includes('DEANS_OFFICE');

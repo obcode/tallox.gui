@@ -10,6 +10,7 @@
 		contactHoursLabel,
 		dutyBadge,
 		filingGroupsFor,
+		filterGroupOptions,
 		mayFileModules,
 		mayRefileModule,
 		mayWriteModuleSplit,
@@ -73,6 +74,10 @@
 			data.led
 		)
 	);
+
+	// The groups the filter offers: every active one. Not `assignableGroups` — reading a group's
+	// modules is not filing into it, and that list is empty for anybody who files nothing.
+	const filterGroups = $derived(filterGroupOptions(data.subjectGroups, data.filter.subjectGroup));
 
 	// The number of columns, so that the empty row spans the table however it is configured.
 	const columnCount = $derived(7 + (data.filter.programme !== '' ? 1 : 0) + (mayAssign ? 1 : 0));
@@ -206,7 +211,7 @@
 			<span class="label-text text-sm">Fachgruppe</span>
 			<select name="fachgruppe" class="select select-bordered select-sm">
 				<option value="" selected={data.filter.subjectGroup === ''}>alle</option>
-				{#each assignableGroups as group (group.id)}
+				{#each filterGroups as group (group.id)}
 					<option value={group.id} selected={data.filter.subjectGroup === group.id}>
 						{group.code} — {group.name}
 					</option>

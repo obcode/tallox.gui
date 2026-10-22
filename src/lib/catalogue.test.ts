@@ -15,6 +15,7 @@ import {
 	frequenciesForTerm,
 	findingIsAlarming,
 	filingGroupsFor,
+	filterGroupOptions,
 	formatHours,
 	handbookHref,
 	mayFileModules,
@@ -375,5 +376,21 @@ describe('a programme in a choice', () => {
 		expect(programmeLabel({ code: 'IF', title: 'Informatik' })).toBe('IF – Informatik');
 		expect(programmeLabel({ code: 'DPH', title: '' })).toBe('DPH');
 		expect(programmeLabel({ code: 'DPH' })).toBe('DPH');
+	});
+});
+
+describe('filterGroupOptions', () => {
+	const groups = [
+		{ id: 'w', code: 'WI', name: 'Wirtschaft', active: true },
+		{ id: 'a', code: 'AL', name: 'Altes', active: false },
+		{ id: 'm', code: 'MA', name: 'Mathematik', active: true }
+	];
+
+	it('offers every active group, whoever is looking — a filter is not a permission', () => {
+		expect(filterGroupOptions(groups, '').map((g) => g.code)).toEqual(['MA', 'WI']);
+	});
+
+	it('keeps a retired group while it is the one selected', () => {
+		expect(filterGroupOptions(groups, 'a').map((g) => g.code)).toEqual(['AL', 'MA', 'WI']);
 	});
 });
