@@ -11,6 +11,7 @@ import {
 	type CombinedEntry,
 	UNFILED
 } from '$lib/assignment';
+import { parseDegreeParam } from '$lib/catalogue';
 import { formatChanges, topicChanges } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -81,6 +82,7 @@ const AssignmentDocument = graphql(`
 			programme {
 				code
 				title
+				degree
 			}
 			module {
 				id
@@ -317,6 +319,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	const wanted = url.searchParams.get('semester') ?? '';
 	const group = url.searchParams.get('fachgruppe') ?? '';
 	const search = (url.searchParams.get('q') ?? '').trim();
+	// The view, not the data: both cut what the page already loaded, so neither reaches the query.
+	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
+	const byProgramme = url.searchParams.get('nach') === 'studiengang';
 
 	const ask = (semester: string) =>
 		backendRequest(AssignmentDocument, {
@@ -375,7 +380,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		// `group` above is the resolved group and stays null for the sentinel — the two are
 		// deliberately not the same field, so that "no group chosen" and "the instances in no
 		// group" cannot be confused for one another.
-		selected: { semester: wanted, group, search },
+		selected: { semester: wanted, group, search, degree, byProgramme },
 		unusable
 	};
 };

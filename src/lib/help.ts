@@ -131,6 +131,26 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{
+		question: 'Wie sehe ich bei der Zuteilung nur die Bachelor- oder nur die Mastermodule?',
+		answer:
+			'Über der Tabelle unter „Abschluss“ Bachelor oder Master wählen. Unter „Gruppiert nach“ lässt sich die Tabelle außerdem nach Studiengang ordnen: ein Modul, das zwei Studiengänge anbieten, steht dann bei beiden, jeweils mit deren Zügen. Beides bleibt beim Wechsel der Fachgruppe erhalten. Den Abschluss-Filter gibt es auch im Modulkatalog.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
+		question: 'Warum fehlt ein Studiengang, wenn ich nach Abschluss filtere?',
+		answer:
+			'Weil für ihn noch kein Abschluss eingetragen ist. Das ZPA liefert diese Angabe nicht, deshalb trägt sie das Dekanat einmal je Studiengang unter Verwaltung → Studiengänge ein. Bis dahin passt der Studiengang zu keinem der beiden Filter, und die Seite nennt ihn über der Tabelle.',
+		who: [],
+		where: [
+			{ href: '/verwaltung/studiengaenge', label: 'Studiengänge' },
+			{ href: '/zuteilung', label: 'Zuteilung' }
+		]
+	},
+	{
 		question: 'Wann werden projektbasierte Lehrveranstaltungen vergeben?',
 		answer:
 			'Zuletzt, damit sie nicht als Lückenfüller vergeben werden. Das ist eine Verabredung der Fakultät; Tallox erzwingt es nicht.',

@@ -114,5 +114,13 @@ Zeilen läuft — nur **String**-Matching normalisiert Leerraum. Bei mehrzeilige
 Zweite Falle im selben Lauf: Testkürzel dürfen **keine Präfixe voneinander** sein.
 `locator('article', { hasText: 'E2EMATHE' })` traf auch `E2EMATHE-ML` und brach im Strict Mode.
 
+## Der Fachgruppen-Filter im Katalog ist keine Berechtigung (2026-10-22)
+
+Die Auswahl „Fachgruppe“ im Filter von `/module` bot `filingGroupsFor(...)` an. Das ist die Liste,
+in die jemand Module **einsortieren** darf, also für Dozierende und Studiengangsleitungen leer.
+Übrig blieb nur „alle“. Lesen ist kein Einsortieren: Der Filter nimmt jetzt `filterGroupOptions`
+(jede aktive Gruppe, dazu die gewählte, auch wenn sie ausgelaufen ist). `assignableGroups` bleibt
+fürs Einsortieren.
+
 Siehe auch [[no-wish-aggregates]] — die Fachgruppenseite ist die Tabelle, in die als Nächstes
 jemand „3 Interessent:innen" schreiben möchte.

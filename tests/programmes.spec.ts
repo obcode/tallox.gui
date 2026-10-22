@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
 import { runSql } from './psql';
-import { CATALOGUE } from './seed';
+import { CATALOGUE, DEGREES } from './seed';
 
 /**
  * Which study programmes the faculty plans.
@@ -18,7 +18,8 @@ test.describe.configure({ mode: 'serial' });
 test.afterAll(() => {
 	// Whatever a failed run left behind: the demand tests need this programme planned.
 	runSql(
-		`UPDATE programme SET planning_status = 'PLANNED' WHERE code = '${CATALOGUE.otherProgramme}';`,
+		`UPDATE programme SET planning_status = 'PLANNED', degree = NULL
+		  WHERE code = '${CATALOGUE.otherProgramme}';`,
 		'restoring the second test programme'
 	);
 });
@@ -64,6 +65,46 @@ test.describe('the study programmes', () => {
 				.getByRole('row', { name: new RegExp(CATALOGUE.otherProgramme) })
 				.getByText('wird geplant')
 		).toBeVisible();
+	});
+
+	test('the dean’s office records a degree and takes it back', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, '/verwaltung/studiengaenge');
+
+		const degree = page.getByRole('combobox', { name: `Abschluss ${CATALOGUE.otherProgramme}` });
+		await expect(degree).toHaveValue('');
+
+		// Saved on choosing — the form saves itself, so reloading is the test that it did.
+		await degree.selectOption('master');
+		await expect(async () => {
+			await gotoRendered(page, '/verwaltung/studiengaenge');
+			await expect(
+				page.getByRole('combobox', { name: `Abschluss ${CATALOGUE.otherProgramme}` })
+			).toHaveValue('master');
+		}).toPass();
+
+		await page
+			.getByRole('combobox', { name: `Abschluss ${CATALOGUE.otherProgramme}` })
+			.selectOption('');
+		await expect(async () => {
+			await gotoRendered(page, '/verwaltung/studiengaenge');
+			await expect(
+				page.getByRole('combobox', { name: `Abschluss ${CATALOGUE.otherProgramme}` })
+			).toHaveValue('');
+		}).toPass();
+	});
+
+	test('a lecturer reads the degree and is offered no choice', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/verwaltung/studiengaenge');
+
+		await expect(page.getByRole('combobox', { name: /^Abschluss / })).toHaveCount(0);
+		await expect(page.getByRole('row', { name: new RegExp(DEGREES.master) })).toContainText(
+			'Master'
+		);
+		await expect(page.getByRole('row', { name: new RegExp(DEGREES.unrecorded) })).toContainText(
+			'nicht eingetragen'
+		);
 	});
 
 	test('the page is accessible', async ({ asPersona, checkA11y }) => {

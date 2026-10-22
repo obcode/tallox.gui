@@ -520,6 +520,7 @@ export function seedSql(): string {
 		...catalogueStatements(),
 		...wishStatements(),
 		...assignmentStatements(),
+		...degreeStatements(),
 		...competenceStatements(),
 		...filingStatements(),
 		...dividedStatements(),
@@ -720,6 +721,88 @@ export function assignmentStatements(): string[] {
 		 SELECT '${ASSIGNMENTS.instance}', p.id, 1, 'gerne die Vorlesung' FROM person p
 		  WHERE p.mail = 'dekanat@example.org'
 		 ON CONFLICT DO NOTHING;`
+	];
+}
+
+/**
+ * The degree fixture: one module, one subject group, three programmes — a bachelor's, a master's
+ * and one nobody has recorded a degree for — each with a cohort of the module in the assignment
+ * fixture's semester.
+ *
+ * Its own subject group and module rather than more cohorts on the assignment fixture: that spec
+ * finds its dropdowns by the module's name, and a second cohort would make every one of those
+ * locators ambiguous. The three programmes are what the filter and the grouping by programme are
+ * about; the unrecorded one is what the notice is about.
+ *
+ * Seeded after the assignment fixture, whose semester it uses.
+ */
+export const DEGREES = {
+	semester: ASSIGNMENTS.semester,
+	bachelor: 'E2B',
+	master: 'E2M',
+	unrecorded: 'E2O',
+	subjectGroup: '0e2e0000-0000-4000-8000-0000000000d1',
+	subjectGroupCode: 'E2EDFG',
+	module: '0e2e0000-0000-4000-8000-0000000000d2',
+	instances: {
+		E2B: '0e2e0000-0000-4000-8000-0000000000d3',
+		E2M: '0e2e0000-0000-4000-8000-0000000000d4',
+		E2O: '0e2e0000-0000-4000-8000-0000000000d5'
+	},
+	parts: {
+		E2B: '0e2e0000-0000-4000-8000-0000000000d6',
+		E2M: '0e2e0000-0000-4000-8000-0000000000d7',
+		E2O: '0e2e0000-0000-4000-8000-0000000000d8'
+	},
+	moduleName: 'E2E Abschlussmodul'
+} as const;
+
+export function degreeStatements(): string[] {
+	const programmes = [
+		{ code: DEGREES.bachelor, title: 'Bachelor-Teststudiengang', degree: "'BACHELOR'" },
+		{ code: DEGREES.master, title: 'Master-Teststudiengang', degree: "'MASTER'" },
+		{ code: DEGREES.unrecorded, title: 'Teststudiengang ohne Abschluss', degree: 'NULL' }
+	] as const;
+	const instances = Object.values(DEGREES.instances)
+		.map((id) => `'${id}'`)
+		.join(', ');
+
+	return [
+		// Whatever a failed run left, innermost first: an assignment holds its part.
+		`DELETE FROM assignment WHERE instance_part_id IN
+		   (SELECT id FROM instance_part WHERE course_instance_id IN (${instances}));`,
+		`DELETE FROM course_instance WHERE id IN (${instances});`,
+
+		// The degree is set on every run, not only on the first: the programmes spec records and
+		// takes back degrees, and a run it stopped half-way must not leave this fixture changed.
+		...programmes.map(
+			(p) =>
+				`INSERT INTO programme (code, title, degree)
+				 VALUES (${quote(p.code)}, ${quote(p.title)}, ${p.degree})
+				 ON CONFLICT (code) DO UPDATE SET degree = EXCLUDED.degree;`
+		),
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${DEGREES.module}', id, ${quote(DEGREES.moduleName)}, 'SU',
+		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${quote(DEGREES.bachelor)}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${DEGREES.subjectGroup}', ${quote(DEGREES.subjectGroupCode)},
+		         'Abschluss-Testfachgruppe')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${DEGREES.module}', '${DEGREES.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
+
+		...programmes.flatMap((p) => [
+			`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+			                              programme_semester)
+			 SELECT '${DEGREES.instances[p.code]}', s.id, '${DEGREES.module}', pr.id, '', 1
+			   FROM semester s, programme pr
+			  WHERE s.code = ${quote(DEGREES.semester)} AND pr.code = ${quote(p.code)};`,
+			`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+			 VALUES ('${DEGREES.parts[p.code]}', '${DEGREES.instances[p.code]}', 'LECTURE', 0, 4);`
+		])
 	];
 }
 

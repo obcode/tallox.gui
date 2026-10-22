@@ -230,7 +230,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				emoji: '🎓',
 				label: 'Studiengänge',
 				href: '/verwaltung/studiengaenge',
-				hint: 'Welche Studiengänge die Fakultät plant — und welche nicht mehr',
+				hint: 'Welche Studiengänge die Fakultät plant, und ob Bachelor oder Master',
 				roles: ['DEANS_OFFICE']
 			},
 			{

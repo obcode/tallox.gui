@@ -11,6 +11,7 @@
 
 import type {
 	CourseType,
+	Degree,
 	DutyStatus,
 	Frequency,
 	InstancePartKind,
@@ -294,6 +295,36 @@ export const PROGRAMME_STATUS_HINTS: Record<ProgrammeStatus, string> = {
 };
 
 /**
+ * What a study programme leads to, as the faculty says it.
+ *
+ * The dean's office records it per programme, because nothing the examination office delivers
+ * says it. A programme without one has a null degree and matches neither in a filter.
+ */
+export const DEGREE_LABELS: Record<Degree, string> = {
+	BACHELOR: 'Bachelor',
+	MASTER: 'Master'
+};
+
+/** The degrees in the order a choice offers them. */
+export const ALL_DEGREES: readonly Degree[] = ['BACHELOR', 'MASTER'];
+
+/**
+ * The degree a URL asks for: `?abschluss=bachelor` or `?abschluss=master`.
+ *
+ * Lower case in the URL, like every other parameter of these screens, and anything else reads as
+ * "every degree" rather than as an error — a link that has gone stale should still open the page.
+ */
+export function parseDegreeParam(value: string | null | undefined): Degree | null {
+	const v = (value ?? '').trim().toUpperCase();
+	return ALL_DEGREES.find((d) => d === v) ?? null;
+}
+
+/** The URL spelling of a degree; the inverse of `parseDegreeParam`. */
+export function degreeParam(degree: Degree | null): string {
+	return degree === null ? '' : degree.toLowerCase();
+}
+
+/**
  * The badge a status gets.
  *
  * A background colour, never `text-*`: the semantic colours reach 1.35:1 as text on the light
@@ -401,6 +432,23 @@ export function filingGroupsFor(
 	if (filingReachesEveryGroup(roles)) return [...all];
 	const ids = new Set(led.map((g) => g.id));
 	return all.filter((g) => ids.has(g.id));
+}
+
+/**
+ * The subject groups a *filter* offers: every active one, whoever is looking.
+ *
+ * Not `filingGroupsFor`: which groups somebody may file a module into is a write permission, and
+ * reading the catalogue of a group is not one. Using the filing list here left a lecturer or a
+ * programme lead with nothing but "alle". A retired group still appears while it is the one
+ * selected, so a link to it shows what it filters by instead of silently showing everything.
+ */
+export function filterGroupOptions<G extends FilingGroup & { active: boolean }>(
+	all: readonly G[],
+	selectedId: string
+): G[] {
+	return all
+		.filter((g) => g.active || g.id === selectedId)
+		.sort((a, b) => a.code.localeCompare(b.code, 'de'));
 }
 
 /** ADMIN and the dean's office file across every group — `policy.FilingScope`'s `All`. */

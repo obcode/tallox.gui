@@ -17,8 +17,8 @@ Kolleginnen und Kollegen.
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
 - [Thema je Zug](seminar-topics.md) — Seminare als eigene Zeilen in Wunschtabelle und Übersicht, `moduleRowKey`, bis 26 Züge
 - [Planungsmarken in der GUI](planning-marks-ui.md) — wo Fertigmeldung und Wunschphase geschaltet werden, und die Action-URL-Falle
-- [Die Zuteilungsseite](assignment-page.md) — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, und zwei Fallen
-- [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, die Leitung sortiert Module selbst ein und gibt sie frei, und zwei Befunde aus dem ersten E2E-Lauf
+- [Die Zuteilungsseite](assignment-page.md) — warum sie nach Fachgruppe filtert, wie die Kandidatenliste entsteht, Abschluss-Filter und Gruppierung nach Studiengang, und zwei Fallen
+- [Die Fachgruppen-Seiten](subject-group-pages.md) — Mitgliedschaft ist keine Berechtigung, die Leitung sortiert Module selbst ein und gibt sie frei, der Katalogfilter bietet alle Gruppen, und zwei Befunde aus dem ersten E2E-Lauf
 - [Die Kompetenz-Seiten](competence-pages.md) — eigene Angaben, der Pool der Fachgruppenleitung, und der Pool in der Kandidatenliste
 - [SWS-Controlling-Seite](sws-controlling-page.md) — `/statistik` (Menü „Statistik“ für Studiengangsleitung und Dekanat, früher `/bedarf/sws`), Vorjahr als eigene Anfrage, Kontingent/Saldo und Fremdmodule, Pflege unter /verwaltung/studiengaenge, eigener E2E-Datensatz
 - [Ablauf, „Jetzt dran“ und Hilfe-Leiste](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts` unter `/ablauf`, Startseite und Hilfe zeigen nur, was jetzt dran ist; verlinkt nur, was das Menü zeigt; Einführung für Dozierende unter `/einfuehrung` (`$lib/intro.ts`)

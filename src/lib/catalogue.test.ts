@@ -15,7 +15,11 @@ import {
 	frequenciesForTerm,
 	findingIsAlarming,
 	filingGroupsFor,
+	filterGroupOptions,
 	formatHours,
+	degreeParam,
+	parseDegreeParam,
+	DEGREE_LABELS,
 	handbookHref,
 	mayFileModules,
 	mayRefileModule,
@@ -375,5 +379,46 @@ describe('a programme in a choice', () => {
 		expect(programmeLabel({ code: 'IF', title: 'Informatik' })).toBe('IF – Informatik');
 		expect(programmeLabel({ code: 'DPH', title: '' })).toBe('DPH');
 		expect(programmeLabel({ code: 'DPH' })).toBe('DPH');
+	});
+});
+
+describe('the degree in a URL', () => {
+	it('reads both degrees, in any case', () => {
+		expect(parseDegreeParam('bachelor')).toBe('BACHELOR');
+		expect(parseDegreeParam('Master')).toBe('MASTER');
+		expect(parseDegreeParam(' master ')).toBe('MASTER');
+	});
+
+	it('reads anything else as every degree, so a stale link still opens the page', () => {
+		expect(parseDegreeParam(null)).toBeNull();
+		expect(parseDegreeParam('')).toBeNull();
+		expect(parseDegreeParam('diplom')).toBeNull();
+	});
+
+	it('writes what it reads', () => {
+		for (const degree of ['BACHELOR', 'MASTER'] as const) {
+			expect(parseDegreeParam(degreeParam(degree))).toBe(degree);
+		}
+		expect(degreeParam(null)).toBe('');
+	});
+
+	it('has a label for every degree', () => {
+		expect(DEGREE_LABELS).toEqual({ BACHELOR: 'Bachelor', MASTER: 'Master' });
+	});
+});
+
+describe('filterGroupOptions', () => {
+	const groups = [
+		{ id: 'w', code: 'WI', name: 'Wirtschaft', active: true },
+		{ id: 'a', code: 'AL', name: 'Altes', active: false },
+		{ id: 'm', code: 'MA', name: 'Mathematik', active: true }
+	];
+
+	it('offers every active group, whoever is looking — a filter is not a permission', () => {
+		expect(filterGroupOptions(groups, '').map((g) => g.code)).toEqual(['MA', 'WI']);
+	});
+
+	it('keeps a retired group while it is the one selected', () => {
+		expect(filterGroupOptions(groups, 'a').map((g) => g.code)).toEqual(['AL', 'MA', 'WI']);
 	});
 });

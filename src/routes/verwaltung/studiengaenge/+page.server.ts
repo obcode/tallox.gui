@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
+import { parseDegreeParam } from '$lib/catalogue';
 import { studyYearOf } from '$lib/controlling';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
@@ -22,6 +23,7 @@ const ProgrammesDocument = graphql(`
 			title
 			active
 			planningStatus
+			degree
 			spos {
 				version
 			}
@@ -67,6 +69,15 @@ const SetStatusDocument = graphql(`
 		setProgrammePlanningStatus(code: $code, status: $status) {
 			code
 			planningStatus
+		}
+	}
+`);
+
+const SetDegreeDocument = graphql(`
+	mutation SetProgrammeDegree($code: String!, $degree: Degree) {
+		setProgrammeDegree(code: $code, degree: $degree) {
+			code
+			degree
 		}
 	}
 `);
@@ -120,6 +131,24 @@ export const actions: Actions = {
 			await backendRequest(SetStatusDocument, { code, status });
 		} catch (err) {
 			return fail(400, toRefusal(err));
+		}
+		return { changed: code };
+	},
+
+	/**
+	 * Record whether a programme leads to a bachelor's or a master's; the empty choice takes it
+	 * back. Read with the same function as the URL parameter, so anything unexpected becomes
+	 * "not recorded" rather than a guess.
+	 */
+	setDegree: async ({ request }) => {
+		const form = await request.formData();
+		const code = String(form.get('code') ?? '');
+		const degree = parseDegreeParam(String(form.get('degree') ?? ''));
+
+		try {
+			await backendRequest(SetDegreeDocument, { code, degree });
+		} catch (err) {
+			return fail(400, { ...toRefusal(err), programme: code });
 		}
 		return { changed: code };
 	},
