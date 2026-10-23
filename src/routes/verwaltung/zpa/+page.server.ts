@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
+import { ZPA_DEPENDENCY } from '$lib/zpa';
 
 const ImportRunsDocument = graphql(`
 	query ZpaSyncRuns {
@@ -95,7 +96,10 @@ const SyncNowDocument = graphql(`
  * only reason anybody opens this page, and making them click again for it would be a click
  * they always make.
  */
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, depends }) => {
+	// The page reads itself again under this key while a run is going: the run finishes on its
+	// own in the backend, and this load is how the page follows it.
+	depends(ZPA_DEPENDENCY);
 	try {
 		const { zpaSyncRuns } = await backendRequest(ImportRunsDocument);
 
@@ -141,6 +145,9 @@ export const actions = {
 	 * No second confirmation. The interval and the lock in the backend are what keep this from
 	 * hammering another institution's system; a check here would be a second opinion about a
 	 * rule that is already enforced where it has to be.
+	 *
+	 * Returns as soon as the run has started: the backend finishes it on its own, whether or not
+	 * this request is still there, and the page follows it by loading again.
 	 */
 	sync: async () => {
 		try {

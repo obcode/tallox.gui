@@ -158,3 +158,57 @@ export function describeCounts(run: {
 	if (run.disappeared > 0) parts.push(`${run.disappeared} entfallen`);
 	return parts.length === 0 ? 'keine Änderungen' : parts.join(', ');
 }
+
+/**
+ * How often the page reads a running run again.
+ *
+ * A whole run takes about a quarter of a minute, and what changes during it is one endpoint
+ * finishing after another — so once a second is enough to see each of them arrive, and cheap
+ * enough for a page only administration and the dean's office open.
+ */
+export const POLL_INTERVAL_MS = 1000;
+
+/** The key the import page's load depends on, and what the page invalidates while polling. */
+export const ZPA_DEPENDENCY = 'tallox:zpa';
+
+/** The run in progress, if there is one. */
+export function runningRun<T extends { status: ZpaSyncStatus }>(runs: readonly T[]): T | undefined {
+	return runs.find((run) => run.status === 'RUNNING');
+}
+
+export type RunProgress = {
+	/** Endpoints already fetched and applied, in the order the backend lists them. */
+	done: string[];
+	/** How many endpoints there are. */
+	total: number;
+	/** Whole seconds since the run started. */
+	seconds: number;
+};
+
+/**
+ * Where a running run is.
+ *
+ * Endpoint by endpoint, because that is the finest step there is: measured on the recorded
+ * payloads, the database work of a whole run is about one second, and eight of the eleven
+ * seconds a real run takes are a single request to the ZPA. A counter below the level of an
+ * endpoint would have nothing to count.
+ *
+ * The total comes from the labels, which are typed against every kind the schema knows — a new
+ * endpoint without a label is a compile error rather than a progress bar that ends at 5 of 6.
+ */
+export function runProgress(
+	run: { startedAt: string; kinds: readonly { kind: ZpaObjectKind }[] },
+	now: Date = new Date()
+): RunProgress {
+	return {
+		done: run.kinds.map((k) => KIND_LABELS[k.kind]),
+		total: Object.keys(KIND_LABELS).length,
+		seconds: Math.max(0, Math.floor((now.getTime() - new Date(run.startedAt).getTime()) / 1000))
+	};
+}
+
+/** The sentence a screen reader hears when an endpoint is done — not every second. */
+export function describeProgress(progress: RunProgress): string {
+	if (progress.done.length === 0) return 'Die Daten werden beim ZPA angefragt.';
+	return `${progress.done.length} von ${progress.total} Quellen übernommen: ${progress.done.join(', ')}.`;
+}

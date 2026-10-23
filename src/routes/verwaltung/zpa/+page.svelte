@@ -1,14 +1,20 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidate } from '$app/navigation';
 	import type { ActionData, PageData } from './$types';
 	import {
 		CHANGE_LABELS,
 		KIND_LABELS,
+		POLL_INTERVAL_MS,
 		STATUS_LABELS,
 		TRIGGER_LABELS,
+		ZPA_DEPENDENCY,
 		describeCounts,
+		describeProgress,
 		freshness,
 		lastSuccessful,
+		runProgress,
+		runningRun,
 		statusBadge
 	} from '$lib/zpa';
 	import { FINDING_LABELS, findingIsAlarming } from '$lib/catalogue';
@@ -16,8 +22,26 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const newest = $derived(lastSuccessful(data.runs));
-	const state = $derived(freshness(newest?.finishedAt));
-	const running = $derived(data.runs.some((run) => run.status === 'RUNNING'));
+	const fresh = $derived(freshness(newest?.finishedAt));
+	const current = $derived(runningRun(data.runs));
+	const running = $derived(current !== undefined);
+
+	// The clock the elapsed seconds are measured against. Ticks with the polling, so the number
+	// moves while the run does even when no endpoint has finished in between.
+	let now = $state(new Date());
+	const progress = $derived(current ? runProgress(current, now) : null);
+
+	// While a run is going, read the page again once a second. It also follows a run the
+	// nightly job started while the page happened to be open. The interval ends with the run:
+	// the effect re-runs when `running` turns false and the cleanup clears it.
+	$effect(() => {
+		if (!running) return;
+		const timer = setInterval(() => {
+			now = new Date();
+			void invalidate(ZPA_DEPENDENCY);
+		}, POLL_INTERVAL_MS);
+		return () => clearInterval(timer);
+	});
 	const refusal = $derived(form && 'message' in form ? form : null);
 
 	const dateFormat = new Intl.DateTimeFormat('de-DE', {
@@ -47,19 +71,19 @@
 	<div class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
 		<div class="flex flex-wrap items-center gap-3">
 			<span
-				class="badge badge-sm {state.level === 'ok'
+				class="badge badge-sm {fresh.level === 'ok'
 					? 'badge-success'
-					: state.level === 'warn'
+					: fresh.level === 'warn'
 						? 'badge-warning'
 						: 'badge-error'}"
 			>
-				{state.level === 'ok'
+				{fresh.level === 'ok'
 					? 'aktuell'
-					: state.level === 'warn'
+					: fresh.level === 'warn'
 						? 'eine Nacht fehlt'
 						: 'veraltet'}
 			</span>
-			<p class="text-base-content/90">{state.message}</p>
+			<p class="text-base-content/90">{fresh.message}</p>
 		</div>
 
 		{#if newest}
@@ -77,27 +101,51 @@
 				opinions about the same number.
 			-->
 			<button class="btn btn-sm btn-primary" disabled={running}>Jetzt abgleichen</button>
-			{#if running}
-				<span class="text-base-content/80 text-sm">Ein Abgleich läuft gerade.</span>
+			{#if progress}
+				<span class="text-base-content/80 text-sm">
+					Ein Abgleich läuft seit {progress.seconds} s.
+				</span>
 			{:else}
 				<span class="text-base-content/80 text-sm">Dauert etwa eine Viertelminute.</span>
 			{/if}
 		</form>
+
+		{#if progress}
+			<!--
+				Endpoint by endpoint, the finest step there is: the database work of a whole run takes
+				about a second, and most of the wait is a single request to the ZPA, so the bar can
+				stand still for several seconds and that is the true state. The live region carries
+				only the sentence that changes when an endpoint is done — the seconds stay outside it,
+				or a screen reader would announce every tick.
+			-->
+			<div class="flex flex-col gap-1">
+				<progress
+					class="progress progress-primary w-full max-w-md"
+					value={progress.done.length}
+					max={progress.total}
+					aria-label="Fortschritt des Abgleichs"
+					aria-valuetext="{progress.done.length} von {progress.total} Quellen"
+				></progress>
+				<p class="text-base-content/80 text-sm" aria-live="polite">
+					{describeProgress(progress)}
+				</p>
+			</div>
+		{/if}
 
 		{#if refusal}
 			<p class="text-base-content/80 text-sm">
 				<span class="badge badge-error badge-sm">nicht ausgeführt</span>
 				{refusal.message}
 			</p>
-		{:else if form?.started}
+		{:else if form?.started && !running}
 			<p class="text-base-content/80 text-sm">
 				<span class="badge badge-success badge-sm">fertig</span>
-				Der Abgleich ist durchgelaufen. Seite neu laden für das Ergebnis.
+				Der Abgleich ist durchgelaufen. Das Ergebnis steht oben und in der Liste darunter.
 			</p>
 		{:else if form?.projected}
 			<p class="text-base-content/80 text-sm">
 				<span class="badge badge-success badge-sm">fertig</span>
-				Der Katalog wurde neu aufgebaut. Seite neu laden für den Bericht.
+				Der Katalog wurde neu aufgebaut. Der Bericht steht unter „Katalog-Projektion“.
 			</p>
 		{/if}
 	</div>
