@@ -138,7 +138,7 @@ test.describe('the walk-through', () => {
 		]) {
 			await expect(chart.getByRole('heading', { name: phase, exact: true })).toBeVisible();
 		}
-		await expect(chart.getByText('nicht umkehrbar')).toHaveCount(2);
+		await expect(chart.getByText('nicht umkehrbar')).toHaveCount(3);
 
 		await chart.getByRole('link', { name: /Die Instanzen besetzen/ }).click();
 		await expect(page).toHaveURL(/#schritt-\d+$/);

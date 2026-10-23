@@ -86,7 +86,8 @@ describe('the process chart', () => {
 			.map((s) => s.title);
 		expect(oneWay.sort()).toEqual([
 			'Die Wunsch-SWS einfrieren, prüfen und veröffentlichen',
-			'Die Wünsche veröffentlichen'
+			'Die Wünsche veröffentlichen',
+			'Die Zuteilung veröffentlichen'
 		]);
 		for (const title of oneWay) {
 			const step = GUIDE[1].steps.find((s) => s.title === title);

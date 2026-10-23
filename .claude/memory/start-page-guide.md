@@ -59,8 +59,9 @@ Liste darunter.
   eine Phase des geplanten Semesters ist; „Planungssemester setzen“ (`UNSET`/`FINAL`) bekommt die
   eigene Spalte **„Auftakt“**, „Abschließen“ (bewusst ohne `due`) landet in `FINAL`. Bahn = erste
   Rolle in `who`; leer = „Alle“. ADMIN und Partner haben keine Bahn, `laneOf` wirft dann.
-- **`oneWay: true`** an den beiden unumkehrbaren Dekanatsschritten (Wunsch-SWS einfrieren und
-  veröffentlichen, Wünsche veröffentlichen), im Bild als Plakette „nicht umkehrbar“. Der Test
+- **`oneWay: true`** an den drei unumkehrbaren Dekanatsschritten (Wunsch-SWS einfrieren und
+  veröffentlichen, Wünsche veröffentlichen, Zuteilung veröffentlichen — die dritte erst seit
+  2026-10-23 ein eigener Schritt), im Bild als Plakette „nicht umkehrbar“. Der Test
   verlangt, dass ihr Text „nicht zurücknehmen“ sagt.
 - Ab `lg` richten sich die Bahnen über **`grid-rows-subgrid`** über die Spalten aus, die Köpfe sind
   Chevrons per `clip-path`. Darunter ist jede Phase eine eigene Karte, und die Rolle steht in
@@ -96,8 +97,8 @@ Studiengangs- und Fachgruppenleitung sind gescopt, leer heißt nichts; Fachgrupp
 Administration an, die Leitung nur an Personen mit der Rolle; **jedes Modul genau eine Fachgruppe**
 (`module_subject_group`, PK `module_id`); Aufteilung durch die Leitung des Heimatstudiengangs oder der Fachgruppe des Moduls (seit 2026-10-17);
 Kopplung über Studiengänge ist Regelfall; Fertigmeldung ist Ansage, Wunschrunde ist Tür je
-Fachgruppe; Veröffentlichungen sind unumkehrbar und Dekanatssache; `FINAL` schließt den Bedarf,
-nicht die Zuteilung. Einziges Nicht-Erzwungenes ist als solches markiert: PBLVs zuletzt.
+Fachgruppe; Veröffentlichungen sind unumkehrbar und Dekanatssache, schließen aber nichts; `FINAL` schließt alles
+(Bedarf, Wünsche, Wunsch-SWS, Zuteilung — Schreibmatrix in `policy/write.go`). Einziges Nicht-Erzwungenes ist als solches markiert: PBLVs zuletzt.
 
 ## Falle aus dem Lauf
 
@@ -185,3 +186,22 @@ Frage: „Sollen wir für normale Dozierende einen Onboarding-Assistenten bauen?
   Fixture-Fachgruppe `SETUP` mit einem Pflichtfach). Phasenabhängiges nur im Unit-Test.
 - **Falle:** der Link in der Karte hieß zuerst „Einführung“ und machte `smoke.spec.ts` (Strict
   Mode, `getByRole('main')`) rot. Jetzt „Einführung in Tallox“.
+
+## Textabgleich (2026-10-23)
+
+Auf Wunsch „passt alles zusammen?“ Hilfe, Ablauf, Einführung, Nav-`hint`s und Seitenabsätze gegen
+das Backend gelesen. Korrigiert:
+
+- **Veröffentlicht heißt nicht endgültig.** Mehrere Stellen lasen sich so, als ließe sich eine
+  veröffentlichte Zuteilung nicht mehr ändern („bis zur Veröffentlichung kann sich das noch
+  ändern“). Die Schreibmatrix hält aber alles offen bis `FINAL`. Jetzt sagen Hilfe, Einführung
+  und „Meine Zuteilungen“ das auch so.
+- **„Die Zuteilung veröffentlichen“** ist ein eigener Schritt (`oneWay`, `due` Zuteilung/Review).
+  Vorher war sie unumkehrbar, stand aber nicht im Ablauf und war im Bild nicht markiert.
+- **Module einsortieren:** dürfen Fachgruppenleitung (unsortierte aufnehmen, eigene freigeben),
+  Dekanat und Administration (`MayFileModule`). Ablauf, Katalog und Bedarfsseite nannten nur
+  die Administration.
+- **SWS-Aufteilung:** darf auch das Dekanat (`MayWriteModuleSplit`).
+- Wunschrunde „öffnet und schließt“ → „offen, bis die Leitung sie schließt“. Glossar „Kompetenz“
+  mit „Einarbeitung“ wie auf der Seite. Nav-`hint` „Fachgruppen“ war „Vorauswahl für
+  Kompetenzen“, gezeigt werden dort aber nur Module der eigenen Gruppen.

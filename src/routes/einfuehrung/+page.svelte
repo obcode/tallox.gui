@@ -180,7 +180,7 @@
 				</li>
 				<li>
 					Die <a class="link" href={resolve('/')}>Startseite</a> sagt, was in der aktuellen Phase für
-					Dich ansteht.
+					Dich ansteht, und unter „Dein Stand“, was Du selbst noch angeben solltest.
 				</li>
 				<li>
 					Der <a class="link" href={resolve('/ablauf')}>Ablauf der Einsatzplanung</a> beschreibt jeden

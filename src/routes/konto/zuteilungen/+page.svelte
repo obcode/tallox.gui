@@ -37,7 +37,8 @@
 		<p class="text-base-content/80 max-w-3xl text-sm">
 			Wo Du tatsächlich eingeplant bist: jede Vorlesung, jedes Praktikum und jedes Seminar, das Dir
 			zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht
-			veröffentlicht ist, ist sie ein Entwurf — die Fachgruppenleitung kann noch umplanen.
+			veröffentlicht ist, ist sie ein Entwurf. Ändern kann sie sich bis zum Ende des Semesters, auch
+			nach der Veröffentlichung, etwa wenn jemand ausfällt.
 		</p>
 	</div>
 

@@ -101,7 +101,7 @@ const TEACHING: NavItem = {
 	// backend rather than a menu entry.
 	emoji: '✋',
 	label: 'Meine Lehre',
-	hint: 'Wünsche, Kompetenzen und Fachgruppen — was Du selbst angibst',
+	hint: 'Wünsche, SWS, Zuteilungen, Kompetenzen und Fachgruppen — Deine eigene Lehre',
 	colleaguesOnly: true,
 	children: [
 		{
@@ -141,7 +141,7 @@ const TEACHING: NavItem = {
 			emoji: '🗂️',
 			label: 'Fachgruppen',
 			href: '/konto/fachgruppen',
-			hint: 'In welchen Fächern Du arbeitest — Vorauswahl für Wünsche und Kompetenzen',
+			hint: 'In welchen Fächern Du arbeitest — steht bei Wünschen zuerst und bestimmt, welche Module unter Kompetenzen stehen',
 			colleaguesOnly: true
 		}
 	]

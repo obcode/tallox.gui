@@ -116,8 +116,10 @@
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			<strong>Jedes Modul gehört genau einer Fachgruppe</strong> — oder noch keiner. Die Zuordnung
 			trifft die Administration hier stapelweise oder auf der Modulseite einzeln; umhängen
-			verschiebt, ein Modul ist nie in zwei Gruppen. An ihr hängt, wer die Instanzen des Moduls
-			besetzt. Die Gruppen selbst, ihre Leitung und Mitglieder stehen unter
+			verschiebt, ein Modul ist nie in zwei Gruppen. Die Leitung einer Fachgruppe nimmt Module ohne
+			Fachgruppe in ihre auf und gibt eigene frei, das Dekanat hängt wie die Administration über
+			alle Gruppen um. An ihr hängt, wer die Instanzen des Moduls besetzt. Die Gruppen selbst, ihre
+			Leitung und Mitglieder stehen unter
 			<a class="link" href={resolve('/verwaltung/fachgruppen')}>Fachgruppen</a>.
 		</p>
 	</div>

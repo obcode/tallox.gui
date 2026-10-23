@@ -1222,9 +1222,9 @@
 					<a class="link" href="{resolve('/zuteilung')}?semester={data.selected.semester}"
 						>Zuteilungsseite</a
 					>
-					unter „ohne Fachgruppe“. Einsortiert wird sie von der Leitung der Fachgruppe oder der Administration
-					im <a class="link" href={resolve('/module')}>Modulkatalog</a>; danach erscheint sie dort,
-					wo die Fachgruppe besetzt.
+					unter „ohne Fachgruppe“. Einsortiert wird sie von der Leitung der Fachgruppe, dem Dekanat oder
+					der Administration im <a class="link" href={resolve('/module')}>Modulkatalog</a>; danach
+					erscheint sie dort, wo die Fachgruppe besetzt.
 				</p>
 			{/if}
 		</details>

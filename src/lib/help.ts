@@ -58,7 +58,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Warum lässt sich für ein Modul keine Instanz anlegen?',
 		answer:
-			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs oder die Fachgruppenleitung des Moduls einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',
+			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/bedarf', label: 'Bedarf' },
@@ -138,7 +138,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
-			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Phase dagegen lässt sich in beide Richtungen umschalten.',
+			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
 		who: ['DEANS_OFFICE'],
 		where: [{ href: '/semester', label: 'Semester und Phasen' }]
 	},
@@ -232,7 +232,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, was ich tatsächlich halte?',
 		answer:
-			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“ — die Fachgruppenleitung kann noch umplanen.',
+			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“. Ändern kann sich die Zuteilung bis zum Ende des Semesters, auch nach der Veröffentlichung, etwa wenn jemand ausfällt.',
 		who: ['LECTURER'],
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }],
 		stage: 'AFTERWARDS'

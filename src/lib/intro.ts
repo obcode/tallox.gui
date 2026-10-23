@@ -59,7 +59,8 @@ export const PHASES: readonly IntroPhase[] = [
 			'Noch nichts Bestimmtes. Eine gute Zeit, einmal die eigenen Fachgruppen und Kompetenzen anzugeben, falls das noch fehlt; was fehlt, zeigt die Startseite unter „Dein Stand“. Die Wunsch-SWS für das Semester lassen sich auch schon jetzt angeben.',
 		where: [
 			{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' },
-			{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }
+			{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' },
+			{ href: '/wuensche', label: 'Wünsche' }
 		]
 	},
 	{
@@ -73,9 +74,9 @@ export const PHASES: readonly IntroPhase[] = [
 	{
 		phase: 'ASSIGNMENT',
 		happens:
-			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum. Dabei sehen sie die Wünsche, die Kompetenzen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
+			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum, im Regelfall eine Person für alle Teile eines Zuges. Dabei sehen sie die Wünsche, die Kompetenzen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
 		forYou:
-			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert. Bis zur Veröffentlichung kann sich das noch ändern.',
+			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert, bis das Dekanat die Zuteilung veröffentlicht. Ändern kann sie sich auch danach noch, bis das Semester vorbei ist, etwa wenn jemand ausfällt.',
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
 	},
 	{
@@ -138,7 +139,7 @@ export const GLOSSARY: readonly IntroTerm[] = [
 	},
 	{
 		term: 'Kompetenz',
-		text: 'Welche Module Du halten kannst und für welche Du Dich interessierst. Einmal angegeben, nicht jedes Semester.'
+		text: 'Welche Module Du halten kannst, auch kurzfristig, und für welche Du Dich interessierst, Dich aber erst einarbeiten müsstest. Einmal angegeben, nicht jedes Semester.'
 	},
 	{
 		term: 'PBLV',

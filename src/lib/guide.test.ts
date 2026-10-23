@@ -66,14 +66,21 @@ describe('the walk-through', () => {
 
 	// The review is the step after the assignment, and the guide says that everything stays
 	// changeable there until the semester is over — the faculty's own words were "bis zum Schluss".
-	it('puts the programme review between the assignment and the close', () => {
+	it('puts the publication and the programme review between the assignment and the close', () => {
 		const titles = GUIDE[1].steps.map((s) => s.title);
 		const assign = titles.indexOf('Die Instanzen besetzen');
-		expect(titles[assign + 1]).toBe('Studiengangs-Review');
-		expect(titles[assign + 2]).toBe('Abschließen');
-		const review = GUIDE[1].steps[assign + 1];
+		expect(titles[assign + 1]).toBe('Die Zuteilung veröffentlichen');
+		expect(titles[assign + 2]).toBe('Studiengangs-Review');
+		expect(titles[assign + 3]).toBe('Abschließen');
+		const review = GUIDE[1].steps[assign + 2];
 		expect(review.text).toMatch(/änderbar, bis das Semester vorbei ist/);
 		expect(review.where.map((w) => w.href)).toContain('/statistik');
+	});
+
+	// Publishing the assignment closes nothing: "published" must not read as "final".
+	it('says the published assignment can still change', () => {
+		const step = GUIDE[1].steps.find((s) => s.title === 'Die Zuteilung veröffentlichen');
+		expect(step?.text).toMatch(/bleibt änderbar, bis das Semester abgeschlossen ist/);
 	});
 
 	// The confidentiality rule is the one sentence the start page may never get wrong.
