@@ -171,11 +171,10 @@
 								</td>
 								<td>
 									<!--
-										Der jetzige Zustand als Abzeichen, die beiden anderen als Knöpfe
-										daneben: „es ist X, mach es zu Y oder Z". Ein Auswahlmenü mit
-										„Speichern" wären zwei Schritte für eine Entscheidung aus drei
-										Möglichkeiten — und der aktuelle Zustand als dritter Knopf wäre
-										einer, der nichts tut außer den Zeitstempel zu bewegen.
+										The current state as a badge, the other two as buttons beside it: "it is X, make
+										it Y or Z". A dropdown with „Speichern“ would be two steps for a decision
+										between three options — and the current state as a third button would be one
+										that does nothing except move the timestamp.
 									-->
 									<div class="flex flex-wrap items-center gap-1">
 										<span class="badge {programmeStatusBadge(programme.planningStatus)} badge-sm">

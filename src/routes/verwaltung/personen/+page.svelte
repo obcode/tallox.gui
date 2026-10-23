@@ -138,15 +138,15 @@
 		</p>
 	</div>
 
-	<!-- Ein GET-Formular *um* die Leiste, und die Reiter sind seine Absende-Knöpfe: ein
-	     `<button name="ansicht" value="…">` schickt genau sein eigenes Paar mit. Als Links ginge
-	     es nicht — `resolve()` kennt nur den Pfad, und die Auswahl steht im Query-String.
+	<!-- A GET form *around* the bar, and the tabs are its submit buttons: a
+	     `<button name="ansicht" value="…">` sends exactly its own pair. As links it would
+	     not work — `resolve()` only knows the path, and the selection is in the query string.
 
-	     Das Formular gehört nach außen und nicht um jeden Knopf: daisyUI stylt die Reiter über
-	     `.tabs > .tab`, also muss der Knopf ein echtes Kind der Leiste sein. Mit einem Formular
-	     dazwischen greift der Selektor nicht, die Reiter verlieren ihr Innenabstand und ihren
-	     markierten Zustand — und die beiden Beschriftungen kleben zu einem Wort zusammen.
-	     `display: contents` hilft dagegen nicht: es ändert das Layout, nicht den Baum. -->
+	     The form belongs on the outside and not around each button: daisyUI styles the tabs
+	     via `.tabs > .tab`, so the button has to be a real child of the bar. With a form in
+	     between the selector does not match, the tabs lose their padding and their selected
+	     state — and the two labels stick together into one word.
+	     `display: contents` does not help against that: it changes the layout, not the tree. -->
 	<form method="GET">
 		<div role="tablist" class="tabs tabs-box w-fit">
 			<button
@@ -279,10 +279,10 @@
 				{/each}
 			</fieldset>
 
-			<!-- Eine Zeile für sich, nicht hinter den Kontozuständen: eine Rolle hat nur, wer ein
-			     Konto hat, und in einer gemeinsamen Zeile las sich das wie acht gleichrangige
-			     Kästchen. Mit Zahlen dahinter, wie in jeder anderen Zeile — „Administration (2)"
-			     ist die Antwort auf die Frage, mit der man diesen Filter überhaupt anfasst. -->
+			<!-- A line of its own, not after the account states: only somebody with an account
+			     has a role, and in a shared line it read like eight checkboxes of equal rank. With
+			     counts after them, as in every other line — „Administration (2)“ is the answer to
+			     the question with which one touches this filter in the first place. -->
 			<fieldset class="flex flex-wrap items-center gap-x-4 gap-y-1">
 				<legend class="sr-only">Rolle</legend>
 				<span class="text-base-content/80 w-24 text-sm">Rolle</span>
@@ -303,9 +303,9 @@
 		</form>
 
 		<!--
-			Wie viele Zeilen der Vorfilter gerade wegnimmt. Ohne diesen Satz sieht eine auf FK07
-			vorgefilterte Liste genauso aus wie eine vollständige — mehr als die Hälfte der
-			Lehrenden trägt gar keine Fakultätsangabe.
+			How many rows the pre-filter is currently removing. Without this sentence a list
+			pre-filtered to FK07 looks exactly like a complete one — more than half of the
+			teachers have no faculty stated at all.
 		-->
 		<p class="text-base-content/90 text-sm">
 			<strong>{shown.length}</strong> von {accounts.length} Lehrenden.
@@ -406,9 +406,9 @@
 											{@const held = account.roles.includes(role)}
 											<form method="POST" action="?/roles" use:enhance={save(account.id)}>
 												<input type="hidden" name="id" value={account.id} />
-												<!-- Die ganze gewünschte Menge, nicht die Änderung: genau das nimmt
-												     setPersonRoles entgegen, und genau deshalb verliert es kein Rennen
-												     gegen eine zweite Administration. -->
+												<!-- The whole desired set, not the change: that is exactly what
+												     setPersonRoles accepts, and exactly why it loses no race against a
+												     second administrator. -->
 												{#each rolesAfterToggle(account.roles, role, !held) as wanted (wanted)}
 													<input type="hidden" name="roles" value={wanted} />
 												{/each}
@@ -452,9 +452,9 @@
 											{/each}
 											{#if account.programmes.length === 0}
 												<!--
-													Ohne Studiengang darf eine Studiengangsleitung gar nichts festlegen —
-													nicht etwa alles. Das sieht man der Rollenliste nicht an, und genau
-													diese Verwechslung erzeugt die Supportfrage.
+													Without a programme a programme lead may decide nothing at all — not, say,
+													everything. That cannot be seen from the role list, and exactly this
+													mix-up produces the support question.
 												-->
 												<span
 													class="badge badge-warning badge-sm"
@@ -614,11 +614,10 @@
 					{#each people as person (person.id)}
 						<tr>
 							<td>
-								<!-- Der Nachname zuerst, wo das ZPA ihn kennt: die Liste ist danach
-								     sortiert, und eine Liste, die nach etwas sortiert ist, das sie nicht
-								     zeigt, liest sich wie eine unsortierte. Für alle anderen der Name, wie
-								     ihn jemand geschrieben hat — welches Wort davon der Nachname ist,
-								     wird hier nicht geraten. -->
+								<!-- Surname first where the ZPA knows it: the list is sorted by it, and a list
+								     sorted by something it does not show reads like an unsorted one. For everybody
+								     else the name as somebody wrote it — which of its words is the surname is not
+								     guessed here. -->
 								<div class="font-medium">{person.sortName ?? displayName(person)}</div>
 								{#if person.sortName}
 									<div class="text-base-content/80 text-xs">{person.name}</div>

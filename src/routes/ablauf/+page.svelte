@@ -63,10 +63,10 @@
 	</div>
 
 	<!--
-		Der Ablauf als durchnummerierte Schritte, in der Reihenfolge des Prozesses. Für jeden: wer
-		es macht, wo, und was man dabei wissen muss. Die Daten stehen in $lib/guide.ts, damit die
-		Tabelle darunter und die Karte „Jetzt dran“ auf der Startseite aus denselben Schritten
-		entstehen und nichts zweimal geschrieben wird.
+		The process as numbered steps, in the order of the process. For each: who does it,
+		where, and what one needs to know while doing it. The data lives in $lib/guide.ts so that
+		the table below and the „Jetzt dran“ card on the start page are built from the same
+		steps and nothing is written twice.
 	-->
 	{#each sections as { section, start } (section.title)}
 		<section class="border-base-300 bg-base-100 rounded-lg border p-4">

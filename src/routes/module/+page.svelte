@@ -130,9 +130,9 @@
 			<select name="studiengang" class="select select-bordered select-sm">
 				<option value="">alle</option>
 				<!--
-					Auch die, die die Fakultät nicht plant, und markiert: das hier ist der Katalog,
-					und deren Module werden weiter gelehrt. Wonach nicht geplant werden kann, sagt
-					die Bedarfsseite — dort stehen sie gar nicht erst zur Wahl.
+					Including the ones the faculty does not plan, and marked: this is the catalogue, and
+					their modules are still taught. What cannot be planned for is said by the demand
+					page — there they are not even offered.
 				-->
 				{#each data.programmes as programme (programme.code)}
 					<option value={programme.code} selected={programme.code === data.filter.programme}>
@@ -164,9 +164,9 @@
 			<label class="form-control">
 				<span class="label-text text-sm">Prüfungsordnung</span>
 				<select name="spo" class="select select-bordered select-sm">
-					<!-- No default, deliberately: ungefiltert ist die Vereinigung über alle Fassungen.
-					     Ein Modul, das aus der neuesten gefallen ist, wird den Studierenden der
-					     älteren weiter gelehrt. -->
+					<!-- No default, deliberately: unfiltered is the union over all versions.
+					     A module that has dropped out of the newest one is still taught to the
+					     students of the older ones. -->
 					<option value="">alle Fassungen</option>
 					{#each spos as spo (spo.id)}
 						<option value={spo.id} selected={spo.id === data.filter.spo}>{spoLabel(spo)}</option>
@@ -187,8 +187,8 @@
 		{#if data.filter.programme !== ''}
 			<label class="form-control">
 				<span class="label-text text-sm">Art</span>
-				<!-- Wie auf der Bedarfsseite: ohne `aria-label` ist der zugängliche Name eines
-				     umschließenden Labels sein ganzer Textinhalt, also die Optionsliste selbst. -->
+				<!-- As on the demand page: without `aria-label` the accessible name of a wrapping
+				     label is its entire text content, i.e. the option list itself. -->
 				<select name="art" aria-label="Art" class="select select-bordered select-sm">
 					<option value="">alle</option>
 					<option value="COMPULSORY" selected={data.filter.duty === 'COMPULSORY'}>Pflicht</option>
@@ -302,8 +302,8 @@
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<p class="text-base-content/90 text-sm">
 				<!--
-					Auch die Null wird gemeldet. „Nichts passiert" und „hat nicht geklappt" sind für
-					die Person, die den Knopf gedrückt hat, sonst dasselbe.
+					Zero is reported too. „Nichts passiert“ and „hat nicht geklappt“ are otherwise the
+					same thing to the person who pressed the button.
 				-->
 				{assigned.modulesAssigned}
 				{assigned.modulesAssigned === 1 ? 'Modul' : 'Module'}
@@ -329,9 +329,9 @@
 	>
 		{#if mayAssign}
 			<!--
-				Über der Tabelle und nicht darunter. Die Kästchen stehen bei 500 Zeilen ganz oben, und
-				ein Bedienfeld, das erst nach dem Scrollen sichtbar wird, erklärt sie niemandem —
-				dann ist die Spalte eine Ankreuzmöglichkeit ohne erkennbaren Zweck.
+				Above the table and not below it. With 500 rows the checkboxes are at the very top, and
+				a control panel that only becomes visible after scrolling explains them to nobody —
+				then the column is a way to tick things with no recognisable purpose.
 			-->
 			<div
 				class="border-base-300 bg-base-100 mb-2 flex flex-wrap items-end gap-2 rounded-lg border p-4"
@@ -350,10 +350,10 @@
 				<button type="submit" class="btn btn-sm btn-primary">Zuordnen</button>
 				{#if asLead}
 					<!--
-						Beide Enden einer Verschiebung müssen in Reichweite sein: aufnehmen, was in keiner
-						Fachgruppe steht, freigeben, was in der eigenen steht. Module fremder Fachgruppen
-						sind deshalb nicht ankreuzbar — ein Stapel, der eines davon enthielte, würde als
-						Ganzes abgelehnt.
+						Both ends of a move have to be within reach: taking in what is in no subject group,
+						releasing what is in one's own. Modules of other subject groups are therefore not
+						tickable — a batch that contained one of them would be rejected as a
+						whole.
 					-->
 					<p class="text-base-content/80 w-full max-w-3xl text-sm">
 						Als Fachgruppenleitung kannst Du Module <strong>ohne Fachgruppe</strong> in eine Deiner
@@ -383,8 +383,8 @@
 					<tr>
 						{#if mayAssign}
 							<!--
-								Sichtbar beschriftet, nicht sr-only. Eine Spalte mit Kästchen und ohne
-								Überschrift ist eine Bedienmöglichkeit, deren Zweck man raten muss.
+								Visibly labelled, not sr-only. A column of checkboxes without a heading is a
+								control whose purpose one has to guess.
 							-->
 							<th>Auswahl</th>
 						{/if}
@@ -478,10 +478,9 @@
 									{module.responsible.sortName}
 								{:else}
 									<!--
-									Etwa jedes dreißigste Modul. Zwei Gründe, die hier nicht
-									unterschieden werden: das ZPA nennt einen Platzhalter statt einer
-									Person, oder eine Adresse, die nicht in der Lehrendenliste steht.
-									Beides steht auf der Import-Seite.
+									About one module in thirty. Two reasons, which are not told apart here: the ZPA
+									names a placeholder instead of a person, or an address that is not in the list of
+									teachers. Both are shown on the import page.
 								-->
 									<span class="text-base-content/80">—</span>
 								{/if}
@@ -500,17 +499,17 @@
 									<span class="text-base-content/90">{componentSummary(module.components)}</span>
 								{:else if mayWriteModuleSplit(roles, data.myProgrammes, data.led, module)}
 									<!--
-									Ein Badge, keine Textfarbe. `link-warning` auf `base-100` erreicht 1,35:1
-									und ist auf den hellen Themes schlicht nicht lesbar — daisyUI paart die
-									semantischen Farben mit ihrem `*-content` nur als Hintergrund.
+									A badge, not a text colour. `link-warning` on `base-100` reaches 1.35:1 and is
+									simply not readable on the light themes — daisyUI pairs the semantic colours with
+									their `*-content` only as a background.
 								-->
 									<a class="link" href={resolve(`/module/${module.id}`)}>
 										<span class="badge badge-warning badge-sm">fehlt</span>
 										<span class="ml-1">eintragen</span>
 									</a>
 								{:else}
-									<!-- Kein Link für wen, der nicht speichern darf: der führte in ein
-									     Formular, das erst beim Speichern ablehnt. -->
+									<!-- No link for somebody who may not save: it would lead into a form
+									     that only refuses when saving. -->
 									<span class="badge badge-warning badge-sm">fehlt</span>
 								{/if}
 							</td>

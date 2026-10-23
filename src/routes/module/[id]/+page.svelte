@@ -210,10 +210,10 @@
 
 		{#if mayAssign}
 			<!--
-				Dieselbe Mutation wie die Stapelzuordnung im Katalog, mit einer Liste von einem.
-				Keine zweite für den Einzelfall: „genau eine Fachgruppe, Verschieben in einem
-				Schritt" ist eine Regel jener Mutation, und ein zweiter Weg hinein wäre eine zweite
-				Stelle, an der sie schiefgehen kann.
+				The same mutation as the batch assignment in the catalogue, with a list of one. No
+				second one for the single case: "exactly one subject group, moving in one step" is a
+				rule of that mutation, and a second way in would be a second place where it can go
+				wrong.
 			-->
 			<form
 				method="POST"
@@ -252,9 +252,9 @@
 			{/if}
 		{:else if filedElsewhere}
 			<!--
-				Beide Enden einer Verschiebung müssen in Reichweite sein. Ein Modul aus einer fremden
-				Fachgruppe herüberzuziehen wäre ein einseitiger Akt gegen die andere Gruppe; ihre
-				Leitung gibt es frei, dann lässt es sich aufnehmen.
+				Both ends of a move have to be within reach. Pulling a module over from another
+				subject group would be a one-sided act against the other group; its lead releases it,
+				then it can be taken in.
 			-->
 			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
 				Dieses Modul gehört zu einer Fachgruppe, die Du nicht leitest. Aufnehmen kannst Du es erst,
@@ -298,11 +298,10 @@
 					<span class="badge badge-ghost badge-sm align-middle">hat einen Tallox-Zugang</span>
 				{:else}
 					<!--
-						Aus dem ZPA übernommen zu sein heißt nicht, Tallox benutzen zu dürfen — wer
-						sich anmelden darf, steht in der Personenverwaltung. Das hier ist die einzige
-						Stelle, an der die Unterscheidung sichtbar wird, und sie ist keine
-						Aufforderung: die meisten Lehrenden brauchen keinen Zugang, solange sie keine
-						Wünsche eintragen.
+						Having been taken over from the ZPA does not mean being allowed to use Tallox — who
+						may sign in is set in the person administration. This is the only place where the
+						distinction becomes visible, and it is not a call to action: most teachers need no
+						access as long as they do not enter any wishes.
 					-->
 					<span class="text-base-content/80">Kein Tallox-Zugang.</span>
 				{/if}
@@ -382,7 +381,7 @@
 				</p>
 			{/if}
 			{#if maySplit}
-				<!-- Neu füllen wie nach dem Speichern der Aufteilung: der Vorschlag hängt an der Dauer. -->
+				<!-- Refill as after saving the split: the proposal depends on the duration. -->
 				<form
 					method="POST"
 					action="?/semesterSpan"
@@ -420,10 +419,10 @@
 			</p>
 		{:else}
 			<!--
-			`enhance` ohne eigenen Callback setzt das Formular nach einem erfolgreichen Absenden
-			zurück, und Svelte 5 zieht ein `reset` in die gebundenen Werte. Der Editor stand danach
-			leer da, obwohl die Aufteilung gespeichert war — und wer das sieht, tippt sie noch
-			einmal ein. Also nicht zurücksetzen, sondern aus den frisch geladenen Daten neu füllen.
+			`enhance` without its own callback resets the form after a successful submission, and
+			Svelte 5 pulls a `reset` into the bound values. The editor then stood there empty even
+			though the split had been saved — and whoever sees that types it in again. So do not
+			reset, but refill from the freshly loaded data.
 		-->
 			<form
 				method="POST"

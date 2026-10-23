@@ -14,9 +14,10 @@
 <svelte:head><title>Einführung · Tallox</title></svelte:head>
 
 <!--
-	Die Einführung für alle, die lehren und nichts planen. Die Texte stehen in $lib/intro.ts, die
-	Anleitungen kommen aus $lib/help.ts — hier wird nur gesetzt, nicht formuliert.
--->
+	The introduction for everybody who teaches and plans nothing. The texts live in
+	$lib/intro.ts, the instructions come from $lib/help.ts — here things are only laid out,
+	not worded.
+	-->
 <div class="flex flex-col gap-4">
 	<div>
 		<h1 class="text-2xl font-semibold">Einführung in Tallox</h1>

@@ -194,15 +194,15 @@
 	{/if}
 
 	<!--
-		Fokussierbar, weil scrollbar. Sobald das Protokoll Zeilen hat, ist die Tabelle breiter als
-		der Bildschirm, und ein Bereich, der scrollt, muss von der Tastatur erreichbar sein
-		(WCAG 2.1.1; axe meldet es als „serious"). Leer läuft nichts über — deshalb war der
-		Befund allein nicht zu sehen und erst im vollen Lauf da, wo die anderen Tests Einträge
-		erzeugen.
+		Focusable because scrollable. As soon as the log has rows, the table is wider than the
+		screen, and an area that scrolls has to be reachable from the keyboard (WCAG 2.1.1; axe
+		reports it as „serious“). Empty, nothing overflows — which is why the finding could not
+		be seen on its own and only showed up in the full run, where the other tests create
+		entries.
 
-		Die Lint-Regel unten meint dekorative Elemente; ein Scroll-Container ist die dokumentierte
-		Ausnahme, und die beiden Prüfer sind sich genau hier uneins. Dieselbe Stelle gab es schon
-		auf /api-doku/schema.
+		The lint rule below means decorative elements; a scroll container is the documented
+		exception, and the two checkers disagree exactly here. The same spot already existed on
+		/api-doku/schema.
 	-->
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div

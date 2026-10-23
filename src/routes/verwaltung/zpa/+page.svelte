@@ -40,9 +40,9 @@
 	</div>
 
 	<!--
-		Das Wichtigste zuerst und als ganzer Satz. Der Fehler, den dieser Import wirklich haben
-		wird, ist nicht ein falscher Diff, sondern ein Job, der vor drei Wochen leise aufgehört
-		hat — währenddessen sieht jede Seite gesund aus und geplant wird mit alten Daten.
+		The most important thing first, and as a whole sentence. The failure this import will
+		really have is not a wrong diff but a job that quietly stopped three weeks ago — in the
+		meantime every page looks healthy and planning happens with old data.
 	-->
 	<div class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
 		<div class="flex flex-wrap items-center gap-3">
@@ -71,10 +71,10 @@
 
 		<form method="POST" action="?/sync" use:enhance class="flex items-center gap-3">
 			<!--
-				Kosmetisch, kein Schloss: dieselbe Regel steht in internal/policy und gilt auch
-				über die Token-Tür. Der Knopf wird nur gesperrt, während wirklich etwas läuft —
-				die Zehn-Minuten-Grenze durchzusetzen ist Sache des Backends, sonst gäbe es zwei
-				Meinungen über dieselbe Zahl.
+				Cosmetic, not a lock: the same rule lives in internal/policy and also applies through
+				the token door. The button is only disabled while something is actually running —
+				enforcing the ten-minute limit is the backend's business, otherwise there would be two
+				opinions about the same number.
 			-->
 			<button class="btn btn-sm btn-primary" disabled={running}>Jetzt abgleichen</button>
 			{#if running}
@@ -103,9 +103,9 @@
 	</div>
 
 	<!--
-		Der Katalog ist das Zweite, was veralten kann, und steht deshalb neben den Läufen statt
-		hinter ihnen: ein erfolgreicher Abgleich mit gescheiterter Projektion sind frische
-		Rohdaten hinter einer wochenalten Modulliste.
+		The catalogue is the second thing that can go stale, and therefore sits beside the runs
+		rather than behind them: a successful sync with a failed projection is fresh raw data
+		behind a weeks-old module list.
 	-->
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="mb-2 flex items-center gap-2 font-semibold">
@@ -162,10 +162,9 @@
 										{FINDING_LABELS[note.finding]}
 										{#if findingIsAlarming(note.finding)}
 											<!--
-												Genau ein Befund ist eine Warnung, und das ist der Punkt der
-												Unterscheidung: die übrigen sind Entscheidungen, die die
-												Projektion bewusst trifft und meldet, damit niemand rätselt,
-												wo die Zeilen geblieben sind.
+												Exactly one finding is a warning, and that is the point of the
+												distinction: the rest are decisions the projection makes deliberately
+												and reports, so that nobody has to puzzle over where the rows went.
 											-->
 											<span class="badge badge-error badge-sm ml-1">nachsehen</span>
 										{/if}
@@ -197,7 +196,7 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-		<!-- Die Läufe. Eine Lücke in dieser Liste ist das Symptom, das man sehen soll. -->
+		<!-- The runs. A gap in this list is the symptom one is meant to see. -->
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4 lg:col-span-1">
 			<h2 class="mb-2 font-semibold">Läufe</h2>
 			{#if data.runs.length === 0}
@@ -207,9 +206,9 @@
 				</p>
 			{:else}
 				<!--
-					Ein GET-Formular statt Links, wie auf der Diagnose-Seite: die Auswahl ist eine
-					Abfrage, kein Vorgang, und die Adresse eines bestimmten Berichts ist genau das, was
-					man in eine Mail kopiert. Ohne JavaScript funktioniert es genauso.
+					A GET form instead of links, as on the diagnostics page: the selection is a query, not
+					an action, and the address of a particular report is exactly what one copies into an
+					email. It works the same without JavaScript.
 				-->
 				<form method="GET" class="flex flex-col gap-1">
 					{#each data.runs as run (run.id)}

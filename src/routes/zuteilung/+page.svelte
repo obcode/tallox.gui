@@ -136,16 +136,16 @@
 	const hasWishRound = $derived(data.group !== null);
 
 	/**
-	 * Die Instanzen dieser Fachgruppe, auf die sich noch niemand eingetragen hat.
+	 * The instances of this subject group that nobody has registered interest in yet.
 	 *
-	 * Nur für eine Fachgruppe, die diese Person **leitet** — dort liest sie die Eintragungen
-	 * ohnehin schon, das ist also eine Umsortierung vorhandener Zeilen und keine neue Auskunft.
-	 * Überall sonst bliebe die Liste stumm falsch: die `wishes` sind serverseitig gefiltert, für
-	 * alle anderen also nur die eigenen, und „niemand eingetragen" wäre dann eine Lüge und ein
-	 * Leck zugleich.
+	 * Only for a subject group this person **leads** — there they read the entries anyway, so
+	 * this is a re-sorting of existing rows and not new information. Anywhere else the list
+	 * would be silently wrong: the `wishes` are filtered server-side, so for everybody else
+	 * they are only their own, and „niemand eingetragen“ would then be a lie and a leak at
+	 * once.
 	 *
-	 * Und keine Zahl, nirgends: Namen von Zügen, nichts gezählt, nichts eingefärbt, nichts
-	 * danach sortiert.
+	 * And no number, anywhere: names of tracks, nothing counted, nothing coloured, nothing
+	 * sorted by it.
 	 */
 	const showGaps = $derived(mayShowGaps(tab, data.session?.effectiveRoles ?? [], data.led));
 
@@ -383,11 +383,11 @@
 			{/each}
 			{#if offerUnfiled}
 				<!--
-					Instanzen, deren Modul in keiner Fachgruppe steht. Kein Sonderfall, den man
-					wegdiskutieren könnte: ein lokal angelegtes Modul — so wird ein kurzfristiges
-					FWP angemeldet — kommt ohne Fachgruppe auf die Welt, und ohne diesen Reiter
-					fiel es aus jeder Auswahl heraus. Nur für die beiden Rollen, die es über den
-					Studiengang besetzen dürfen.
+					Instances whose module is in no subject group. Not a special case one could argue
+					away: a locally created module — that is how a short-notice FWP is registered —
+					comes into the world without a subject group, and without this tab it fell out of
+					every selection. Only for the two roles that may staff it via the
+					programme.
 				-->
 				<button
 					type="submit"
@@ -416,9 +416,9 @@
 		</div>
 	{:else}
 		<!--
-			Die Ansicht: nur Bachelor oder nur Master, und auf Wunsch je Studiengang gruppiert. Beides
-			schneidet nur, was die Seite schon geladen hat — für eine Fachgruppe wie WI, deren
-			Leitung Bachelor- und Mastermodule getrennt besetzt.
+			The view: only bachelor or only master, and grouped by programme on request. Both only
+			cut what the page has already loaded — for a subject group like WI, whose lead staffs
+			bachelor and master modules separately.
 		-->
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-3">
 			{@render carriedOver(['abschluss', 'nach'])}
@@ -463,16 +463,15 @@
 		{/if}
 
 		<!--
-			Der Schalter für die Wunschphase dieser Fachgruppe. Ein eigenes Formular und eine eigene
-			Action: das Speichern der Tabelle ist ein Bündel kleiner Entscheidungen, dies ist eine
-			Entscheidung über die Runde selbst — und ein versehentlicher Klick soll nicht bei jedem
-			automatischen Speichern mitreisen.
+			The switch for this subject group's wish phase. Its own form and its own action: saving
+			the table is a bundle of small decisions, this is a decision about the round itself —
+			and an accidental click should not travel along with every automatic save.
 		-->
 		<!--
-			Die Parameter stehen in der Action-URL, nicht nur im Rumpf. Ohne `use:enhance` navigiert
-			der Browser wirklich nach `?/window` — und der ersetzt den Query-String der Seite, also
-			landet man danach ohne Semester und ohne Fachgruppe auf dem Planungssemester. Der Rumpf
-			trägt sie trotzdem, weil die Action sie von dort liest.
+			The parameters are in the action URL, not only in the body. Without `use:enhance` the
+			browser really navigates to `?/window` — and that replaces the page's query string, so
+			afterwards one lands on the planning semester without a semester and without a subject
+			group. The body carries them anyway, because the action reads them from there.
 		-->
 		{#if hasWishRound && data.group}
 			<form method="POST" action={actionUrl('window')} class="mt-5">
@@ -528,9 +527,9 @@
 
 		{#if showGaps && gaps.length > 0}
 			<!--
-				Keine Zahl, keine Färbung, keine Sortierung danach — die Namen der Züge und sonst
-				nichts. Sichtbar nur für die Leitung dieser Fachgruppe, die die Eintragungen
-				darauf ohnehin liest.
+				No number, no colouring, no sorting by it — the names of the tracks and nothing
+				else. Visible only to the lead of this subject group, who reads the entries on
+				them anyway.
 			-->
 			<div class="border-base-300 bg-base-100 mt-5 max-w-prose rounded-lg border p-4">
 				<h2 class="font-medium">Noch ohne Interesse</h2>
@@ -642,8 +641,8 @@
 						</thead>
 						{#each sections as section (section.programme?.code ?? '')}
 							{#if section.programme}
-								<!-- Eine Überschrift je Studiengang, wenn danach gruppiert ist. Ein eigener
-								     tbody, weil jeder Zug darunter seinen eigenen braucht. -->
+								<!-- One heading per programme when grouped by it. A tbody of its own, because
+								     every track below it needs its own. -->
 								<tbody class="border-base-300 border-t-2">
 									<tr>
 										<th colspan="6" scope="colgroup" class="bg-base-200 pt-4 text-base">
@@ -1012,18 +1011,19 @@
 {/if}
 
 <!--
-	Die Ausnahme der Ausnahme, hinter einem Zahnrad: einen Teil aufteilen — die Vorlesung halb bei
-	uns, halb bei einer anderen Fakultät — und einen Teil einer anderen Fakultät überlassen.
+	The exception to the exception, behind a cog: splitting a part — the lecture half with
+	us, half with another faculty — and leaving a part to another faculty.
 
-	Ein Popover und keine Dropdown-Liste, aus demselben Grund wie in der Bedarfsplanung: die Tabelle
-	steht in `overflow-x-auto`, und ein Dropdown würde am Rand abgeschnitten. Ohne JavaScript: das
-	Öffnen macht der Browser über `popovertarget`, und die Knöpfe gehören zum Formular der Tabelle,
-	mit eigener `formaction`. Die Felder darin tragen den Teil im Namen, weil sie mit jedem Absenden
-	der Tabelle mitreisen und nur das zum gedrückten Knopf gelesen wird.
+	A popover and not a dropdown list, for the same reason as in the demand planning: the
+	table sits in `overflow-x-auto`, and a dropdown would be cut off at the edge. Without
+	JavaScript: the browser does the opening via `popovertarget`, and the buttons belong to
+	the table's form, with their own `formaction`. The fields inside carry the part in their
+	name, because they travel along with every submission of the table and only those
+	belonging to the pressed button are read.
 
-	Bewusst ohne die Wörter der Tabellenzeile in den Knöpfen: der Inhalt ist versteckt, steht aber im
-	Dokument, und ein zweites „3 Teile" machte jeden Locator darauf mehrdeutig.
--->
+	Deliberately without the words of the table row in the buttons: the content is hidden
+	but is in the document, and a second „3 Teile“ would make every locator on it ambiguous.
+	-->
 {#snippet carriedOver(own: readonly string[])}
 	{#each filterFields as field (field.name)}
 		{#if !own.includes(field.name) && field.value !== ''}

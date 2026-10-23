@@ -149,34 +149,34 @@
 	]);
 
 	/**
-	 * Speichern passiert beim Auswählen und beim Verlassen des Notizfeldes.
+	 * Saving happens on selecting and on leaving the note field.
 	 *
-	 * Drei Ereignisse, und jedes hat seinen Grund:
+	 * Three events, and each has its reason:
 	 *
-	 * - `change` ist der Auslöser. Beim Auswahlfeld heißt es „ausgewählt", beim Textfeld „fertig
-	 *   getippt" — beides ist genau der Moment. **Nicht `input`:** das feuert je Tastendruck, und
-	 *   ein Rundlauf je Buchstabe wäre für eine Notiz das Falsche.
-	 * - `input` merkt sich nur, dass etwas offen ist.
-	 * - `focusout` fängt das Verlassen des Feldes auf jedem Weg ab. Der Browser feuert `change`
-	 *   beim Textfeld nur, wenn *er* die Änderung als Eingabe gesehen hat; alles andere (eine
-	 *   Erweiterung, ein Passwortmanager, ein Test, der den Wert setzt) käme sonst nie an. Deshalb
-	 *   das Merken oben — sonst schickte jedes Verlassen einer Zelle ein zweites Mal ab.
+	 * - `change` is the trigger. On the select it means "selected", on the text field "finished
+	 *   typing" — both are exactly the moment. **Not `input`:** that fires on every keystroke,
+	 *   and a round trip per letter would be the wrong thing for a note.
+	 * - `input` only notes that something is pending.
+	 * - `focusout` catches leaving the field by any route. The browser fires `change` on the text
+	 *   field only if *it* saw the change as input; anything else (an extension, a password
+	 *   manager, a test that sets the value) would otherwise never arrive. Hence the noting
+	 *   above — otherwise every time a cell is left it would submit a second time.
 	 *
-	 * Alle drei blubbern, deshalb hängen die Zuhörer am Formular und nicht an jeder der mehreren
-	 * hundert Zellen.
+	 * All three bubble, which is why the listeners hang on the form and not on each of the
+	 * several hundred cells.
 	 */
 	let formElement = $state<HTMLFormElement | null>(null);
 	let saving = $state(false);
 	let savedOnce = $state(false);
-	/** Etwas wurde getippt und ist noch nicht abgeschickt. Nicht `$state`: nichts rendert es. */
+	/** Something was typed and has not been submitted yet. Not `$state`: nothing renders it. */
 	let dirty = false;
 	/**
-	 * Eine Änderung, die während eines laufenden Speicherns kam.
+	 * A change that came in while a save was running.
 	 *
-	 * Nicht `$state`, weil nichts davon gerendert wird — und der Grund, dass es das überhaupt
-	 * gibt: zwei gleichzeitige Abschickungen tragen beide den *ganzen* Formularzustand, und
-	 * käme die ältere als zweite an, überschriebe sie die neuere Zelle wieder mit ihrem alten
-	 * Wert. Also immer nur eines unterwegs, und danach bei Bedarf noch einmal.
+	 * Not `$state`, because none of it is rendered — and the reason it exists at all: two
+	 * simultaneous submissions both carry the *whole* form state, and if the older one arrived
+	 * second, it would overwrite the newer cell with its old value again. So only ever one in
+	 * flight, and afterwards once more if needed.
 	 */
 	let queued = false;
 
@@ -186,8 +186,8 @@
 			queued = true;
 			return;
 		}
-		// Synchron zurückgesetzt und nicht erst nach der Antwort: sonst sähe das `focusout`, das
-		// unmittelbar auf ein `change` folgt, noch das offene Flag und schickte gleich noch einmal.
+		// Reset synchronously and not only after the response: otherwise the `focusout` that
+		// immediately follows a `change` would still see the pending flag and submit once more.
 		dirty = false;
 		formElement?.requestSubmit();
 	}
@@ -203,11 +203,11 @@
 		<table class="table table-sm w-full min-w-[720px]">
 			<thead>
 				<!--
-					Die drei linken Spalten sind fest, den Rest teilen sich die Zug-Spalten — dort
-					wird die Notiz getippt. Der Modulname bekommt genug, um in aller Regel in zwei
-					Zeilen zu passen; enger war es zwar noch lesbar, aber die Namen im Katalog sind
-					lang („Advanced Data Modeling and Analysis with R"), und eine Spalte, in der
-					jeder zweite Titel vierzeilig umbricht, kostet mehr, als die Notiz gewinnt.
+					The three left columns are fixed, the track columns share the rest — that is where the
+					note is typed. The module name gets enough to fit in two lines as a rule; narrower was
+					still readable, but the names in the catalogue are long („Advanced Data Modeling and
+					Analysis with R“), and a column in which every second title wraps over four lines costs
+					more than the note gains.
 				-->
 				<tr>
 					<SortHeader
@@ -258,11 +258,10 @@
 							{/if}
 							{#if heldForOthers(row).length > 0}
 								<!--
-									Eine Veranstaltung, mehrere Studiengänge. Der gedeckte Zug steht nicht
-									mehr als eigene Zeile da — er wäre dasselbe Angebot ein zweites Mal,
-									einmal mit seinen echten SWS und einmal mit null. Wofür er gehalten
-									wird, gehört trotzdem hierher: wer sich einträgt, trägt sich für alle
-									ein.
+									One course, several programmes. The covered track no longer appears as a row of
+									its own — it would be the same offering a second time, once with its real SWS and
+									once with zero. What it is held for still belongs here: whoever registers,
+									registers for all of them.
 								-->
 								<span class="badge badge-outline badge-xs ml-1 align-middle">
 									{heldForLabel(heldForOthers(row))}
@@ -270,27 +269,26 @@
 							{/if}
 							{#if demandHint}
 								<!--
-									Eine Orientierung, keine Warnung: sich in einen Studiengang einzutragen,
-									der seinen Bedarf noch bearbeitet, ist erlaubt und oft sinnvoll. Der
-									Hinweis fehlt, sobald gemeldet ist — eine Marke auf jeder Zeile wäre
-									Rauschen genau auf den Zeilen, die zählen.
+									A pointer, not a warning: registering for a programme that is still working on
+									its demand is allowed and often sensible. The hint disappears as soon as the
+									demand has been announced as settled — a mark on every row would be noise on
+									exactly the rows that count.
 								-->
 								<span class="badge badge-ghost badge-xs ml-1 align-middle">{demandHint}</span>
 							{/if}
 							{#if row.module.subjectGroup}
 								<!--
-									Ungedämpft, anders als sonst in einer Tabelle — und das ist keine
-									Ausnahme von der Regel, sondern sie richtig gelesen: „/80 ist die
-									Untergrenze" ist gegen `base-100` gemessen. Diese Zelle steht auf
-									der getönten Fläche der Zeile, und dort misst `/80` auf `winter`
-									3,48:1. Eine andere Fläche braucht ihre eigene Messung.
+									Not muted, unlike elsewhere in a table — and that is not an exception to the
+									rule but the rule read correctly: "/80 is the lower limit" is measured against
+									`base-100`. This cell sits on the row's tinted surface, and there `/80`
+									measures 3.48:1 on `winter`. A different surface needs its own measurement.
 								-->
 								<span class="block text-xs">
 									{row.module.subjectGroup.name}
 								</span>
 							{/if}
 						</td>
-						<!-- Ebenfalls ungedämpft, aus demselben Grund wie das Kürzel eine Zelle weiter. -->
+						<!-- Also not muted, for the same reason as the short code one cell further on. -->
 						<td class="align-top text-right {rowTint}">
 							{formatHours(row.teachingHours)}
 						</td>
@@ -298,21 +296,19 @@
 							{@const cohort = cohortIn(row, track)}
 							{@const wish = cohort ? mine.get(cohort.instanceId) : undefined}
 							<!--
-								Die ganze Zelle wird hinterlegt, nicht nur das Bedienelement darin: was
-								man in dieser Tabelle sucht, ist „wo habe ich etwas stehen", und das
-								liest sich an der Fläche ab.
+								The whole cell gets a background, not just the control in it: what one looks for in
+								this table is "where do I have something", and that is read off the surface.
 
-								Die Farbe folgt dem **gespeicherten** Wunsch und sonst nichts. Nie
-								fremden Eintragungen — das wäre die Heatmap, gegen die die ganze
-								Vertraulichkeitsregel geschrieben ist.
+								The colour follows the **saved** wish and nothing else. Never other people's
+								entries — that would be the heatmap the whole confidentiality rule is written
+								against.
 							-->
 							<td class="align-top {wishTint(wish?.priority ?? '')}">
 								{#if cohort}
 									<!--
-										Der Schlüssel ist der gespeicherte Zustand, nicht die Kennung der
-										Instanz: die Zelle hält den Eingabestand lokal und soll genau dann
-										neu aufsetzen, wenn sich das Gespeicherte geändert hat — nach dem
-										Speichern also, und nicht währenddessen.
+										The key is the saved state, not the instance's id: the cell keeps the input
+										state locally and should start over exactly when what is saved has changed —
+										that is, after saving, and not during it.
 									-->
 									{#key `${wish?.id ?? ''}:${wish?.priority ?? ''}:${wish?.note ?? ''}`}
 										<WishCell
@@ -323,13 +319,13 @@
 											open={open && closedReason === null}
 										/>
 									{/key}
-									<!-- Block und Englisch stehen beim Zug, nicht beim Modul: zwei Züge
-									     desselben Moduls können verschieden gehalten werden. -->
+									<!-- Block and English sit with the track, not with the module: two tracks
+									     of the same module can be held differently. -->
 									{#each cohort.format ? formatBadges(cohort.format) : [] as mark (mark)}
 										<span class="badge badge-info badge-xs mt-1 mr-1 align-middle">{mark}</span>
 									{/each}
-									<!-- Ein Teil davon hält eine andere Fakultät: gewünscht wird trotzdem der
-									     Zug, und die Notiz sagt, welche Hälfte. -->
+									<!-- Part of it is held by another faculty: the wish is still for the
+									     track, and the note says which half. -->
 									{@const elsewhere = facultiesElsewhere(cohort.parts)}
 									{#if elsewhere.length > 0}
 										<span
@@ -344,9 +340,8 @@
 									{/if}
 									{#if refusalsByInstance[cohort.instanceId]}
 										<!--
-											Farbe als Hintergrund, nie als Textfarbe: text-error liegt auf den
-											hellen Themes bei 1,35:1 bis 3,5:1 und ist als Text unlesbar,
-											egal was es signalisiert.
+											Colour as background, never as text colour: text-error sits at 1.35:1 to 3.5:1
+											on the light themes and is unreadable as text, whatever it signals.
 										-->
 										<p class="text-base-content/80 mt-1 text-xs">
 											<span class="badge badge-error badge-xs align-middle">Nicht gespeichert</span>
@@ -392,12 +387,12 @@
 	</div>
 
 	<!--
-		Jeder Reiter ist ein Submit-Knopf, wie auf der Bedarfsseite: umgeschaltet wird mit einem
-		Klick und nicht mit zweien, und es braucht kein JavaScript dafür — ein Auswahlfeld, das sich
-		selbst abschickt, bräuchte welches, und daneben stünde wieder ein Knopf.
+		Every tab is a submit button, as on the demand page: switching takes one click and not
+		two, and it needs no JavaScript — a select that submits itself would need some, and
+		there would be a button beside it again.
 
-		Das <form> steht um die Leiste herum und nie dazwischen: daisyUI stylt über `.tabs > .tab`,
-		und ein Formular in der Mitte nimmt der Leiste Rahmen, Abstände und den markierten Zustand.
+		The <form> goes around the bar and never in between: daisyUI styles via `.tabs > .tab`,
+		and a form in the middle takes the bar's border, spacing and selected state away.
 	-->
 	<form method="GET" class="flex flex-col gap-1">
 		<span class="label-text text-sm">Semester</span>
@@ -560,8 +555,8 @@
 			<h2 class="text-lg font-medium">
 				Meine Eintragungen
 				<!--
-					Die eigene Zahl ist unbedenklich: sie sagt nichts über andere. Genau deshalb steht
-					sie hier und nirgends sonst auf dieser Seite.
+					One's own figure is harmless: it says nothing about others. That is exactly why it
+					is here and nowhere else on this page.
 				-->
 				<span class="text-base-content/80 text-sm font-normal">({data.myWishes.length})</span>
 			</h2>
@@ -580,11 +575,11 @@
 								<span class="badge badge-ghost badge-sm align-middle">angezeigt</span>
 							{:else if group.code !== ''}
 								<!--
-									resolve() baut die Route, der Query-String kommt dahinter — dieselbe
-									Route mit anderer Auswahl. Ohne resolve() schlägt
-									svelte/no-navigation-without-resolve zu, und zwar zu Recht: ein
-									href, das mit „?" beginnt, hängt an der Adresse, auf der man
-									gerade steht.
+									resolve() builds the route, the query string goes after it — the same
+									route with a different selection. Without resolve()
+									svelte/no-navigation-without-resolve kicks in, and rightly so: an
+									href that starts with „?“ is appended to the address one is currently
+									on.
 								-->
 								<a
 									class="link text-sm font-normal"
@@ -594,8 +589,8 @@
 								</a>
 							{/if}
 							<!--
-								Die eigene Summe, und deshalb sagbar: sie handelt von dem, was diese
-								Person angeboten hat, und von niemandem sonst.
+								One's own total, and therefore sayable: it is about what this person has
+								offered, and about nobody else.
 							-->
 							<span class="text-base-content/80 text-sm font-normal">
 								· {hoursLabel(group.teachingHours)}
@@ -624,13 +619,11 @@
 								</thead>
 								<tbody>
 									<!--
-										Dieselbe Tönung wie in der Wunschtabelle, damit die drei Stufen
-										hier nicht nur als Wort dastehen — man liest diese Liste, um zu
-										sehen, was man wo zugesagt hat.
+										The same tint as in the wish table, so that the three levels are not just a
+										word here — one reads this list to see what one has committed to where.
 
-										Ungedämpfter Text, wie drüben und aus demselben Grund: „/80 ist
-										die Untergrenze" ist gegen `base-100` gemessen, nicht gegen die
-										getönte Fläche.
+										Unmuted text, as over there and for the same reason: "/80 is the lower
+										limit" is measured against `base-100`, not against the tinted surface.
 									-->
 									{#each sortRows(group.wishes, ownSort, OWN_WISH_SORT) as wish (wish.id)}
 										<tr class={wishTint(wish.priority)}>
@@ -658,9 +651,9 @@
 		</p>
 	{:else}
 		<!--
-			Eine Tabelle, ein Formular, ein Speichern. So wurde die Confluence-Tabelle auch benutzt:
-			runtergehen, drei Sachen eintragen, fertig. Und ohne JavaScript funktioniert es genauso,
-			was ein Auswahlfeld, das sich selbst abschickt, nicht täte.
+			One table, one form, one save. That is how the Confluence table was used too: go down,
+			enter three things, done. And it works the same without JavaScript, which a select
+			that submits itself would not.
 		-->
 		<form
 			method="POST"
@@ -692,9 +685,9 @@
 
 			{#each sections as section (section.title)}
 				<!--
-					Der eigene Abschnitt wird auch dann gerendert, wenn er leer ist. Sonst ist der Satz
-					darunter unerreichbar — und wer in keiner Fachgruppe ist, sieht auf dieser Seite nur
-					„Alle weiteren Module" und erfährt nie, dass es eine Vorauswahl gäbe.
+					One's own section is rendered even when it is empty. Otherwise the sentence below it
+					is unreachable — and whoever is in no subject group sees only „Alle weiteren Module“
+					on this page and never learns that there would be a preselection.
 				-->
 				{#if section.rows.length > 0 || section.own}
 					<section class="flex flex-col gap-2">
@@ -740,10 +733,10 @@
 					{/if}
 				</p>
 				<!--
-					Bleibt, obwohl er im Normalfall nichts tut: ohne JavaScript ist er der einzige
-					Weg, ein Auswahlfeld abzuschicken. Deshalb unauffällig statt als Hauptaktion —
-					und weil er die ganze Tabelle schickt, ist ein Druck darauf folgenlos, wenn
-					ohnehin schon alles gespeichert ist.
+					Stays, although normally it does nothing: without JavaScript it is the only way to
+					submit a select. Hence inconspicuous rather than the main action — and because it
+					sends the whole table, pressing it has no effect when everything is already saved
+					anyway.
 				-->
 				<button type="submit" class="btn btn-ghost btn-sm" disabled={!open || saving}>
 					Alles speichern
