@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { describeCounts, freshness, lastSuccessful, statusBadge } from './zpa';
+import {
+	describeCounts,
+	describeProgress,
+	freshness,
+	lastSuccessful,
+	runProgress,
+	runningRun,
+	statusBadge
+} from './zpa';
 
 /**
  * The freshness judgement is the reason the page exists, so it is the part that gets tested.
@@ -80,5 +88,39 @@ describe('describeCounts', () => {
 		expect(describeCounts({ appeared: 0, changed: 4, disappeared: 1 })).toBe(
 			'4 geändert, 1 entfallen'
 		);
+	});
+});
+
+describe('runningRun', () => {
+	it('finds the run in progress and nothing else', () => {
+		expect(runningRun([{ status: 'SUCCEEDED' as const }])).toBeUndefined();
+		const runs = [
+			{ status: 'RUNNING' as const, id: 'a' },
+			{ status: 'SUCCEEDED' as const, id: 'b' }
+		];
+		expect(runningRun(runs)?.id).toBe('a');
+	});
+});
+
+describe('runProgress', () => {
+	const startedAt = '2026-10-23T10:00:00Z';
+
+	it('counts the endpoints that are done against all there are', () => {
+		const progress = runProgress(
+			{ startedAt, kinds: [{ kind: 'SPO' }, { kind: 'BASKET' }] },
+			new Date('2026-10-23T10:00:07.900Z')
+		);
+		expect(progress).toEqual({ done: ['SPOs', 'Kataloge'], total: 5, seconds: 7 });
+		expect(describeProgress(progress)).toBe('2 von 5 Quellen übernommen: SPOs, Kataloge.');
+	});
+
+	it('says what is happening before the first endpoint is done', () => {
+		const progress = runProgress({ startedAt, kinds: [] }, new Date(startedAt));
+		expect(progress.seconds).toBe(0);
+		expect(describeProgress(progress)).toBe('Die Daten werden beim ZPA angefragt.');
+	});
+
+	it('never counts backwards when the clocks disagree', () => {
+		expect(runProgress({ startedAt, kinds: [] }, new Date('2026-10-23T09:59:58Z')).seconds).toBe(0);
 	});
 });

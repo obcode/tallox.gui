@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
+import { runSql } from './psql';
 
 /**
  * The ZPA import page, against the real stack.
@@ -53,5 +54,73 @@ test.describe('the ZPA import page', () => {
 		await gotoRendered(page, '/');
 
 		await expect(page.getByRole('link', { name: /ZPA-Import/ })).toHaveCount(0);
+	});
+});
+
+/**
+ * Following a run while it is going.
+ *
+ * The run happens in the backend, detached from the request that started it, and the page
+ * follows it by loading itself again. No Go test sees that half — whether the page actually
+ * re-reads, and stops when the run is over — and nothing short of a real browser against a real
+ * stack does. The run is arranged in the database rather than started through the button: there
+ * is no ZPA behind the end-to-end stack, and a row is exactly what the page reads.
+ *
+ * Serial, and cleaned up afterwards: a RUNNING row greys out the button for every other test,
+ * and a finished one would hold off a manual run for ten minutes.
+ */
+test.describe('a run in progress', () => {
+	test.describe.configure({ mode: 'serial' });
+
+	const RUN = 'e2e00000-0000-4000-8000-00000000c0de';
+	const kind = (name: string) =>
+		`INSERT INTO zpa_sync_run_kind (run_id, kind, status, fetched) VALUES ('${RUN}', '${name}', 'SUCCEEDED', 1);`;
+	const reset = () => runSql(`DELETE FROM zpa_sync_run WHERE id = '${RUN}';`, 'removing the run');
+
+	test.skip(!process.env.TALLOX_DB_URL, 'needs the database to arrange a run');
+	test.beforeEach(() => {
+		reset();
+	});
+	test.afterEach(() => {
+		reset();
+	});
+
+	test('is shown endpoint by endpoint and replaced by its result without a reload', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		runSql(
+			`INSERT INTO zpa_sync_run (id, trigger, started_at)
+			   VALUES ('${RUN}', 'MANUAL', now() - interval '5 seconds');
+			 ${kind('SPO')} ${kind('BASKET')} ${kind('TEACHER')}`,
+			'arranging a run in progress'
+		);
+
+		const page = await asPersona(PERSONAS.sechs);
+		await gotoRendered(page, '/verwaltung/zpa');
+
+		const bar = page.getByRole('progressbar', { name: 'Fortschritt des Abgleichs' });
+		await expect(bar).toHaveAttribute('value', '3');
+		await expect(bar).toHaveAttribute('max', '5');
+		await expect(page.getByText(/^3 von 5 Quellen übernommen: .*SPOs/)).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Jetzt abgleichen' })).toBeDisabled();
+		await checkA11y(page);
+
+		// The next endpoint arrives while the page is open.
+		runSql(kind('MODULE'), 'one more endpoint');
+		await expect(bar).toHaveAttribute('value', '4');
+
+		// And the run ends. Nothing reloads the page — what replaces the bar is the polling.
+		let reloaded = false;
+		page.on('load', () => (reloaded = true));
+		runSql(
+			`${kind('MSBA')}
+			 UPDATE zpa_sync_run SET status = 'SUCCEEDED', finished_at = now() WHERE id = '${RUN}';`,
+			'finishing the run'
+		);
+		await expect(bar).toHaveCount(0);
+		await expect(page.getByRole('button', { name: 'Jetzt abgleichen' })).toBeEnabled();
+		await expect(page.getByText('Dauert etwa eine Viertelminute.')).toBeVisible();
+		expect(reloaded).toBe(false);
 	});
 });
