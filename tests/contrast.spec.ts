@@ -98,6 +98,27 @@ test.describe('contrast across all themes', () => {
 });
 
 /**
+ * The process chart on /ablauf, signed in so that a phase is marked: phase headers on `neutral`
+ * and `primary`, the "nicht umkehrbar" badge on `warning`, and the hints in /80 under them.
+ * Wide, because that is where the headers are chevrons and the hints sit in narrow columns.
+ */
+test.describe('contrast of the process chart, across all themes', () => {
+	for (const theme of THEMES) {
+		test(`${theme.label} (${theme.value})`, async ({ asPersona }) => {
+			const page = await asPersona(PERSONAS.eins);
+			await page
+				.context()
+				.addCookies([{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }]);
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await gotoRendered(page, '/ablauf');
+			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
+
+			await expectNoContrastViolations(page, `${theme.value}, /ablauf`);
+		});
+	}
+});
+
+/**
  * The same check with the menus **open** — and that is not busywork.
  *
  * a11y.spec.ts opens both menus, but only in the default theme; contrast.spec.ts walks all

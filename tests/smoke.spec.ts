@@ -120,6 +120,31 @@ test.describe('the walk-through', () => {
 		await expect(page.getByRole('heading', { name: 'Wer macht was' })).toBeVisible();
 	});
 
+	// The picture above the steps: the per-semester steps as phases × roles. Where each step sits
+	// is pinned in processChart.test.ts; this checks that it renders and that a box leads to its
+	// step. Which phase is marked depends on other specs and is not checked here.
+	test('draws the semester as phases and roles', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/ablauf');
+
+		const chart = page.getByRole('heading', { name: 'Das Semester im Überblick' }).locator('..');
+		for (const phase of [
+			'Auftakt',
+			'Bedarfsplanung',
+			'Wunschphase',
+			'Zuteilung',
+			'Studiengangs-Review',
+			'Abgeschlossen'
+		]) {
+			await expect(chart.getByRole('heading', { name: phase, exact: true })).toBeVisible();
+		}
+		await expect(chart.getByText('nicht umkehrbar')).toHaveCount(2);
+
+		await chart.getByRole('link', { name: /Die Instanzen besetzen/ }).click();
+		await expect(page).toHaveURL(/#schritt-\d+$/);
+		await expect(page.getByRole('heading', { name: /^Die Instanzen besetzen/ })).toBeInViewport();
+	});
+
 	test('links a step only where the menu would', async ({ asPersona }) => {
 		const lecturer = await asPersona(PERSONAS.eins);
 		await gotoRendered(lecturer, '/ablauf');
