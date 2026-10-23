@@ -92,6 +92,18 @@ export const HELP: readonly HelpEntry[] = [
 		stage: 'ONCE'
 	},
 	{
+		question: 'Was muss ich einmal einrichten?',
+		answer:
+			'Zwei Dinge, beide unter „Meine Lehre“: Deine Fachgruppen und danach Deine Kompetenzen, also welche Module Du halten kannst. Dazu kommt in jedem Semester die Angabe, wie viele SWS Du übernehmen möchtest. Was davon noch fehlt, zeigt die Startseite unter „Dein Stand“. Die Karte verschwindet, sobald alles angegeben ist, und kommt mit einem neuen Planungssemester für die SWS zurück. Gespeichert wird dafür nichts eigenes: sie liest nur, was Du auf den Seiten eingetragen hast.',
+		who: ['LECTURER'],
+		where: [
+			{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' },
+			{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' },
+			{ href: '/wuensche', label: 'Wünsche' }
+		],
+		stage: 'ONCE'
+	},
+	{
 		question: 'Wo gebe ich an, in welchen Fächern ich arbeite?',
 		answer:
 			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Jedes Häkchen ist sofort gespeichert. Das ist eine Aussage über Dich und keine Berechtigung: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall.',
