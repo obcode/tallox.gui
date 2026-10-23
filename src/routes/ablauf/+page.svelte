@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import GuidePlaces from '$lib/components/GuidePlaces.svelte';
+	import ProcessChart from '$lib/components/ProcessChart.svelte';
 	import { GUIDE, isDue, type GuideStep } from '$lib/guide';
 	import { ALL_ROLES, ROLE_LABELS } from '$lib/roles';
 	import type { PageData } from './$types';
@@ -62,6 +63,17 @@
 		</p>
 	</div>
 
+	<section class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="font-medium">Das Semester im Überblick</h2>
+		<p class="text-base-content/80 mt-1 mb-3 max-w-3xl text-sm">
+			Die Phasen eines Semesters der Reihe nach, und in jeder, wer was tut. Jeder Kasten führt zu
+			seinem Schritt weiter unten. Das Einrichten fehlt im Bild, weil es an keinem Semester hängt.
+			Die Phasen sind der Takt der Fakultät und keine Sperre: Bis einschließlich Studiengangs-Review
+			lässt sich alles ändern oder zurückschalten, außer den markierten Schritten des Dekanats.
+		</p>
+		<ProcessChart planning={data.planning} />
+	</section>
+
 	<!--
 		The process as numbered steps, in the order of the process. For each: who does it,
 		where, and what one needs to know while doing it. The data lives in $lib/guide.ts so that
@@ -74,7 +86,7 @@
 			<p class="text-base-content/80 mt-1 max-w-3xl text-sm">{section.intro}</p>
 			<ol class="mt-3 flex flex-col gap-3" start={start + 1}>
 				{#each section.steps as step, i (step.title)}
-					<li class="flex gap-3">
+					<li id="schritt-{start + i + 1}" class="flex scroll-mt-24 gap-3">
 						<span
 							class="bg-neutral text-neutral-content mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
 							aria-hidden="true"

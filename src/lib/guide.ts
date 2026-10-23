@@ -56,6 +56,11 @@ export type GuideStep = {
 	 * read like a prompt to do it early.
 	 */
 	due?: readonly DuePhase[];
+	/**
+	 * The step cannot be undone, which its text says and the picture on /ablauf marks. Only the
+	 * dean's office's publications: everything else can be switched back.
+	 */
+	oneWay?: true;
 };
 
 /** A phase of the planning semester, or `UNSET` for "no planning semester has been named". */
@@ -157,6 +162,7 @@ export const GUIDE: readonly GuideSection[] = [
 			},
 			{
 				title: 'Die Wunsch-SWS einfrieren, prüfen und veröffentlichen',
+				oneWay: true,
 				who: ['DEANS_OFFICE'],
 				where: [
 					{ href: '/semester', label: 'Semester und Phasen' },
@@ -176,6 +182,7 @@ export const GUIDE: readonly GuideSection[] = [
 			},
 			{
 				title: 'Die Wünsche veröffentlichen',
+				oneWay: true,
 				who: ['DEANS_OFFICE'],
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['WISHES'],
