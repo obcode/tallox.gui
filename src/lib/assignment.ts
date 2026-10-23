@@ -931,3 +931,35 @@ export function mayShowGaps(
 	if (roles.includes('DEANS_OFFICE')) return true;
 	return led.some((g) => g.id === tab);
 }
+
+/** How far a selection of cohorts is filled, by parts and by hours. */
+export type FillProgress = {
+	parts: number;
+	filledParts: number;
+	hours: number;
+	filledHours: number;
+};
+
+/**
+ * How much of what is shown is filled: the progress line above the assignment table.
+ *
+ * Counts assignments, which the person filling them sees anyway — nothing about wishes. A part
+ * another faculty teaches is nobody's to fill here and is left out of both sides; a part without
+ * stated hours counts as a part and as zero hours, the same as everywhere else.
+ */
+export function fillProgress(groups: readonly CohortGroup[]): FillProgress {
+	const progress: FillProgress = { parts: 0, filledParts: 0, hours: 0, filledHours: 0 };
+	for (const group of groups) {
+		for (const row of group.rows) {
+			if (row.part.taughtBy) continue;
+			const hours = row.part.teachingHours ?? 0;
+			progress.parts++;
+			progress.hours += hours;
+			if (row.assignment) {
+				progress.filledParts++;
+				progress.filledHours += hours;
+			}
+		}
+	}
+	return progress;
+}
