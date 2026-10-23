@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	gaugeScale,
+	loadGauge,
 	desiredHoursStage,
 	desiredRangeLabel,
 	filterOverview,
@@ -98,5 +100,37 @@ describe('the overview of the faculty', () => {
 		expect(OVERVIEW_SORT_KEYS.max(rows[1])).toBeNull();
 		expect(OVERVIEW_SORT_KEYS.groups(rows[2])).toBeNull();
 		expect(OVERVIEW_SORT_KEYS.assigned(rows[0])).toBeNull();
+	});
+});
+
+describe('loadGauge', () => {
+	it('judges planned hours against the wished range', () => {
+		expect(loadGauge(10, { min: 14, max: 18 }, 20).verdict).toBe('UNDER');
+		expect(loadGauge(14, { min: 14, max: 18 }, 20).verdict).toBe('WITHIN');
+		expect(loadGauge(18, { min: 14, max: 18 }, 20).verdict).toBe('WITHIN');
+		expect(loadGauge(19, { min: 14, max: 18 }, 20).verdict).toBe('OVER');
+		expect(loadGauge(19, null, 20).verdict).toBe('UNSTATED');
+	});
+
+	it('draws the range as a band and the plan as a fill, on the given scale', () => {
+		const gauge = loadGauge(10, { min: 14, max: 18 }, 20);
+		expect(gauge.planned).toBe(50);
+		expect(gauge.range).toEqual({ start: 70, width: 20 });
+		expect(loadGauge(10, null, 20).range).toBeNull();
+	});
+
+	// Past the end of the scale the bar stops at the edge; the number beside it says the rest.
+	it('stops at the end of the scale', () => {
+		expect(loadGauge(40, { min: 14, max: 30 }, 20).planned).toBe(100);
+		expect(loadGauge(40, { min: 14, max: 30 }, 20).range).toEqual({ start: 70, width: 30 });
+		expect(loadGauge(5, null, 0).planned).toBe(0);
+	});
+});
+
+describe('gaugeScale', () => {
+	it('is the largest value shown, never below the floor', () => {
+		expect(gaugeScale([4, 12, null, undefined])).toBe(20);
+		expect(gaugeScale([4, 26, 18])).toBe(26);
+		expect(gaugeScale([], 10)).toBe(10);
 	});
 });

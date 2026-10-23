@@ -16,6 +16,7 @@
 	} from '$lib/controlling';
 	import type { DutyStatus } from '$lib/gql/__generated__/graphql';
 	import { cohortLabel } from '$lib/demand';
+	import QuotaBars from '$lib/components/QuotaBars.svelte';
 	import { semesterName, semesterShortName } from '$lib/semester';
 
 	let { data } = $props();
@@ -206,6 +207,13 @@
 				ein Klick auf die Zahl führt in die Bedarfsplanung — und zählt hier sofort mit. Es ist echter
 				Bedarf: alle können ihn lesen, und Dozierende können sich darauf schon eintragen.
 			</p>
+			<div class="mt-4 max-w-3xl">
+				<QuotaBars
+					rows={year}
+					winterLabel={semesterShortName(yearSemesters.winter)}
+					summerLabel={semesterShortName(yearSemesters.summer)}
+				/>
+			</div>
 			<div class="mt-3 overflow-x-auto">
 				<table class="table-sm table">
 					<thead>

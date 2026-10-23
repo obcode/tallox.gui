@@ -118,6 +118,12 @@ test.describe('the assignment screen', () => {
 		await gotoRendered(page, URL);
 		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toHaveValue(/^p:/);
+
+		// The line above the table counts it: at least this part is filled.
+		const progress = page.getByRole('progressbar', { name: 'Besetzte Teile' });
+		await expect(progress).toBeVisible();
+		expect(Number(await progress.getAttribute('value'))).toBeGreaterThan(0);
+		await expect(page.getByRole('main')).toContainText(/\d+\s+von\s+\d+\s+Teilen?\s+besetzt/);
 	});
 
 	test('a part is given back by choosing nobody', async ({ asPersona }) => {
@@ -214,7 +220,8 @@ test.describe('a cohort held by one person', () => {
 		// How many parts "alle Teile" means is on the row, next to the switch — a single dropdown is
 		// otherwise a promise whose extent nobody has been shown. Which ones they are is the
 		// switch's own title, and the rows it folds out.
-		await expect(page.getByText('3 Teile')).toBeVisible();
+		// Exact: the progress line above the table says "von 3 Teilen besetzt".
+		await expect(page.getByText('3 Teile', { exact: true })).toBeVisible();
 		await expect(partsSwitch(page)).toHaveAttribute('aria-label', /3 Teile/);
 
 		// The first candidate: whoever registered interest, which is what the list leads with.
@@ -292,9 +299,14 @@ test.describe('the wish round switch', () => {
 			name: new RegExp(`Wunsch für .*${ASSIGNMENTS.moduleName}`)
 		});
 		await expect(cell).toBeDisabled();
+		// Once, above the table, and a short mark on the cell — not the sentence in every cell.
+		await expect(
+			page.getByText(/Wunschphase der Fachgruppe .* ist derzeit geschlossen/)
+		).toHaveCount(1);
 		await expect(
 			page.getByText(/Wunschphase der Fachgruppe .* ist derzeit geschlossen/)
 		).toBeVisible();
+		await expect(page.getByText('Wunschrunde geschlossen').first()).toBeVisible();
 		await expect(page.getByText(/Fachgruppenleitung kann sie wieder öffnen/)).toBeVisible();
 
 		// Reopened, and the cell takes entries again.

@@ -17,6 +17,7 @@ import {
 	othersHint,
 	ownWishesBySemester,
 	rowClosedReason,
+	closedRoundNotices,
 	savedHint,
 	splitByMySubjects,
 	strongestPriority,
@@ -642,6 +643,27 @@ describe('rowClosedReason', () => {
 	it('leaves a module in no subject group open', () => {
 		// It cannot be reached by any window, which is the fail-open default the backend takes too.
 		expect(rowClosedReason(row(null), new Set(['g1']))).toBeNull();
+	});
+});
+
+describe('closedRoundNotices', () => {
+	const row = (id: string, name: string) => ({ module: { subjectGroup: { id, name } } });
+
+	it('names each closed round once, in order, and only where the table has rows', () => {
+		const rows = [
+			row('g2', 'Softwarefächer'),
+			row('g1', 'Mathematik'),
+			row('g2', 'Softwarefächer')
+		];
+		const notices = closedRoundNotices(rows, new Set(['g1', 'g2', 'g9']));
+		expect(notices).toHaveLength(2);
+		expect(notices[0]).toContain('Mathematik');
+		expect(notices[1]).toContain('Softwarefächer');
+		expect(notices[1]).toBe(rowClosedReason(rows[0], new Set(['g2'])));
+	});
+
+	it('is empty while every round is open', () => {
+		expect(closedRoundNotices([row('g1', 'Mathematik')], new Set())).toEqual([]);
 	});
 });
 

@@ -9,6 +9,7 @@ import {
 	mergeCombined,
 	pooledInstances,
 	cohortGroups,
+	fillProgress,
 	currentValue,
 	partHours,
 	partsSummary,
@@ -876,5 +877,38 @@ describe('the candidate in the dropdown', () => {
 		expect(candidateLabel({ teacherId: 't1', name: 'Extern', kind: 'other' }, desired, load)).toBe(
 			'Extern'
 		);
+	});
+});
+
+describe('fillProgress', () => {
+	it('counts filled parts and their hours', () => {
+		const groups = cohortGroups(
+			[
+				instance(),
+				instance({ id: 'i2', track: 'B', parts: [{ id: 'p4', kind: 'LECTURE', teachingHours: 4 }] })
+			],
+			[held({ part: { id: 'p2' } }), held({ id: 'a2', part: { id: 'p4' } })]
+		);
+		expect(fillProgress(groups)).toEqual({ parts: 4, filledParts: 2, hours: 10, filledHours: 6 });
+	});
+
+	// Taught by another faculty: nobody here fills it, so it is neither open nor done.
+	it('leaves out what another faculty teaches, and counts a part without hours as zero', () => {
+		const groups = cohortGroups(
+			[
+				instance({
+					parts: [
+						{ id: 'p1', kind: 'LECTURE', teachingHours: 2, taughtBy: 'FK 04' },
+						{ id: 'p2', kind: 'LAB', teachingHours: null }
+					]
+				})
+			],
+			[]
+		);
+		expect(fillProgress(groups)).toEqual({ parts: 1, filledParts: 0, hours: 0, filledHours: 0 });
+	});
+
+	it('is empty for nothing shown', () => {
+		expect(fillProgress([])).toEqual({ parts: 0, filledParts: 0, hours: 0, filledHours: 0 });
 	});
 });

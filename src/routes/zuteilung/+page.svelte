@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { formatHours } from '$lib/catalogue';
 	import { flushSync } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
@@ -12,6 +13,7 @@
 		moduleBlocks,
 		pooledInstances,
 		cohortGroups,
+		fillProgress,
 		currentValue,
 		partHours,
 		partsSummary,
@@ -81,6 +83,7 @@
 	const shown = $derived(instancesOfDegree(tabInstances, data.selected.degree));
 
 	const groups: CohortGroup[] = $derived(cohortGroups(shown, data.assignments as AssignmentLike[]));
+	const progress = $derived(fillProgress(groups));
 
 	/**
 	 * The programmes a degree filter leaves out because nobody has recorded theirs. Named on the
@@ -566,6 +569,24 @@
 						</li>
 					{/each}
 				</ul>
+			</div>
+		{/if}
+
+		{#if progress.parts > 0}
+			<!-- What is shown, filled so far: the filter above decides what "shown" is. -->
+			<div class="border-base-300 bg-base-100 mt-5 max-w-xl rounded-lg border p-4">
+				<h2 class="font-medium">Stand der Besetzung</h2>
+				<p class="text-base-content/90 mt-1 text-sm">
+					<strong>{progress.filledParts}</strong> von {progress.parts}
+					{progress.parts === 1 ? 'Teil' : 'Teilen'} besetzt · {formatHours(progress.filledHours)} von
+					{formatHours(progress.hours)} SWS
+				</p>
+				<progress
+					class="progress progress-primary mt-2 h-2 w-full"
+					value={progress.filledParts}
+					max={progress.parts}
+					aria-label="Besetzte Teile"
+				></progress>
 			</div>
 		{/if}
 

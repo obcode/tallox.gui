@@ -12,6 +12,7 @@
 	} from '$lib/semester';
 	import { formatMoment } from '$lib/tokens';
 	import { desiredHoursStage, STAGE_LABELS } from '$lib/desiredHours';
+	import PhaseSteps from '$lib/components/PhaseSteps.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -62,6 +63,10 @@
 				{#if semester.isPlanningSemester}
 					<span class="badge badge-primary badge-sm">Planungssemester</span>
 				{/if}
+			</div>
+
+			<div class="max-w-xl">
+				<PhaseSteps phase={semester.phase} label="Phasen von {semesterName(semester.code)}" />
 			</div>
 
 			<p class="text-base-content/80 text-sm">{PHASE_HINTS[semester.phase]}</p>

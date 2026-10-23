@@ -6,6 +6,7 @@ import {
 	deltaLabel,
 	importGroups,
 	quotaTable,
+	quotaUsage,
 	semesterQuotaRule,
 	studyYearLabel,
 	studyYearSemesters,
@@ -13,7 +14,8 @@ import {
 	studyYearOf,
 	type BasketInput,
 	type ImportInput,
-	type LoadInput
+	type LoadInput,
+	type StudyYearRow
 } from './controlling';
 
 function load(code: string, hours: number, own: number, extra: Partial<LoadInput> = {}): LoadInput {
@@ -254,5 +256,43 @@ describe('the electives by basket', () => {
 
 	it('takes a mixed module as an elective', () => {
 		expect(basketGroups([instance('Mal so', 4, ['WPF A'], 'MIXED')])).toHaveLength(1);
+	});
+});
+
+describe('quotaUsage', () => {
+	function year(quota: number | null, winter: number, summer: number): StudyYearRow {
+		return {
+			programme: { code: 'IF', title: '', planningStatus: 'PLANNED' },
+			yearlyQuota: quota,
+			winterHours: winter,
+			summerHours: summer,
+			remaining: quota === null ? null : quota - winter - summer,
+			partsWithoutHours: 0,
+			reviewed: false
+		};
+	}
+
+	it('measures both semesters against the quota', () => {
+		expect(quotaUsage(year(200, 80, 60))).toEqual({
+			winter: 40,
+			summer: 30,
+			used: 70,
+			over: false
+		});
+	});
+
+	// Over the quota the bar is full and keeps the split between the semesters; how far over is
+	// the number, not a bar running off the edge of the card.
+	it('fills the track when over, in proportion', () => {
+		const usage = quotaUsage(year(100, 90, 60));
+		expect(usage?.over).toBe(true);
+		expect(usage?.used).toBe(150);
+		expect((usage?.winter ?? 0) + (usage?.summer ?? 0)).toBeCloseTo(100);
+		expect(usage?.winter).toBeCloseTo(60);
+	});
+
+	it('draws nothing without a quota to measure against', () => {
+		expect(quotaUsage(year(null, 10, 10))).toBeNull();
+		expect(quotaUsage(year(0, 10, 10))).toBeNull();
 	});
 });

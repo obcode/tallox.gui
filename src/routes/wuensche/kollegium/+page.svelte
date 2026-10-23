@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import DesiredRangeFields from '$lib/components/DesiredRangeFields.svelte';
+	import HoursGauge from '$lib/components/HoursGauge.svelte';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import {
 		desiredHoursStage,
 		desiredRangeLabel,
 		filterOverview,
+		gaugeScale,
 		loadBreakdown,
 		OVERVIEW_SORT_KEYS,
 		STAGE_LABELS,
@@ -37,6 +39,10 @@
 
 	let sort: SortState<OverviewSortKey> = $state(null);
 	const rows = $derived(sortRows(filterOverview(data.rows, data.filter), sort, OVERVIEW_SORT_KEYS));
+	// One scale for every row, so that two bars of the same length mean the same hours.
+	const scale = $derived(
+		gaugeScale(data.rows.flatMap((r) => [r.assignedLoad?.total, r.stated ? r.maxHours : null]))
+	);
 	const semesterTabs = $derived([...data.semesters].reverse());
 	const refusal = $derived(form && 'message' in form ? form : null);
 </script>
@@ -137,6 +143,20 @@
 				Leere Zellen heißen „nicht angegeben“ oder „für Dich nicht sichtbar“.
 			</p>
 		{/if}
+		<p class="text-base-content/80 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+			<span class="flex items-center gap-1.5">
+				<span class="bg-primary inline-block h-2 w-5 rounded-full" aria-hidden="true"></span>
+				eingeplant
+			</span>
+			<span class="flex items-center gap-1.5">
+				<span
+					class="border-base-content bg-base-content/15 inline-block h-3 w-5 rounded-sm border"
+					aria-hidden="true"
+				></span>
+				Wunschbereich
+			</span>
+			<span>Alle Balken auf derselben Skala.</span>
+		</p>
 		<!-- Created afresh for each semester: the fields hold their own text, see DesiredRangeFields. -->
 		{#key data.selected}
 			<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
@@ -203,6 +223,16 @@
 									{/if}
 								</td>
 								<td class="text-right whitespace-nowrap">
+									{#if row.assignedLoad || row.stated}
+										<div class="flex justify-end">
+											<HoursGauge
+												planned={row.assignedLoad?.total ?? 0}
+												min={row.stated ? row.minHours : null}
+												max={row.stated ? row.maxHours : null}
+												{scale}
+											/>
+										</div>
+									{/if}
 									{#if row.assignedLoad}
 										{desiredHoursLabel(row.assignedLoad.total)}
 										<!-- By subject group, so that a lead sees whom to talk to. -->

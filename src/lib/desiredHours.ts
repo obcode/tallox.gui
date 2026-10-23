@@ -131,3 +131,45 @@ export const OVERVIEW_SORT_KEYS = {
 } as const;
 
 export type OverviewSortKey = keyof typeof OVERVIEW_SORT_KEYS;
+
+/** Where somebody's planned hours stand against the range they asked for. */
+export type LoadVerdict = 'UNDER' | 'WITHIN' | 'OVER' | 'UNSTATED';
+
+export const LOAD_VERDICT_LABELS: Record<LoadVerdict, string> = {
+	UNDER: 'unter Wunsch',
+	WITHIN: 'im Wunschbereich',
+	OVER: 'über Wunsch',
+	UNSTATED: 'kein Wunsch angegeben'
+};
+
+/** The bar of a gauge, in percent of its scale. */
+export type LoadGauge = {
+	verdict: LoadVerdict;
+	/** The planned hours, as the filled part of the track. */
+	planned: number;
+	/** The wished range as a band on the track, or null without a statement. */
+	range: { start: number; width: number } | null;
+};
+
+/**
+ * Planned hours against the wished range, on a scale the caller picks.
+ *
+ * The scale is a parameter so that a table can put every row on the same one — a bar is only
+ * comparable to the bar above it if both measure the same distance. Values past the scale are
+ * drawn at its end; the number beside the bar says the rest.
+ */
+export function loadGauge(planned: number, range: DesiredRange | null, scale: number): LoadGauge {
+	const pct = (n: number) => (scale > 0 ? Math.min(100, Math.max(0, (n / scale) * 100)) : 0);
+	let verdict: LoadVerdict = 'UNSTATED';
+	if (range) verdict = planned < range.min ? 'UNDER' : planned > range.max ? 'OVER' : 'WITHIN';
+	return {
+		verdict,
+		planned: pct(planned),
+		range: range ? { start: pct(range.min), width: pct(range.max) - pct(range.min) } : null
+	};
+}
+
+/** A common scale for several gauges: the largest value any of them shows, at least `floor`. */
+export function gaugeScale(values: readonly (number | null | undefined)[], floor = 20): number {
+	return Math.max(floor, ...values.map((v) => v ?? 0));
+}

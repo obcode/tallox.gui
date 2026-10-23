@@ -382,3 +382,34 @@ export function semesterQuotaRule(code: string): string {
 		? 'Ein Sommersemester darf verbrauchen, was das Wintersemester desselben Studienjahres vom Kontingent übrig gelassen hat — das Wintersemester ist verbraucht.'
 		: 'Ein Wintersemester darf die Hälfte des Kontingents verbrauchen, weil das Sommersemester noch kommt.';
 }
+
+/** One programme's study year as a bar: the two semesters as shares of the quota. */
+export type QuotaUsage = {
+	/** Shares of the bar in percent, 0–100 each; together never more than 100. */
+	winter: number;
+	summer: number;
+	/** Both semesters against the quota, in percent, unclamped: 130 means 30 over. */
+	used: number;
+	over: boolean;
+};
+
+/**
+ * How much of its quota a programme's study year uses, for the bar above the table.
+ *
+ * The bar is the quota: a programme within it fills part of the track, one over it fills the
+ * whole track, and both segments shrink in proportion so the split between the semesters stays
+ * readable. How far over is in `used` and in the text, not in a bar running off the edge. No
+ * quota, or a quota of zero, has no bar at all — there is nothing to measure against.
+ */
+export function quotaUsage(row: StudyYearRow): QuotaUsage | null {
+	if (row.yearlyQuota === null || row.yearlyQuota <= 0) return null;
+	const spent = row.winterHours + row.summerHours;
+	const used = (spent / row.yearlyQuota) * 100;
+	const scale = spent > row.yearlyQuota ? 100 / spent : 100 / row.yearlyQuota;
+	return {
+		winter: row.winterHours * scale,
+		summer: row.summerHours * scale,
+		used,
+		over: spent > row.yearlyQuota
+	};
+}

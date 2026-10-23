@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
+	import HoursGauge from '$lib/components/HoursGauge.svelte';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { autosave, trackSaves } from '$lib/saveOnLeave';
 	import WishCell from '$lib/components/WishCell.svelte';
@@ -33,6 +34,7 @@
 		trackHeading,
 		WISH_PRIORITY_LABELS,
 		wishesAreOpen,
+		closedRoundNotices,
 		closedSubjectGroups,
 		settledProgrammes,
 		rowClosedReason,
@@ -48,7 +50,13 @@
 		type WishRow,
 		type WishSortKey
 	} from '$lib/wishes';
-	import { desiredHoursStage, loadBreakdown, STAGE_HINTS, STAGE_LABELS } from '$lib/desiredHours';
+	import {
+		desiredHoursStage,
+		gaugeScale,
+		loadBreakdown,
+		STAGE_HINTS,
+		STAGE_LABELS
+	} from '$lib/desiredHours';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -99,6 +107,7 @@
 	// The reader's own entries keep their line even where the cohort is held elsewhere — otherwise
 	// an entry made before the coupling would have nowhere to be withdrawn.
 	const rows = $derived(wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id))));
+	const closedNotices = $derived(closedRoundNotices(rows, closed));
 	const myGroupCodes = $derived(data.mySubjectGroups.map((g) => g.code));
 	const mine = $derived(myWishByInstance(data.myWishes));
 
@@ -336,7 +345,10 @@
 										</span>
 									{/if}
 									{#if closedReason}
-										<p class="text-base-content/80 mt-1 text-xs">{closedReason}</p>
+										<!-- The sentence with the repair stands once above the table. -->
+										<span class="badge badge-ghost badge-xs mt-1 align-middle" title={closedReason}
+											>Wunschrunde geschlossen</span
+										>
 									{/if}
 									{#if refusalsByInstance[cohort.instanceId]}
 										<!--
@@ -517,6 +529,17 @@
 					noch nichts
 				{/if}
 			</p>
+			{#if data.desiredHours}
+				<!-- The same picture as in "SWS im Kollegium", for oneself. -->
+				<div class="mt-2">
+					<HoursGauge
+						planned={data.ownLoad?.total ?? 0}
+						min={data.desiredHours?.minHours}
+						max={data.desiredHours?.maxHours}
+						scale={gaugeScale([data.ownLoad?.total, data.desiredHours?.maxHours])}
+					/>
+				</div>
+			{/if}
 			{#if form && 'desiredHoursMessage' in form}
 				<p class="text-base-content/90 mt-2 text-sm" role="alert">
 					<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
@@ -682,6 +705,20 @@
 			class="flex flex-col gap-4"
 		>
 			<input type="hidden" name="semester" value={data.semester?.code ?? ''} />
+
+			{#if closedNotices.length > 0}
+				<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+					<h2 class="font-medium">Geschlossene Wunschrunden</h2>
+					<ul class="mt-1 flex flex-col gap-1">
+						{#each closedNotices as notice (notice)}
+							<li class="text-base-content/90 text-sm">{notice}</li>
+						{/each}
+					</ul>
+					<p class="text-base-content/80 mt-1 text-sm">
+						In der Tabelle tragen diese Züge die Marke „Wunschrunde geschlossen“.
+					</p>
+				</div>
+			{/if}
 
 			{#each sections as section (section.title)}
 				<!--
