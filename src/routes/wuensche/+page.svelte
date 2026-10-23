@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
 	import HoursGauge from '$lib/components/HoursGauge.svelte';
@@ -34,7 +35,7 @@
 		trackHeading,
 		WISH_PRIORITY_LABELS,
 		wishesAreOpen,
-		closedRoundNotices,
+		closedRoundNotice,
 		closedSubjectGroups,
 		settledProgrammes,
 		rowClosedReason,
@@ -107,7 +108,7 @@
 	// The reader's own entries keep their line even where the cohort is held elsewhere — otherwise
 	// an entry made before the coupling would have nowhere to be withdrawn.
 	const rows = $derived(wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id))));
-	const closedNotices = $derived(closedRoundNotices(rows, closed));
+	const closedNotice = $derived(closedRoundNotice(rows, closed));
 	const myGroupCodes = $derived(data.mySubjectGroups.map((g) => g.code));
 	const mine = $derived(myWishByInstance(data.myWishes));
 
@@ -209,7 +210,7 @@
 {#snippet wishTable(sectionRows: WishRow[])}
 	{@const tracks = trackColumns(sectionRows)}
 	<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-		<table class="table table-sm w-full min-w-[720px]">
+		<table class="table table-sm w-full min-w-[720px] table-stack" use:stackedTable>
 			<thead>
 				<!--
 					The three left columns are fixed, the track columns share the rest — that is where the
@@ -408,7 +409,7 @@
 	-->
 	<form method="GET" class="flex flex-col gap-1">
 		<span class="label-text text-sm">Semester</span>
-		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 			{#each semesterTabs as semester (semester.code)}
 				{@const active = semester.code === data.semester?.code}
 				<button
@@ -620,7 +621,7 @@
 							</span>
 						</h3>
 						<div class="overflow-x-auto">
-							<table class="table table-sm w-full min-w-[480px]">
+							<table class="table table-sm w-full min-w-[480px] table-stack" use:stackedTable>
 								<thead>
 									<tr>
 										<SortHeader
@@ -706,16 +707,11 @@
 		>
 			<input type="hidden" name="semester" value={data.semester?.code ?? ''} />
 
-			{#if closedNotices.length > 0}
+			{#if closedNotice}
 				<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-					<h2 class="font-medium">Geschlossene Wunschrunden</h2>
-					<ul class="mt-1 flex flex-col gap-1">
-						{#each closedNotices as notice (notice)}
-							<li class="text-base-content/90 text-sm">{notice}</li>
-						{/each}
-					</ul>
+					<p class="text-base-content/90 text-sm">{closedNotice}</p>
 					<p class="text-base-content/80 mt-1 text-sm">
-						In der Tabelle tragen diese Züge die Marke „Wunschrunde geschlossen“.
+						In der Tabelle tragen die betroffenen Züge die Marke „Wunschrunde geschlossen“.
 					</p>
 				</div>
 			{/if}

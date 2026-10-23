@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import { invalidate } from '$app/navigation';
 	import type { ActionData, PageData } from './$types';
@@ -195,7 +196,7 @@
 
 			{#if data.projection.notes.length > 0}
 				<div class="mt-3 overflow-x-auto">
-					<table class="table table-sm">
+					<table class="table table-sm table-stack" use:stackedTable>
 						<thead>
 							<tr>
 								<th>Befund</th>
@@ -235,7 +236,12 @@
 			</p>
 		{/if}
 
-		<form method="POST" action="?/project" use:enhance class="mt-3 flex items-center gap-3">
+		<form
+			method="POST"
+			action="?/project"
+			use:enhance
+			class="mt-3 flex flex-wrap items-center gap-3"
+		>
 			<button class="btn btn-sm">Katalog neu aufbauen</button>
 			<span class="text-base-content/80 text-sm">
 				Nur aus dem, was schon zwischengespeichert ist — holt nichts vom ZPA.
@@ -297,7 +303,7 @@
 				{/if}
 
 				<div class="mb-4 overflow-x-auto">
-					<table class="table table-sm">
+					<table class="table table-sm table-stack" use:stackedTable>
 						<thead>
 							<tr><th>Endpunkt</th><th>Status</th><th class="text-right">Objekte</th></tr>
 						</thead>
@@ -327,7 +333,7 @@
 					</p>
 				{:else}
 					<div class="overflow-x-auto">
-						<table class="table table-sm">
+						<table class="table table-sm table-stack" use:stackedTable>
 							<thead>
 								<tr><th>Art</th><th>Objekt</th><th>Was</th><th>Felder</th></tr>
 							</thead>

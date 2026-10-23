@@ -669,23 +669,28 @@ function closedRoundSentence(groupName: string): string {
 }
 
 /**
- * The closed rounds, once each, for the head of the table.
+ * The closed rounds, in one sentence for the head of the table, or null while all are open.
  *
- * The cells of a closed group carry a short mark; the sentence that names the repair stands here,
- * once per group, rather than in every cell of every track — with three tracks and forty modules
- * that was the same sentence a hundred times, and the table was hard to read around it.
- * Only groups that have a row in the table: a closed round nobody here can wish in is not news.
+ * The cells of a closed group carry a short mark; the sentence that names the repair stands here
+ * once rather than in every cell of every track — with three tracks and forty modules that was the
+ * same sentence a hundred times, and the table was hard to read around it. One group reads as the
+ * cell used to; several are named together. Only groups that have a row in the table: a closed
+ * round nobody here can wish in is not news.
  */
-export function closedRoundNotices(
+export function closedRoundNotice(
 	rows: readonly { module: { subjectGroup?: { id: string; name: string } | null } }[],
 	closed: Set<string>
-): string[] {
+): string | null {
 	const names = new Map<string, string>();
 	for (const row of rows) {
 		const group = row.module.subjectGroup;
 		if (group && closed.has(group.id)) names.set(group.id, group.name);
 	}
-	return [...names.values()].sort((a, b) => a.localeCompare(b, 'de')).map(closedRoundSentence);
+	const sorted = [...names.values()].sort((a, b) => a.localeCompare(b, 'de'));
+	if (sorted.length === 0) return null;
+	if (sorted.length === 1) return closedRoundSentence(sorted[0]);
+	const list = `${sorted.slice(0, -1).join(', ')} und ${sorted[sorted.length - 1]}`;
+	return `Die Wunschphasen der Fachgruppen ${list} sind derzeit geschlossen. Die jeweilige Fachgruppenleitung kann sie wieder öffnen.`;
 }
 
 /**

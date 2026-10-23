@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import { DUTY_LABELS, dutyBadge, formatHours, moduleName, programmeLabel } from '$lib/catalogue';
 	import {
@@ -152,7 +153,7 @@
 	<div class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
 		<form method="GET" class="flex flex-col gap-1">
 			<span class="label-text text-sm">Semester</span>
-			<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+			<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 				{#each semesterTabs as semester (semester.code)}
 					{@const active = semester.code === data.selected}
 					<button
@@ -215,7 +216,7 @@
 				/>
 			</div>
 			<div class="mt-3 overflow-x-auto">
-				<table class="table-sm table">
+				<table class="table-sm table table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<th>Studiengang</th>
@@ -287,7 +288,7 @@
 				{semesterQuotaRule(data.selected)}
 			</p>
 			<div class="mt-3 overflow-x-auto">
-				<table class="table-sm table">
+				<table class="table-sm table table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<th>Studiengang</th>
@@ -329,7 +330,7 @@
 				SWS je Studiengang · {semesterName(data.selected)}
 			</h2>
 			<div class="mt-3 overflow-x-auto">
-				<table class="table-sm table">
+				<table class="table-sm table table-stack" use:stackedTable>
 					{@render header('Studiengang')}
 					<tbody>
 						{#each table.planned as row (row.programme.code)}
@@ -394,7 +395,7 @@
 				</p>
 			{:else}
 				<div class="mt-3 overflow-x-auto">
-					<table class="table-sm table">
+					<table class="table-sm table table-stack" use:stackedTable>
 						<thead>
 							<tr>
 								<th>Modul</th>
@@ -454,7 +455,7 @@
 					</p>
 				{:else}
 					<div class="mt-3 overflow-x-auto">
-						<table class="table-sm table">
+						<table class="table-sm table table-stack" use:stackedTable>
 							<thead>
 								<tr>
 									<th>Modul</th>

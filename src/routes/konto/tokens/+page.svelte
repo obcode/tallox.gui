@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
@@ -231,7 +232,7 @@
 			<!-- Wide tables live in overflow-x-auto so the page does not drift sideways at
 			     375px. -->
 			<div class="overflow-x-auto">
-				<table class="table-zebra table text-sm">
+				<table class="table-zebra table text-sm table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<SortHeader

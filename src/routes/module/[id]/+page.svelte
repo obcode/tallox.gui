@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
 	import { resolve } from '$app/paths';
@@ -552,7 +553,7 @@
 			</p>
 		{:else}
 			<div class="overflow-x-auto">
-				<table class="table table-sm">
+				<table class="table table-sm table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<th>Studiengang</th>

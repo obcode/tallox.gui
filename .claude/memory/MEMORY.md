@@ -33,3 +33,5 @@ Kolleginnen und Kollegen.
 - [Sortieren per Spaltenkopf](sortable-tables.md) — Dreierzyklus, kein URL-Zustand, eingefrorene Reihenfolge beim Bearbeiten, Zug-Spalten nur nach eigener Priorität
 - [Wunsch-SWS in der GUI](desired-hours-ui.md) — von/bis, „SWS im Kollegium“, Einfrieren/Veröffentlichen; selbstspeichernde Felder halten eigenen Text, weil das Neuladen sonst überschreibt
 - [Laufenden ZPA-Abgleich verfolgen](zpa-run-polling.md) — depends/invalidate je Sekunde, Körnung Endpunkt (gemessen), aria-live nur auf dem Satz, E2E per runSql
+- [Tabellen werden Karten](responsive-tables.md) — `table-stack` + `use:stackedTable` statt `overflow-x-auto`, Reiter brechen um, und der Test, der versteckte Spalten auf jeder Seite findet
+- [Grafische Übersichten](visual-overview.md) — Phasen-Leiste, Kontingent- und SWS-Balken, Besetzungsstand, geschlossene Wunschrunden in einem Satz

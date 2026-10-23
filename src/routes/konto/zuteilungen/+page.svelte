@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { formatHours } from '$lib/catalogue';
@@ -73,7 +74,7 @@
 				</p>
 			{/if}
 			<div class="mt-3 overflow-x-auto">
-				<table class="table-sm table">
+				<table class="table-sm table table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<SortHeader

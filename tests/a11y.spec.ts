@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, KNOWN_A11Y_DEBT, PERSONAS, gotoRendered, openDropdown } from './fixtures';
+import { ASSIGNMENTS, WISHES } from './seed';
 
 /**
  * Accessibility, checked automatically.
@@ -48,6 +49,24 @@ test.describe('accessibility', () => {
 			const page = await asPersona(PERSONAS.eins);
 			await page.setViewportSize({ width, height: 900 });
 			await gotoRendered(page, '/ablauf');
+			await checkA11y(page);
+		});
+	}
+
+	// On a phone the wide tables become cards (see $lib/stackedTable): the same cells in a
+	// different box, with the column heads as labels and the sort buttons in a row above.
+	for (const { who, path } of [
+		{ who: PERSONAS.eins, path: `/wuensche?semester=${WISHES.semester}` },
+		{
+			who: PERSONAS.drei,
+			path: `/zuteilung?semester=${ASSIGNMENTS.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`
+		}
+	]) {
+		test(`tables as cards on a phone: ${path.split('?')[0]}`, async ({ asPersona, checkA11y }) => {
+			const page = await asPersona(who);
+			await page.setViewportSize({ width: 375, height: 812 });
+			await gotoRendered(page, path);
+			await expect(page.locator('table.table-stack.stacked').first()).toBeVisible();
 			await checkA11y(page);
 		});
 	}

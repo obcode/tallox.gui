@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { displayName, roleLabel } from '$lib/roles';
 	import type { PageData } from './$types';
 
@@ -63,7 +64,7 @@
 		</div>
 
 		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-			<table class="table table-sm">
+			<table class="table table-sm table-stack" use:stackedTable>
 				<caption class="text-base-content/80 px-4 py-2 text-left text-sm">
 					Rollen, abgelaufene eingeschlossen — die Frage „wer konnte das im Oktober sehen“ braucht
 					sie.

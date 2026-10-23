@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import DesiredRangeFields from '$lib/components/DesiredRangeFields.svelte';
 	import HoursGauge from '$lib/components/HoursGauge.svelte';
@@ -160,7 +161,7 @@
 		<!-- Created afresh for each semester: the fields hold their own text, see DesiredRangeFields. -->
 		{#key data.selected}
 			<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-				<table class="table-sm table">
+				<table class="table-sm table table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<SortHeader

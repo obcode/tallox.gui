@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import CompetenceRow from '$lib/components/CompetenceRow.svelte';
@@ -167,7 +168,7 @@
 						</p>
 					{:else}
 						<div class="overflow-x-auto">
-							<table class="table-sm table">
+							<table class="table-sm table table-stack" use:stackedTable>
 								<thead>
 									<tr>
 										<SortHeader

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { resolve } from '$app/paths';
@@ -837,7 +838,7 @@
 
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Semester</span>
-				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 					{#each semesterTabs as semester (semester.code)}
 						{@const active = semester.code === data.selected.semester}
 						<button
@@ -872,7 +873,7 @@
 					the rest from the ZPA, which somebody else runs or which have expired, are not in it at
 					all any more.
 				-->
-				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 					<!-- „alle“ exists only in the read view: planDemand writes exactly one. -->
 					{#if !data.selected.editing}
 						{@const active = data.selected.programme === ''}
@@ -1574,7 +1575,10 @@
 							table. As a side effect the columns of all cohort-year blocks now line up, which they
 							did not before.
 						-->
-							<table class="table table-fixed table-sm w-full min-w-[900px]">
+							<table
+								class="table table-fixed table-sm w-full min-w-[900px] table-stack"
+								use:stackedTable
+							>
 								<colgroup>
 									<col style="width: 28%" />
 									<col style="width: 8%" />
