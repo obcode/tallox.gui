@@ -144,9 +144,19 @@ committed copy of the backend schema; codegen reads that file, so it works offli
     unreadable, whatever they signal. Use `badge badge-error`, which daisyUI pairs with its
     `*-content` foreground, and keep the sentence itself in `text-base-content/80`.
 
-- **Responsive, tablet-first.** Full usability from 768px, clean at 375px. Horizontal padding
-  comes from `+layout.svelte`; pages do not add their own. Grids are always
-  `grid-cols-1 sm:grid-cols-N`, wide tables live in `overflow-x-auto`.
+- **Responsive at every width, from 320px up** (asked for on 2026-10-23: "das muss es immer
+  sein"). Not only no sideways scroll of the page — nothing may hide behind a sideways scroll of
+  its own either. Horizontal padding comes from `+layout.svelte`; pages do not add their own.
+  Grids are always `grid-cols-1 sm:grid-cols-N`.
+  **Every table is `class="table table-stack" use:stackedTable`** (`$lib/stackedTable`): it
+  measures whether its columns fit its box and otherwise turns into cards, one per row, with the
+  column heads copied onto the cells as labels and the sort buttons in a row above. A cell whose
+  head does not describe it sets its own `data-label` (empty for none). Keep `min-w-[…]` on wide
+  tables — without it a table squeezes and "fits". Rows that open with a switch use
+  `data-collapsed`, not `hidden` (see app.css). **Tab strips wrap** (`flex-wrap`), never
+  `overflow-x-auto`; code samples in `<pre>` are the one thing that may scroll.
+  `tests/responsive.spec.ts` › "every page across widths" visits every page as its user at six
+  widths and fails on either kind of hidden content — a new page goes into its list.
   Full usability does not mean everything at once: the nav bar shows its seven areas
   side by side only from `xl` (1280px), below that the menu carries them — with the same
   entries. They did not fit at 768px (883px wide) and did not fit at 1024px either (1061px,
