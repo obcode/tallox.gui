@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
-import { ASSIGNMENTS, assignmentStatements } from './seed';
+import { ASSIGNMENTS, TEACHERS, assignmentStatements } from './seed';
 
 /**
  * The assignment screen, end to end.
@@ -65,6 +65,36 @@ async function openParts(page: Page) {
 test.describe('the assignment screen', () => {
 	test.beforeAll(reset);
 	test.afterAll(reset);
+
+	// Collab: the dropdown offered only who had wished for the cohort, because the subject group
+	// had no members entered. Everybody who teaches here is offered once somebody reaches for the
+	// cohort, and the wishes stand apart at the top rather than being the whole list.
+	test('anybody who teaches here can be chosen, and the wishes stand apart', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		const spare = `t:${TEACHERS.spare}`;
+		await expect(cohortChooser(page).locator(`option[value="${spare}"]`)).toHaveCount(0);
+
+		await cohortChooser(page).focus();
+		await expect(
+			cohortChooser(page).locator(`optgroup[label="Weitere Lehrende"] option[value="${spare}"]`)
+		).toHaveCount(1);
+		await expect(cohortChooser(page).locator('optgroup[label="Gewünscht"]')).toContainText(
+			PERSONAS.fuenf.name
+		);
+
+		await cohortChooser(page).selectOption(spare);
+		await expect(page.getByText(/3 Änderungen gespeichert/)).toBeVisible();
+
+		// Held now, so offered without reaching for it.
+		await gotoRendered(page, URL);
+		await expect(cohortChooser(page)).toHaveValue(spare);
+
+		await reset();
+	});
 
 	test('the lead of the subject group fills a part, and it stays filled', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.drei);
