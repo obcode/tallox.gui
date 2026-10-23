@@ -61,43 +61,4 @@
 			nur hier.
 		</p>
 	</div>
-
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<h2 class="mb-2 flex items-center gap-2 font-medium">
-				<span aria-hidden="true">🔑</span> Anmeldung
-			</h2>
-			{#if data.remoteUser}
-				<p class="text-sm">
-					Angemeldet als <span class="font-mono">{data.remoteUser}</span>
-					{#if data.remoteDisplayname}
-						<span class="text-base-content/80">({data.remoteDisplayname})</span>
-					{/if}
-				</p>
-			{:else}
-				<p class="text-base-content/80 text-sm">
-					Kein <span class="font-mono">X-Remote-User</span> gesetzt — lokale Entwicklung ohne Auth-Proxy.
-				</p>
-			{/if}
-		</div>
-
-		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<h2 class="mb-2 flex items-center gap-2 font-medium">
-				<span aria-hidden="true">🔌</span> Backend
-			</h2>
-			{#if data.serverBuild}
-				<p class="text-sm">
-					Erreichbar, Version <span class="font-mono">{data.serverBuild.version}</span>.
-				</p>
-			{:else}
-				<!-- The state sits in the badge, the sentence stays ordinary running text.
-				     `text-error` as a text colour on base-100 falls below 4.5:1 on the light
-				     themes. -->
-				<p class="text-base-content/80 text-sm">
-					<span class="badge badge-error badge-sm align-middle">Nicht erreichbar</span>
-					Die Seite rendert trotzdem — Daten fehlen aber überall.
-				</p>
-			{/if}
-		</div>
-	</div>
 </div>

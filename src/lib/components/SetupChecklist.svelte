@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import type { SetupCard } from '$lib/setup';
 	import GuidePlaces from './GuidePlaces.svelte';
 
@@ -37,9 +36,4 @@
 			{/each}
 		</ul>
 	{/each}
-
-	<p class="text-base-content/80 mt-3 text-sm">
-		Worum es geht und was in welcher Phase passiert:
-		<a class="link" href={resolve('/einfuehrung')}>Einführung in Tallox</a>.
-	</p>
 </section>

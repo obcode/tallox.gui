@@ -39,7 +39,6 @@ test.describe('dein Stand', () => {
 			card.getByRole('listitem').filter({ hasText: 'Fachgruppen angeben' })
 		).toContainText('offen');
 		await expect(card.getByText('Geht, sobald Du Deine Fachgruppen angegeben hast.')).toBeVisible();
-		await expect(card.getByRole('link', { name: 'Einführung in Tallox' })).toBeVisible();
 		await checkA11y(page);
 	});
 

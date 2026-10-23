@@ -79,7 +79,7 @@ async function loadOverview() {
 	} catch {
 		// The start page is where somebody lands when something is wrong, so it must not fail on
 		// an overview. "No account" never gets here — the root layout has already answered that —
-		// and an unreachable backend is said once, in the backend card further down.
+		// and an unreachable backend is said once, in the footer.
 		return null;
 	}
 }

@@ -17,15 +17,20 @@ test.describe('identity', () => {
 	test('access is anonymous without the proxy header', async ({ page }) => {
 		await gotoRendered(page, '/');
 
-		await expect(page.getByText(/Kein\s+X-Remote-User\s+gesetzt/)).toBeVisible();
+		// Twice in the bar: the wide row and the menu below xl.
+		await expect(page.getByRole('banner').getByText('anonym')).not.toHaveCount(0);
 	});
 
-	test('the user set by the proxy appears on the page', async ({ asPersona }) => {
+	// On "Meine Rollen" the name comes from the backend's `me`, so it is the relay that is
+	// asserted, not merely what the proxy header said on the way in.
+	test('the user set by the proxy is who the backend answers for', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, '/');
+		await gotoRendered(page, '/konto/rollen');
 
-		await expect(page.getByText(PERSONAS.eins.mail)).toBeVisible();
-		await expect(page.getByText(/Kein\s+X-Remote-User/)).toHaveCount(0);
+		await expect(
+			page.getByRole('main').getByText(PERSONAS.eins.name, { exact: true })
+		).toBeVisible();
+		await expect(page.getByRole('banner').getByText('anonym')).toHaveCount(0);
 	});
 
 	test("two people see their own identity, not each other's", async ({ asPersona }) => {
@@ -35,13 +40,17 @@ test.describe('identity', () => {
 		// somebody sees another person's wishes.
 		const [eins, zwei] = await Promise.all([asPersona(PERSONAS.eins), asPersona(PERSONAS.zwei)]);
 
-		await Promise.all([gotoRendered(eins, '/'), gotoRendered(zwei, '/')]);
+		await Promise.all([gotoRendered(eins, '/konto/rollen'), gotoRendered(zwei, '/konto/rollen')]);
 
-		await expect(eins.getByText(PERSONAS.eins.mail)).toBeVisible();
-		await expect(eins.getByText(PERSONAS.zwei.mail)).toHaveCount(0);
+		await expect(
+			eins.getByRole('main').getByText(PERSONAS.eins.name, { exact: true })
+		).toBeVisible();
+		await expect(eins.getByText(PERSONAS.zwei.name, { exact: true })).toHaveCount(0);
 
-		await expect(zwei.getByText(PERSONAS.zwei.mail)).toBeVisible();
-		await expect(zwei.getByText(PERSONAS.eins.mail)).toHaveCount(0);
+		await expect(
+			zwei.getByRole('main').getByText(PERSONAS.zwei.name, { exact: true })
+		).toBeVisible();
+		await expect(zwei.getByText(PERSONAS.eins.name, { exact: true })).toHaveCount(0);
 	});
 
 	test('an Authorization header sent by the client is not forwarded', async ({ browser }) => {
@@ -57,7 +66,8 @@ test.describe('identity', () => {
 		await gotoRendered(page, '/');
 
 		await expect(page.getByRole('heading', { name: 'Einsatzplanung', level: 1 })).toBeVisible();
-		await expect(page.getByText(/Kein\s+X-Remote-User\s+gesetzt/)).toBeVisible();
+		// Twice in the bar: the wide row and the menu below xl.
+		await expect(page.getByRole('banner').getByText('anonym')).not.toHaveCount(0);
 
 		await context.close();
 	});

@@ -19,20 +19,11 @@ test.describe('start page', () => {
 	test('reaches the backend and shows its version', async ({ page }) => {
 		await gotoRendered(page, '/');
 
-		// The card says "Nicht erreichbar" when the SSR hop fails. That is exactly the
-		// interesting case: the page still renders, and without this assertion an end-to-end run
-		// against a dead backend would be green.
-		const backendCard = page
-			.locator('div')
-			.filter({ hasText: /^🔌 Backend/ })
-			.last();
-		await expect(backendCard).not.toContainText('Nicht erreichbar');
-
-		// The footer gets its server version by the same route. Deliberately not checked against
+		// The footer gets its server version through the SSR hop. Deliberately not checked against
 		// a version number: a locally built backend reports "dev", because the version is only
-		// set via ldflags at release time. The interesting thing is the "—", because that means
-		// the answer was empty rather than faulty — a different failure from an unreachable
-		// backend, and one the card above does not show.
+		// set via ldflags at release time. The interesting thing is the "—": it is what the footer
+		// shows when the backend did not answer, and without this assertion an end-to-end run
+		// against a dead backend would be green — the page still renders.
 		const footer = page.getByRole('contentinfo');
 		await expect(footer).toContainText(/Server\s+\S+/);
 		await expect(footer).not.toContainText('Server —');
