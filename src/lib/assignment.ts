@@ -72,7 +72,12 @@ export type InstanceLike = {
 export type AssignmentLike = {
 	id: string;
 	note: string;
-	assignee: { personId?: string | null; teacherId?: string | null; name: string };
+	assignee: {
+		personId?: string | null;
+		teacherId?: string | null;
+		name: string;
+		mail?: string | null;
+	};
 	part: { id?: string };
 };
 
@@ -80,7 +85,7 @@ export type AssignmentLike = {
 export type WishLike = {
 	priority: string;
 	note: string;
-	person: { id: string; name: string };
+	person: { id: string; name: string; mail?: string | null };
 	instance: { id: string };
 };
 
@@ -88,7 +93,12 @@ export type WishLike = {
 export type PoolEntryLike = {
 	level: string;
 	note: string;
-	holder: { personId?: string | null; teacherId?: string | null; name: string };
+	holder: {
+		personId?: string | null;
+		teacherId?: string | null;
+		name: string;
+		mail?: string | null;
+	};
 };
 
 /** One row of the table: a part, and whoever holds it. */
@@ -346,7 +356,37 @@ export type Candidate = {
 	name: string;
 	/** Why they are in the list: shown after the name, so the reason is visible in the dropdown. */
 	hint?: string;
+	/** Which section of the dropdown they stand in. See `candidateSections`. */
+	kind: CandidateKind;
 };
+
+/**
+ * Why somebody is offered, strongest reason first. The dropdown groups by it, so that the people
+ * who asked for a cohort stand apart from everybody else who could be put on it.
+ */
+export type CandidateKind = 'wish' | 'pool' | 'member' | 'other';
+
+const CANDIDATE_SECTION_LABELS: Record<CandidateKind, string> = {
+	wish: 'Gewünscht',
+	pool: 'Kompetenz',
+	member: 'Fachgruppe',
+	other: 'Weitere Lehrende'
+};
+
+/**
+ * The candidates as the dropdown's option groups, in the order `candidatesFor` produced them and
+ * without the empty ones.
+ */
+export function candidateSections(
+	candidates: readonly Candidate[]
+): { label: string; candidates: Candidate[] }[] {
+	return (Object.keys(CANDIDATE_SECTION_LABELS) as CandidateKind[])
+		.map((kind) => ({
+			label: CANDIDATE_SECTION_LABELS[kind],
+			candidates: candidates.filter((c) => c.kind === kind)
+		}))
+		.filter((section) => section.candidates.length > 0);
+}
 
 /**
  * A candidate as the dropdown shows them: the name, why they are listed, and — where the reader may
@@ -444,9 +484,10 @@ export function commonNote(rows: readonly PartRow[]): string | null {
  * Then who has said they can teach the module, then who would like to — the competence pool, which
  * is what is left to go on when a wish round leaves a gap. Then the members of the module's subject
  * group, then whoever the search turned up, then the person currently holding the part if none of
- * the above named them. Deduplicated by identity, so
- * somebody who wished for it and is in the subject group appears once, with the reason that says
- * more.
+ * the above named them, then everybody else who teaches here. Deduplicated by identity — and by
+ * address, because the same colleague is a `Person` in a wish and a `Teacher` in the full list —
+ * so somebody who wished for it and is in the subject group appears once, with the reason that
+ * says more.
  *
  * **Not a permission.** A name being absent from this list does not mean somebody may not hold the
  * part; it means the page did not think to offer them, which is what the search field is for.
@@ -454,8 +495,8 @@ export function commonNote(rows: readonly PartRow[]): string | null {
 export function candidatesFor(
 	instanceIds: readonly string[],
 	wishes: WishLike[],
-	members: { id: string; name: string }[],
-	found: { id: string; name: string }[],
+	members: { id: string; name: string; mail?: string | null }[],
+	found: { id: string; name: string; mail?: string | null }[],
 	/**
 	 * Whoever already holds something here.
 	 *
@@ -477,15 +518,24 @@ export function candidatesFor(
 	 * Last and optional so that every existing call reads as it did. Stronger statements are
 	 * offered first whatever order they arrive in.
 	 */
-	pool: readonly PoolEntryLike[] = []
+	pool: readonly PoolEntryLike[] = [],
+	/**
+	 * Everybody who teaches here, offered last under their own heading.
+	 *
+	 * The page passes it only for a cohort somebody is working on: a few hundred names in every
+	 * dropdown of a subject group is a page of megabytes.
+	 */
+	everyone: readonly { id: string; name: string; mail?: string | null }[] = []
 ): Candidate[] {
 	const out: Candidate[] = [];
 	const seen = new Set<string>();
 
-	const add = (c: Candidate) => {
+	const add = (c: Candidate, mail?: string | null) => {
 		const key = c.personId ?? `t:${c.teacherId}`;
-		if (seen.has(key)) return;
+		const address = mail ? `m:${mail.toLowerCase()}` : undefined;
+		if (seen.has(key) || (address && seen.has(address))) return;
 		seen.add(key);
+		if (address) seen.add(address);
 		out.push(c);
 	};
 
@@ -498,41 +548,65 @@ export function candidatesFor(
 		const from = wish.instance.id === instanceIds[0] ? '' : programmeOf.get(wish.instance.id);
 		const words = WISH_WORDS[wish.priority] ?? '';
 		const base = wish.note ? `${words} · ${wish.note}` : words;
-		add({
-			personId: wish.person.id,
-			name: wish.person.name,
-			hint: from ? `Wunsch aus ${from} · ${base}` : base
-		});
+		add(
+			{
+				personId: wish.person.id,
+				name: wish.person.name,
+				hint: from ? `Wunsch aus ${from} · ${base}` : base,
+				kind: 'wish'
+			},
+			wish.person.mail
+		);
 	}
 
 	for (const level of ['CAN_TEACH', 'WOULD_LIKE'] as const) {
 		for (const c of pool) {
 			if (c.level !== level) continue;
 			const words = COMPETENCE_LEVEL_OTHERS[level];
-			add({
-				personId: c.holder.personId ?? undefined,
-				teacherId: c.holder.personId ? undefined : (c.holder.teacherId ?? undefined),
-				name: c.holder.name,
-				hint: c.note ? `${words} · ${c.note}` : words
-			});
+			add(
+				{
+					personId: c.holder.personId ?? undefined,
+					teacherId: c.holder.personId ? undefined : (c.holder.teacherId ?? undefined),
+					name: c.holder.name,
+					hint: c.note ? `${words} · ${c.note}` : words,
+					kind: 'pool'
+				},
+				c.holder.mail
+			);
 		}
 	}
 
-	for (const member of members) add({ personId: member.id, name: member.name, hint: 'Fachgruppe' });
+	for (const member of members) {
+		add(
+			{ personId: member.id, name: member.name, hint: 'Fachgruppe', kind: 'member' },
+			member.mail
+		);
+	}
 
 	// Whoever the search turned up, offered by their teacher id whether or not they hold an
 	// account. The backend canonicalises on the way in — a teacher who has one is stored as the
 	// account — so the page does not need to know which, and cannot get it wrong by knowing
 	// something that was true when it rendered.
-	for (const teacher of found) add({ teacherId: teacher.id, name: teacher.name, hint: 'Suche' });
+	for (const teacher of found) {
+		add({ teacherId: teacher.id, name: teacher.name, hint: 'Suche', kind: 'other' }, teacher.mail);
+	}
 
 	for (const held of current) {
-		add({
-			personId: held.assignee.personId ?? undefined,
-			teacherId: held.assignee.teacherId ?? undefined,
-			name: held.assignee.name,
-			hint: 'zugeteilt'
-		});
+		add(
+			{
+				personId: held.assignee.personId ?? undefined,
+				teacherId: held.assignee.teacherId ?? undefined,
+				name: held.assignee.name,
+				hint: 'zugeteilt',
+				kind: 'other'
+			},
+			held.assignee.mail
+		);
+	}
+
+	// Same as the search: by teacher id, canonicalised by the backend.
+	for (const teacher of everyone) {
+		add({ teacherId: teacher.id, name: teacher.name, kind: 'other' }, teacher.mail);
 	}
 	return out;
 }

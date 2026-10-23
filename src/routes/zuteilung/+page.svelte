@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { flushSync } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		candidateValue,
 		candidateLabel,
+		candidateSections,
 		candidatesFor,
 		commonNote,
 		commonValue,
@@ -168,6 +171,20 @@
 	// Saving, the same arrangement the wish screen uses: three events on the form itself, because
 	// all three bubble — otherwise every one of a few hundred cells would need a listener.
 	let formElement: HTMLFormElement | undefined = $state();
+
+	/**
+	 * The cohorts whose dropdowns offer everybody who teaches here.
+	 *
+	 * A few hundred names in every dropdown of a subject group is a page of megabytes, so the list
+	 * is added to a cohort when somebody reaches for it. Synchronously, because a pointer press opens
+	 * the native list right after this handler and it should open with the names in it. The whole
+	 * cohort and not the one dropdown: the cohort's choice is copied down onto its parts, and a part
+	 * without the option could not take it.
+	 */
+	const widened = new SvelteSet<string>();
+	function widen(cohort: string) {
+		if (!widened.has(cohort)) flushSync(() => widened.add(cohort));
+	}
 	let saving = $state(false);
 	let savedOnce = $state(false);
 	// Neither is $state: nothing renders them, and making them reactive would only invite somebody
@@ -674,8 +691,10 @@
 										data.found,
 										held,
 										pooled.programmes,
-										data.competences.filter((c) => c.module.id === group.instance.module.id)
+										data.competences.filter((c) => c.module.id === group.instance.module.id),
+										widened.has(group.instance.id) ? data.everyone : []
 									)}
+									{@const sections = candidateSections(candidates)}
 									<!-- What the cohort's own dropdown stands for: our share of it. A part
 								     another faculty teaches is arranged, not staffed. -->
 									{@const own = ownRows(group.rows)}
@@ -749,16 +768,22 @@
 														aria-label="Wer hält alle Teile von {block.name} in {group.label}"
 														disabled={!open}
 														value={shared ?? MIXED_CHOICE}
+														onfocus={() => widen(group.instance.id)}
+														onpointerdown={() => widen(group.instance.id)}
 													>
 														<option value="">— nicht besetzt —</option>
 														<!-- "Lass jeden Teil bei dem, der ihn hat." Always offered, because the
 												     dropdown has to be able to *show* it: a cohort whose parts are held
 												     by different people has no one name to put here. -->
 														<option value={MIXED_CHOICE}>— je Teil verschieden —</option>
-														{#each candidates as candidate (candidateValue(candidate))}
-															<option value={candidateValue(candidate)}>
-																{candidateLabel(candidate, desired, load)}
-															</option>
+														{#each sections as section (section.label)}
+															<optgroup label={section.label}>
+																{#each section.candidates as candidate (candidateValue(candidate))}
+																	<option value={candidateValue(candidate)}>
+																		{candidateLabel(candidate, desired, load)}
+																	</option>
+																{/each}
+															</optgroup>
 														{/each}
 													</select>
 													{#if elsewhere.length > 0}
@@ -947,12 +972,18 @@
 																aria-label="Wer hält {row.heading} in {group.label}, {block.name}"
 																disabled={!open}
 																value={currentValue(row.assignment)}
+																onfocus={() => widen(group.instance.id)}
+																onpointerdown={() => widen(group.instance.id)}
 															>
 																<option value="">— nicht besetzt —</option>
-																{#each candidates as candidate (candidateValue(candidate))}
-																	<option value={candidateValue(candidate)}>
-																		{candidateLabel(candidate, desired, load)}
-																	</option>
+																{#each sections as section (section.label)}
+																	<optgroup label={section.label}>
+																		{#each section.candidates as candidate (candidateValue(candidate))}
+																			<option value={candidateValue(candidate)}>
+																				{candidateLabel(candidate, desired, load)}
+																			</option>
+																		{/each}
+																	</optgroup>
 																{/each}
 															</select>
 														{/if}

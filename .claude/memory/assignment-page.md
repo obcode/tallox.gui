@@ -87,6 +87,26 @@ Je Teil, in dieser Reihenfolge:
 Die Liste ist **keine Berechtigung**: wer fehlt, darf trotzdem — die Seite hat nur nicht daran
 gedacht, und dafür ist die Suche da.
 
+### Alle Lehrenden, gegliedert (seit 2026-10-23)
+
+Aus Collab: „ich habe nur Personen zur Auswahl, die einen Wunsch eingetragen haben“. Die Liste oben
+war vollständig gedacht, aber ohne gepflegte Fachgruppen-Mitglieder und ohne Kompetenz-Pool blieben
+nur die Wünsche, und die Suche fiel niemandem auf. Seitdem:
+
+- **`<optgroup>` je Grund** (`candidateSections`, `Candidate.kind`): „Gewünscht“, „Kompetenz“,
+  „Fachgruppe“, „Weitere Lehrende“ (Suche, aktuelle Inhaber, alle übrigen). Das ist die
+  Hervorhebung; `selectOption({ index })` zählt Optionen, nicht Gruppen, also bleiben die Indizes.
+- **Alle Lehrenden** (`everyone: teachers`, ohne `search`, für jedes Konto lesbar, kein
+  Backend-Umbau) kommen **erst beim Zugreifen** hinzu: `onfocus`/`onpointerdown` am Select →
+  `widen(zug)` mit `flushSync` in eine `SvelteSet`, damit die native Liste schon mit den Namen
+  aufgeht. Je **Zug**, weil `harmonise` die Zug-Wahl auf die Teile kopiert. Grund ist die
+  Seitengröße aus dem Abschnitt unten. Ohne JavaScript bleibt die Suche der Weg.
+- **Dubletten über die Mailadresse**: Wunsch und Mitglied sind `Person`, die volle Liste
+  `Teacher`. Ohne Mail-Abgleich stünde dieselbe Kollegin unter „Gewünscht“ und unter „Weitere“.
+- E2E: `anybody who teaches here can be chosen, …` mit `TEACHERS.spare`; der Test setzt am Ende
+  zurück und steht deshalb im ersten `describe` — die Tests in „a cohort held by one person“ bauen
+  aufeinander auf, ein `reset()` dazwischen bricht den nächsten.
+
 **Ein Treffer der Suche wird als `teacherId` geschickt, nicht als Konto.** Das Backend
 kanonisiert selbst (wer ein Konto hat, wird als Konto gespeichert), also muss die Seite nicht
 wissen, wer eins hat — und kann sich nicht darin irren.
