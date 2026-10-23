@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	assignmentChanges,
+	candidateSections,
 	candidatesFor,
 	commonNote,
 	commonValue,
@@ -189,7 +190,42 @@ describe('candidatesFor', () => {
 
 	it('offers a search result by its teacher id and lets the backend canonicalise', () => {
 		const out = candidatesFor(['i1'], [], [], [{ id: 't7', name: 'Lehrbeauftragte' }], []);
-		expect(out).toEqual([{ teacherId: 't7', name: 'Lehrbeauftragte', hint: 'Suche' }]);
+		expect(out).toEqual([
+			{ teacherId: 't7', name: 'Lehrbeauftragte', hint: 'Suche', kind: 'other' }
+		]);
+	});
+
+	// Collab: the dropdown offered only who had wished for the cohort, where the subject group had
+	// no members entered. Whoever fills a cohort must be able to pick anybody who teaches here.
+	it('offers everybody who teaches here after the reasons, under their own heading', () => {
+		const everyone = [
+			{ id: 't1', name: 'Prof. Eins', mail: 'prof.eins@example.org' },
+			{ id: 't8', name: 'Prof. Acht', mail: 'prof.acht@example.org' }
+		];
+		const withMail = wishes.map((w) =>
+			w.person.id === 'per1' ? { ...w, person: { ...w.person, mail: 'Prof.Eins@example.org' } } : w
+		);
+		const out = candidatesFor(['i1'], withMail, [], [], [], new Map(), [], everyone);
+		expect(out.map((c) => c.name)).toEqual(['Prof. Eins', 'Prof. Zwei', 'Prof. Acht']);
+		expect(out.at(-1)).toEqual({ teacherId: 't8', name: 'Prof. Acht', kind: 'other' });
+	});
+
+	it('groups the dropdown with the wishes first and leaves out empty groups', () => {
+		const out = candidatesFor(
+			['i1'],
+			wishes,
+			[{ id: 'per7', name: 'Prof. Sieben' }],
+			[],
+			[],
+			new Map(),
+			[],
+			[{ id: 't8', name: 'Prof. Acht' }]
+		);
+		expect(candidateSections(out).map((s) => [s.label, s.candidates.map((c) => c.name)])).toEqual([
+			['Gewünscht', ['Prof. Eins', 'Prof. Zwei']],
+			['Fachgruppe', ['Prof. Sieben']],
+			['Weitere Lehrende', ['Prof. Acht']]
+		]);
 	});
 
 	it('always offers whoever currently holds the part, even if nothing else names them', () => {
@@ -234,7 +270,12 @@ describe('candidatesFor', () => {
 			'Prof. Vier',
 			'Prof. Drei'
 		]);
-		expect(out[2]).toEqual({ teacherId: 't8', name: 'LB Acht', hint: 'kann halten · nur Übung' });
+		expect(out[2]).toEqual({
+			teacherId: 't8',
+			name: 'LB Acht',
+			hint: 'kann halten · nur Übung',
+			kind: 'pool'
+		});
 		expect(out[3].hint).toBe('Interesse, Einarbeitung nötig');
 		expect(out[0].hint).toBe('unbedingt');
 	});
@@ -810,28 +851,30 @@ describe('the candidate in the dropdown', () => {
 	const load = new Map([['p3', 8]]);
 
 	it('adds the hours somebody would like to teach, after why they are listed', () => {
-		expect(candidateLabel({ personId: 'p1', name: 'Eins', hint: 'gerne' }, desired)).toBe(
-			'Eins (gerne, möchte 12,5 SWS)'
-		);
-		expect(candidateLabel({ personId: 'p1', name: 'Eins' }, desired)).toBe(
+		expect(
+			candidateLabel({ personId: 'p1', name: 'Eins', hint: 'gerne', kind: 'wish' }, desired)
+		).toBe('Eins (gerne, möchte 12,5 SWS)');
+		expect(candidateLabel({ personId: 'p1', name: 'Eins', kind: 'other' }, desired)).toBe(
 			'Eins (möchte 12,5 SWS)'
 		);
 	});
 
 	it('shows a range, and what somebody already holds in every subject group', () => {
-		expect(candidateLabel({ personId: 'p3', name: 'Drei' }, desired, load)).toBe(
+		expect(candidateLabel({ personId: 'p3', name: 'Drei', kind: 'other' }, desired, load)).toBe(
 			'Drei (möchte 6–10 SWS, 8 eingeplant)'
 		);
-		expect(candidateLabel({ personId: 'p4', name: 'Vier' }, desired, new Map([['p4', 2]]))).toBe(
-			'Vier (2 eingeplant)'
-		);
+		expect(
+			candidateLabel({ personId: 'p4', name: 'Vier', kind: 'other' }, desired, new Map([['p4', 2]]))
+		).toBe('Vier (2 eingeplant)');
 	});
 
 	// Not stated and not visible are the same: nothing.
 	it('says nothing for somebody without a visible figure, or a teacher without an account', () => {
-		expect(candidateLabel({ personId: 'p2', name: 'Zwei', hint: 'Fachgruppe' }, desired)).toBe(
-			'Zwei (Fachgruppe)'
+		expect(
+			candidateLabel({ personId: 'p2', name: 'Zwei', hint: 'Fachgruppe', kind: 'member' }, desired)
+		).toBe('Zwei (Fachgruppe)');
+		expect(candidateLabel({ teacherId: 't1', name: 'Extern', kind: 'other' }, desired, load)).toBe(
+			'Extern'
 		);
-		expect(candidateLabel({ teacherId: 't1', name: 'Extern' }, desired, load)).toBe('Extern');
 	});
 });

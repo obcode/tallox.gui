@@ -34,9 +34,10 @@ import type { Actions, PageServerLoad } from './$types';
  * time.
  *
  * The candidate list per part follows from the same thought: whoever registered interest in this
- * cohort first, then the members of the group, then whoever a search turned up. The search is a
- * query parameter and reloads the page, so it works without JavaScript and needs no second
- * endpoint.
+ * cohort first, then the members of the group, then whoever a search turned up, then everybody
+ * else who teaches here. The search is a query parameter and reloads the page, so it works without
+ * JavaScript and needs no second endpoint; the last group is added by the browser to the cohort
+ * somebody is working on, because in every dropdown at once it would not be a page any more.
  */
 const AssignmentDocument = graphql(`
 	query AssignmentScreen(
@@ -155,6 +156,7 @@ const AssignmentDocument = graphql(`
 			person {
 				id
 				name
+				mail
 			}
 			instance {
 				id
@@ -167,6 +169,7 @@ const AssignmentDocument = graphql(`
 			members {
 				id
 				name
+				mail
 			}
 		}
 		# The wish round of the group being filled. The lead switches it here because this is where
@@ -194,9 +197,17 @@ const AssignmentDocument = graphql(`
 				personId
 				teacherId
 				name
+				mail
 			}
 		}
 		teachers(search: $search) @include(if: $withSearch) {
+			id
+			name
+			mail
+		}
+		# Everybody who teaches here, for the last group of every dropdown. Not a confidential list:
+		# any account may read it.
+		everyone: teachers @include(if: $withSemester) {
 			id
 			name
 			mail
@@ -383,6 +394,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		desired: data.desiredTeachingHours ?? [],
 		load: data.assignedTeachingHours ?? [],
 		found: data.teachers ?? [],
+		everyone: data.everyone ?? [],
 		competences: data.competences ?? [],
 		windows: data.wishWindows ?? [],
 		me: data.me,
