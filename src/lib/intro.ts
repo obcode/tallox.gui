@@ -56,7 +56,7 @@ export const PHASES: readonly IntroPhase[] = [
 		happens:
 			'Die Studiengangsleitungen legen fest, welche Instanzen im Semester angeboten werden: welches Modul, für welchen Studiengang, in wie vielen Zügen und mit wie vielen Praktikumsgruppen.',
 		forYou:
-			'Noch nichts Bestimmtes. Eine gute Zeit, einmal die eigenen Fachgruppen und Kompetenzen anzugeben, falls das noch fehlt.',
+			'Noch nichts Bestimmtes. Eine gute Zeit, einmal die eigenen Fachgruppen und Kompetenzen anzugeben, falls das noch fehlt; was fehlt, zeigt die Startseite unter „Dein Stand“. Die Wunsch-SWS für das Semester lassen sich auch schon jetzt angeben.',
 		where: [
 			{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' },
 			{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }

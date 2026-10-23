@@ -522,6 +522,7 @@ export function seedSql(): string {
 		...assignmentStatements(),
 		...degreeStatements(),
 		...competenceStatements(),
+		...setupStatements(),
 		...filingStatements(),
 		...dividedStatements(),
 		...sortingStatements()
@@ -621,6 +622,45 @@ export function competenceStatements(): string[] {
 		 VALUES ('${COMPETENCES.teacher}', ${quote(COMPETENCES.teacherName)},
 		         'Lehrbeauftragte, Kompetenz', true, true, 'EXT')
 		 ON CONFLICT (id) DO NOTHING;`
+	];
+}
+
+/**
+ * The setup fixture: a subject group of its own with one compulsory and one elective module, for
+ * the newcomer to join. One compulsory module on purpose — fewer than the faculty's three, so the
+ * card has to cap the minimum to be completable at all. Under the competence fixture's
+ * regulations, which are seeded just before; nobody leads the group, which no spec counts.
+ */
+export const SETUP = {
+	subjectGroup: '0e2e0000-0000-4000-8000-0000000000e1',
+	subjectGroupName: 'Einrichtungs-Testfachgruppe',
+	compulsory: '0e2e0000-0000-4000-8000-0000000000e2',
+	compulsoryName: 'E2E Einrichtungsmodul',
+	elective: '0e2e0000-0000-4000-8000-0000000000e3'
+} as const;
+
+export function setupStatements(): string[] {
+	const programme = quote(COMPETENCES.programme);
+	return [
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT m.id, p.id, m.name, 'SU_WITH_LAB', 'EVERY_SEMESTER', 4, 5
+		   FROM programme p,
+		        (VALUES ('${SETUP.compulsory}'::uuid, ${quote(SETUP.compulsoryName)}),
+		                ('${SETUP.elective}'::uuid, 'E2E Einrichtungs-Wahlmodul')) AS m(id, name)
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
+		                              min_programme_semester)
+		 VALUES ('${SETUP.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-11'], 1, 1)
+		 ON CONFLICT DO NOTHING;`,
+		`INSERT INTO subject_group (id, code, name)
+		 VALUES ('${SETUP.subjectGroup}', 'E2EEINR', ${quote(SETUP.subjectGroupName)})
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module_subject_group (module_id, subject_group_id)
+		 VALUES ('${SETUP.compulsory}', '${SETUP.subjectGroup}'),
+		        ('${SETUP.elective}', '${SETUP.subjectGroup}')
+		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`
 	];
 }
 

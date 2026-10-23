@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import DueNow from '$lib/components/DueNow.svelte';
+	import SetupChecklist from '$lib/components/SetupChecklist.svelte';
 	import WhoLeadsWhat from '$lib/components/WhoLeadsWhat.svelte';
+	import { setupCard } from '$lib/setup';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const roles = $derived(data.session?.effectiveRoles ?? []);
+	const setup = $derived(data.setup ? setupCard({ ...data.setup, roles }) : null);
 </script>
 
 <svelte:head><title>Einsatzplanung · Tallox</title></svelte:head>
@@ -27,6 +30,10 @@
 	</div>
 
 	<DueNow planning={data.planning} {roles} />
+
+	{#if setup}
+		<SetupChecklist card={setup} {roles} />
+	{/if}
 
 	{#if data.overview}
 		<WhoLeadsWhat

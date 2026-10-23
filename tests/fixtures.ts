@@ -46,7 +46,14 @@ export const PERSONAS = {
 	 * backend asserts the rule with its own cast (`bootstrap/partner_test.go`); what this one
 	 * exercises is the bar and the pages a partner is offered.
 	 */
-	partner: { mail: 'partner.zehn@example.org', name: 'Partner Zehn' }
+	partner: { mail: 'partner.zehn@example.org', name: 'Partner Zehn' },
+	/**
+	 * New in the faculty: a lecturer who has stated nothing yet — no subject group, no competence.
+	 * The persona "Dein Stand" on the start page is for. GUI-only like Neun, and her own, because
+	 * the setup spec walks her from nothing to everything and any other spec asserting about her
+	 * rows would race it.
+	 */
+	newcomer: { mail: 'prof.elf@example.org', name: 'Prof. Elf' }
 } as const;
 
 export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];

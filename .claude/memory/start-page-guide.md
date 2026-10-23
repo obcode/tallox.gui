@@ -158,3 +158,30 @@ Tests:
   der Versprechen suchen, nicht in `main`.
 
 Pflegeregel: [[help-maintenance]] (in `tallox.dev`).
+
+## „Dein Stand“ (2026-10-23)
+
+Frage: „Sollen wir für normale Dozierende einen Onboarding-Assistenten bauen?“ Entschieden:
+**kein Wizard, sondern eine Karte** unter „Jetzt dran“ (`SetupChecklist.svelte`, Logik in
+**`$lib/setup.ts`**), fertig für die Klausurtagung, damit das Kollegium dort gleich einrichtet.
+
+- **Die Lücke war Zustand, nicht Inhalt.** Die Idee steht in `/einfuehrung`, das Setzen auf den
+  eigenen Seiten. Keine Seite sagte: „bei Dir fehlt X“. Ein Wizard hätte die Formulare
+  (Auto-Save, `CompetenceRow`) ein zweites Mal gebraucht und wäre nach einem Durchlauf tot.
+- **Abgeleitet, nichts gespeichert.** Kein „eingerichtet“-Flag (veraltet, sobald jemand einer
+  zweiten Fachgruppe beitritt), kein Wegklicken, und **kein „Einführung gelesen“** — das wären
+  Verhaltensdaten, dieselbe Mitbestimmungsfrage wie beim Zugriffsprotokoll. Die Einführung
+  bleibt ein Link.
+- Zwei Gruppen: **„Einmal einrichten“** (Fachgruppen; Kompetenzen bis zum Minimum, gesperrt ohne
+  Fachgruppe) und **„Für <Semester>“** (Wunsch-SWS). Eine erledigte Gruppe verschwindet. Die
+  Wunsch-SWS kommen also mit jedem neuen Planungssemester zurück, aber nur in
+  `DEMAND_PLANNING`/`WISHES` und solange nicht eingefroren.
+- **Minimum gedeckelt:** das Backend meldet flach 3 (`policy.MinCompulsoryCompetences`). Eine
+  Fachgruppe mit weniger Pflichtfächern ließe den Punkt sonst nie zu; `reachableMinimum` nimmt
+  das Kleinere. Die Kompetenzseite selbst zeigt weiter „0 von mindestens 3“.
+- Nur mit `LECTURER` in den effektiven Rollen. Eigene Query `OwnSetup` im `+page.server.ts`,
+  schlägt sie fehl, fällt nur die Karte weg.
+- Tests: `setup.test.ts`; E2E `setup.spec.ts` mit der neuen Persona **Elf** (`newcomer`, eigene
+  Fixture-Fachgruppe `SETUP` mit einem Pflichtfach). Phasenabhängiges nur im Unit-Test.
+- **Falle:** der Link in der Karte hieß zuerst „Einführung“ und machte `smoke.spec.ts` (Strict
+  Mode, `getByRole('main')`) rot. Jetzt „Einführung in Tallox“.
