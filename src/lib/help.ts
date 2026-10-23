@@ -75,7 +75,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie viele FWP kann sich mein Studiengang leisten?',
 		answer:
-			'Das SWS-Controlling unter Statistik stellt die Lehre je Studiengang dem Kontingent des Studienjahres gegenüber. Gezählt wird, was die Lehre kostet: jede Praktikumsgruppe einzeln, eine gemeinsam gehaltene Vorlesung einmal.',
+			'Das SWS-Controlling unter Statistik stellt die Lehre je Studiengang dem Kontingent des Studienjahres gegenüber. Gezählt wird, was die Lehre kostet: jede Praktikumsgruppe einzeln, eine gemeinsam gehaltene Vorlesung einmal. Über der Tabelle des Studienjahres zeigt ein Balken je Studiengang, wie viel Winter- und Sommersemester vom Kontingent verbrauchen.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
@@ -102,7 +102,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie trage ich einen Wunsch ein, und wie ziehe ich ihn zurück?',
 		answer:
-			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist.',
+			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist. Welche Wunschrunden geschlossen sind, steht einmal über der Tabelle; die betroffenen Züge tragen die Marke „Wunschrunde geschlossen“.',
 		who: [],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
@@ -134,6 +134,13 @@ export const HELP: readonly HelpEntry[] = [
 		question: 'Wen kann ich bei der Zuteilung auswählen?',
 		answer:
 			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
+		question: 'Wie weit ist meine Fachgruppe mit dem Besetzen?',
+		answer:
+			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe und Abschluss. Teile, die eine andere Fakultät hält, zählen nicht mit.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
@@ -229,7 +236,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, wie viele SWS ich halten möchte?',
 		answer:
-			'Auf der Wunschseite, über der Tabelle, je Semester: wie viele SWS modulbehaftete Lehre Du übernehmen möchtest, ohne Abschlussarbeiten, als Bereich von–bis oder als eine Zahl. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Ändern kannst Du sie, bis das Dekanat sie zum Stichtag einfriert. Bis zur Veröffentlichung lesen sie nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; danach sieht das ganze Kollegium den Bereich. Die Notiz daneben bleibt immer bei Dir, Deinen Fachgruppenleitungen und dem Dekanat.',
+			'Auf der Wunschseite, über der Tabelle, je Semester: wie viele SWS modulbehaftete Lehre Du übernehmen möchtest, ohne Abschlussarbeiten, als Bereich von–bis oder als eine Zahl. Leer heißt „nicht angegeben“, 0 ist eine Angabe. Ändern kannst Du sie, bis das Dekanat sie zum Stichtag einfriert. Bis zur Veröffentlichung lesen sie nur Du, die Leitungen Deiner Fachgruppen und das Dekanat; danach sieht das ganze Kollegium den Bereich. Die Notiz daneben bleibt immer bei Dir, Deinen Fachgruppenleitungen und dem Dekanat. Darunter zeigt ein Balken, wie viel schon eingeplant ist, verglichen mit Deinem Bereich.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
@@ -237,7 +244,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, wer wie viele SWS halten möchte?',
 		answer:
-			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat; vorher sehen sie nur die Leitungen der jeweiligen Fachgruppen und das Dekanat. „Eingeplant“ ist bis zur Veröffentlichung der Zuteilung ein Entwurf.',
+			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat; vorher sehen sie nur die Leitungen der jeweiligen Fachgruppen und das Dekanat. „Eingeplant“ ist bis zur Veröffentlichung der Zuteilung ein Entwurf. Der Balken je Zeile zeigt beides auf einen Blick: gefüllt ist, was eingeplant ist, der umrandete Bereich ist der Wunsch; daneben steht „unter Wunsch“, „im Wunschbereich“ oder „über Wunsch“. Alle Balken haben dieselbe Skala.',
 		who: [],
 		where: [{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }],
 		stage: 'EACH_SEMESTER'
