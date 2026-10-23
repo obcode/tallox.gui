@@ -191,7 +191,7 @@ export type WishModule = {
 	id: string;
 	name: string;
 	programmeSemester?: number | null;
-	subjectGroup?: { id: string; code: string } | null;
+	subjectGroup?: { id: string; code: string; name: string } | null;
 };
 
 /** One row of the wish table: a module in a study programme, with its cohorts. */
@@ -657,12 +657,12 @@ export function settledProgrammes(completions: { programme: { code: string } }[]
  * is what this is for.
  */
 export function rowClosedReason(
-	row: { module: { subjectGroup?: { id: string; code: string } | null } },
+	row: { module: { subjectGroup?: { id: string; name: string } | null } },
 	closed: Set<string>
 ): string | null {
 	const group = row.module.subjectGroup;
 	if (group && closed.has(group.id)) {
-		return `Die Wunschphase der Fachgruppe ${group.code} ist derzeit geschlossen. Die Fachgruppenleitung kann sie wieder öffnen.`;
+		return `Die Wunschphase der Fachgruppe ${group.name} ist derzeit geschlossen. Die Fachgruppenleitung kann sie wieder öffnen.`;
 	}
 	return null;
 }

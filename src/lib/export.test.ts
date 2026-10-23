@@ -31,7 +31,7 @@ function instance(id: string, over: Partial<ExportInstance> = {}): ExportInstanc
 		programmeSemester: 1,
 		note: '',
 		programme: { code: 'IF' },
-		module: { name: 'Analysis', zpaId: '1001', subjectGroup: { code: 'MA' } },
+		module: { name: 'Analysis', zpaId: '1001', subjectGroup: { name: 'Mathematik' } },
 		parts: [],
 		coveredBy: null,
 		covers: [],
@@ -82,7 +82,7 @@ describe('planningRows', () => {
 		expect(rows.map((r) => r[col('Besetzt durch')])).toEqual(['Prof. Eins', '', 'Prof. Zwei']);
 		expect(rows[0][col('Notiz Zuteilung')]).toBe('nur erste Hälfte');
 		// No topic: the column is there and empty, as for every cohort that is not a seminar.
-		expect(rows[0].slice(0, 7)).toEqual(['IF', 1, 'IF1A', 'Analysis', '', '1001', 'MA']);
+		expect(rows[0].slice(0, 7)).toEqual(['IF', 1, 'IF1A', 'Analysis', '', '1001', 'Mathematik']);
 	});
 
 	it('keeps hours as numbers and an unstated figure empty rather than zero', () => {

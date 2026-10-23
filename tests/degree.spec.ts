@@ -81,7 +81,7 @@ test.describe('the degree filter on the assignment screen', () => {
 				'&abschluss=master&nach=studiengang'
 		);
 
-		await page.getByRole('tab', { name: DEGREES.subjectGroupCode }).click();
+		await page.getByRole('tab', { name: 'Abschluss-Testfachgruppe' }).click();
 		await expect(page).toHaveURL(new RegExp(`fachgruppe=${DEGREES.subjectGroup}`));
 		await expect(page).toHaveURL(/abschluss=master/);
 		await expect(page).toHaveURL(/nach=studiengang/);

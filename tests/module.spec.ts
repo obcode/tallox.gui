@@ -119,11 +119,9 @@ test.describe('the module catalogue', () => {
 		await gotoRendered(page, '/module');
 
 		const filter = page.getByRole('combobox', { name: 'Fachgruppe' });
-		await expect(
-			filter.getByRole('option', { name: new RegExp(DEGREES.subjectGroupCode) })
-		).toHaveCount(1);
+		await expect(filter.getByRole('option', { name: 'Abschluss-Testfachgruppe' })).toHaveCount(1);
 
-		await filter.selectOption({ label: `${DEGREES.subjectGroupCode} — Abschluss-Testfachgruppe` });
+		await filter.selectOption({ label: 'Abschluss-Testfachgruppe' });
 		await page.getByRole('button', { name: 'Anwenden' }).click();
 		await expect(page).toHaveURL(new RegExp(`fachgruppe=${DEGREES.subjectGroup}`));
 		await expect(page.getByRole('link', { name: DEGREES.moduleName })).toBeVisible();

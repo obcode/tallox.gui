@@ -55,7 +55,7 @@ const OverviewDocument = graphql(`
 				bySubjectGroup {
 					hours
 					subjectGroup {
-						code
+						name
 					}
 				}
 			}

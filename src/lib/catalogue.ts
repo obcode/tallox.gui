@@ -448,7 +448,7 @@ export function filterGroupOptions<G extends FilingGroup & { active: boolean }>(
 ): G[] {
 	return all
 		.filter((g) => g.active || g.id === selectedId)
-		.sort((a, b) => a.code.localeCompare(b.code, 'de'));
+		.sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
 /** ADMIN and the dean's office file across every group — `policy.FilingScope`'s `All`. */

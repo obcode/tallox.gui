@@ -32,7 +32,7 @@
 	let moduleSort = $state<SortState<'module'>>(null);
 	const groups = $derived(
 		[...data.groups]
-			.sort((a, b) => a.code.localeCompare(b.code, 'de'))
+			.sort((a, b) => a.name.localeCompare(b.name, 'de'))
 			.map((g) => ({
 				...g,
 				modules: sortRows(sortModules(g.modules), moduleSort, { module: (m) => m.name })
@@ -150,7 +150,7 @@
 					aria-labelledby="group-{group.id}"
 				>
 					<h2 id="group-{group.id}" class="text-lg font-semibold">
-						<span class="font-mono">{group.code}</span> — {group.name}
+						{group.name}
 					</h2>
 					{#if status}
 						<p class="text-base-content/80 text-sm">

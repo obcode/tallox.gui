@@ -178,7 +178,7 @@
 			<p class="text-base-content/90 mb-2 text-sm">
 				<span class="badge badge-ghost badge-sm align-middle">Gespeichert</span>
 				{#if assigned.subjectGroup}
-					Jetzt in {assigned.subjectGroup.code} — {assigned.subjectGroup.name}.
+					Jetzt in {assigned.subjectGroup.name}.
 				{:else}
 					Aus der Fachgruppe herausgenommen.
 				{/if}
@@ -190,8 +190,7 @@
 
 		{#if data.module.subjectGroup}
 			<p class="text-base-content/90 text-sm">
-				<span class="font-mono">{data.module.subjectGroup.code}</span>
-				— {data.module.subjectGroup.name}
+				{data.module.subjectGroup.name}
 				{#if !data.module.subjectGroup.active}
 					<span class="badge badge-ghost badge-sm align-middle">stillgelegt</span>
 				{/if}
@@ -230,7 +229,7 @@
 						</option>
 						{#each assignableGroups as group (group.id)}
 							<option value={group.id} selected={group.id === data.module.subjectGroup?.id}>
-								{group.code} — {group.name}
+								{group.name}
 							</option>
 						{/each}
 					</select>

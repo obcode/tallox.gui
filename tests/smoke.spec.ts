@@ -242,7 +242,7 @@ test.describe('the start page as a starting point', () => {
 		await expect(programme).toContainText(PERSONAS.vier.name);
 
 		const groups = main.getByRole('list', { name: 'Fachgruppen und ihre Leitung' });
-		const group = groups.locator(':scope > li').filter({ hasText: COMPETENCES.subjectGroupCode });
+		const group = groups.locator(':scope > li').filter({ hasText: 'Kompetenz-Testfachgruppe' });
 		await expect(group).toContainText(`Leitung: ${PERSONAS.drei.name}`);
 
 		const module = group.getByRole('link', { name: COMPETENCES.compulsoryName });

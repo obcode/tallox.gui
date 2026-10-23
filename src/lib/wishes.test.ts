@@ -58,7 +58,9 @@ function instance(
 		module: {
 			id: moduleId,
 			name: moduleName,
-			subjectGroup: subjectGroup ? { id: subjectGroup, code: subjectGroup } : null
+			subjectGroup: subjectGroup
+				? { id: subjectGroup, code: subjectGroup, name: subjectGroup }
+				: null
 		},
 		parts: [{ id: `${id}-v`, kind: 'LECTURE', teachingHours: 2 }]
 	};
@@ -617,24 +619,24 @@ describe('closedSubjectGroups', () => {
 });
 
 describe('rowClosedReason', () => {
-	const row = (group: { id: string; code: string } | null) => ({ module: { subjectGroup: group } });
+	const row = (group: { id: string; name: string } | null) => ({ module: { subjectGroup: group } });
 
 	it('says nothing when the round is open', () => {
-		expect(rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set())).toBeNull();
+		expect(rowClosedReason(row({ id: 'g1', name: 'Mathematik' }), new Set())).toBeNull();
 	});
 
 	it('names the subject group lead as the repair for a shut round', () => {
 		// The point of separating this from the phase: a shut window is one switch held by that
 		// group's lead, and a sentence about the process would send somebody to the wrong person.
-		const reason = rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set(['g1']));
-		expect(reason).toContain('MATHE');
+		const reason = rowClosedReason(row({ id: 'g1', name: 'Mathematik' }), new Set(['g1']));
+		expect(reason).toContain('Mathematik');
 		expect(reason).toContain('Fachgruppenleitung');
 	});
 
 	it('leaves the finished semester to the page head, which says it once', () => {
 		// It said it per row as well, and an end-to-end test found the sentence as two elements.
 		// What holds for the whole screen belongs at its head.
-		expect(rowClosedReason(row({ id: 'g1', code: 'MATHE' }), new Set())).toBeNull();
+		expect(rowClosedReason(row({ id: 'g1', name: 'Mathematik' }), new Set())).toBeNull();
 	});
 
 	it('leaves a module in no subject group open', () => {

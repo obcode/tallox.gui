@@ -51,7 +51,7 @@
 	const groupTabs = $derived(
 		[...data.subjectGroups].sort((a, b) => {
 			const mine = Number(data.myGroups.includes(b.id)) - Number(data.myGroups.includes(a.id));
-			return mine !== 0 ? mine : a.code.localeCompare(b.code, 'de');
+			return mine !== 0 ? mine : a.name.localeCompare(b.name, 'de');
 		})
 	);
 
@@ -374,9 +374,8 @@
 					role="tab"
 					aria-selected={active}
 					class="tab whitespace-nowrap {active ? 'tab-active' : ''}"
-					title={group.name}
 				>
-					{group.code}
+					{group.name}
 					{#if data.myGroups.includes(group.id)}
 						<span class="badge badge-ghost badge-xs ml-1">meine</span>
 					{/if}

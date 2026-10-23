@@ -58,7 +58,7 @@ export type ExportInstance = {
 	module: {
 		name: string;
 		zpaId?: string | null;
-		subjectGroup?: { code: string } | null;
+		subjectGroup?: { name: string } | null;
 	};
 	parts: readonly ExportPart[];
 	coveredBy?: CoverageLike | null;
@@ -120,7 +120,7 @@ export function planningRows(
 			instance.module.name,
 			instance.topic ?? '',
 			instance.module.zpaId ?? '',
-			instance.module.subjectGroup?.code ?? '',
+			instance.module.subjectGroup?.name ?? '',
 			instance.delivery ? DELIVERY_LABELS[instance.delivery] : '',
 			instance.taughtInEnglish ? 'ja' : ''
 		];

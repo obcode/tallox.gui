@@ -1134,7 +1134,7 @@
 						<select name="fachgruppe" class="select select-bordered select-sm w-56">
 							<option value="">noch keine</option>
 							{#each data.filingGroups as group (group.id)}
-								<option value={group.id} title={group.name}>{group.code} — {group.name}</option>
+								<option value={group.id}>{group.name}</option>
 							{/each}
 						</select>
 					</label>

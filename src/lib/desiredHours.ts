@@ -73,15 +73,15 @@ export const STAGE_HINTS: Record<DesiredHoursStage, string> = {
 /** What somebody already holds, as the backend sums it: in total and by subject group. */
 export type AssignedLoad = {
 	total: number;
-	bySubjectGroup: readonly { subjectGroup?: { code: string } | null; hours: number }[];
+	bySubjectGroup: readonly { subjectGroup?: { name: string } | null; hours: number }[];
 };
 
-/** "MATHE 4 · SWE 8 · ohne Fachgruppe 2" — whom to talk to, in the order the backend sends. */
+/** "Mathematik 4 · Softwarefächer 8 · ohne Fachgruppe 2" — whom to talk to, in the order the backend sends. */
 export function loadBreakdown(load: AssignedLoad): string {
 	return load.bySubjectGroup
 		.map(
 			(share) =>
-				`${share.subjectGroup?.code ?? 'ohne Fachgruppe'} ${desiredHoursLabel(share.hours)}`
+				`${share.subjectGroup?.name ?? 'ohne Fachgruppe'} ${desiredHoursLabel(share.hours)}`
 		)
 		.join(' · ');
 }
@@ -117,14 +117,14 @@ export function filterOverview<T extends OverviewRow>(
 			(needle === '' ||
 				row.person.name.toLocaleLowerCase('de-DE').includes(needle) ||
 				(row.person.sortName ?? '').toLocaleLowerCase('de-DE').includes(needle)) &&
-			(filter.group === '' || row.subjectGroups.some((g) => g.code === filter.group))
+			(filter.group === '' || row.subjectGroups.some((g) => g.id === filter.group))
 	);
 }
 
 /** The columns a click on a head sorts by. Unstated and unseen are both empty, and go last. */
 export const OVERVIEW_SORT_KEYS = {
 	name: (row: OverviewRow) => row.person.sortName || row.person.name,
-	groups: (row: OverviewRow) => row.subjectGroups.map((g) => g.code).join(', ') || null,
+	groups: (row: OverviewRow) => row.subjectGroups.map((g) => g.name).join(', ') || null,
 	min: (row: OverviewRow) => (row.stated ? (row.minHours ?? null) : null),
 	max: (row: OverviewRow) => (row.stated ? (row.maxHours ?? null) : null),
 	assigned: (row: OverviewRow) => row.assignedLoad?.total ?? null

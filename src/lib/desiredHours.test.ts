@@ -54,19 +54,19 @@ describe('the load somebody already holds', () => {
 			loadBreakdown({
 				total: 14,
 				bySubjectGroup: [
-					{ subjectGroup: { code: 'MATHE' }, hours: 4 },
-					{ subjectGroup: { code: 'SWE' }, hours: 8 },
+					{ subjectGroup: { name: 'Mathematik' }, hours: 4 },
+					{ subjectGroup: { name: 'Softwarefächer' }, hours: 8 },
 					{ subjectGroup: null, hours: 2 }
 				]
 			})
-		).toBe('MATHE 4 · SWE 8 · ohne Fachgruppe 2');
+		).toBe('Mathematik 4 · Softwarefächer 8 · ohne Fachgruppe 2');
 	});
 });
 
 describe('the overview of the faculty', () => {
 	const row = (name: string, groups: string[], stated = false, max?: number): OverviewRow => ({
 		person: { id: name, name: `Prof. ${name}`, sortName: name },
-		subjectGroups: groups.map((code) => ({ id: code, code, name: code })),
+		subjectGroups: groups.map((code) => ({ id: `g-${code.toLowerCase()}`, code, name: code })),
 		stated,
 		minHours: stated ? max : null,
 		maxHours: stated ? max : null
@@ -74,9 +74,9 @@ describe('the overview of the faculty', () => {
 	const rows = [row('Eins', ['MATHE', 'SWE'], true, 12), row('Zwei', ['SWE']), row('Drei', [])];
 
 	it('reads the filter from the address', () => {
-		expect(parseOverviewFilter(new URLSearchParams('q=%20ein%20&fachgruppe=SWE'))).toEqual({
+		expect(parseOverviewFilter(new URLSearchParams('q=%20ein%20&fachgruppe=g-swe'))).toEqual({
 			query: 'ein',
-			group: 'SWE'
+			group: 'g-swe'
 		});
 	});
 
@@ -84,7 +84,7 @@ describe('the overview of the faculty', () => {
 		expect(filterOverview(rows, { query: 'zwei', group: '' }).map((r) => r.person.id)).toEqual([
 			'Zwei'
 		]);
-		expect(filterOverview(rows, { query: '', group: 'SWE' }).map((r) => r.person.id)).toEqual([
+		expect(filterOverview(rows, { query: '', group: 'g-swe' }).map((r) => r.person.id)).toEqual([
 			'Eins',
 			'Zwei'
 		]);

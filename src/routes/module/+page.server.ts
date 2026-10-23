@@ -91,7 +91,7 @@ const AssignSubjectGroupDocument = graphql(`
 			modulesAssigned
 			modulesWithoutSubjectGroup
 			subjectGroup {
-				code
+				name
 			}
 		}
 	}

@@ -124,3 +124,15 @@ fürs Einsortieren.
 
 Siehe auch [[no-wish-aggregates]] — die Fachgruppenseite ist die Tabelle, in die als Nächstes
 jemand „3 Interessent:innen" schreiben möchte.
+
+## Name statt Kürzel (2026-10-23)
+
+Auf Olivers Wunsch steht in der GUI überall der **Name** einer Fachgruppe: in Tabellen, Reitern,
+Auswahllisten, Meldungen, im Export und in der Aufschlüsselung der eingeplanten SWS. Sortiert wird
+ebenfalls nach dem Namen. Vorher stand das Kürzel in der Tabelle und der Name im Dropdown, oft
+auch „MATHE — Mathematik“. Das Kürzel bleibt die feste Kennung in der API für Skripte. Sichtbar
+ist es nur noch in der Verwaltung, wo es beim Anlegen einmal vergeben wird. Intern vergleicht
+`splitByMySubjects` weiter nach Kürzel, das zeigt aber nichts an. `fachgruppe=` in der Adresse
+trägt überall die ID, seit diesem Umbau auch auf `/wuensche/kollegium`. E2E sucht Fachgruppen
+über den Namen. Die Fixture-Namen fangen teils gleich an („Testfachgruppe“,
+„Kompetenz-Testfachgruppe“), deshalb `/^Testfachgruppe/`.

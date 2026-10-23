@@ -285,8 +285,8 @@
 									der getönten Fläche der Zeile, und dort misst `/80` auf `winter`
 									3,48:1. Eine andere Fläche braucht ihre eigene Messung.
 								-->
-								<span class="block font-mono text-xs">
-									{row.module.subjectGroup.code}
+								<span class="block text-xs">
+									{row.module.subjectGroup.name}
 								</span>
 							{/if}
 						</td>
