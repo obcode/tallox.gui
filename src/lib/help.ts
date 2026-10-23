@@ -131,9 +131,16 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/semester', label: 'Semester und Phasen' }]
 	},
 	{
+		question: 'Wen kann ich bei der Zuteilung auswählen?',
+		answer:
+			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
 		question: 'Wie teile ich Lehrbeauftragte zu, die kein Tallox-Konto haben?',
 		answer:
-			'Auf der Zuteilungsseite wie alle anderen: zur Auswahl stehen auch Lehrende, die hier kein Konto haben. Ein Konto brauchen sie dafür nicht.',
+			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
