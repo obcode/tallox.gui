@@ -221,3 +221,11 @@ Auf Wunsch „was kann noch eingespart werden“:
 - Die Gruppe der Karte „Dein Stand“ heißt **„Einmal angeben“**, nicht „Einmal einrichten“. Sonst
   trägt sie dieselbe Überschrift wie der Ablauf-Abschnitt, den `smoke.spec.ts` auf der Startseite
   ausschließt. Der Test war nur grün, weil Eins schon alles angegeben hat.
+
+## „Alles angegeben“ statt Verschwinden (2026-10-23)
+
+Oliver hatte schon alles angegeben und fand die Karte nicht. Das war so gebaut, sah aber aus
+wie ein Fehler. Jetzt schrumpft die Karte bei vollständigem Stand auf eine Zeile mit der Marke
+„Alles angegeben“, dem Stand und den Links zum Ändern (`SetupCard` mit `complete: true`). `null`
+gibt es nur noch für Konten ohne `LECTURER`. So unterscheidet sich „fertig“ von „Abfrage
+fehlgeschlagen“, denn dann fehlt die Karte weiterhin.

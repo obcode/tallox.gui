@@ -94,7 +94,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Was muss ich einmal einrichten?',
 		answer:
-			'Zwei Dinge, beide unter „Meine Lehre“: Deine Fachgruppen und danach Deine Kompetenzen, also welche Module Du halten kannst. Dazu kommt in jedem Semester die Angabe, wie viele SWS Du übernehmen möchtest. Was davon noch fehlt, zeigt die Startseite unter „Dein Stand“. Die Karte verschwindet, sobald alles angegeben ist, und kommt mit einem neuen Planungssemester für die SWS zurück. Gespeichert wird dafür nichts eigenes: sie liest nur, was Du auf den Seiten eingetragen hast.',
+			'Zwei Dinge, beide unter „Meine Lehre“: Deine Fachgruppen und danach Deine Kompetenzen, also welche Module Du halten kannst. Dazu kommt in jedem Semester die Angabe, wie viele SWS Du übernehmen möchtest. Was davon noch fehlt, zeigt die Startseite unter „Dein Stand“. Ist alles angegeben, steht dort nur noch „Alles angegeben“; mit einem neuen Planungssemester kommen die SWS wieder als offener Punkt dazu. Gespeichert wird dafür nichts eigenes: sie liest nur, was Du auf den Seiten eingetragen hast.',
 		who: ['LECTURER'],
 		where: [
 			{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' },

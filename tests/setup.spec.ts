@@ -69,9 +69,11 @@ test.describe('dein Stand', () => {
 			.selectOption('CAN_TEACH');
 		await expect(page.getByText('Eine Änderung gespeichert.')).toBeVisible();
 
-		// Set up: the one-time group is gone. The card may stay for the desired hours.
+		// Set up: the one-time group is gone, the card is not. Whether it still asks for the
+		// desired hours or says "Alles angegeben" depends on the phase — see setup.test.ts.
 		await gotoRendered(page, '/');
 		await expect(page.getByRole('heading', { name: 'Einmal angeben' })).toHaveCount(0);
+		await expect(card).toBeVisible();
 	});
 
 	test('is not shown to a partner faculty', async ({ asPersona }) => {

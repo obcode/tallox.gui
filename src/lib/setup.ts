@@ -31,7 +31,10 @@ export type SetupItem = {
 
 export type SetupGroup = { title: string; items: SetupItem[] };
 
-export type SetupCard = { groups: SetupGroup[]; done: number; total: number };
+export type SetupCard =
+	| { complete: false; groups: SetupGroup[]; done: number; total: number }
+	/** Nothing open: one line instead of an empty list, so the card is still there to find. */
+	| { complete: true; summary: string; where: readonly GuideLink[] };
 
 /** A subject group I am in, with whether each of its modules is compulsory. */
 export type SetupSubjectGroup = {
@@ -132,22 +135,38 @@ function semesterItems(input: SetupInput): SetupGroup | null {
 }
 
 /**
- * The card, or null when there is nothing to show: no lecturer, or everything stated.
+ * The card, or null for somebody who is not a lecturer.
  *
  * A group whose items are all done disappears, so that somebody who set up long ago sees one item
- * when a new planning semester asks for their hours — and nothing at all once they have stated
- * them. There is no "dismiss": that would be a state to store.
+ * when a new planning semester asks for their hours. With nothing open the card shrinks to one
+ * line rather than vanishing: a card that is sometimes there and sometimes not reads as broken,
+ * and "done" has to look different from "did not load". There is no "dismiss": that would be a
+ * state to store.
  */
 export function setupCard(input: SetupInput): SetupCard | null {
 	if (!input.roles.includes('LECTURER')) return null;
 
-	const groups = [
-		{ title: 'Einmal angeben', items: onceItems(input) },
-		semesterItems(input)
-	].filter((group): group is SetupGroup => !!group && group.items.some((item) => !item.done));
+	const semester = semesterItems(input);
+	const groups = [{ title: 'Einmal angeben', items: onceItems(input) }, semester].filter(
+		(group): group is SetupGroup => !!group && group.items.some((item) => !item.done)
+	);
 
-	if (groups.length === 0) return null;
+	if (groups.length === 0) {
+		const where = [...onceItems(input), ...(semester?.items ?? [])].flatMap((item) => item.where);
+		return {
+			complete: true,
+			summary: semester
+				? `Fachgruppen, Kompetenzen und Deine Wunsch-SWS ${semester.title.replace(/^Für/, 'für das')} sind angegeben.`
+				: 'Fachgruppen und Kompetenzen sind angegeben.',
+			where
+		};
+	}
 
 	const items = groups.flatMap((group) => group.items);
-	return { groups, done: items.filter((item) => item.done).length, total: items.length };
+	return {
+		complete: false,
+		groups,
+		done: items.filter((item) => item.done).length,
+		total: items.length
+	};
 }
