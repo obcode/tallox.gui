@@ -38,6 +38,27 @@ export const PHASE_HINTS: Record<Phase, string> = {
 	FINAL: 'Das Semester ist vorbei. Der Plan ist das Protokoll und wird nicht mehr geändert.'
 };
 
+/** Where a phase stands relative to the semester's current one. */
+export type PhaseState = 'DONE' | 'CURRENT' | 'UPCOMING';
+
+/**
+ * The five phases with their state, for the bar that shows where a semester stands.
+ *
+ * Done means "passed", not "closed": everything up to the review stays changeable, and the phase
+ * is switched back as easily as forward. The bar reads as the faculty's beat, the same way the
+ * phase does everywhere else.
+ */
+export function phaseProgress(
+	current: Phase
+): { phase: Phase; label: string; state: PhaseState }[] {
+	const at = PHASE_ORDER.indexOf(current);
+	return PHASE_ORDER.map((phase, i) => ({
+		phase,
+		label: PHASE_LABELS[phase],
+		state: i < at ? 'DONE' : i === at ? 'CURRENT' : 'UPCOMING'
+	}));
+}
+
 /**
  * The semester name as the faculty says it.
  *

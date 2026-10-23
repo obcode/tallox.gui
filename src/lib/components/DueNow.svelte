@@ -3,6 +3,7 @@
 	import { dueCard } from '$lib/guide';
 	import type { PlanningState } from '$lib/planning';
 	import GuidePlaces from './GuidePlaces.svelte';
+	import PhaseSteps from './PhaseSteps.svelte';
 
 	let {
 		planning,
@@ -37,6 +38,11 @@
 	</svelte:element>
 	{#if card.heading}
 		<p class="text-base-content/80 mt-1 text-sm">{card.heading}</p>
+	{/if}
+	{#if planning.kind === 'set'}
+		<div class="mt-3 max-w-xl">
+			<PhaseSteps phase={planning.phase} label="Phasen des Planungssemesters" />
+		</div>
 	{/if}
 
 	{#if card.steps.length > 0}

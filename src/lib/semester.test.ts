@@ -4,6 +4,7 @@ import {
 	PHASE_HINTS,
 	PHASE_LABELS,
 	PHASE_ORDER,
+	phaseProgress,
 	mayStillPublish,
 	phaseButtonLabel,
 	phaseDirection,
@@ -162,5 +163,31 @@ describe('semesterTerm', () => {
 	it('answers nothing for a code that is not one', () => {
 		expect(semesterTerm('WS 2026')).toBe('');
 		expect(semesterTerm('')).toBe('');
+	});
+});
+
+describe('phaseProgress', () => {
+	it('marks the phases before as done, the phase itself as current, the rest as upcoming', () => {
+		expect(phaseProgress('ASSIGNMENT').map((p) => p.state)).toEqual([
+			'DONE',
+			'DONE',
+			'CURRENT',
+			'UPCOMING',
+			'UPCOMING'
+		]);
+		expect(phaseProgress('DEMAND_PLANNING')[0].state).toBe('CURRENT');
+		expect(phaseProgress('FINAL').map((p) => p.state)).toEqual([
+			'DONE',
+			'DONE',
+			'DONE',
+			'DONE',
+			'CURRENT'
+		]);
+	});
+
+	it('lists all five phases in process order, with their labels', () => {
+		const progress = phaseProgress('WISHES');
+		expect(progress.map((p) => p.phase)).toEqual([...PHASE_ORDER]);
+		expect(progress.map((p) => p.label)).toEqual(PHASE_ORDER.map((p) => PHASE_LABELS[p]));
 	});
 });

@@ -54,11 +54,13 @@ test.describe('semesters and phases', () => {
 		// test also ends where it started — but a run that fails halfway does not, and then the
 		// next one would assert about a phase somebody's failure left behind.
 		const row = cards(page).filter({ hasText: SEMESTERS.phase });
-		await expect(row.getByText('Bedarfsplanung')).toBeVisible();
+		// The phase bar marks where the semester stands; the badge in the heading says the same.
+		const current = row.locator('[aria-current="step"]');
+		await expect(current).toContainText('Bedarfsplanung');
 
 		// Forward one step. The button label comes from the same order the backend uses.
 		await row.getByRole('button', { name: 'Weiter zu Wunschphase' }).click();
-		await expect(row.getByText('Wunschphase')).toBeVisible();
+		await expect(current).toContainText('Wunschphase');
 
 		// One step away in each direction, and nothing further: FINAL is two steps from here and
 		// must not be offered, because a skip that cannot be expressed cannot happen by accident.
@@ -69,7 +71,7 @@ test.describe('semesters and phases', () => {
 		// to exist — and clicking it here also leaves the semester where the test found it,
 		// which is what lets this run twice against the same database.
 		await row.getByRole('button', { name: 'Zurück zu Bedarfsplanung' }).click();
-		await expect(row.getByText('Bedarfsplanung')).toBeVisible();
+		await expect(current).toContainText('Bedarfsplanung');
 	});
 
 	test('publishing takes two clicks and cannot be undone afterwards', async ({ asPersona }) => {
