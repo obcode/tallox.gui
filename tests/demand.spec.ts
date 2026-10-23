@@ -717,7 +717,7 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toBeDisabled();
 		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveAttribute(
 			'title',
-			/leiten Sie nicht/
+			/leitest Du nicht/
 		);
 
 		// And her own, where it works.

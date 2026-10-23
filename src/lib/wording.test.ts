@@ -16,7 +16,17 @@ const FORBIDDEN: { name: string; pattern: RegExp }[] = [
 		name: 'gender mark on an article or pronoun',
 		pattern: /\b(?:jede|eine|keine|ein|kein|die|der|des|dem|den)[:*_/](?:r|n|s|m)\b/iu
 	},
-	{ name: 'paired pronoun', pattern: /\b(?:er oder sie|sie oder er|ihm oder ihr|ihr oder ihm)\b/iu }
+	{
+		name: 'paired pronoun',
+		pattern: /\b(?:er oder sie|sie oder er|ihm oder ihr|ihr oder ihm)\b/iu
+	},
+	// The interface says "Du". Narrow on purpose: "Sie wird einmal eingetragen" is the pronoun, and
+	// "Ihre Leitung" after a subject group is its leadership — neither is addressing the reader.
+	{
+		name: 'formal address',
+		pattern:
+			/\b(?:[Ss]ind|[Ll]eiten|[Kk]önnen|[Dd]ürfen|[Hh]aben|[Mm]öchten|[Mm]üssen|[Ll]esen|[Tt]reten) Sie\b|\b(?:die|denen|wenn|ob) Sie\b|\b(?:mit|bei|von) Ihnen\b|\bIhre[nrms]? (?:Studiengang|Studiengänge|Studiengangs|Fachgruppe|Fachgruppen|Studiengangsleitung|Fachgruppenleitung)\b/u
+	}
 ];
 
 const ROOT = join(process.cwd(), 'src');
@@ -56,7 +66,14 @@ describe('German wording', () => {
 		['Dozierende', false],
 		['das Kollegium', false],
 		['class="sm:inline"', false],
-		['<div in:fade>', false]
+		['<div in:fade>', false],
+		['Diesen Studiengang leiten Sie nicht.', true],
+		['gemeinsam mit Ihnen anbieten', true],
+		['Ihre Studiengangsleitung ist noch keinem Studiengang zugeordnet', true],
+		['Treten Sie zuerst der Fachgruppe bei.', true],
+		['in eine Fachgruppe, die Sie leiten', true],
+		['Sie wird einmal eingetragen', false],
+		['Ihre Leitung besetzt die Instanzen ihrer Module', false]
 	])('classifies %s', (text, forbidden) => {
 		expect(FORBIDDEN.some(({ pattern }) => pattern.test(text))).toBe(forbidden);
 	});
