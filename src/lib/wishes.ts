@@ -661,10 +661,31 @@ export function rowClosedReason(
 	closed: Set<string>
 ): string | null {
 	const group = row.module.subjectGroup;
-	if (group && closed.has(group.id)) {
-		return `Die Wunschphase der Fachgruppe ${group.name} ist derzeit geschlossen. Die Fachgruppenleitung kann sie wieder öffnen.`;
+	return group && closed.has(group.id) ? closedRoundSentence(group.name) : null;
+}
+
+function closedRoundSentence(groupName: string): string {
+	return `Die Wunschphase der Fachgruppe ${groupName} ist derzeit geschlossen. Die Fachgruppenleitung kann sie wieder öffnen.`;
+}
+
+/**
+ * The closed rounds, once each, for the head of the table.
+ *
+ * The cells of a closed group carry a short mark; the sentence that names the repair stands here,
+ * once per group, rather than in every cell of every track — with three tracks and forty modules
+ * that was the same sentence a hundred times, and the table was hard to read around it.
+ * Only groups that have a row in the table: a closed round nobody here can wish in is not news.
+ */
+export function closedRoundNotices(
+	rows: readonly { module: { subjectGroup?: { id: string; name: string } | null } }[],
+	closed: Set<string>
+): string[] {
+	const names = new Map<string, string>();
+	for (const row of rows) {
+		const group = row.module.subjectGroup;
+		if (group && closed.has(group.id)) names.set(group.id, group.name);
 	}
-	return null;
+	return [...names.values()].sort((a, b) => a.localeCompare(b, 'de')).map(closedRoundSentence);
 }
 
 /**

@@ -422,6 +422,8 @@ test.describe('the wish phase', () => {
 		await gotoRendered(page, `/wuensche/kollegium?semester=${WISHES.semester}`);
 		const row = page.getByRole('row').filter({ hasText: PERSONAS.eins.name });
 		await expect(row).toContainText('6–14');
+		// The bar beside it says the same in its label: planned against the range asked for.
+		await expect(row.getByRole('img', { name: /gewünscht 6–14 SWS/ })).toBeVisible();
 		await expect(page.locator('main')).not.toContainText('E2E-Notiz');
 		// No correction controls for a colleague.
 		await expect(page.getByRole('textbox', { name: /SWS bis,/ })).toHaveCount(0);
