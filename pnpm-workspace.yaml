@@ -1,6 +1,6 @@
-# pnpm-Settings (seit pnpm 10/11 nicht mehr im "pnpm"-Feld der package.json).
-# Native Postinstall-Builds sind aus Sicherheitsgründen standardmäßig blockiert;
-# hier werden die für Vite/Tailwind nötigen Pakete explizit erlaubt.
+# pnpm settings (since pnpm 10/11 no longer in the "pnpm" field of package.json).
+# Native postinstall builds are blocked by default for security reasons;
+# the packages Vite/Tailwind need are allowed explicitly here.
 allowBuilds:
   # false: the postinstall only fetches the sentry-cli binary, which uploads source maps
   # — not done here. GlitchTip does not accept uploads, and it could not fetch them from
