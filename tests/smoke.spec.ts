@@ -108,7 +108,8 @@ test.describe('the walk-through', () => {
 		await expect(
 			page.getByText('Jedes Modul gehört genau einer Fachgruppe', { exact: false })
 		).toBeVisible();
-		await expect(page.getByRole('heading', { name: 'Wer macht was' })).toBeVisible();
+		// Removed on 2026-10-23: the table of roles × steps repeated the picture above the list.
+		await expect(page.getByRole('heading', { name: 'Wer macht was' })).toHaveCount(0);
 	});
 
 	// The picture above the steps: the per-semester steps as phases × roles. Where each step sits

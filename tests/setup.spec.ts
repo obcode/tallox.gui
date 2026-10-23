@@ -34,7 +34,7 @@ test.describe('dein Stand', () => {
 		await gotoRendered(page, '/');
 
 		const card = page.getByRole('region', { name: /Dein Stand/ });
-		await expect(card.getByRole('heading', { name: 'Einmal einrichten' })).toBeVisible();
+		await expect(card.getByRole('heading', { name: 'Einmal angeben' })).toBeVisible();
 		await expect(
 			card.getByRole('listitem').filter({ hasText: 'Fachgruppen angeben' })
 		).toContainText('offen');
@@ -71,7 +71,7 @@ test.describe('dein Stand', () => {
 
 		// Set up: the one-time group is gone. The card may stay for the desired hours.
 		await gotoRendered(page, '/');
-		await expect(page.getByRole('heading', { name: 'Einmal einrichten' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Einmal angeben' })).toHaveCount(0);
 	});
 
 	test('is not shown to a partner faculty', async ({ asPersona }) => {

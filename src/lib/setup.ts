@@ -142,7 +142,7 @@ export function setupCard(input: SetupInput): SetupCard | null {
 	if (!input.roles.includes('LECTURER')) return null;
 
 	const groups = [
-		{ title: 'Einmal einrichten', items: onceItems(input) },
+		{ title: 'Einmal angeben', items: onceItems(input) },
 		semesterItems(input)
 	].filter((group): group is SetupGroup => !!group && group.items.some((item) => !item.done));
 

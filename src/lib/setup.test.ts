@@ -30,7 +30,7 @@ const wishes = { code: '2027-SS', phase: 'WISHES' as const, frozen: false, state
 describe('the setup card', () => {
 	it('starts with both one-time items open, competences waiting for the groups', () => {
 		const card = setupCard(input());
-		expect(card?.groups.map((g) => g.title)).toEqual(['Einmal einrichten']);
+		expect(card?.groups.map((g) => g.title)).toEqual(['Einmal angeben']);
 		expect(card?.done).toBe(0);
 		expect(card?.total).toBe(2);
 		const competences = card?.groups[0].items.find((i) => i.key === 'COMPETENCES');
@@ -82,7 +82,7 @@ describe('the setup card', () => {
 
 	it('keeps a stated semester beside open one-time items', () => {
 		const card = setupCard(input({ semester: { ...wishes, stated: true } }));
-		expect(card?.groups.map((g) => g.title)).toEqual(['Einmal einrichten']);
+		expect(card?.groups.map((g) => g.title)).toEqual(['Einmal angeben']);
 	});
 
 	it('asks for the hours only while they can still be entered and are of use', () => {

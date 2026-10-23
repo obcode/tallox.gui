@@ -13,7 +13,7 @@ Rückmeldung: die zwei Abschnitte mit allen Schritten plus Tabelle auf der Start
 **erschlagen alle, die neu sind**. Und zwischen zwei Planungsrunden fällt vom How-to etwas hinten
 runter — gefragt wird dann nicht, weil man nicht weiß, dass man fragen müsste.
 
-- **`/ablauf`** trägt jetzt den ganzen Ablauf und „Wer macht was“, unverändert, plus ein Badge
+- **`/ablauf`** trägt jetzt den ganzen Ablauf (bis 2026-10-23 auch „Wer macht was“), plus ein Badge
   „jetzt dran“ an den Schritten der aktuellen Phase (`isDue`). Nicht in der Navigation: erreichbar
   über die Hilfe-Leiste („Nachschlagen“) und die Karte „Jetzt dran“, verlinkt mit `resolve()`
   statt über `GuidePlaces`.
@@ -173,7 +173,7 @@ Frage: „Sollen wir für normale Dozierende einen Onboarding-Assistenten bauen?
   zweiten Fachgruppe beitritt), kein Wegklicken, und **kein „Einführung gelesen“** — das wären
   Verhaltensdaten, dieselbe Mitbestimmungsfrage wie beim Zugriffsprotokoll. Die Einführung
   bleibt ein Link.
-- Zwei Gruppen: **„Einmal einrichten“** (Fachgruppen; Kompetenzen bis zum Minimum, gesperrt ohne
+- Zwei Gruppen: **„Einmal angeben“** (Fachgruppen; Kompetenzen bis zum Minimum, gesperrt ohne
   Fachgruppe) und **„Für <Semester>“** (Wunsch-SWS). Eine erledigte Gruppe verschwindet. Die
   Wunsch-SWS kommen also mit jedem neuen Planungssemester zurück, aber nur in
   `DEMAND_PLANNING`/`WISHES` und solange nicht eingefroren.
@@ -205,3 +205,19 @@ das Backend gelesen. Korrigiert:
 - Wunschrunde „öffnet und schließt“ → „offen, bis die Leitung sie schließt“. Glossar „Kompetenz“
   mit „Einarbeitung“ wie auf der Seite. Nav-`hint` „Fachgruppen“ war „Vorauswahl für
   Kompetenzen“, gezeigt werden dort aber nur Module der eigenen Gruppen.
+
+## Gekürzt (2026-10-23)
+
+Auf Wunsch „was kann noch eingespart werden“:
+
+- Startseite ohne die Kästen **„Anmeldung“** und **„Backend“**. Die Identität zeigt die Kopfleiste,
+  die Server-Version (oder „—“) der Footer. `identity.spec.ts` hatte die Weitergabe über den
+  Anmeldekasten geprüft, der nur den eingehenden Header zeigte. Jetzt prüft er den Namen aus
+  `me` auf „Meine Rollen“. Das ist ein stärkerer Beleg.
+- Einleitung auf einen Satz plus „Neu hier?“. Der API-Kasten ist auf einen Satz mit zwei Links
+  gekürzt; Inhalt und Grenzen stehen in `/einfuehrung` und `/api-doku`.
+- `/ablauf` ohne die Tabelle **„Wer macht was“**: Sie wiederholte das Prozessbild. Der Hinweis
+  auf „Meine Rollen“ steht jetzt im Kopfabsatz.
+- Die Gruppe der Karte „Dein Stand“ heißt **„Einmal angeben“**, nicht „Einmal einrichten“. Sonst
+  trägt sie dieselbe Überschrift wie der Ablauf-Abschnitt, den `smoke.spec.ts` auf der Startseite
+  ausschließt. Der Test war nur grün, weil Eins schon alles angegeben hat.

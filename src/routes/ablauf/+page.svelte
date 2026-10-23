@@ -1,31 +1,14 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import GuidePlaces from '$lib/components/GuidePlaces.svelte';
 	import ProcessChart from '$lib/components/ProcessChart.svelte';
 	import { GUIDE, isDue, type GuideStep } from '$lib/guide';
-	import { ALL_ROLES, ROLE_LABELS } from '$lib/roles';
+	import { ROLE_LABELS } from '$lib/roles';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const roles = $derived(data.session?.effectiveRoles ?? []);
-
-	/**
-	 * The steps, seen from the role: what does a subject group lead actually do here?
-	 *
-	 * Derived from the guide rather than written a second time, so the two answers to "who does
-	 * what" — the walk-through and the table — cannot drift apart. A step nobody in particular
-	 * does is everybody's, and everybody holds LECTURER.
-	 */
-	const stepsByRole = $derived(
-		ALL_ROLES.map((role) => ({
-			role,
-			steps: GUIDE.flatMap((section) => section.steps).filter(
-				(step) => step.who.includes(role) || (role === 'LECTURER' && step.who.length === 0)
-			)
-		}))
-	);
 
 	/** Continuous numbering across both sections: the process is one sequence. */
 	const sections = (() => {
@@ -60,7 +43,9 @@
 			davon für Dich gerade dran ist, steht kürzer auf der <a class="link" href={resolve('/')}
 				>Startseite</a
 			>; die Schritte der aktuellen Phase sind hier markiert. Kürzer und aus Sicht der Dozierenden
-			erklärt es die <a class="link" href={resolve('/einfuehrung')}>Einführung</a>.
+			erklärt es die <a class="link" href={resolve('/einfuehrung')}>Einführung</a>. Welche Rollen Du
+			hast und wofür sie gelten, denn eine Rolle ohne Zuordnung darf nichts:
+			<a class="link" href={resolve('/konto/rollen')}>Meine Rollen</a>.
 		</p>
 	</div>
 
@@ -115,45 +100,4 @@
 			</ol>
 		</section>
 	{/each}
-
-	<section class="border-base-300 bg-base-100 rounded-lg border p-4">
-		<h2 class="font-medium">Wer macht was</h2>
-		<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
-			Die fünf Rollen, und welche Schritte sie betreffen. Eine Person kann mehrere haben; die
-			Studiengangsleitung gilt für bestimmte Studiengänge, die Fachgruppenleitung für bestimmte
-			Fachgruppen. Es gibt keine Rolle, die alles sieht: vor der Veröffentlichung liest die
-			Administration keine Wünsche.
-		</p>
-		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
-			Welche Du selbst hast — und wofür sie gelten, denn eine Rolle ohne Zuordnung darf nichts:
-			<a class="link" href={resolve('/konto/rollen')}>Meine Rollen</a>.
-		</p>
-		<div class="mt-3 overflow-x-auto">
-			<table class="table table-sm table-stack" use:stackedTable>
-				<thead>
-					<tr>
-						<th>Rolle</th>
-						<th>Schritte</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each stepsByRole as entry (entry.role)}
-						<tr>
-							<td class="align-top whitespace-nowrap">
-								<span class="badge badge-neutral badge-sm">{ROLE_LABELS[entry.role]}</span>
-							</td>
-							<td class="text-base-content/90 text-sm">
-								{#if entry.role === 'ADMIN'}
-									{entry.steps.map((s) => s.title).join(' · ')} · Zugriffsprotokoll und Diagnose. Liest
-									bewusst keine Wünsche.
-								{:else}
-									{entry.steps.map((s) => s.title).join(' · ')}
-								{/if}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	</section>
 </div>

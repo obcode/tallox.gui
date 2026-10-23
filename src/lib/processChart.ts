@@ -8,8 +8,8 @@ import { PHASE_HINTS, PHASE_LABELS, PHASE_ORDER } from '$lib/semester';
  * The semester as a picture on /ablauf: phases from left to right, roles as lanes, and in each
  * cell the steps that role takes in that phase.
  *
- * Built from `GUIDE` and nothing else, like the table "Wer macht was" — a third answer to "who
- * does what, and when" that is drawn by hand would be the first to go stale. Two things the
+ * Built from `GUIDE` and nothing else — a second answer to "who does what, and when" that is
+ * drawn by hand would be the first to go stale. Two things the
  * guide does not say directly are derived here, and the tests pin both:
  *
  * - **The column** is the first phase in `due` that is a phase of the semester being planned.
