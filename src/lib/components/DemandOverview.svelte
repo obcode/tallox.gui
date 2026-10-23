@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import {
 		DUTY_LABELS,
@@ -72,7 +73,7 @@
 			one block and a third in the next — four tables one below the other, no two with the same
 			column in the same place.
 		-->
-		<table class="table table-fixed table-sm w-full min-w-[720px]">
+		<table class="table table-fixed table-sm w-full min-w-[720px] table-stack" use:stackedTable>
 			<colgroup>
 				<col style="width: 38%" />
 				<col style="width: 8%" />

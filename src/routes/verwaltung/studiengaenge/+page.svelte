@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import {
 		ALL_DEGREES,
@@ -103,7 +104,7 @@
 			<p class="text-base-content/80 text-sm">{PROGRAMME_STATUS_HINTS[group.status]}</p>
 
 			<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-				<table class="table table-sm w-full min-w-[640px]">
+				<table class="table table-sm w-full min-w-[640px] table-stack" use:stackedTable>
 					<thead>
 						<tr>
 							<SortHeader label="Kürzel" key="code" sort={programmeSort} onsort={onProgrammeSort} />

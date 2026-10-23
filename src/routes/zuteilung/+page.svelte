@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { formatHours } from '$lib/catalogue';
+	import { stackedTable } from '$lib/stackedTable';
 	import { flushSync } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
@@ -35,7 +35,13 @@
 		isArranged,
 		divisionDefault
 	} from '$lib/assignment';
-	import { ALL_DEGREES, DEGREE_LABELS, degreeParam, programmeLabel } from '$lib/catalogue';
+	import {
+		ALL_DEGREES,
+		DEGREE_LABELS,
+		degreeParam,
+		formatHours,
+		programmeLabel
+	} from '$lib/catalogue';
 	import { trackSaves } from '$lib/saveOnLeave';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
@@ -329,7 +335,7 @@
 <form method="GET" class="mt-6 flex flex-col gap-1">
 	<span class="label-text text-sm">Semester</span>
 	{@render carriedOver(['semester'])}
-	<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+	<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 		{#each semesterTabs as semester (semester.code)}
 			{@const active = semester.code === data.semester?.code}
 			<button
@@ -384,7 +390,7 @@
 	<form method="GET" class="mt-5 flex flex-col gap-1">
 		<span class="label-text text-sm">Fachgruppe</span>
 		{@render carriedOver(['fachgruppe'])}
-		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
+		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 			{#each groupTabs as group (group.id)}
 				{@const active = group.id === data.group?.id}
 				<button
@@ -666,7 +672,7 @@
 					three different things. The parts are rows too, hidden until somebody asks for them.
 				-->
 				<div class="mt-6 overflow-x-auto">
-					<table class="table">
+					<table class="table-stack table" use:stackedTable>
 						<thead>
 							<tr>
 								<th class="w-64">Modul</th>
@@ -743,7 +749,9 @@
 									>
 										<tr>
 											<td class="align-top font-medium">
-												{position === 0 ? block.name : ''}
+												<!-- Written once per module above sm; on a phone every cohort is a card
+												     of its own and needs it. -->
+												<span class={position === 0 ? '' : 'sm:hidden'}>{block.name}</span>
 												{#if position === 0 && block.projectBased}
 													<span
 														class="badge badge-secondary badge-sm ml-1 align-middle"
@@ -961,8 +969,8 @@
 												<!-- Rendered whether or not they are shown: the save carries every field,
 											     and it is that which lets the cohort's dropdown and the parts be
 											     ranked by what they say. -->
-												<tr class="hidden [tbody:has(.split-toggle:checked)_&]:table-row">
-													<td class="text-base-content/80 pl-8 align-top text-sm">
+												<tr data-collapsed>
+													<td class="text-base-content/80 pl-8 align-top text-sm" data-label="Teil">
 														{row.heading}
 														{#if row.part.sharedAcrossTracks}
 															<span

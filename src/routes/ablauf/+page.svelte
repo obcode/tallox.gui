@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import GuidePlaces from '$lib/components/GuidePlaces.svelte';
 	import ProcessChart from '$lib/components/ProcessChart.svelte';
@@ -128,7 +129,7 @@
 			<a class="link" href={resolve('/konto/rollen')}>Meine Rollen</a>.
 		</p>
 		<div class="mt-3 overflow-x-auto">
-			<table class="table table-sm">
+			<table class="table table-sm table-stack" use:stackedTable>
 				<thead>
 					<tr>
 						<th>Rolle</th>

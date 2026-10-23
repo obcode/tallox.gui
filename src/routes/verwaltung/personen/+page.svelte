@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { enhance } from '$app/forms';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
@@ -327,7 +328,7 @@
 		</p>
 
 		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-			<table class="table table-sm">
+			<table class="table table-sm table-stack" use:stackedTable>
 				<thead>
 					<tr>
 						<SortHeader
@@ -597,7 +598,7 @@
 		</form>
 
 		<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
-			<table class="table table-sm">
+			<table class="table table-sm table-stack" use:stackedTable>
 				<thead>
 					<tr>
 						<SortHeader

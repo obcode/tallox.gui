@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import {
 		DOOR_LABELS,
@@ -162,7 +163,7 @@
 			role="region"
 			aria-label="Abgewiesene Anmeldungen"
 		>
-			<table class="table table-sm">
+			<table class="table table-sm table-stack" use:stackedTable>
 				<caption class="text-base-content/80 px-4 py-2 text-left text-sm">
 					Abgewiesene Anmeldungen. Wer hier steht, hat eine HM-Kennung und in Tallox kein Konto —
 					oder ein Token, das nicht mehr gilt. Das eine wird unter
@@ -211,7 +212,7 @@
 		role="region"
 		aria-label="Zugriffsprotokoll"
 	>
-		<table class="table table-sm">
+		<table class="table table-sm table-stack" use:stackedTable>
 			<caption class="text-base-content/80 px-4 py-2 text-left text-sm">
 				Die Einträge selbst, neueste zuerst.
 			</caption>

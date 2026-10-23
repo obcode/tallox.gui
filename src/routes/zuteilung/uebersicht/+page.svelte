@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import { assignmentOverview } from '$lib/assignmentOverview';
 	import { PART_KIND_LABELS, formatHours, programmeLabel } from '$lib/catalogue';
@@ -84,7 +85,7 @@
 					{programmeLabel(programme)}
 				</h2>
 				<div class="mt-3 overflow-x-auto">
-					<table class="table-sm table">
+					<table class="table-sm table table-stack" use:stackedTable>
 						<thead>
 							<tr>
 								<th>Modul</th>

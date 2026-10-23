@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import { anchorFor, describeBlocks, inlineSegments, type SchemaType } from '$lib/schemaDoc';
 	import type { PageData } from './$types';
@@ -32,8 +33,8 @@
 
 	{#each all as type (type.name)}
 		<section id={anchorFor(type.name)} class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<h2 class="flex items-center gap-2 font-medium">
-				<span class="font-mono">{type.name}</span>
+			<h2 class="flex flex-wrap items-center gap-2 font-medium">
+				<span class="font-mono break-all">{type.name}</span>
 				<span class="badge badge-ghost badge-sm">{type.kind}</span>
 			</h2>
 
@@ -71,7 +72,7 @@
 					role="region"
 					aria-label="Felder von {type.name}"
 				>
-					<table class="table text-sm">
+					<table class="table text-sm table-stack" use:stackedTable>
 						<thead>
 							<tr>
 								<th>Feld</th>
@@ -132,7 +133,7 @@
 				<ul class="mt-3 flex flex-col gap-1 text-sm">
 					{#each type.values as value (value.name)}
 						<li>
-							<span class="font-mono">{value.name}</span>
+							<span class="font-mono break-all">{value.name}</span>
 							{#if value.description}
 								<span class="text-base-content/90">— {value.description}</span>
 							{/if}

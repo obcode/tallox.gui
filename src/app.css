@@ -148,3 +148,216 @@
 	appearance: none;
 	margin: 0;
 }
+
+/*
+ * A table that becomes a list of cards when it does not fit — see `$lib/stackedTable`, which
+ * measures the table against its container, sets `.stacked`, and copies each column head onto its
+ * cells as `data-label`.
+ *
+ * Each row is a card, each cell a line of it with its column beside it in small type. The head
+ * stays as a row of its sort buttons, so sorting works in a card too; heads that sort nothing are
+ * left out of that row, their words are on the cells now. Right-aligned figures go left: in a
+ * card there is no column for them to line up in. The label is full `base-content`, not the
+ * muted /80 of a table head: it sits on whatever the cell is painted with, and on the tinted
+ * cells of the wish table /80 measures 3.48:1 on `winter` — which axe would never report,
+ * because it does not read `::before`.
+ *
+ * Measured rather than tied to a breakpoint, because the tables are of very different widths: the
+ * wish table needs 935px, the list of tokens fits a phone. A breakpoint low enough for one hides
+ * columns of the other, and an `overflow-x-auto` alone hid the person picker of the assignment
+ * screen and every track column of the wish table behind a scroll nobody saw.
+ *
+ * The second block is the same rules for the moment before the script has measured, and for
+ * anybody without it: below `sm` every such table is stacked. Keep the two blocks alike.
+ */
+.table-stack.stacked,
+.table-stack.stacked > tbody,
+.table-stack.stacked > tfoot,
+.table-stack.stacked > tbody > tr:not(.hidden),
+.table-stack.stacked > tfoot > tr:not(.hidden) {
+	display: block;
+	width: 100%;
+	min-width: 0;
+}
+
+.table-stack.stacked > thead {
+	display: block;
+}
+
+.table-stack.stacked > thead > tr {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1rem;
+	padding-block: 0.25rem;
+}
+
+.table-stack.stacked > thead > tr > th {
+	display: block;
+	padding: 0.25rem 0;
+	width: auto;
+}
+
+.table-stack.stacked > thead > tr > th:not(:has(button)) {
+	display: none;
+}
+
+.table-stack.stacked > tbody > tr,
+.table-stack.stacked > tfoot > tr {
+	border-bottom: 1px solid var(--color-base-300);
+	padding-block: 0.5rem;
+}
+
+.table-stack.stacked > tbody > tr > td,
+.table-stack.stacked > tbody > tr > th,
+.table-stack.stacked > tfoot > tr > td,
+.table-stack.stacked > tfoot > tr > th {
+	display: block;
+	width: auto;
+	max-width: none;
+	padding: 0.125rem 0.5rem;
+	text-align: start;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	border: 0;
+}
+
+.table-stack.stacked > tbody > tr > :empty,
+.table-stack.stacked > tfoot > tr > :empty {
+	display: none;
+}
+
+.table-stack.stacked > tbody > tr > [data-label]:not([data-label='']),
+.table-stack.stacked > tfoot > tr > [data-label]:not([data-label='']) {
+	position: relative;
+	min-height: 1.75rem;
+	padding-inline-start: 8.5rem;
+}
+
+.table-stack.stacked > tbody > tr > [data-label]:not([data-label=''])::before,
+.table-stack.stacked > tfoot > tr > [data-label]:not([data-label=''])::before {
+	content: attr(data-label);
+	position: absolute;
+	inset-inline-start: 0.5rem;
+	top: 0.25rem;
+	width: 7.5rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: var(--color-base-content);
+}
+
+.table-stack.stacked .justify-end {
+	justify-content: flex-start;
+}
+
+@media (width < 40rem) {
+	.table-stack:not(.measured),
+	.table-stack:not(.measured) > tbody,
+	.table-stack:not(.measured) > tfoot,
+	.table-stack:not(.measured) > tbody > tr:not(.hidden),
+	.table-stack:not(.measured) > tfoot > tr:not(.hidden) {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.table-stack:not(.measured) > thead {
+		display: block;
+	}
+
+	.table-stack:not(.measured) > thead > tr {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		padding-block: 0.25rem;
+	}
+
+	.table-stack:not(.measured) > thead > tr > th {
+		display: block;
+		padding: 0.25rem 0;
+		width: auto;
+	}
+
+	.table-stack:not(.measured) > thead > tr > th:not(:has(button)) {
+		display: none;
+	}
+
+	.table-stack:not(.measured) > tbody > tr,
+	.table-stack:not(.measured) > tfoot > tr {
+		border-bottom: 1px solid var(--color-base-300);
+		padding-block: 0.5rem;
+	}
+
+	.table-stack:not(.measured) > tbody > tr > td,
+	.table-stack:not(.measured) > tbody > tr > th,
+	.table-stack:not(.measured) > tfoot > tr > td,
+	.table-stack:not(.measured) > tfoot > tr > th {
+		display: block;
+		width: auto;
+		max-width: none;
+		padding: 0.125rem 0.5rem;
+		text-align: start;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		border: 0;
+	}
+
+	.table-stack:not(.measured) > tbody > tr > :empty,
+	.table-stack:not(.measured) > tfoot > tr > :empty {
+		display: none;
+	}
+
+	.table-stack:not(.measured) > tbody > tr > [data-label]:not([data-label='']),
+	.table-stack:not(.measured) > tfoot > tr > [data-label]:not([data-label='']) {
+		position: relative;
+		min-height: 1.75rem;
+		padding-inline-start: 8.5rem;
+	}
+
+	.table-stack:not(.measured) > tbody > tr > [data-label]:not([data-label=''])::before,
+	.table-stack:not(.measured) > tfoot > tr > [data-label]:not([data-label=''])::before {
+		content: attr(data-label);
+		position: absolute;
+		inset-inline-start: 0.5rem;
+		top: 0.25rem;
+		width: 7.5rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1.25;
+		color: var(--color-base-content);
+	}
+
+	.table-stack:not(.measured) .justify-end {
+		justify-content: flex-start;
+	}
+}
+
+/* On the narrowest phones the label goes back above its value: beside it, a select keeps less
+   than 150px. */
+@media (width < 24rem) {
+	.table-stack.stacked > tbody > tr > [data-label]:not([data-label='']),
+	.table-stack.stacked > tfoot > tr > [data-label]:not([data-label='']),
+	.table-stack:not(.measured) > tbody > tr > [data-label]:not([data-label='']),
+	.table-stack:not(.measured) > tfoot > tr > [data-label]:not([data-label='']) {
+		padding-inline-start: 0.5rem;
+	}
+
+	.table-stack.stacked > tbody > tr > [data-label]:not([data-label=''])::before,
+	.table-stack.stacked > tfoot > tr > [data-label]:not([data-label=''])::before,
+	.table-stack:not(.measured) > tbody > tr > [data-label]:not([data-label=''])::before,
+	.table-stack:not(.measured) > tfoot > tr > [data-label]:not([data-label=''])::before {
+		position: static;
+		display: block;
+		width: auto;
+	}
+}
+
+/*
+ * Rows that open with a switch in their own `tbody` — the parts of a cohort on the assignment
+ * screen. A data attribute rather than `hidden` plus a variant: a stacked table sets its rows to
+ * `display: block`, and that must not open rows that are closed, nor give opened ones
+ * `table-row` inside a card. `!important` because it has to win over both forms of the table.
+ */
+tbody:not(:has(.split-toggle:checked)) > tr[data-collapsed] {
+	display: none !important;
+}

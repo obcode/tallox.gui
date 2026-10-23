@@ -17,7 +17,7 @@ import {
 	othersHint,
 	ownWishesBySemester,
 	rowClosedReason,
-	closedRoundNotices,
+	closedRoundNotice,
 	savedHint,
 	splitByMySubjects,
 	strongestPriority,
@@ -646,24 +646,25 @@ describe('rowClosedReason', () => {
 	});
 });
 
-describe('closedRoundNotices', () => {
+describe('closedRoundNotice', () => {
 	const row = (id: string, name: string) => ({ module: { subjectGroup: { id, name } } });
 
-	it('names each closed round once, in order, and only where the table has rows', () => {
-		const rows = [
-			row('g2', 'Softwarefächer'),
-			row('g1', 'Mathematik'),
-			row('g2', 'Softwarefächer')
-		];
-		const notices = closedRoundNotices(rows, new Set(['g1', 'g2', 'g9']));
-		expect(notices).toHaveLength(2);
-		expect(notices[0]).toContain('Mathematik');
-		expect(notices[1]).toContain('Softwarefächer');
-		expect(notices[1]).toBe(rowClosedReason(rows[0], new Set(['g2'])));
+	it('reads as the cell used to for a single closed round', () => {
+		const rows = [row('g2', 'Softwarefächer'), row('g2', 'Softwarefächer')];
+		expect(closedRoundNotice(rows, new Set(['g2']))).toBe(
+			rowClosedReason(rows[0], new Set(['g2']))
+		);
 	});
 
-	it('is empty while every round is open', () => {
-		expect(closedRoundNotices([row('g1', 'Mathematik')], new Set())).toEqual([]);
+	it('names several closed rounds together, in order, and only where the table has rows', () => {
+		const rows = [row('g2', 'Softwarefächer'), row('g1', 'Mathematik'), row('g3', 'Games')];
+		expect(closedRoundNotice(rows, new Set(['g1', 'g2', 'g3', 'g9']))).toBe(
+			'Die Wunschphasen der Fachgruppen Games, Mathematik und Softwarefächer sind derzeit geschlossen. Die jeweilige Fachgruppenleitung kann sie wieder öffnen.'
+		);
+	});
+
+	it('says nothing while every round is open', () => {
+		expect(closedRoundNotice([row('g1', 'Mathematik')], new Set())).toBeNull();
 	});
 });
 
