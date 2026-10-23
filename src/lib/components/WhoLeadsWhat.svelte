@@ -64,7 +64,7 @@
 					{#each subjectGroups as group (group.id)}
 						<li>
 							<span class="font-medium">
-								<span class="font-mono">{group.code}</span> — {group.name}
+								{group.name}
 							</span>
 							<span class="text-base-content/80 block">Leitung: {leadLine(group.leads)}</span>
 							{#if group.modules.length > 0}

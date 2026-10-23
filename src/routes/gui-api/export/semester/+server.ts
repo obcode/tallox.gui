@@ -34,7 +34,7 @@ const ExportDocument = graphql(`
 				name
 				zpaId
 				subjectGroup {
-					code
+					name
 				}
 			}
 			parts {

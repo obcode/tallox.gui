@@ -37,13 +37,16 @@ describe('isPlausibleCode', () => {
 describe('splitByActivity', () => {
 	it('keeps retired groups visible rather than filtering them away', () => {
 		const { active, retired } = splitByActivity([
-			{ code: 'SWE', active: true },
-			{ code: 'MATHE', active: false },
-			{ code: 'MATHE-ML', active: true }
+			{ name: 'Softwarefächer', active: true },
+			{ name: 'Mathematik', active: false },
+			{ name: 'Mathematik (maschinelles Lernen)', active: true }
 		]);
 
-		expect(active.map((g) => g.code)).toEqual(['MATHE-ML', 'SWE']);
-		expect(retired.map((g) => g.code)).toEqual(['MATHE']);
+		expect(active.map((g) => g.name)).toEqual([
+			'Mathematik (maschinelles Lernen)',
+			'Softwarefächer'
+		]);
+		expect(retired.map((g) => g.name)).toEqual(['Mathematik']);
 	});
 });
 

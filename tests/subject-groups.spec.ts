@@ -19,6 +19,9 @@ const CODE = 'E2EMATHE';
 // Deliberately not a prefix of CODE: a card is found by the text it contains, and
 // `E2EMATHE-ML` would match every locator looking for `E2EMATHE`.
 const SPLIT = 'E2EML';
+// What every page but the administration shows: the name, never the short name.
+const NAME = 'E2E Mathematik';
+const SPLIT_NAME = 'E2E Mathematik (ML)';
 
 /**
  * The module the assignment test happened to pick.
@@ -189,14 +192,12 @@ test.describe('subject groups', () => {
 		).replace('/module/', '');
 
 		await firstRow.getByRole('checkbox').check();
-		await page
-			.getByLabel('Ausgewählte Module zuordnen zu')
-			.selectOption({ label: `${CODE} — E2E Mathematik` });
+		await page.getByLabel('Ausgewählte Module zuordnen zu').selectOption({ label: NAME });
 		await page.getByRole('button', { name: 'Zuordnen' }).click();
 
 		// A string rather than a regular expression: the sentence spans several lines in the
 		// markup, and only string matching normalizes whitespace.
-		await expect(page.getByText(`1 Modul nach ${CODE} verschoben`)).toBeVisible();
+		await expect(page.getByText(`1 Modul nach ${NAME} verschoben`)).toBeVisible();
 
 		// It is out of the work list, and its group shows **under the Fachgruppe heading**.
 		//
@@ -208,10 +209,10 @@ test.describe('subject groups', () => {
 
 		const group = await cellUnder(page, 'Fachgruppe');
 		const home = await cellUnder(page, 'Heimat');
-		await expect(group).toHaveText(CODE);
-		// Whatever the home programme is, it is not the subject group's code — which is exactly
-		// what a swap would make it.
-		await expect(home).not.toHaveText(CODE);
+		await expect(group).toHaveText(NAME);
+		// Whatever the home programme is, it is not the subject group — which is exactly what a
+		// swap would make it.
+		await expect(home).not.toHaveText(NAME);
 		await expect(home).not.toHaveText('');
 	});
 
@@ -235,8 +236,8 @@ test.describe('subject groups', () => {
 		// It arrives showing where the module actually is, rather than at the top of the list.
 		await expect(picker()).toHaveValue(/.+/);
 
-		await picker().selectOption({ label: `${SPLIT} — E2E Mathematik (ML)` });
-		await expect(page.getByText(`Jetzt in ${SPLIT}`)).toBeVisible();
+		await picker().selectOption({ label: SPLIT_NAME });
+		await expect(page.getByText(`Jetzt in ${SPLIT_NAME}`)).toBeVisible();
 
 		// Taking it out is the same form's other answer, not a missing one.
 		await picker().selectOption('');
@@ -244,8 +245,8 @@ test.describe('subject groups', () => {
 		await expect(page.getByText('noch keiner Fachgruppe zugeordnet')).toBeVisible();
 
 		// Back where the test after this one expects it.
-		await picker().selectOption({ label: `${CODE} — E2E Mathematik` });
-		await expect(page.getByText(`Jetzt in ${CODE}`)).toBeVisible();
+		await picker().selectOption({ label: NAME });
+		await expect(page.getByText(`Jetzt in ${NAME}.`)).toBeVisible();
 	});
 
 	test('a lecturer reads the group on the module page but is offered no control', async ({
@@ -254,7 +255,7 @@ test.describe('subject groups', () => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, `/module/${assignedModuleId}`);
 
-		await expect(page.getByText(`${CODE} — E2E Mathematik`)).toBeVisible();
+		await expect(page.getByText(NAME, { exact: true })).toBeVisible();
 		await expect(page.locator('form[action="?/subjectGroup"]')).toHaveCount(0);
 	});
 

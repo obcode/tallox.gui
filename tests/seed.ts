@@ -904,6 +904,7 @@ export const FILING = {
 	ownGroupName: 'E2F Eigene Fachgruppe',
 	foreignGroup: '0e2e0000-0000-4000-8000-000000000072',
 	foreignGroupCode: 'E2FFREMD',
+	foreignGroupName: 'E2F Fremde Fachgruppe',
 	unfiled: '0e2e0000-0000-4000-8000-000000000073',
 	unfiledName: 'E2F Modul ohne Fachgruppe',
 	own: '0e2e0000-0000-4000-8000-000000000074',
@@ -939,7 +940,7 @@ export function filingStatements(): string[] {
 		 ON CONFLICT (id) DO NOTHING;`,
 		`INSERT INTO subject_group (id, code, name)
 		 VALUES ('${FILING.ownGroup}', ${quote(FILING.ownGroupCode)}, ${quote(FILING.ownGroupName)}),
-		        ('${FILING.foreignGroup}', ${quote(FILING.foreignGroupCode)}, 'E2F Fremde Fachgruppe')
+		        ('${FILING.foreignGroup}', ${quote(FILING.foreignGroupCode)}, ${quote(FILING.foreignGroupName)})
 		 ON CONFLICT (code) DO NOTHING;`,
 		`INSERT INTO person_subject_group_scope (person_id, role, subject_group_id)
 		 SELECT id, 'SUBJECT_GROUP_LEAD', '${FILING.ownGroup}' FROM person

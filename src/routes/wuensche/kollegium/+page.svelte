@@ -78,7 +78,7 @@
 			>
 				<option value="" selected={data.filter.group === ''}>alle</option>
 				{#each data.subjectGroups as g (g.id)}
-					<option value={g.code} selected={g.code === data.filter.group}>{g.name}</option>
+					<option value={g.id} selected={g.id === data.filter.group}>{g.name}</option>
 				{/each}
 			</select>
 		</label>
@@ -175,7 +175,7 @@
 						{#each rows as row (row.person.id)}
 							<tr>
 								<td class="font-medium">{row.person.name}</td>
-								<td>{row.subjectGroups.map((g) => g.code).join(', ')}</td>
+								<td>{row.subjectGroups.map((g) => g.name).join(', ')}</td>
 								<td class="text-right whitespace-nowrap">
 									{#if mayCorrect}
 										<form

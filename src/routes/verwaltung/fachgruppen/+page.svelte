@@ -119,10 +119,10 @@
 				</div>
 			</form>
 			<p class="text-base-content/80 text-sm">
-				Das Kürzel steht in Adressen und in Auswertungsskripten und lässt sich später nicht ändern —
-				bis zu 16 Zeichen, Großbuchstaben, Ziffern, Punkt, Unterstrich oder Bindestrich. Eine
-				geteilte Fachgruppe bekommt ein unterscheidbares Kürzel (<code>MATHE-ML</code>), damit die
-				Unterscheidung nicht im Namen steckt.
+				Überall in Tallox steht der Name. Das Kürzel ist die feste Kennung für Auswertungsskripte
+				über die Programmierschnittstelle und lässt sich später nicht ändern — bis zu 16 Zeichen,
+				Großbuchstaben, Ziffern, Punkt, Unterstrich oder Bindestrich. Eine geteilte Fachgruppe
+				bekommt ein eigenes Kürzel (<code>MATHE-ML</code>) und einen Namen, der sie unterscheidet.
 			</p>
 		</section>
 	{/if}
@@ -147,8 +147,12 @@
 						<article class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
 							<div class="flex flex-wrap items-baseline justify-between gap-2">
 								<h3 class="text-base font-medium">
-									<span class="font-mono">{group.code}</span>
-									<span class="text-base-content/90">— {group.name}</span>
+									{group.name}
+									<!-- The short name is the group's key in the API and in scripts, so the
+									     administration still shows it; nowhere else does. -->
+									<span class="text-base-content/80 text-sm font-normal">
+										Kürzel <span class="font-mono">{group.code}</span>
+									</span>
 								</h3>
 								<span class="text-base-content/80 text-sm">
 									{group.moduleCount}

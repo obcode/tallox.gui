@@ -26,7 +26,7 @@
 		sortRows(sortModules(data.group?.modules ?? []), moduleSort, { module: (m) => m.name })
 	);
 	const below = $derived(data.members.filter(belowMinimum));
-	const groups = $derived([...data.groups].sort((a, b) => a.code.localeCompare(b.code, 'de')));
+	const groups = $derived([...data.groups].sort((a, b) => a.name.localeCompare(b.name, 'de')));
 </script>
 
 <div class="flex flex-col gap-4">
@@ -58,7 +58,7 @@
 			>
 				<option value="">— wählen —</option>
 				{#each groups as g (g.id)}
-					<option value={g.id}>{g.code} — {g.name}</option>
+					<option value={g.id}>{g.name}</option>
 				{/each}
 			</select>
 		</label>
@@ -86,7 +86,7 @@
 			aria-labelledby="pool"
 		>
 			<h2 id="pool" class="text-lg font-semibold">
-				Wer kann was — <span class="font-mono">{data.group.code}</span>
+				Wer kann was — {data.group.name}
 			</h2>
 			{#if modules.length === 0}
 				<p class="text-base-content/80 text-sm">

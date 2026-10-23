@@ -71,6 +71,7 @@ const WishesDocument = graphql(`
 				subjectGroup {
 					id
 					code
+					name
 				}
 			}
 			parts {
@@ -199,7 +200,7 @@ const WishesDocument = graphql(`
 			bySubjectGroup {
 				hours
 				subjectGroup {
-					code
+					name
 				}
 			}
 			person {

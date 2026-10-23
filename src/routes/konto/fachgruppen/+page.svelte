@@ -18,7 +18,7 @@
 		Object.fromEntries(untrack(() => data.mine).map((id) => [id, true]))
 	);
 
-	const groups = $derived([...data.groups].sort((a, b) => a.code.localeCompare(b.code, 'de')));
+	const groups = $derived([...data.groups].sort((a, b) => a.name.localeCompare(b.name, 'de')));
 	const chosen = $derived(groups.filter((g) => ticked[g.id]).length);
 </script>
 
@@ -93,7 +93,7 @@
 							/>
 							<span>
 								<span class="font-medium">
-									<span class="font-mono">{group.code}</span> — {group.name}
+									{group.name}
 								</span>
 								<span class="text-base-content/80 block text-sm">
 									Leitung: {leadNames(group.leads)}

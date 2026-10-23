@@ -42,18 +42,18 @@ export function isPlausibleCode(raw: string): boolean {
 }
 
 /**
- * Active groups first, retired ones after, each in code order.
+ * Active groups first, retired ones after, each in the order of their names.
  *
  * Retired groups stay visible rather than being filtered away: a group is retired when it has
  * been split, and the person doing the splitting needs to see both halves at once.
  */
-export function splitByActivity<T extends { code: string; active: boolean }>(
+export function splitByActivity<T extends { name: string; active: boolean }>(
 	groups: readonly T[]
 ): { active: T[]; retired: T[] } {
-	const byCode = (a: T, b: T) => a.code.localeCompare(b.code, 'de');
+	const byName = (a: T, b: T) => a.name.localeCompare(b.name, 'de');
 	return {
-		active: groups.filter((g) => g.active).sort(byCode),
-		retired: groups.filter((g) => !g.active).sort(byCode)
+		active: groups.filter((g) => g.active).sort(byName),
+		retired: groups.filter((g) => !g.active).sort(byName)
 	};
 }
 

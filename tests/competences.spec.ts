@@ -26,7 +26,7 @@ test.describe('competences', () => {
 		await gotoRendered(page, '/konto/kompetenzen');
 
 		await expect(page.getByRole('heading', { name: 'Meine Kompetenzen', level: 1 })).toBeVisible();
-		const group = page.getByRole('region', { name: new RegExp(COMPETENCES.subjectGroupCode) });
+		const group = page.getByRole('region', { name: 'Kompetenz-Testfachgruppe' });
 		await expect(group).toBeVisible();
 
 		// Compulsory first: it is what the faculty asks for.

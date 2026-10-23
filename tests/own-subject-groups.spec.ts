@@ -52,7 +52,7 @@ test.describe('my subject groups', () => {
 		await expect(page.getByRole('heading', { name: 'Meine Fachgruppen' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 
-		const box = page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) });
+		const box = page.getByRole('checkbox', { name: /^Testfachgruppe/ });
 		await expect(box).not.toBeChecked();
 
 		await box.check();
@@ -62,16 +62,12 @@ test.describe('my subject groups', () => {
 			.click();
 
 		await expect(page.getByRole('heading', { name: 'Meine Kompetenzen' })).toBeVisible();
-		await expect(
-			page.getByRole('heading', { name: new RegExp(WISHES.subjectGroupCode) })
-		).toBeVisible();
+		await expect(page.getByRole('heading', { name: /^Testfachgruppe/ })).toBeVisible();
 
 		// And the tick is still a tick on the way back — a form reset after the save would show
 		// the state from before it.
 		await gotoRendered(page, '/konto/fachgruppen');
-		await expect(
-			page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) })
-		).toBeChecked();
+		await expect(page.getByRole('checkbox', { name: /^Testfachgruppe/ })).toBeChecked();
 	});
 
 	test('joining changes what the wish screen offers first', async ({ asPersona }) => {
@@ -88,8 +84,12 @@ test.describe('my subject groups', () => {
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, '/konto/fachgruppen');
 
-		// A group's code says nothing about whether it holds the module somebody teaches.
-		const card = page.locator('article', { hasText: WISHES.subjectGroupCode });
+		// A group's name says nothing about whether it holds the module somebody teaches. By the
+		// start of the name: the other fixtures' groups are called "Kompetenz-Testfachgruppe" and
+		// so on.
+		const card = page
+			.locator('article')
+			.filter({ has: page.getByRole('checkbox', { name: /^Testfachgruppe/ }) });
 		await card.getByRole('group').click();
 		await expect(card.getByRole('link', { name: 'E2E Fachmodul' })).toBeVisible();
 	});
@@ -98,7 +98,7 @@ test.describe('my subject groups', () => {
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, '/konto/fachgruppen');
 
-		const box = page.getByRole('checkbox', { name: new RegExp(WISHES.subjectGroupCode) });
+		const box = page.getByRole('checkbox', { name: /^Testfachgruppe/ });
 		await box.uncheck();
 		await expect(page.getByText('gespeichert', { exact: true })).toBeVisible();
 		await expect(box).not.toBeChecked();

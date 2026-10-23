@@ -34,7 +34,7 @@
 	const moduleKeys = {
 		name: (m: CatalogueModule) => moduleName(m),
 		home: (m: CatalogueModule) => m.homeProgramme.code,
-		group: (m: CatalogueModule) => m.subjectGroup?.code,
+		group: (m: CatalogueModule) => m.subjectGroup?.name,
 		responsible: (m: CatalogueModule) => m.responsible?.sortName,
 		frequency: (m: CatalogueModule) => FREQUENCY_LABELS[m.frequency]
 	};
@@ -237,7 +237,7 @@
 				<option value="" selected={data.filter.subjectGroup === ''}>alle</option>
 				{#each filterGroups as group (group.id)}
 					<option value={group.id} selected={data.filter.subjectGroup === group.id}>
-						{group.code} — {group.name}
+						{group.name}
 					</option>
 				{/each}
 			</select>
@@ -308,7 +308,7 @@
 				{assigned.modulesAssigned}
 				{assigned.modulesAssigned === 1 ? 'Modul' : 'Module'}
 				{#if assigned.subjectGroup}
-					nach {assigned.subjectGroup.code} verschoben.
+					nach {assigned.subjectGroup.name} verschoben.
 				{:else}
 					aus ihrer Fachgruppe genommen.
 				{/if}
@@ -340,7 +340,7 @@
 					<span class="label-text text-sm">Ausgewählte Module zuordnen zu</span>
 					<select name="subjectGroup" class="select select-bordered select-sm">
 						{#each assignableGroups as group (group.id)}
-							<option value={group.id}>{group.code} — {group.name}</option>
+							<option value={group.id}>{group.name}</option>
 						{/each}
 						<option value="">
 							{asLead ? '— keiner Fachgruppe (freigeben) —' : '— keiner Fachgruppe —'}
@@ -444,7 +444,7 @@
 							</td>
 							<td class="text-base-content/90">
 								{#if module.subjectGroup}
-									<span class="font-mono">{module.subjectGroup.code}</span>
+									<span>{module.subjectGroup.name}</span>
 									{#if !module.subjectGroup.active}
 										<span class="badge badge-ghost badge-sm ml-1">stillgelegt</span>
 									{/if}

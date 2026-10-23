@@ -21,7 +21,7 @@ test.beforeEach(() => {
 	runSql(filingResetSql(), 'putting the filing fixture back');
 });
 
-const OWN_TARGET = `${FILING.ownGroupCode} — ${FILING.ownGroupName}`;
+const OWN_TARGET = FILING.ownGroupName;
 
 test.describe('a subject group lead filing modules', () => {
 	test('ticks what is in reach, and nothing in a colleague’s group', async ({ asPersona }) => {
@@ -36,8 +36,8 @@ test.describe('a subject group lead filing modules', () => {
 		// Only her own groups as targets — the colleague's is not offered, because filing into it
 		// would be refused.
 		const target = page.getByLabel('Ausgewählte Module zuordnen zu');
-		await expect(target.locator('option', { hasText: FILING.ownGroupCode })).toHaveCount(1);
-		await expect(target.locator('option', { hasText: FILING.foreignGroupCode })).toHaveCount(0);
+		await expect(target.locator('option', { hasText: FILING.ownGroupName })).toHaveCount(1);
+		await expect(target.locator('option', { hasText: FILING.foreignGroupName })).toHaveCount(0);
 	});
 
 	test('pulls a module that is in no group into her own', async ({ asPersona }) => {
@@ -49,7 +49,7 @@ test.describe('a subject group lead filing modules', () => {
 		await page.getByRole('button', { name: 'Zuordnen' }).click();
 
 		// A string rather than a regular expression: the sentence spans several lines in the markup.
-		await expect(page.getByText(`1 Modul nach ${FILING.ownGroupCode} verschoben`)).toBeVisible();
+		await expect(page.getByText(`1 Modul nach ${FILING.ownGroupName} verschoben`)).toBeVisible();
 	});
 
 	test('releases a module of her own group', async ({ asPersona }) => {
@@ -77,14 +77,14 @@ test.describe('a subject group lead filing modules', () => {
 		// The choice saves itself.
 		await expect(card.getByRole('button', { name: 'Speichern' })).toHaveCount(0);
 
-		await expect(picker.locator('option', { hasText: FILING.foreignGroupCode })).toHaveCount(0);
+		await expect(picker.locator('option', { hasText: FILING.foreignGroupName })).toHaveCount(0);
 
 		await picker.selectOption('');
 		await expect(page.getByText('Aus der Fachgruppe herausgenommen')).toBeVisible();
 		await expect(page.getByText('noch keiner Fachgruppe zugeordnet')).toBeVisible();
 
 		await picker.selectOption({ label: OWN_TARGET });
-		await expect(page.getByText(`Jetzt in ${FILING.ownGroupCode}`)).toBeVisible();
+		await expect(page.getByText(`Jetzt in ${FILING.ownGroupName}`)).toBeVisible();
 	});
 
 	test('is told why a colleague’s module offers no control', async ({ asPersona }) => {

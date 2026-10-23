@@ -139,8 +139,7 @@
 			<ul class="mt-2 flex flex-col gap-1">
 				{#each led as group (group.id)}
 					<li class="text-sm">
-						<span class="font-mono font-medium">{group.code}</span>
-						<span class="text-base-content/90">— {group.name}</span>
+						<span class="font-medium">{group.name}</span>
 						{#if !group.active}
 							<span class="badge badge-ghost badge-sm ml-1">stillgelegt</span>
 						{/if}
@@ -165,8 +164,7 @@
 			<ul class="mt-2 flex flex-col gap-1">
 				{#each data.memberships as group (group.id)}
 					<li class="text-sm">
-						<span class="font-mono font-medium">{group.code}</span>
-						<span class="text-base-content/90">— {group.name}</span>
+						<span class="font-medium">{group.name}</span>
 					</li>
 				{/each}
 			</ul>
