@@ -38,6 +38,18 @@ test.describe('start page', () => {
 		await expect(footer).not.toContainText('Server —');
 	});
 
+	// The tab shows a graduation cap, and the icon the page names is the one that is served.
+	test('names its favicon and serves the graduation cap', async ({ page }) => {
+		await page.goto('/');
+		const href = await page.locator('link[rel="icon"]').getAttribute('href');
+		expect(href).toMatch(/favicon\.svg$/);
+
+		const icon = await page.request.get(new URL(href!, page.url()).toString());
+		expect(icon.ok()).toBe(true);
+		expect(icon.headers()['content-type']).toContain('image/svg+xml');
+		expect(await icon.text()).toContain('🎓');
+	});
+
 	test('serves a fully substituted app.html', async ({ page }) => {
 		// Learned the hard way: a comment in app.html that mentioned a sveltekit placeholder in
 		// its prose attracted the substitution. The stylesheet ended up inside the comment, the
