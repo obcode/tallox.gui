@@ -13,8 +13,8 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
-# Eigene Stufe statt `pnpm prune`: so kommt der Laufzeitbaum reproduzierbar aus dem Lockfile.
-# --ignore-scripts, weil postinstall-Hooks reine Entwicklungssache sind.
+# A stage of its own rather than `pnpm prune`: that way the runtime tree comes reproducibly
+# from the lockfile. --ignore-scripts, because postinstall hooks are purely for development.
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts

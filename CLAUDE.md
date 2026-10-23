@@ -16,6 +16,8 @@ Personal Access Token, which bypasses this app entirely — so anything this UI 
 enforce (hiding a button, filtering a list) is cosmetic. The backend is the gate.
 
 UI language is German. Code, identifiers, comments and commit messages are English.
+`src/lib/commentLanguage.test.ts` reads every comment in `src/` and refuses German ones; quoting a
+label („Speichern“) or naming a domain term in an English sentence is fine.
 
 The German is gender-neutral **without typographic marks**: "Dozierende", "das Kollegium",
 "alle", "Kolleginnen und Kollegen" — never "Dozent:in", "Kolleg\*innen", "jede:r" or "er oder

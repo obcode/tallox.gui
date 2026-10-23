@@ -6,10 +6,10 @@
 </script>
 
 <!--
-	Verlinkt wird nur, was das Menü dieser Person auch zeigt. Ein Schritt, der eine Dozentin in
-	die Verwaltung schickt, ist ein Klick in eine Ablehnung — und wer es macht, steht ohnehin
-	daneben.
--->
+	Only what this person's menu also shows is linked. A step that sends a lecturer into the
+	administration is a click into a refusal — and who does it is stated next to it
+	anyway.
+	-->
 {#each links as link, i (link.href)}
 	{#if i > 0},{/if}
 	{#if link.href && mayOpen(link.href, roles)}

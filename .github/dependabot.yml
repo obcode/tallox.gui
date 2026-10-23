@@ -1,12 +1,12 @@
 version: 2
 
-# Version-Updates für alle drei Quellen, aus denen dieses Repo Fremdcode zieht:
-# npm-Pakete (pnpm-Lockfile), Actions in der Pipeline, Base-Images im Dockerfile.
+# Version updates for all three sources of third-party code in this repository: npm
+# packages (pnpm lockfile), actions in the pipeline, base images in the Dockerfile.
 #
-# Die commit-message-Präfixe sind nicht kosmetisch: semantic-release leitet den Release
-# daraus ab (siehe ci.yml). Ein `chore` erzeugt keinen Release — und ohne Release baut
-# docker.yml kein Image und dispatcht keinen Deploy. Was auf dem Server ankommen soll,
-# muss also `fix` sein.
+# The commit-message prefixes are not cosmetic: semantic-release derives the release from
+# them (see ci.yml). A `chore` produces no release — and without a release docker.yml
+# builds no image and dispatches no deploy. Anything that has to reach the server
+# therefore has to be a `fix`.
 
 updates:
   - package-ecosystem: npm
@@ -17,25 +17,24 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
-    # Karenzzeit, damit ein frisch veröffentlichtes npm-Paket nicht am selben Tag im
-    # Lockfile landet. Ohne das öffnet Dependabot PRs, die pnpm anschließend selbst
-    # ablehnt (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION) — genau so passiert am
-    # 2026-07-30, siehe PR #7. Die drei Tage liegen mit Abstand über pnpms 24 Stunden.
-    # Majors bekommen mehr Zeit, weil sich die Fehler eines .0-Releases erst zeigen
-    # müssen.
+    # A grace period, so that a freshly published npm package does not land in the lockfile
+    # the same day. Without it Dependabot opens PRs that pnpm then rejects on its own
+    # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION) — exactly what happened on 2026-07-30, see
+    # PR #7. The three days are comfortably above pnpm's 24 hours. Majors get longer,
+    # because the mistakes in a .0 release need time to surface.
     cooldown:
       default-days: 3
       semver-patch-days: 3
       semver-minor-days: 7
       semver-major-days: 14
-    # dependencies landen über die prod-deps-Stufe im Image → `fix`.
-    # devDependencies (vite, eslint, playwright …) nicht → `chore`, kein Release.
+    # dependencies end up in the image via the prod-deps stage → `fix`.
+    # devDependencies (vite, eslint, playwright …) do not → `chore`, no release.
     commit-message:
       prefix: fix(deps)
       prefix-development: chore(deps-dev)
     groups:
-      # Ein PR je Klasse statt zwanzig. Majors bleiben bewusst einzeln — Svelte,
-      # SvelteKit und Vite will man nicht im Rudel durchwinken.
+      # One PR per class instead of twenty. Majors stay separate on purpose — Svelte,
+      # SvelteKit and Vite are not something to wave through in a pack.
       production-dependencies:
         dependency-type: production
         update-types: [minor, patch]
@@ -51,11 +50,11 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
-    # Actions kennen kein SemVer, hier greift nur default-days. Eine unterwanderte
-    # Action ist der klassische CI-Angriffsweg — eine Woche Abstand ist billig.
+    # Actions have no SemVer, so only default-days applies. A subverted action is the
+    # classic way into a CI pipeline — a week of distance is cheap.
     cooldown:
       default-days: 7
-    # Ändert nur die Pipeline, nicht das ausgelieferte Artefakt → kein Release.
+    # Changes the pipeline, not the shipped artefact → no release.
     commit-message:
       prefix: chore(ci)
     groups:
@@ -71,26 +70,25 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
-    # Docker-Tags kennen kein SemVer, hier greift nur default-days.
+    # Docker tags have no SemVer, so only default-days applies.
     cooldown:
       default-days: 7
-    # Das Base-Image (`node:24-alpine`, in allen drei Stufen) steckt im ausgelieferten
-    # Image → Patch-Release, damit auch tatsächlich neu gebaut und ausgerollt wird.
+    # The base image (`node:24-alpine`, in all three stages) is part of the shipped image
+    # → a patch release, so that it actually gets rebuilt and rolled out.
     commit-message:
       prefix: fix(docker)
-    # Die Runtime-Stufe ist das Produktions-Image und gehört auf eine LTS-Linie. Node 24
-    # ist Active LTS bis 2028-04-30. Die beiden Alternativen sind es nicht:
+    # The runtime stage is the production image and belongs on an LTS line. Node 24 is
+    # Active LTS until 2028-04-30. Neither alternative is:
     #
-    #   Node 25 — nie LTS gewesen, EOL seit 2026-06-01
-    #   Node 26 — erst ab 2026-10-28 LTS
+    #   Node 25 — never LTS, EOL since 2026-06-01
+    #   Node 26 — LTS only from 2026-10-28
     #
-    # Das steht hier und nicht als geschlossener PR, weil Dependabot einen manuell
-    # geschlossenen PR nur als „diese eine Version nicht" liest und daraufhin den
-    # nächstniedrigeren Major anbietet — am 2026-07-30 also das EOL-Node-25 (PR #13),
-    # nachdem PR #1 auf 26 geschlossen worden war. Ein Downgrade als Folge einer
-    # Ablehnung ist genau das, was diese Regel verhindert.
+    # This lives here rather than as a closed PR, because Dependabot reads a manually
+    # closed PR only as "not this one version" and then offers the next lower major —
+    # on 2026-07-30 that was the EOL Node 25 (PR #13), after PR #1 to 26 had been
+    # closed. A downgrade as the result of a rejection is exactly what this rule prevents.
     #
-    # AUFHEBEN AB 2026-10-28: dann ist Node 26 LTS und dieser Block kann weg.
+    # LIFT FROM 2026-10-28: Node 26 is LTS then and this block can go.
     ignore:
       - dependency-name: node
         update-types: ['version-update:semver-major']

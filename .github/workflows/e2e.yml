@@ -1,23 +1,23 @@
 name: e2e
 
-# End-to-end gegen einen echten Stack: PostgreSQL → tallox.go → SvelteKit-SSR → Chromium.
+# End-to-end against a real stack: PostgreSQL → tallox.go → SvelteKit SSR → Chromium.
 #
-# Eigener Workflow und nicht Teil von quality.yml, weil hier etwas Ungewöhnliches passiert:
-# dieser Job checkt das **Backend-Repository** mit aus und baut es. Das ist der Preis dafür,
-# die eine Sache prüfen zu können, die kein Test in einem der beiden Repos allein erreicht —
-# ob GUI und Backend zusammen tatsächlich funktionieren.
+# A workflow of its own and not part of quality.yml, because something unusual happens here:
+# this job also checks out the **backend repository** and builds it. That is the price of
+# being able to check the one thing no test in either repository reaches on its own —
+# whether GUI and backend actually work together.
 #
-# Konkret geht es um die Identitätsweitergabe. Der SSR-Prozess spricht am Auth-Proxy vorbei
-# mit dem Backend und muss X-Remote-User selbst mitschicken. Fällt das aus, rendert jede
-# Seite anonym — und sieht dabei völlig normal aus. Ein Mock-Backend würde diesen Fehler
-# nicht zeigen, weil der Mock die Header bekäme, die der Test ihm gibt.
+# Specifically, this is about passing on the identity. The SSR process talks to the backend
+# past the auth proxy and has to send X-Remote-User itself. If that breaks, every page
+# renders anonymously — and looks perfectly normal doing so. A mock backend would not show
+# this failure, because the mock would get whatever headers the test gives it.
 
 on:
   push:
     branches: ['**']
   pull_request:
-  # Damit eine Backend-Änderung diese Stufe auslösen kann, ohne dass hier etwas committet
-  # wird: tallox.go schickt einen repository_dispatch, sobald sein eigenes Gate grün ist.
+  # So that a backend change can trigger this stage without anything being committed
+  # here: tallox.go sends a repository_dispatch as soon as its own gate is green.
   repository_dispatch:
     types: [backend-changed]
   workflow_dispatch:
@@ -47,16 +47,16 @@ jobs:
 
     env:
       TALLOX_DB_URL: postgres://tallox:tallox@127.0.0.1:5432/tallox?sslmode=disable
-      # Der SSR-Prozess spricht das Backend direkt an, wie containerintern in der Produktion.
+      # The SSR process calls the backend directly, as it does container-internally in production.
       TALLOX_SERVER: http://127.0.0.1:8080/query
 
     steps:
       - name: checkout gui
         uses: actions/checkout@v7
 
-      # Der Standard ist der Stand von main. Ein repository_dispatch aus tallox.go schickt
-      # seinen Commit mit, sodass diese Stufe genau die Backend-Version prüft, die ihn
-      # ausgelöst hat — und nicht die, die zufällig gerade auf main steht.
+      # The default is the state of main. A repository_dispatch from tallox.go sends its
+      # commit along, so that this stage checks exactly the backend version that triggered
+      # it — and not whichever one happens to be on main right now.
       - name: checkout backend
         uses: actions/checkout@v7
         with:
@@ -100,29 +100,29 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Explizit, obwohl `prepare` es beim Install schon tut: .svelte-kit/tsconfig.json wird
-      # von der Wurzel-tsconfig per `extends` eingebunden, und Playwright lädt seine Config
-      # *bevor* der webServer baut. Fehlt die Datei, scheitert der Lauf vor dem ersten Test
-      # mit einem Stacktrace aus playwright/lib/common — einer Meldung, die nach einem
-      # kaputten Playwright aussieht und nichts über SvelteKit sagt. Ein pnpm, das
-      # Lifecycle-Skripte überspringt, darf das nicht auslösen.
+      # Explicit, although `prepare` already does it on install: .svelte-kit/tsconfig.json is
+      # pulled in by the root tsconfig via `extends`, and Playwright loads its config *before*
+      # the webServer builds. If the file is missing, the run fails before the first test with
+      # a stack trace from playwright/lib/common — a message that looks like a broken
+      # Playwright and says nothing about SvelteKit. A pnpm that skips lifecycle scripts must
+      # not be able to cause that.
       - name: svelte-kit sync
         run: pnpm exec svelte-kit sync
 
-      # Nur Chromium. Die App ist für Kolleg:innen an Dienstrechnern und Tablets im Haus, und
-      # drei Browser-Engines zu installieren verdreifacht die Laufzeit für einen Ertrag, den
-      # dieses Publikum nicht hat.
+      # Chromium only. The app is for colleagues on office machines and tablets on campus, and
+      # installing three browser engines triples the run time for a benefit this audience
+      # does not get.
       - name: install chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      # Das Backend hat beim Start migriert, also gibt es die Tabellen jetzt. Die Personen
-      # legt globalSetup in playwright.config.ts an — hier steht nur, dass psql dafür da sein
-      # muss; auf ubuntu-latest ist es vorinstalliert.
+      # The backend migrated on startup, so the tables exist now. The people are created by
+      # globalSetup in playwright.config.ts — all this says is that psql has to be there for
+      # it; on ubuntu-latest it is preinstalled.
       - name: e2e
         run: pnpm run test:e2e
 
-      # Der Bericht ist bei einem Fehlschlag das Einzige, womit man ihn ohne lokale
-      # Reproduktion versteht — Trace, Screenshot und Video hängen darin.
+      # On a failure the report is the only thing that makes it understandable without a
+      # local reproduction — trace, screenshot and video are attached to it.
       - name: upload playwright report
         if: always()
         uses: actions/upload-artifact@v5
@@ -131,8 +131,8 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-      # Ohne das ist ein fehlgeschlagener E2E-Lauf oft nur "die Seite war leer", während der
-      # Grund im Backend-Log steht.
+      # Without this a failed E2E run is often just "the page was empty", while the reason
+      # is in the backend log.
       - name: backend log
         if: failure()
         run: cat "${RUNNER_TEMP}/backend.log"

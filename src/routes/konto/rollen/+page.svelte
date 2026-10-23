@@ -33,9 +33,9 @@
 {#snippet scope(title: string, reach: ScopeReach, axis: 'programme' | 'subjectGroup')}
 	{@const hint = reachHint(reach, axis)}
 	<!--
-		Nur die beiden Fälle ohne Liste. Wo eine Liste steht, rendert der Block darunter
-		dieselbe Überschrift — beides zu zeigen hieße sie zweimal zu schreiben, einmal über
-		einer leeren Karte.
+		Only the two cases without a list. Where there is a list, the block below renders the
+		same heading — showing both would mean writing it twice, once above an empty
+		card.
 	-->
 	{#if hint}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
@@ -44,9 +44,9 @@
 			{#if needsAttention(reach)}
 				<p class="mt-2">
 					<!--
-						Ein Badge, keine Textfarbe: `text-warning` auf `base-100` ist auf den
-						hellen Themes nicht lesbar, und daisyUI paart die semantischen Farben
-						nur als Hintergrund mit ihrem `*-content`.
+						A badge, not a text colour: `text-warning` on `base-100` is not readable on the
+						light themes, and daisyUI pairs the semantic colours with their `*-content` only
+						as a background.
 					-->
 					<span class="badge badge-warning badge-sm">Zuordnung fehlt</span>
 				</p>

@@ -201,9 +201,9 @@
 									</div>
 								{:else}
 									<!--
-										Kein {#key} auf der gespeicherten Menge mehr: der Picker speichert jedes
-										Häkchen selbst und liest die Menge danach selbst neu ein — ein Neuaufbau
-										mitten im Klicken löschte das nächste Häkchen.
+										No {#key} on the saved set any more: the picker saves every tick itself and
+										re-reads the set itself afterwards — a rebuild in the middle of clicking wiped
+										out the next tick.
 									-->
 									<PeoplePicker
 										groupId={group.id}

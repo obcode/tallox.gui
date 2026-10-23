@@ -91,20 +91,20 @@
 
 		<div class="ml-auto flex items-center gap-1 xl:ml-0">
 			<!--
-				Neben der Identität und bei jeder Breite sichtbar, nicht in der Bereichsleiste:
-				die zeigt den Planungsprozess in seiner Reihenfolge, und eine Rückmeldung ist
-				kein Schritt darin. Unterhalb von `sm` bleibt das Sprechblasen-Zeichen allein
-				stehen — die Zeile hat dort 375px, und der `title` trägt den Namen weiter.
+				Next to the identity and visible at every width, not in the area bar: that one shows
+				the planning process in its order, and feedback is not a step in it. Below `sm` the
+				speech-bubble icon stands alone — the row is 375px wide there, and the `title` still
+				carries the name.
 
-				`target="_blank"`, weil das Ziel außerhalb dieser Anwendung liegt: wer mitten in
-				einer halb ausgefüllten Bedarfstabelle etwas anmerken will, soll sie nicht
-				verlassen. `rel="noopener noreferrer"` gehört zwingend dazu.
+				`target="_blank"`, because the target lies outside this application: whoever wants
+				to remark on something in the middle of a half-filled demand table should not have
+				to leave it. `rel="noopener noreferrer"` is mandatory with it.
 			-->
 			{#if feedbackUrl}
-				<!-- `resolve()` wäre hier falsch: es löst interne Routen auf, und dieses Ziel liegt
-				     außerhalb. Die Lint-Regel sieht das einem dynamischen href nicht an, also ist
-				     sie für diese eine Stelle aus — wie beim Release-Link im Footer. Der Wert
-				     kommt aus der Umgebung des Deployments und aus keiner Eingabe. -->
+				<!-- `resolve()` would be wrong here: it resolves internal routes, and this target lies
+				     outside. The lint rule cannot tell that from a dynamic href, so it is off for this
+				     one place — as for the release link in the footer. The value comes from the
+				     deployment's environment and from no input. -->
 				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				<a
 					href={feedbackUrl}

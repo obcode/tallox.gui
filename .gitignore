@@ -7,7 +7,7 @@ dist/
 /blob-report/
 /coverage/
 
-# Lokale Backend-URL. Die Vorlage steht in .env.example.
+# Local backend URL. The template is in .env.example.
 .env
 .env.*
 !.env.example

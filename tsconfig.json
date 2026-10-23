@@ -11,7 +11,7 @@
 		"strict": true,
 		"moduleResolution": "bundler"
 	}
-	// Pfade und weitere Optionen kommen aus .svelte-kit/tsconfig.json (svelte-kit sync).
-	// Dieses Projekt ist TypeScript-only; allowJs/checkJs stehen nur da, damit
-	// Konfigurationsdateien wie svelte.config.js mitgeprüft werden.
+	// Paths and further options come from .svelte-kit/tsconfig.json (svelte-kit sync).
+	// This project is TypeScript-only; allowJs/checkJs are only there so that
+	// configuration files such as svelte.config.js are checked as well.
 }

@@ -70,10 +70,10 @@
 	</select>
 
 	<!--
-		Die Notiz erscheint erst, wenn etwas gewählt ist. Sie ist die Stelle, an der die
-		Sonderfälle stehen, für die früher der Instanz-Teil gedacht war — „nur die Vorlesung",
-		„lieber die Dienstagsgruppe". Ein leeres Feld in jeder Zelle wäre dieselbe Tabelle, nur
-		doppelt so hoch.
+		The note only appears once something is chosen. It is the place for the special cases
+		the instance part used to be meant for — „nur die Vorlesung“, „lieber die
+		Dienstagsgruppe“. An empty field in every cell would be the same table, only twice as
+		tall.
 	-->
 	{#if choice !== WISH_NONE}
 		<input
@@ -89,9 +89,9 @@
 
 	{#if others.length > 0}
 		<!--
-			Nur nach der Veröffentlichung nicht leer: davor gibt der Load fremde Zeilen nicht
-			weiter, auch nicht an die Leitungen. Namen, keine Zahl — eine Zahl wäre genau das Aggregat, das hier nie
-			stehen darf.
+			Only non-empty after publication: before that the load does not pass on other people's rows,
+			not even to the leads. Names, not a number — a number would be exactly the aggregate that must
+			never appear here.
 		-->
 		<p class="text-base-content/80 text-xs">
 			Außerdem: {others.map((o) => o.person.name).join(', ')}

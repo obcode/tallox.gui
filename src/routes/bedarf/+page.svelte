@@ -331,10 +331,9 @@
 		if (showResult && form && 'report' in form && form.report) {
 			const r = form.report;
 			const refused = r.refused.length > 0 ? ` ${r.refused.length} nicht möglich.` : '';
-			// Was in *fremden* Studiengängen passiert ist, steht dahinter und nicht in der Summe:
-			// eine Zeile, die neben einem anderen Studiengang entstand, hält nichts, und ein
-			// zurückgezogener Gastgeber hat seine Lehre weitergegeben. Beides ist unsichtbar,
-			// wenn es nur „1 angelegt" heißt.
+			// What happened in *other* programmes goes after it and not into the total: a row that
+			// came about next to another programme holds nothing, and a host that withdrew has handed
+			// its teaching on. Both are invisible when all it says is „1 angelegt“.
 			const coupled =
 				r.coupled.length > 0
 					? ` ${r.coupled.length} gemeinsam mit einem anderen Studiengang geplant.`
@@ -514,20 +513,19 @@
 		const seq = editSeq;
 		sentSeq = seq;
 		saving = true;
-		// Ein Zeilenmenü, aus dem heraus abgeschickt wurde, schließt. Ohne das bleibt das
-		// Popover über dem neu geladenen Tisch stehen, und der nächste Klick auf „⋯"
-		// schließt es, statt es zu öffnen — der Umschalter kennt nur die eine Richtung.
+		// A row menu that a submission came from closes. Without this the popover stays open over
+		// the reloaded table, and the next click on „⋯“ closes it instead of opening it — the
+		// toggle only knows the one direction.
 		closeRowMenus();
 		return async ({ result, update }) => {
 			const preview =
 				result.type === 'success' && !!(result.data as { preview?: unknown })?.preview;
-			// Eine Vorschau lässt die Häkchen stehen: das weggenommene ist genau das, worüber
-			// gerade entschieden wird. Und wer während des Speicherns weitergeklickt hat,
-			// behält seine neueren Zahlen — sonst überschriebe die Antwort von eben sie.
+			// A preview leaves the ticks in place: the one taken away is exactly what is being decided
+			// right now. And whoever kept clicking while the save was running keeps their newer
+			// figures — otherwise the response from just now would overwrite them.
 			if (!preview && editSeq === seq) edits = {};
-			// Der Aufteilungs-Editor schließt: was er beantworten sollte, ist beantwortet,
-			// und ein Formular, das über der Zeile stehen bleibt, die es gerade geschrieben
-			// hat, liest sich, als wäre nichts passiert.
+			// The split editor closes: what it was meant to answer has been answered, and a form that
+			// stays open above the row it has just written reads as if nothing had happened.
 			editingSplit = null;
 			await update({ reset: false });
 			saving = false;
@@ -641,12 +639,12 @@
 </script>
 
 <!--
-	Der Zustand des Speicherns steht über der Seite, nicht in ihr.
+	The saving state sits above the page, not inside it.
 
-	Im Fluss stand er zwischen Kopf und Tabelle, und jede Meldung schob die Tabelle nach unten und
-	wieder zurück — bei einer Seite, die sich nach jedem Klick selbst speichert, also bei jedem
-	Klick. Was sich beim Lesen bewegt, liest niemand.
--->
+	In the flow it stood between the header and the table, and every message pushed the table
+	down and back up again — on a page that saves itself after every click, that means on every
+	click. Nobody reads what moves while they are reading it.
+	-->
 <div
 	class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
 	role="status"
@@ -672,25 +670,25 @@
 </div>
 
 <!--
-	Die Filter der aktuellen Ansicht als versteckte Felder.
+	The filters of the current view as hidden fields.
 
-	Jedes GET-Formular auf dieser Seite, das nur *einen* Parameter setzen will, muss die übrigen
-	mitschicken — sonst fällt beim Umschalten der Sicht die halbe Auswahl weg. Einmal geschrieben,
-	dreimal benutzt.
--->
+	Every GET form on this page that wants to set only *one* parameter has to send the others
+	along — otherwise switching the view drops half the selection. Written once, used three
+	times.
+	-->
 <!--
-	Der Teil des Filters, den dieses Formular nicht selbst trägt.
+	The part of the filter this form does not carry itself.
 
-	Ein GET-Formular schickt nur seine eigenen Felder — und von seinen Absende-Knöpfen nur den
-	geklickten. Wer also einen Studiengang anklickt, schickt genau `studiengang`, und alles
-	andere fällt weg: die Seite landete wieder im Planungssemester, weil `semester` fehlte.
+	A GET form sends only its own fields — and of its submit buttons only the one that was
+	clicked. So whoever clicks a programme sends exactly `studiengang`, and everything else is
+	dropped: the page landed back in the planning semester because `semester` was missing.
 
-	`own` nennt die Parameter, für die dieses Formular ein sichtbares Bedienelement hat. Alles
-	andere reist als verstecktes Feld mit. Zwei Felder desselben Namens in einem Formular sind
-	kein Ausweg: `searchParams.get` nimmt das erste, also gewönne je nach Reihenfolge im Markup
-	mal das versteckte, mal das sichtbare — genau die stille Abhängigkeit, die hier nirgends
-	sein soll.
--->
+	`own` names the parameters for which this form has a visible control. Everything else
+	travels along as a hidden field. Two fields of the same name in one form are no way out:
+	`searchParams.get` takes the first, so depending on the order in the markup sometimes the
+	hidden one would win and sometimes the visible one — exactly the silent dependency that is
+	not supposed to exist anywhere here.
+	-->
 {#snippet carriedOver(own: readonly string[])}
 	{#each filterFields as field (field.name)}
 		{#if !own.includes(field.name) && field.value !== ''}
@@ -701,7 +699,7 @@
 
 <div class="flex flex-col gap-4">
 	<div class="flex flex-wrap items-start justify-between gap-3">
-		<!-- Begrenzt, damit der Schalter oben rechts steht und nicht unter den Absatz rutscht. -->
+		<!-- Limited so the switch stays at the top right and does not slip under the paragraph. -->
 		<div class="max-w-2xl">
 			<h1 class="text-2xl font-semibold">Bedarf</h1>
 			<p class="text-base-content/80 text-sm">
@@ -729,15 +727,15 @@
 		</div>
 
 		<!--
-			Der Umschalter, wie in Moodle: oben rechts, und er steht in der Adresse.
-			Client-Zustand wären zwei Ansichten unter einer Adresse — nicht verschickbar, und der
-			Zurück-Knopf zeigte die falsche.
+			The toggle, as in Moodle: top right, and it lives in the address.
+			Client state would be two views under one address — not shareable, and the back button
+			would show the wrong one.
 		-->
 		{#if plansAtAll && data.selected.programme !== '' && data.current}
 			<!--
-				Die Fertigmeldung. Eigenes Formular und eigene Action, weil sie eine Aussage über den
-				Stand ist und keine Änderung an der Planung — und weil sie auch dann gilt, wenn
-				gerade niemand bearbeitet.
+				The completion notice. Its own form and its own action, because it is a statement about
+				the state of things and not a change to the planning — and because it holds even when
+				nobody is editing at the moment.
 			-->
 			<form
 				method="POST"
@@ -783,10 +781,10 @@
 					<button type="submit" name="bearbeiten" value="" class="btn btn-sm">Ansicht</button>
 				{:else}
 					<!--
-						Abgeschaltet statt versteckt, wenn er hier nicht geht: wer plant, soll den
-						Knopf immer an derselben Stelle finden. Einer, der beim Durchklicken der
-						Studiengänge kommt und geht, liest sich wie ein Fehler — und seine
-						Abwesenheit beantwortet nichts, während der `title` genau sagt, was fehlt.
+						Disabled rather than hidden when it does not work here: whoever plans should always find
+						the button in the same place. One that comes and goes while clicking through the
+						programmes reads like a bug — and its absence answers nothing, while the `title` says
+						exactly what is missing.
 					-->
 					<button
 						type="submit"
@@ -815,22 +813,21 @@
 
 	<div class="border-base-300 bg-base-100 flex flex-col gap-3 rounded-lg border p-4">
 		<!--
-			Semester und Studiengang schalten sofort um, der Rest nicht.
+			Semester and programme switch immediately, the rest does not.
 
-			Die Reiter sind Absende-Knöpfe eines GET-Formulars: SvelteKit fängt die ab und macht
-			daraus eine echte Navigation, also stimmt `page.url` und der Load läuft — ohne
-			`replaceState`, ohne zweiten Zustand neben der Adresse, und ohne Skript tut es dasselbe
-			mit vollem Seitenaufbau.
+			The tabs are submit buttons of a GET form: SvelteKit intercepts them and turns them into a
+			real navigation, so `page.url` is right and the load runs — without `replaceState`, without
+			a second state next to the address, and without a script it does the same with a full page
+			load.
 
-			**Ein Formular je Leiste**, und das ist keine Kosmetik. Ein Formular schickt von seinen
-			Absende-Knöpfen nur den geklickten — beide Leisten in einem Formular hieß also: wer
-			einen Studiengang anklickt, schickt `studiengang` und sonst nichts, landet ohne
-			`semester` und damit im Planungssemester. Umgekehrt genauso. Jede Leiste trägt jetzt
-			den Rest des Filters als versteckte Felder mit (`carriedOver`).
+			**One form per bar**, and that is not cosmetic. A form sends only the clicked one of its
+			submit buttons — so both bars in one form meant: whoever clicks a programme sends
+			`studiengang` and nothing else, and arrives without `semester` and therefore in the
+			planning semester. The same the other way round. Each bar now carries the rest of the
+			filter along as hidden fields (`carriedOver`).
 
-			Das <form> steht um die Leiste herum, nie dazwischen: daisyUI stylt über `.tabs > .tab`,
-			und ein Formular in der Mitte nimmt der Leiste Rahmen, Abstände und den markierten
-			Zustand.
+			The <form> goes around the bar, never in between: daisyUI styles via `.tabs > .tab`, and a
+			form in the middle takes the bar's border, spacing and selected state away.
 		-->
 		<form method="GET" class="flex flex-col gap-1">
 			{@render carriedOver(['semester'])}
@@ -870,13 +867,13 @@
 			<div class="flex flex-col gap-1">
 				<span class="label-text text-sm">Studiengang</span>
 				<!--
-					Alle geplanten Studiengänge als Knöpfe, nicht nur die eigenen mit einer
-					Auswahlliste daneben. Die Liste ist kurz genug dafür, seit sie nur noch die
-					enthält, die die Fakultät wirklich plant: die übrigen aus dem ZPA, die jemand
-					anderes betreibt oder die ausgelaufen sind, stehen gar nicht mehr darin.
+					All planned programmes as buttons, not just one's own with a dropdown beside them. The
+					list is short enough for that since it only contains the ones the faculty actually plans:
+					the rest from the ZPA, which somebody else runs or which have expired, are not in it at
+					all any more.
 				-->
 				<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-nowrap overflow-x-auto">
-					<!-- „alle" gibt es nur in der Lesesicht: planDemand schreibt genau einen. -->
+					<!-- „alle“ exists only in the read view: planDemand writes exactly one. -->
 					{#if !data.selected.editing}
 						{@const active = data.selected.programme === ''}
 						<button
@@ -902,9 +899,8 @@
 							title={programme.title || programme.code}
 							class="tab whitespace-nowrap {active ? 'tab-active' : ''}"
 						>
-							<!-- Die eigenen fett: die Reihenfolge bleibt alphabetisch, damit ein
-							     Studiengang immer an derselben Stelle steht, und wer plant, findet
-							     seinen trotzdem sofort. -->
+							<!-- One's own in bold: the order stays alphabetical so that a programme always
+							     stands in the same place, and whoever plans still finds theirs at once. -->
 							<span class={mine ? 'font-semibold' : ''}>{programme.code}</span>
 						</button>
 					{/each}
@@ -913,19 +909,19 @@
 		</form>
 
 		<!--
-			Der Rest der Zeile gehört zur Bearbeiten-Sicht, und zwar ganz.
+			The rest of the row belongs to the edit view, and entirely so.
 
-			Suche, Art, Turnus und die beiden Häkchen filtern die *Katalogliste*, aus der die
-			Planungstabelle ihre Zeilen macht — und die wird nur beim Bearbeiten überhaupt geladen.
-			In der Lesesicht standen fünf Bedienelemente, die nichts taten.
+			Search, kind, term and the two checkboxes filter the *catalogue list* from which the
+			planning table makes its rows — and that is only loaded at all while editing. The read
+			view had five controls that did nothing.
 
-			Er schaltet nicht sofort um — eine Suche, die nach jedem Buchstaben lädt, ist keine.
-			Eigenes Formular, weil ein Absenden hier nicht dasselbe bedeutet wie ein Reiterklick
-			oben: dort ist der Knopf die Auswahl, hier ist er das Ende einer Eingabe.
+			It does not switch immediately — a search that reloads after every letter is not one.
+			Its own form, because submitting here does not mean the same as a tab click above:
+			there the button is the selection, here it is the end of an input.
 
-			Diese fünf trägt es selbst, also dürfen sie nicht *auch* versteckt mitreisen: zwei
-			Felder gleichen Namens, und `searchParams.get` nähme das erste — die Auswahllisten
-			hätten stumm den alten Wert wieder eingesetzt.
+			It carries these five itself, so they must not *also* travel along hidden: two fields
+			of the same name, and `searchParams.get` would take the first — the dropdowns would
+			silently have put the old value back.
 		-->
 		{#if editing}
 			<form method="GET" class="flex flex-wrap items-end gap-3">
@@ -945,10 +941,9 @@
 				<label class="form-control">
 					<span class="label-text text-sm">Art</span>
 					<!--
-						`aria-label`, obwohl das Label das Feld umschließt: bei einem umschließenden
-						Label ist der zugängliche Name der ganze Textinhalt — hier also „Art alle
-						Pflicht Wahlpflicht uneinheitlich". Vorgelesen wird das Feld damit als seine
-						eigene Optionsliste.
+						`aria-label`, although the label wraps the field: with a wrapping label the accessible
+						name is the entire text content — here, then, „Art alle Pflicht Wahlpflicht
+						uneinheitlich“. The field would thus be read out as its own list of options.
 					-->
 					<select name="art" aria-label="Art" class="select select-bordered select-sm">
 						<option value="">alle</option>
@@ -959,19 +954,19 @@
 							Wahlpflicht
 						</option>
 						<!--
-							Dieselbe dritte Möglichkeit wie im Modulkatalog. Ohne sie ließ sich nicht
-							danach filtern — und schlimmer: der Server akzeptiert `art=MIXED`, also
-							stand das Feld auf „alle", während der Filter wirkte.
+							The same third option as in the module catalogue. Without it there was no way to
+							filter by it — and worse: the server accepts `art=MIXED`, so the field said „alle“
+							while the filter was in effect.
 						-->
 						<option value="MIXED" selected={data.selected.duty === 'MIXED'}> uneinheitlich </option>
 					</select>
 				</label>
 
 				<!--
-					Der Turnus folgt dem Semester, und die einzige Entscheidung darüber ist, ob man
-					weiter aufmacht. Vorher waren es drei Möglichkeiten, von denen zwei Unsinn
-					waren: bei einem gewählten Wintersemester fragt „Sommersemester" nach genau den
-					Modulen, die darin nicht laufen können.
+					The term follows the semester, and the only decision about it is whether to open it up
+					further. Before, there were three options, two of which were nonsense: with a winter
+					semester selected, „Sommersemester“ asks for exactly the modules that cannot run in
+					it.
 				-->
 				<label class="flex items-center gap-2 pb-1 text-sm">
 					<input
@@ -1013,16 +1008,16 @@
 
 	{#if editing}
 		<!--
-			Ein Fach hereinholen, das nicht für diesen Studiengang markiert ist.
+			Bringing in a subject that is not marked for this programme.
 
-			Der Notfall, den die Fakultät ausdrücklich braucht: ein Modul muss angeboten werden und
-			steht in keinem Katalog dieses Studiengangs. Erlaubt ist das im Backend längst — die
-			Berechtigung hängt am Studiengang der Instanz und nie an der Heimat des Moduls, denn
-			genau dieser Unterschied *ist* die Import/Export-Zahl des Dekanats.
+			The emergency the faculty explicitly needs: a module has to be offered and is in none of
+			this programme's catalogues. The backend has allowed that for a long time — the permission
+			depends on the programme of the instance and never on the module's home, because exactly
+			that difference *is* the dean's office's import/export figure.
 
-			Eigene Suche und nicht der Filter oben: der Filter beschreibt die Tabelle, und ein
-			Filter, der plötzlich fremde Module einmischte, machte jedes Speichern zu einem Ritt
-			über einen Katalog, den niemand überblickt.
+			Its own search and not the filter above: the filter describes the table, and a filter that
+			suddenly mixed in modules from elsewhere would turn every save into a ride across a
+			catalogue nobody can survey.
 		-->
 		<details class="border-base-300 bg-base-100 rounded-lg border p-4" open={foreignOpen}>
 			<summary class="cursor-pointer text-sm font-medium">
@@ -1066,9 +1061,9 @@
 									</span>
 								{/if}
 								<!--
-									Eigenes Formular, nicht die große Tabelle: für dieses Modul gibt es dort
-									noch keine Zeile — es ist genau das, was die Katalogabfrage nicht
-									liefert. Nach dem Anlegen steht es als gewöhnliche, markierte Zeile da.
+									Its own form, not the big table: there is no row for this module there yet — it is
+									exactly what the catalogue query does not return. Once created it appears as an
+									ordinary, ticked row.
 								-->
 								<form method="POST" action="?/adopt" use:enhance>
 									<input type="hidden" name="semester" value={data.selected.semester} />
@@ -1086,15 +1081,15 @@
 		</details>
 
 		<!--
-			Eine Lehrveranstaltung anlegen, die es im ZPA nicht gibt — und der FWP-Platzhalter.
+			Creating a course that does not exist in the ZPA — and the FWP placeholder.
 
-			Beides dieselbe Form: eine `module`-Zeile, die die Fakultät selbst einträgt. Ein
-			Platzhalter ist danach ein Modul wie jedes andere; „wir brauchen drei" sind drei Züge
-			davon, gesetzt mit dem Zug-Zähler, den die Tabelle schon hat.
+			Both are the same form: a `module` row the faculty enters itself. A placeholder is then a
+			module like any other; "we need three" is three tracks of it, set with the track counter
+			the table already has.
 
-			Angelegt *und* für dieses Semester angemeldet in einem Schritt: wer dieses Formular
-			öffnet, hat die Entscheidung getroffen. Eine Zeile, die im Katalog steht und nicht im
-			Bedarf, wäre ein zweiter, unsichtbarer Schritt.
+			Created *and* registered for this semester in one step: whoever opens this form has made
+			the decision. A row that is in the catalogue and not in the demand would be a second,
+			invisible step.
 		-->
 		<details class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<summary class="cursor-pointer text-sm font-medium">
@@ -1124,11 +1119,10 @@
 				{#if data.filingGroups.length > 0}
 					<label class="form-control">
 						<!--
-							Gleich hier einsortieren, nicht später. Ein lokal angelegtes Modul kommt
-							ohne Fachgruppe auf die Welt, und eine Instanz, deren Modul in keiner
-							steht, erreicht keine Fachgruppenleitung — sie stand deshalb auf der
-							Zuteilungsseite unter gar keinem Reiter. Genau das ist beim
-							kurzfristigen FWP passiert.
+							Filed right here, not later. A locally created module comes into the world without a
+							subject group, and an instance whose module is in none reaches no subject group lead —
+							which is why it appeared under no tab at all on the assignment page. That is exactly
+							what happened with the short-notice FWP.
 						-->
 						<span class="label-text text-sm">Fachgruppe</span>
 						<select name="fachgruppe" class="select select-bordered select-sm w-56">
@@ -1141,8 +1135,8 @@
 				{/if}
 
 				<label class="form-control">
-					<!-- Nicht nur „Art": die Filterleiste hat schon eine, und die meint Pflicht
-					     oder Wahlpflicht. -->
+					<!-- Not just „Art“: the filter bar already has one, and that one means compulsory
+					     or elective. -->
 					<span class="label-text text-sm">Art der Lehrveranstaltung</span>
 					<select name="kind" class="select select-bordered select-sm">
 						<option value="MODULE">{MODULE_KIND_LABELS.MODULE}</option>
@@ -1186,14 +1180,14 @@
 				</label>
 
 				<label class="form-control">
-					<!-- Das einzige Feld dieser Form, das nicht das Modul beschreibt, sondern die
-					     Instanz, die im selben Schritt angemeldet wird. Es steht trotzdem hier: eine
-					     lokale Zeile steht in keiner SPO, also gibt es nichts, woraus sich das
-					     Fachsemester vorbelegen ließe — leer bliebe es sonst bis jemand die Zeile in
-					     der Tabelle sucht, und dort steht sie unter „Ohne Fachsemester" ganz unten.
+					<!-- The only field of this form that describes not the module but the instance
+					     registered in the same step. It is here anyway: a local row is in no
+					     regulations, so there is nothing to prefill the cohort year from — otherwise it
+					     would stay empty until somebody looks for the row in the table, and there it
+					     sits right at the bottom under „Ohne Fachsemester“.
 
-					     Leer ist erlaubt und heißt genau das: niemand hat es gesagt. Nachtragen geht
-					     in der Zeile, wie bei jeder anderen Instanz auch. -->
+					     Empty is allowed and means exactly that: nobody has said. It can be filled in
+					     later in the row, as for any other instance. -->
 					<span class="label-text text-sm">Fachsemester</span>
 					<input
 						type="number"
@@ -1216,10 +1210,10 @@
 			</p>
 			{#if data.filingGroups.length === 0}
 				<!--
-					Der Satz, der den Rest des Wegs beschreibt. Einsortieren darf hier nur, wer eine
-					Fachgruppe leitet oder das Dekanat ist — die Studiengangsleitung legt die
-					Lehrveranstaltung an, ordnet sie aber nicht zu. Ohne diesen Hinweis bliebe das
-					Modul stillschweigend ohne Fachgruppe liegen.
+					The sentence describing the rest of the way. Only somebody who leads a subject group or
+					is the dean's office may file it here — the programme lead creates the course but does
+					not assign it to a group. Without this hint the module would silently be left without a
+					subject group.
 				-->
 				<p class="text-base-content/80 mt-2 text-sm">
 					Die neue Lehrveranstaltung gehört zunächst <strong>keiner Fachgruppe</strong> an. Besetzen
@@ -1236,19 +1230,19 @@
 	{/if}
 
 	<!--
-		Der Rückzug fragt in einem Modal nach, nicht in einem Kasten über der Tabelle.
+		The withdrawal asks in a modal, not in a box above the table.
 
-		Der Kasten stand oben, die Marke „noch nicht gespeichert" unten rechts — und die Marke ist
-		auffälliger. Wer ein Häkchen wegnimmt und die Seite nicht gerade ganz oben hat, sieht die
-		Frage nicht und liest den Entwurfszustand als Fehler.
+		The box was at the top, the „noch nicht gespeichert“ badge at the bottom right — and the
+		badge is the more eye-catching of the two. Whoever removes a tick without having the page
+		scrolled right to the top does not see the question and reads the draft state as an error.
 
-		OHNE JAVASCRIPT MUSS ES TROTZDEM DASTEHEN
+		WITHOUT JAVASCRIPT IT MUST STILL BE THERE
 
-		Diese Seite kommt ohne JavaScript aus — das Formular hat einen Speichern-Knopf, und die
-		Vorschau ist eine servergerenderte Antwort. Ein `<dialog>`, das nur `showModal()` öffnet,
-		verlöre die Rückfrage genau dort. Deshalb steht `open` als Attribut am Element: daisyUI
-		zeigt `.modal[open]` an, also ist die Frage auch ohne JavaScript sichtbar und bedienbar.
-		Mit JavaScript wird daraus im Effekt ein echtes Modal — Backdrop, Fokusfalle, ESC.
+		This page works without JavaScript — the form has a save button, and the preview is a
+		server-rendered response. A `<dialog>` opened only by `showModal()` would lose the
+		confirmation exactly there. That is why `open` is set as an attribute on the element:
+		daisyUI shows `.modal[open]`, so the question is visible and usable without JavaScript too.
+		With JavaScript it effectively becomes a real modal — backdrop, focus trap, ESC.
 	-->
 	{#if showConfirm && form && 'preview' in form && form.preview}
 		<dialog
@@ -1274,13 +1268,13 @@
 					{/each}
 				</ul>
 				<!--
-					Was in einem *fremden* Studiengang passieren würde, und zwar als Konjunktiv.
+					What would happen in *another* programme, and in the conditional at that.
 
-					Der Probelauf sagt, wer die Veranstaltung übernähme — aber das Speichern kann
-					danach immer noch scheitern: an einer Instanz hängt womöglich ein Wunsch, und
-					`wish.course_instance_id` ist ON DELETE RESTRICT. Die Übergabe liegt in
-					derselben Transaktion und rollt dann mit zurück. „GS5 übernimmt" zu versprechen
-					wäre also eine Zusage, die das Backend nicht halten muss.
+					The dry run says who would take over the course — but saving can still fail afterwards:
+					an instance may have a wish attached, and `wish.course_instance_id` is ON DELETE
+					RESTRICT. The handover is in the same transaction and is then rolled back with it. To
+					promise „GS5 übernimmt“ would therefore be a commitment the backend does not have to
+					keep.
 				-->
 				{#if form.preview.promoted.length > 0}
 					<p class="text-base-content/90 mt-2 text-sm">
@@ -1301,10 +1295,10 @@
 				{/if}
 				<div class="modal-action">
 					<!--
-						Der Weg hinaus, den der Kasten nicht hatte. Ein Modal ohne Abbruch ist eine
-						Sackgasse — und ohne JavaScript ist ein `type="button"` gar nichts, also ist
-						es ein GET auf dieselbe Adresse: das lädt die Seite neu und damit den
-						gespeicherten Stand, was genau das ist, was „abbrechen" hier heißt.
+						The way out the box did not have. A modal without a cancel is a dead end — and without
+						JavaScript a `type="button"` is nothing at all, so it is a GET to the same address: that
+						reloads the page and with it the saved state, which is exactly what „abbrechen“ means
+						here.
 					-->
 					<form method="GET" onsubmit={dismissWithdrawal}>
 						{@render carriedOver([])}
@@ -1329,8 +1323,8 @@
 				</div>
 			</div>
 			<!--
-				Klick daneben schließt, wie bei jedem Modal. Ein `form method="dialog"` braucht kein
-				JavaScript und ist genau dafür da.
+				Clicking beside it closes, as with every modal. A `form method="dialog"` needs no
+				JavaScript and exists for exactly that.
 			-->
 			<form method="dialog" class="modal-backdrop">
 				<button type="submit" aria-label="Dialog schließen">schließen</button>
@@ -1372,9 +1366,9 @@
 				</span>
 			{/if}
 			{#if openEstimates > 0}
-				<!-- Als GET-Formular statt als Link: `resolve()` kennt nur den Pfad, die Auswahl steht
-				     in Query-Parametern, und ein handgeschriebener Link mit beidem ist genau das, was
-				     die Lint-Regel verhindert. -->
+				<!-- As a GET form rather than a link: `resolve()` only knows the path, the selection is
+				     in query parameters, and a hand-written link with both is exactly what the lint
+				     rule prevents. -->
 				<form method="GET">
 					{@render carriedOver(['offen'])}
 					<input type="hidden" name="bearbeiten" value="1" />
@@ -1390,12 +1384,12 @@
 		</div>
 
 		<!--
-			Anfragen anderer Studiengänge, ganz oben und außerhalb der Tabelle.
+			Requests from other programmes, at the very top and outside the table.
 
-			Ohne diesen Abschnitt ist eine Anfrage auf dem einzigen Schirm unsichtbar, auf dem sie
-			beantwortet werden kann: sie steht in der Zeile des *fragenden* Studiengangs, und den
-			sieht die haltende Leitung in ihrer eigenen Auswahl gar nicht. Sie hängt an den
-			Instanzen dieses Studiengangs — `covers` —, also genau da, wo die Zusage hingehört.
+			Without this section a request is invisible on the only screen on which it can be
+			answered: it sits in the row of the *requesting* programme, and the holding lead does not
+			even see that one in their own selection. It hangs off this programme's instances —
+			`covers` —, so exactly where the agreement belongs.
 		-->
 		{#if mayPlan && openCoverageRequests.length > 0}
 			<form method="POST" action="?/coverage" use:enhance class="flex flex-col gap-2">
@@ -1420,7 +1414,7 @@
 							>
 								bestätigen
 							</button>
-							<!-- Ablehnen und Lösen sind dieselbe Sache: der Bedarf ist nicht gedeckt. -->
+							<!-- Declining and releasing are the same thing: the demand is not covered. -->
 							<button type="submit" name="release" value={request.guestId} class="btn btn-xs">
 								ablehnen
 							</button>
@@ -1431,12 +1425,12 @@
 		{/if}
 
 		<!--
-			Das Formular, das den Picker öffnet, steht hier — außerhalb der Planungstabelle.
+			The form that opens the picker lives here — outside the planning table.
 
-			Ein Knopf mit `formmethod="GET"` *innerhalb* des Planungsformulars schickte dessen
-			gesamten Inhalt als Query-String ab, also jedes Häkchen und jede Gruppenzahl der Tabelle.
-			Formulare lassen sich nicht schachteln, also verweisen die Zeilenknöpfe per `form`-Attribut
-			hierher: sie senden dann nur ihren eigenen Namen und die Filter, die hier drinstehen.
+			A button with `formmethod="GET"` *inside* the planning form would send that form's entire
+			content as a query string, i.e. every tick and every group count in the table. Forms cannot
+			be nested, so the row buttons point here via the `form` attribute: they then send only
+			their own name and the filters contained here.
 		-->
 		{#if editing}
 			<form method="GET" id="coverage-picker" class="hidden">
@@ -1446,12 +1440,12 @@
 		{/if}
 
 		<!--
-			Der Picker: welche Instanz eines anderen Studiengangs diesen Bedarf mitdecken soll.
+			The picker: which instance of another programme should also cover this demand.
 
-			Ein Abschnitt an der Adresse statt eines Dialogs, wie die Bearbeiten-Ansicht auch:
-			nachladbar, weitergebbar, und mit dem Zurück-Knopf zu schließen. Die Liste kommt aus
-			dem Load und ist genau das, was der Fremdschlüssel akzeptieren würde — ein Menü mit
-			Einträgen, die beim Klick scheitern, wäre schlimmer als ein kurzes Menü.
+			A section at the address instead of a dialog, like the edit view: reloadable, shareable,
+			and closed with the back button. The list comes from the load and is exactly what the
+			foreign key would accept — a menu with entries that fail when clicked would be worse than
+			a short menu.
 		-->
 		{#if mayPlan && coverageSubject}
 			<div class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
@@ -1492,9 +1486,9 @@
 									{/if}
 								</span>
 								<!--
-									Die Kandidaten-Id sitzt auf dem Knopf, nicht in einem versteckten Feld:
-									ein Formular mit einem versteckten Feld je Kandidat schickt alle mit,
-									und `coveredBy` wäre immer der erste der Liste statt der angeklickte.
+									The candidate id sits on the button, not in a hidden field: a form with one hidden
+									field per candidate sends all of them, and `coveredBy` would always be the first
+									in the list instead of the one clicked.
 								-->
 								<button
 									type="submit"
@@ -1511,8 +1505,8 @@
 				{/if}
 
 				<form method="GET" class="self-start">
-					<!-- `deckung` gehört nicht zu den Filtern und reist deshalb nicht mit: genau
-					     das schließt den Picker. -->
+					<!-- `deckung` is not one of the filters and therefore does not travel along: exactly
+					     that is what closes the picker. -->
 					{@render carriedOver([])}
 					<input type="hidden" name="bearbeiten" value="1" />
 					<button type="submit" class="btn btn-ghost btn-xs">schließen</button>
@@ -1522,10 +1516,10 @@
 
 		{#if !editing}
 			<!--
-				Die Lesesicht: dieselbe Kornung wie die Planungstabelle — eine Zeile je Modul, die
-				Züge darin —, aber nur, was tatsächlich angemeldet ist. Keine ausgegraute
-				Planungstabelle: deren Zeilen sind zum größten Teil Module, die niemand angehakt
-				hat, also eine Arbeitsliste, und die gehört jemand anderem.
+				The read view: the same grain as the planning table — one row per module, the tracks
+				inside it —, but only what is actually registered. No greyed-out planning table: most of
+				its rows are modules nobody has ticked, so it is a work list, and that belongs to
+				somebody else.
 			-->
 			<DemandOverview instances={data.instances} programme={data.selected.programme} />
 		{:else}
@@ -1538,9 +1532,9 @@
 			{/if}
 
 			<!--
-			`enhance` mit eigenem Callback. Nach dem Speichern hat der Load neu geladen, und die
-			Bearbeitungen von vorhin sind damit beantwortet — außer es kam eine Vorschau zurück
-			(dann steht die Entscheidung noch aus) oder jemand hat inzwischen weitergeklickt.
+			`enhance` with its own callback. After saving, the load has reloaded, and with that the
+			edits from before are answered — unless a preview came back (then the decision is still
+			pending) or somebody has kept clicking in the meantime.
 		-->
 			<form
 				bind:this={formEl}
@@ -1574,10 +1568,10 @@
 
 						<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
 							<!--
-							`table-fixed` mit festen Spaltenanteilen: sonst misst der Browser die Spalten
-							nach ihrem Inhalt, und jede gespeicherte Zahl — aus „—" wird „14 SWS" —
-							vermisst die ganze Tabelle neu. Nebenbei stehen damit die Spalten aller
-							Fachsemester-Blöcke untereinander, was sie vorher nicht taten.
+							`table-fixed` with fixed column shares: otherwise the browser sizes the columns by
+							their content, and every saved figure — „—“ becomes „14 SWS“ — re-measures the whole
+							table. As a side effect the columns of all cohort-year blocks now line up, which they
+							did not before.
 						-->
 							<table class="table table-fixed table-sm w-full min-w-[900px]">
 								<colgroup>
@@ -1604,9 +1598,9 @@
 										<tr>
 											<td>
 												<input type="hidden" name="module" value={row.module.id} />
-												<!-- Die Buchstaben der Züge, wie die Seite sie zeigt. Sie stehen hier
-											     und nicht bei den Zählern, weil ein Feld auch dann mitgeschickt
-											     werden muss, wenn das Modul gar keine Gruppen kennt. -->
+												<!-- The track letters, as the page shows them. They are here and not with
+											     the counters, because a field has to be sent along even when the module
+											     has no groups at all. -->
 												{#each letters as letter, i (i)}
 													<input type="hidden" name="track:{row.module.id}:{i}" value={letter} />
 												{/each}
@@ -1658,29 +1652,26 @@
 																	Vorschlag aus {semesterName(row.proposedFrom)}
 																</span>
 															{/if}
-															<!-- Geplant wird nur mit einer bestätigten Aufteilung: aus
-															     einer Schätzung wurden Teile, die nach dem Bestätigen
-															     liegen blieben. Bei einer Schätzung steht „bestätigen“
-															     in der Spalte Aufteilung. -->
+															<!-- Planning happens only with a confirmed split: an estimate
+															     produced parts that were left behind after confirming. With an
+															     estimate, „bestätigen“ is in the split column. -->
 															{#if !row.module.plannable && !row.module.splitIsEstimated}
 																<span class="badge badge-ghost badge-sm">
 																	keine SWS im Katalog
 																</span>
 															{/if}
-															<!-- Eine Zeile, die der Filter nicht geliefert hat: das
-															     Modul gehört woanders hin, oder der Turnus blendet es
-															     aus. Sie steht trotzdem da, denn planDemand fasst nur
-															     an, was auf dem Bildschirm stand — eine unsichtbare
-															     Zeile ließe sich nie wieder abwählen. -->
+															<!-- A row the filter did not return: the module belongs elsewhere,
+															     or the term hides it. It is shown anyway, because planDemand only
+															     touches what was on the screen — an invisible row could never be
+															     deselected again. -->
 															{#if row.foreign}
 																<span class="badge badge-ghost badge-sm">
 																	außerhalb des Filters
 																</span>
 															{/if}
-															<!-- Eine Zeile, die das ZPA nicht kennt. Der
-															     Unterschied ist kein Nebenschauplatz: „aktiv" und
-															     „zurückgezogen" sind Aussagen des ZPA, und über
-															     eine eigene Zeile macht es keine. -->
+															<!-- A row the ZPA does not know. The difference is not a
+															     side issue: „aktiv“ and „zurückgezogen“ are statements by
+															     the ZPA, and it makes none about a row of our own. -->
 															{#if row.module.kind === 'FWP_PLACEHOLDER'}
 																<span class="badge badge-accent badge-sm">
 																	{MODULE_KIND_LABELS.FWP_PLACEHOLDER}
@@ -1694,14 +1685,14 @@
 													</span>
 												</label>
 												<!--
-													Die Notiz steht unter dem Namen und nur bei einer angemeldeten
-													Zeile: sie erklärt ein Angebot, und eine Zeile ohne Häkchen hat
-													keins. Gesendet wird sie als Feld der Zeile, also für alle
-													Züge auf einmal — wie das Fachsemester.
+													The note sits under the name and only on a registered row: it explains an
+													offering, and a row without a tick has none. It is sent as a field of the
+													row, so for all tracks at once — like the cohort year.
 												-->
 												{#if draft(row).offered}
-													<!-- Das Feld trägt dieselbe Sprechblase wie der gezeigte Kommentar,
-													     damit man beim Tippen schon sieht, als was es nachher dasteht. -->
+													<!-- The field carries the same speech bubble as the comment shown, so
+													     that while typing one already sees what it will appear as afterwards.
+													     -->
 													<label class="input input-xs mt-1 w-full max-w-sm">
 														<NoteIcon class="text-base-content/80 size-4 shrink-0" />
 														<input
@@ -1734,20 +1725,19 @@
 											</td>
 											<td class="text-base-content/90">
 												<!--
-												Die Aufteilung links, die Marke und der Knopf rechts am Spaltenrand.
-												Hinter dem Text her stünden sie in jeder Zeile woanders — und was
-												hier durchgegangen wird, ist eine Spalte von Schätzungen, keine
-												Zeile: das Auge braucht sie untereinander.
+												The split on the left, the badge and the button at the right edge of the
+												column. Following the text they would sit somewhere different in every row —
+												and what is scanned here is a column of estimates, not a row: the eye needs
+												them lined up.
 											-->
 												{#if editingSplit === row.module.id}
 													<!--
-													Geändert wird hier, wo die Zahl steht: „4+2 statt 3+3" ist eine
-													Korrektur von zwei Feldern und keine Reise auf eine andere Seite —
-													und die Seite, auf der man gerade fünfzehn Häkchen gesetzt hat,
-													verlässt man dafür nicht. Eine Einheit hinzuzunehmen bleibt der
-													Modulseite vorbehalten, die der Modulname verlinkt. Eine
-													wegzunehmen geht hier: leer oder 0 — und das steht dran, weil
-													es sonst niemand errät.
+													Changed here, where the figure is: „4+2 statt 3+3“ is a correction of two
+													fields and not a trip to another page — and one does not leave the page on
+													which one has just set fifteen ticks for it. Adding a unit stays reserved
+													for the module page, which the module name links to. Removing one works
+													here: empty or 0 — and that is written beside it, because otherwise nobody
+													would guess it.
 												-->
 													<div class="flex flex-wrap items-center gap-1">
 														{#each effectiveComponents(row.module) as component, i (i)}
@@ -1793,10 +1783,10 @@
 													</div>
 												{:else}
 													<!--
-													Zwei Zeilen: oben die Aufteilung, darunter alles, was man mit ihr tun
-													kann. Nebeneinander wuchs die Spalte um die Breite der Knöpfe, und
-													bei zwei Zügen schob das die SWS-Spalte aus dem Bild — die Zahl,
-													die man beim Klicken beobachtet.
+													Two lines: the split on top, below it everything one can do with it. Side
+													by side the column grew by the width of the buttons, and with two tracks
+													that pushed the SWS column out of view — the figure one watches while
+													clicking.
 												-->
 													<div class="flex flex-col gap-1">
 														<span>{splitLabel(row)}</span>
@@ -1816,9 +1806,9 @@
 																{/if}
 															{/if}
 															{#if maySplit(row.module) && row.module.splitIsEstimated}
-																<!-- Solange es eine Schätzung ist, steht das Ändern hier neben
-															     dem Bestätigen: die Leute sollen sehen, dass noch etwas zu
-															     tun ist. Bestätigt wandert es ins Menü der Zeile. -->
+																<!-- As long as it is an estimate, changing sits here next to
+															     confirming: people should see that something is still to be done.
+															     Once confirmed it moves into the row's menu. -->
 																<button
 																	type="button"
 																	class="btn btn-xs"
@@ -1828,16 +1818,16 @@
 																</button>
 															{/if}
 															<!--
-																Der Fall, für den es bisher gar keine Anzeige gab: dasselbe
-																Modul, zweimal geplant, weil keiner vom anderen wusste. Als
-																Angebot formuliert und nicht als Fehler.
+																The case that previously had no display at all: the same module,
+																planned twice because neither knew about the other. Phrased as an
+																offer and not as an error.
 
-																Einmal je Zeile und hier statt bei den Gruppen: es ist eine
-																Aussage über das Modul, nicht über einen Zug — in der
-																Zug-Schleife stand derselbe Satz bei zwei Zügen zweimal, und
-																in der schmalen Spalte brach er über fünf Zeilen um. Kurz,
-																weil davon ohnehin nur die Liste in der Mitte etwas trägt;
-																der ganze Satz steht im `title`.
+																Once per row and here rather than with the groups: it is a
+																statement about the module, not about a track — in the track loop
+																the same sentence appeared twice for two tracks, and in the narrow
+																column it wrapped over five lines. Short, because only the list in
+																the middle carries anything anyway; the full sentence is in the
+																`title`.
 															-->
 															{#if separatelyPlannedIn(row).length > 0}
 																<span
@@ -1848,22 +1838,21 @@
 																</span>
 															{/if}
 															<!--
-																Das Menü der Zeile: alles, was an einer angemeldeten Zeile
-																selten gebraucht wird — Aufteilung ändern, eine Vorlesung für
-																alle Züge, einen Zug mit einem anderen Studiengang zusammen
-																halten. In der Zeile selbst standen diese Knöpfe zu dritt und
-																viert, und die Tabelle wurde voll, obwohl fast jede Zeile
-																keinen davon je braucht.
+																The row's menu: everything that is rarely needed on a registered
+																row — changing the split, one lecture for all tracks, holding a
+																track together with another programme. In the row itself these
+																buttons stood in threes and fours, and the table filled up although
+																almost no row ever needs any of them.
 
-																Ein Popover (top layer) und kein daisyUI-Dropdown: die Tabelle
-																steht in `overflow-x-auto`, und ein Dropdown darin würde am
-																Rand der Tabelle abgeschnitten. Ohne JavaScript: das Öffnen
-																macht der Browser über `popovertarget`, die Knöpfe darin
-																gehören weiter zum Planungsformular.
+																A popover (top layer) and not a daisyUI dropdown: the table sits in
+																`overflow-x-auto`, and a dropdown inside it would be cut off at the
+																table's edge. Without JavaScript: the browser does the opening via
+																`popovertarget`, and the buttons inside still belong to the planning
+																form.
 															-->
 															{#if mayPlan && row.module.plannable && (row.planned || !row.module.splitIsEstimated)}
-																<!-- Ein Zahnrad und ein richtiger Knopf: drei Punkte in Ghost-Optik
-															     waren zu unscheinbar für das, was dahintersteckt. -->
+																<!-- A cog and a proper button: three dots in ghost style were too
+															     inconspicuous for what is behind them. -->
 																<button
 																	type="button"
 																	class="btn btn-xs"
@@ -1913,13 +1902,13 @@
 																			</section>
 																		{/if}
 
-																		<!-- Einmal je Modul, nicht je Zug: „einmal für beide gehalten" ist
-																	     eine Aussage über die Vorlesung, und der Rückweg ist derselbe
-																	     Knopf, weil ein Sabbatical die Entscheidung revidiert.
+																		<!-- Once per module, not per track: „einmal für beide gehalten“
+																	     is a statement about the lecture, and the way back is the
+																	     same button, because a sabbatical revises the decision.
 
-																	     Für einen Platzhalter gar nicht: drei FWPs sind drei
-																	     verschiedene Fächer, keine drei Kohorten desselben — da gibt
-																	     es keine gemeinsame Vorlesung zusammenzulegen. -->
+																	     Not at all for a placeholder: three FWPs are three different
+																	     subjects, not three cohorts of the same one — there is no
+																	     shared lecture to merge. -->
 																		{#if row.planned && row.module.kind !== 'FWP_PLACEHOLDER'}
 																			{@const sharing = sharingState(row)}
 																			{#if sharing.sharedPartId || sharing.mergeablePartId}
@@ -1963,14 +1952,13 @@
 																			{/if}
 
 																			<!--
-																				Gemeinsam oder getrennt, je Zug: welcher Zug sein Modul
-																				mit einem anderen Studiengang zusammen hält, ist eine
-																				Aussage über genau diesen Zug. Der Regelfall braucht
-																				keinen Knopf: wer neben einem anderen Studiengang plant,
-																				ist sofort mit ihm zusammen — dann steht hier „getrennt
-																				planen". „gemeinsam planen" ist der nachträgliche Weg
-																				über den Picker, und den bestätigt die Gegenseite in
-																				ihrer eigenen Zeile.
+																				Together or separate, per track: which track holds its
+																				module together with another programme is a statement about
+																				exactly that track. The usual case needs no button: whoever
+																				plans next to another programme is together with it
+																				immediately — then this says „getrennt planen“. „gemeinsam
+																				planen“ is the after-the-fact route via the picker, and the
+																				other side confirms it in its own row.
 																			-->
 																			<section class="flex flex-col gap-1">
 																				<h4
@@ -1994,8 +1982,9 @@
 																								)}
 																							</span>
 																							{#if cohortTrack.coveredBy}
-																								<!-- Kein Status-Abzeichen hier: das steht beim Zug in der
-																							     Tabelle, und der Knopf sagt selbst, wo der Zug steht. -->
+																								<!-- No status badge here: that sits with the track
+																							     in the table, and the button itself says where
+																							     the track stands. -->
 																								<button
 																									type="submit"
 																									formaction="?/coverage"
@@ -2012,9 +2001,9 @@
 																								</button>
 																							{:else}
 																								<!--
-																									Ein GET-Formular statt eines Links: `resolve()` kennt
-																									nur den Pfad, die Auswahl steht in Query-Parametern.
-																									Das Formular steht außerhalb der Tabelle
+																									A GET form instead of a link: `resolve()` knows
+																									only the path, the selection is in query
+																									parameters. The form sits outside the table
 																									(`coverage-picker`).
 																								-->
 																								<button
@@ -2038,7 +2027,8 @@
 														</span>
 													</div>
 													{#if row.module.splitIsEstimated}
-														<!-- Was „bestätigen" absendet: die Schätzung, so wie sie danebensteht. -->
+														<!-- What „bestätigen“ submits: the estimate, as it stands beside it.
+														     -->
 														{#each effectiveComponents(row.module) as component, i (i)}
 															<input
 																type="hidden"
@@ -2085,21 +2075,21 @@
 											</td>
 											<td>
 												<!--
-													Eine Zeile je Zug, immer — auch für ein Modul ohne Gruppen. Vorher
-													stand hier ein „—", und die Deckung des Zuges stand in der
-													Aufteilungsspalte, je Zug ein gleichlautender Knopf ohne Namen
-													dabei: bei zwei Zügen zwei Knöpfe, und keiner sagte, welcher
-													welcher ist. Jetzt steht sie beim Zug, neben seinem Namen.
+													One row per track, always — even for a module without groups. Before,
+													there was a „—“ here, and the track's coverage sat in the split column,
+													with one identically worded button per track and no name beside it:
+													two tracks, two buttons, and neither said which was which. Now it
+													sits with the track, next to its name.
 												-->
 												<div class="flex flex-col gap-1">
 													{#each letters as letter, i (i)}
 														<!--
-																Ein gedeckter Zug hält gar keine eigene Lehre — ein anderer
-																Studiengang hält sie. Seine Gruppenzahl ist deshalb nicht
-																seine, und der Stepper ist abgeschaltet statt nur auf 0 zu
-																stehen: der erste Klick schickte sonst `groups: 1` und
-																holte sich ein INSTANCE_COVERED, das der Schirm hätte
-																vermeiden können.
+																A covered track holds no teaching of its own — another
+																programme holds it. Its group count is therefore not its
+																own, and the stepper is disabled rather than merely set to
+																0: otherwise the first click would send `groups: 1` and
+																get back an INSTANCE_COVERED that the screen could have
+																avoided.
 															-->
 														{@const covered = !!row.tracks[i]?.coveredBy?.acceptedAt}
 														<div class="flex flex-wrap items-center gap-1">
@@ -2108,8 +2098,8 @@
 																	{cohortLabel(data.selected.programme, yearOf(row), letter)}
 																</span>
 															{/if}
-															<!-- Nichts zu vervielfachen bei einem Modul, das nur aus einer
-															     Vorlesung besteht — parallele Vorlesungen meint hier niemand. -->
+															<!-- Nothing to multiply for a module that consists of a single
+															     lecture — nobody means parallel lectures here. -->
 															{#if row.module.practicalKind}
 																<div class="join">
 																	<button
@@ -2155,9 +2145,9 @@
 																	>{coversLabel(covers)}</span
 																>
 															{/each}
-															<!-- Wie der Zug gehalten wird. Dieselben Felder wie auf der
-															     Zuteilungsseite; gespeichert wird nur ein Zug, dessen Felder
-															     von den mitgeschickten Ausgangswerten abweichen. -->
+															<!-- How the track is held. The same fields as on the
+															     assignment page; only a track whose fields differ from the
+															     initial values sent along is saved. -->
 															{#if row.tracks[i]?.format}
 																{@const format = row.tracks[i].format!}
 																<input
@@ -2242,9 +2232,9 @@
 												{#if draft(row).offered}
 													{hoursLabel(liveHours(row))}
 													{#if row.planned && liveHours(row) !== row.teachingHours}
-														<!-- Was auf dem Bildschirm steht, ist noch nicht, was in der
-													     Datenbank steht. Beides zu zeigen ist der Unterschied
-													     zwischen „ich habe geändert" und „ich habe gespeichert". -->
+														<!-- What is on the screen is not yet what is in the
+													     database. Showing both is the difference between
+													     „ich habe geändert“ and „ich habe gespeichert“. -->
 														<span class="text-base-content/80 text-xs">
 															(gespeichert {hoursLabel(row.teachingHours)})
 														</span>

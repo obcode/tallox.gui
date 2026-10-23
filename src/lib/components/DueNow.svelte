@@ -23,10 +23,10 @@
 </script>
 
 <!--
-	Was in der aktuellen Phase für diese Rollen dran ist — die Antwort auf „was habe ich seit dem
-	letzten Semester vergessen“. Ein Zeiger, keine Regel: die Phase ist der Takt der Fakultät, und
-	gesperrt wird dadurch nichts. Die ganze Folge steht unter /ablauf.
--->
+	What is due in the current phase for these roles — the answer to "what have I forgotten since
+	last semester". A pointer, not a rule: the phase is the faculty's rhythm, and nothing is
+	locked by it. The whole sequence is under /ablauf.
+	-->
 <section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby={titleId}>
 	<svelte:element
 		this={`h${headingLevel}`}

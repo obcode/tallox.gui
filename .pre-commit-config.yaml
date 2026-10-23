@@ -1,8 +1,8 @@
 minimum_pre_commit_version: '3.5.0'
 default_stages: [pre-commit]
 
-# Bewusst pre-commit statt husky/lint-staged: dasselbe Werkzeug wie in tallox.go, im
-# DevContainer schon installiert, und gitleaks lässt sich damit ohne Umweg einbinden.
+# Deliberately pre-commit rather than husky/lint-staged: the same tool as in tallox.go,
+# already installed in the DevContainer, and gitleaks plugs straight into it.
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -19,8 +19,8 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
-        # Eigene Regel für das tallox_-Tokenformat. Der realistische Leckpfad ist nicht der
-        # Server, sondern ein Auswertungsskript im Commit.
+        # Custom rule for the tallox_ token format. The realistic leak path is not the
+        # server but an evaluation script in a commit.
         args: ['--config', '.gitleaks.toml']
 
   - repo: local

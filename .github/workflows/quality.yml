@@ -1,8 +1,8 @@
 name: quality
 
-# Das schnelle Gate. Läuft auf jedem Push und jedem PR, braucht kein Backend und keinen
-# Browser. E2E steht in e2e.yml — getrennt, weil dieser Workflow in unter zwei Minuten eine
-# Antwort geben soll und E2E einen ganzen Stack hochfährt.
+# The fast gate. Runs on every push and every PR, needs no backend and no browser.
+# E2E lives in e2e.yml — separate, because this workflow is meant to give an answer in
+# under two minutes and E2E brings up an entire stack.
 
 on:
   push:
@@ -37,12 +37,12 @@ jobs:
           retention-days: 14
       - run: pnpm run build
 
-  # Die versionierte Schema-Kopie muss zu den generierten Dokumenten passen.
+  # The committed copy of the schema has to match the generated documents.
   #
-  # Der Fehler, den das fängt: jemand aktualisiert schema.graphql von Hand oder per
-  # `update-schema` und vergisst das Codegen. Der Build bleibt grün, weil der alte generierte
-  # Code weiterhin kompiliert — er beschreibt nur ein Schema, das es nicht mehr gibt, und der
-  # Typfehler taucht erst zur Laufzeit als leeres Feld auf.
+  # The failure this catches: someone updates schema.graphql by hand or via
+  # `update-schema` and forgets the codegen. The build stays green because the old generated
+  # code still compiles — it just describes a schema that no longer exists, and the type
+  # error only surfaces at runtime as an empty field.
   codegen:
     name: generierte Dokumente sind aktuell
     runs-on: ubuntu-latest
