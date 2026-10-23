@@ -67,10 +67,10 @@
 {#snippet table(list: ModuleRow<ModuleShape>[], code: string)}
 	<div class="border-base-300 bg-base-100 overflow-x-auto rounded-lg border">
 		<!--
-			`table-fixed` mit festen Spaltenanteilen, wie in der Planungstabelle: sonst misst der
-			Browser jeden Fachsemester-Block nach seinem Inhalt, und der Modulname nimmt in einem
-			Block die halbe Breite und im nächsten ein Drittel — vier Tabellen untereinander, keine
-			zwei mit derselben Spalte an derselben Stelle.
+			`table-fixed` with fixed column shares, as in the planning table: otherwise the browser
+			sizes every cohort-year block by its content, and the module name takes half the width in
+			one block and a third in the next — four tables one below the other, no two with the same
+			column in the same place.
 		-->
 		<table class="table table-fixed table-sm w-full min-w-[720px]">
 			<colgroup>
@@ -113,16 +113,16 @@
 								{/if}
 							</span>
 							<!--
-								Die Notiz der Planung, für die Leserin, die vier Züge eines Moduls sonst
-								für einen Fehler hielte. Sie steht bei der Zeile, nicht beim Zug, weil sie
-								dort geschrieben wurde.
+								The planning note, for the reader who would otherwise take four tracks of one module
+								for a mistake. It sits with the row, not with the track, because that is where it
+								was written.
 							-->
 							{#if row.note !== ''}
 								<!--
-									Als Kommentar gesetzt, nicht als zweite Zeile Fließtext: Sprechblase,
-									kursiv, gedämpft, an einer feinen Kante wie ein Zitat. Wer die Tabelle
-									überfliegt, soll sehen, dass hier jemand etwas *dazu* gesagt hat — und
-									nicht ein Feld des Moduls lesen, das er nicht kennt.
+									Set as a comment, not as a second line of running text: speech bubble, italic,
+									muted, against a fine edge like a quotation. Whoever skims the table should see
+									that somebody has said something *about* it here — and not read a field of the
+									module that they do not know.
 								-->
 								<p
 									class="text-base-content/80 border-base-300 mt-1 flex items-start gap-1 border-l-2 pl-2 text-sm italic"
@@ -136,12 +136,12 @@
 						<td class="align-top text-right">{row.cohorts.length}</td>
 						<td class="text-base-content/90 align-top">
 							<!--
-								Eine Zeile je Zug, aber innerhalb der Modulzeile: was sich zwischen den
-								Zügen unterscheidet, ist genau das hier — drei Praktikumsgruppen gegen
-								zwei, und eine geteilte Vorlesung, die nur einer von beiden hält.
+								One line per track, but inside the module row: what differs between the tracks is
+								exactly this — three lab groups against two, and a shared lecture that only one of
+								the two holds.
 
-								Der Zug-Name steht nur davor, wenn es mehr als einen gibt: bei einem
-								einzügigen Modul — dem Regelfall — wäre er eine Spalte Wiederholung.
+								The track name only goes in front when there is more than one: for a single-track
+								module — the usual case — it would be a column of repetition.
 							-->
 							<span class="flex flex-col gap-0.5">
 								{#each row.cohorts as cohort (cohort.instanceId)}
@@ -153,11 +153,11 @@
 											<span>{partGroupLabel(part)}{i < cohort.parts.length - 1 ? ' ·' : ''}</span>
 										{/each}
 										<!--
-											Die geliehenen Teile stehen mit da, und das müssen sie: ein Zug mit
-											drei Praktika und ohne Vorlesung sieht nach einem Planungsfehler
-											aus, wo er in Wirklichkeit der Fall ist, für den das Zug-Modell
-											existiert. Gezählt werden sie nie — der Sinn einer Vorlesung für
-											zwei Züge ist, dass sie die Fakultät einmal kostet.
+											The borrowed parts are listed too, and they have to be: a track with
+											three labs and no lecture looks like a planning error, where in reality
+											it is the very case the track model exists for. They are never counted —
+											the point of a lecture for two tracks is that it costs the faculty
+											once.
 										-->
 										{#each cohort.borrowed as borrowed, i (i)}
 											<span class="text-base-content/80">
@@ -169,14 +169,13 @@
 											</span>
 										{/each}
 										<!--
-											Der studiengangsübergreifende Fall, und der Grund, warum er
-											überhaupt eine eigene Beschriftung braucht: eine gedeckte Zeile
-											hat gar keine eigenen Teile und 0 SWS. Ohne diesen Satz liest
-											sie sich als Zug, den jemand anzulegen vergessen hat — und genau
-											das ist der Zustand, den die ganze Mechanik vermeiden soll.
+											The cross-programme case, and the reason it needs a label of its own
+											at all: a covered row has no parts of its own and 0 SWS. Without this
+											sentence it reads as a track somebody forgot to create — and that is
+											exactly the state the whole mechanism is meant to avoid.
 										-->
-										<!-- Nur, was vom Regelfall abweicht: ein Block, eine englische
-										     Lehrveranstaltung. Semesterbegleitend auf Deutsch steht nirgends. -->
+										<!-- Only what departs from the usual case: a block, an English-taught
+										     course. Semester-long and in German is stated nowhere. -->
 										{#each cohort.format ? formatBadges(cohort.format) : [] as mark (mark)}
 											<span class="badge badge-info badge-sm">{mark}</span>
 										{/each}
@@ -189,10 +188,10 @@
 											<span class="badge badge-outline badge-sm">{coversLabel(covered)}</span>
 										{/each}
 										<!--
-											Und der Fall, für den es bisher gar keine Anzeige gab: dasselbe Modul,
-											zweimal geplant, weil keiner vom anderen wusste. Als Angebot formuliert
-											und nicht als Fehler — es kann genau richtig sein, und dieser Schirm
-											kann das nicht wissen. Sagen kann er es.
+											And the case that previously had no display at all: the same module,
+											planned twice because neither knew about the other. Phrased as an offer
+											and not as an error — it may be exactly right, and this screen cannot
+											know that. What it can do is say it.
 										-->
 										{#if (cohort.alsoPlannedSeparately ?? []).length > 0}
 											<span class="badge badge-ghost badge-sm">

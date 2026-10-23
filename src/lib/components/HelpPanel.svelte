@@ -59,9 +59,9 @@
 {/snippet}
 
 <!--
-	Neben „Feedback“ und bei jeder Breite sichtbar. Der Name steht erst ab 2xl daneben: die Zeile
-	ist bei xl knapp (siehe NavBar), und `aria-label` und `title` tragen ihn ohnehin.
--->
+	Next to „Feedback“ and visible at every width. The name only appears beside it from 2xl:
+	the row is tight at xl (see NavBar), and `aria-label` and `title` carry it anyway.
+	-->
 <button
 	type="button"
 	class="btn btn-ghost btn-sm gap-1.5 font-normal"
@@ -74,11 +74,11 @@
 </button>
 
 <!--
-	Ein natives <dialog>: Fokusfalle, Escape und das Zurückspringen auf den Knopf bringt der
-	Browser mit, und für einen Screenreader ist es ein Dialog und keine Ebene, die zufällig oben
-	liegt. Rechts angedockt, damit die Seite daneben sichtbar bleibt, auf die sich die Fragen
-	beziehen.
--->
+	A native <dialog>: the browser brings focus trap, Escape and jumping back to the button,
+	and to a screen reader it is a dialog and not a layer that happens to be on top. Docked
+	on the right so that the page beside it, which the questions are about, stays
+	visible.
+	-->
 <dialog
 	bind:this={dialog}
 	class="modal modal-end"

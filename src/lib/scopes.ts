@@ -51,9 +51,9 @@ export const AREA_HINTS: Record<ScopeArea, string> = {
 	PUBLIC: 'Welche Version des Servers antwortet.',
 	PROFILE: 'Wer Du bist und welche Rollen Du hast.',
 	PLANNING: 'Semester, Fachgruppen und Bedarf — und später Zuteilung und Statistik.',
-	// Named for what a token actually reaches here: über ein Token sieht auch eine Leitung nur
-	// die eigenen Wünsche, egal welche Rolle sie hat. Der Bereich begrenzt die Fläche, die
-	// Sichtbarkeitsregel die Zeilen.
+	// Named for what a token actually reaches here: through a token even a lead sees only
+	// their own wishes, whatever role they hold. The scope limits the surface, the visibility
+	// rule the rows.
 	WISHES: 'Eigene Interessensbekundungen lesen und eintragen.',
 	TOKENS: 'Eigene Tokens anlegen und widerrufen.',
 	ADMIN: 'Personen und Rollen.'
