@@ -171,6 +171,15 @@ test.describe('the SWS controlling', () => {
 		await expect(cells.nth(2)).toHaveText('6');
 		await expect(cells.nth(3)).toHaveText('+10');
 
+		// The same figures as a bar over the table: half the quota is spent.
+		const bar = year.getByRole('listitem').filter({
+			has: page.getByRole('img', {
+				name: new RegExp(`^${CONTROLLING.home.code}: .* 4, .* 6 von 20 SWS`)
+			})
+		});
+		await expect(bar).toContainText('50 %');
+		await expect(bar).not.toContainText('über Kontingent');
+
 		// The summer is played through from here: its figure leads into its demand.
 		await expect(cells.nth(2).getByRole('link')).toHaveAttribute(
 			'href',
