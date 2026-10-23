@@ -129,6 +129,74 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toHaveValue('3');
 	});
 
+	// Reported from Collab: once the wish round had run, two cohorts could not be merged into one
+	// any more — the wish on the cohort that went held it in place, and the save said "1 nicht
+	// möglich". The faculty plans iteratively, so the wishes now move to the cohort that stays.
+	test('merges two cohorts after the wish round, and the wish moves along', async ({
+		asPersona
+	}) => {
+		const onCohort = (track: string) =>
+			`SELECT 1 FROM wish w
+			   JOIN course_instance c ON c.id = w.course_instance_id
+			   JOIN semester s ON s.id = c.semester_id
+			   JOIN person p ON p.id = w.person_id
+			  WHERE c.module_id = '${CATALOGUE.split}' AND c.track = ${quoted(track)}
+			    AND s.code = ${quoted(DEMAND.semester)} AND p.mail = 'dekanat@example.org'`;
+		const removeWish = `DELETE FROM wish WHERE course_instance_id IN
+		    (SELECT id FROM course_instance WHERE module_id = '${CATALOGUE.split}')
+		    AND person_id = (SELECT id FROM person WHERE mail = 'dekanat@example.org');`;
+
+		// Fuenf, for the reason seed.ts gives: nobody asserts about Fuenf's own entries.
+		runSql(
+			`INSERT INTO wish (course_instance_id, person_id, priority, note)
+			 SELECT c.id, p.id, 1, '' FROM course_instance c
+			   JOIN semester s ON s.id = c.semester_id, person p
+			  WHERE c.module_id = '${CATALOGUE.split}' AND c.track = 'B'
+			    AND s.code = ${quoted(DEMAND.semester)} AND p.mail = 'dekanat@example.org';`,
+			'a wish on the second cohort'
+		);
+
+		try {
+			const page = await asPersona(PERSONAS.vier);
+			await gotoRendered(page, DEMAND_URL);
+
+			const row = page.getByRole('row', { name: /E2E Modul mit Aufteilung/ }).first();
+			await row.getByRole('button', { name: /Ein Zug weniger/ }).click();
+
+			const dialog = page.getByRole('dialog');
+			await expect(dialog).toBeVisible({ timeout: 15_000 });
+			await expect(dialog.getByText(/gehen Wünsche für einen wegfallenden Zug/)).toBeVisible();
+			await dialog.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
+
+			await expect(page.getByText('1 zurückgezogen')).toBeVisible({ timeout: 15_000 });
+			await expect(page.getByText(/nicht möglich/)).toHaveCount(0);
+			await expect(page.getByRole('spinbutton', { name: 'Gruppen von Zug B' })).toHaveCount(0);
+
+			// The wish is on the cohort that stayed — which lost its letter, since one cohort is
+			// unlettered (E2E1A became E2E1). Asserted in the database: the lead's wish screen would
+			// show it too, but that is a different page with its own spec.
+			runSql(
+				`DO $$ BEGIN
+				   IF NOT EXISTS (${onCohort('')}) THEN
+				     RAISE EXCEPTION 'the wish did not move to the cohort that stays';
+				   END IF;
+				 END $$;`,
+				'checking that the wish moved to the cohort that stays'
+			);
+
+			// Back to two cohorts for the tests that follow, as "saves itself" left them.
+			await page
+				.getByRole('row', { name: /E2E Modul mit Aufteilung/ })
+				.first()
+				.getByRole('button', { name: /Ein Zug mehr/ })
+				.click();
+			await page.getByRole('spinbutton', { name: 'Gruppen von Zug B' }).fill('3');
+			await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+		} finally {
+			runSql(removeWish, 'removing the wish again');
+		}
+	});
+
 	// The sentence beside the row, for the reader who would otherwise take four cohorts of one
 	// module for a mistake. Kept while it is typed, saved when the field is left — a sentence is
 	// not finished at its third letter — and shown where the demand is read, not only where it is

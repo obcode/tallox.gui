@@ -49,6 +49,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},
 	{
+		question: 'Kann ich nach der Wunschrunde noch Züge ergänzen oder zusammenlegen?',
+		answer:
+			'Ja, bis das Semester abgeschlossen ist. Wer einem Modul, das weiter angeboten wird, einen Zug wegnimmt, legt zusammen: die Wünsche für den wegfallenden Zug gehen auf einen verbleibenden über. Wer beide Züge gewünscht hat, behält einen Wunsch mit der stärkeren Stufe und beiden Notizen. Ist dem wegfallenden Zug schon jemand zugeteilt, wird zuerst die Zuteilung gelöst. Ein Modul ganz zu streichen geht erst, wenn niemand mehr dafür eingetragen ist.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/bedarf', label: 'Bedarf' }]
+	},
+	{
 		question: 'Warum lässt sich für ein Modul keine Instanz anlegen?',
 		answer:
 			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs oder die Fachgruppenleitung des Moduls einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',

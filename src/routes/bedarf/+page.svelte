@@ -1257,8 +1257,9 @@
 					<span aria-hidden="true">⚠️</span> Bitte bestätigen
 				</h2>
 				<p class="text-base-content/90 text-sm">
-					Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit;
-					sobald etwas daran hängt, wird die Instanz einzeln abgelehnt und bleibt.
+					Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit.
+					Bleibt das Modul angeboten, gehen Wünsche für einen wegfallenden Zug auf einen verbleibenden
+					über. Ist schon jemand zugeteilt, wird die Instanz einzeln abgelehnt und bleibt.
 				</p>
 				<ul class="mt-2 flex flex-col gap-1">
 					{#each form.preview.withdrawn as change, i (i)}
