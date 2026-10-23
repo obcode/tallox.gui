@@ -1,4 +1,5 @@
-import { PERSONAS, test, expect, gotoRendered, openDropdown } from './fixtures';
+import { PERSONAS, test, expect, gotoRendered, openDropdown, type Persona } from './fixtures';
+import { ASSIGNMENTS, CATALOGUE, COMPETENCES, DEMAND, WISHES } from './seed';
 
 /**
  * Tablet-first, as laid down in CLAUDE.md: fully usable from 768px, clean at 375px.
@@ -149,4 +150,92 @@ test.describe('areas across widths', () => {
 		}
 		await expect(menu.getByRole('link', { name: /Tokens/ })).toBeVisible();
 	});
+});
+
+/**
+ * Every page, at every width, as the person who uses it.
+ *
+ * Two promises, and the second is the one an overflow check alone does not keep. The page must not
+ * scroll sideways; and nothing on it may hide behind a sideways scroll of its own. The first held
+ * everywhere when this was written, and still the person picker of the assignment screen, every
+ * track column of the wish table and half the semester tabs sat off the right edge of a phone —
+ * inside an `overflow-x-auto` that kept the page still and the content out of sight.
+ *
+ * Tables now turn into cards when their columns do not fit (`$lib/stackedTable`), and tab strips
+ * wrap. Code samples in `<pre>` may scroll: a line of code broken in two is a different line.
+ */
+const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
+	{ who: PERSONAS.eins, path: '/' },
+	{ who: PERSONAS.eins, path: '/ablauf' },
+	{ who: PERSONAS.eins, path: '/einfuehrung' },
+	{ who: PERSONAS.eins, path: '/konto/fachgruppen' },
+	{ who: PERSONAS.eins, path: '/konto/kompetenzen' },
+	{ who: PERSONAS.eins, path: '/konto/rollen' },
+	{ who: PERSONAS.eins, path: '/konto/tokens' },
+	{ who: PERSONAS.eins, path: '/konto/zuteilungen' },
+	{ who: PERSONAS.eins, path: `/wuensche?semester=${WISHES.semester}` },
+	{ who: PERSONAS.eins, path: '/module' },
+	{ who: PERSONAS.eins, path: `/module/${CATALOGUE.split}` },
+	{ who: PERSONAS.eins, path: '/api-doku' },
+	{ who: PERSONAS.eins, path: '/api-doku/schema' },
+	{ who: PERSONAS.vier, path: `/bedarf?semester=${DEMAND.semester}` },
+	{ who: PERSONAS.fuenf, path: `/bedarf?semester=${DEMAND.semester}&bearbeiten=1` },
+	{ who: PERSONAS.vier, path: '/statistik' },
+	{
+		who: PERSONAS.drei,
+		path: `/zuteilung?semester=${ASSIGNMENTS.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`
+	},
+	{ who: PERSONAS.drei, path: `/zuteilung/kompetenzen?fachgruppe=${COMPETENCES.subjectGroup}` },
+	{ who: PERSONAS.fuenf, path: '/semester' },
+	{ who: PERSONAS.fuenf, path: `/wuensche/kollegium?semester=${WISHES.semester}` },
+	{ who: PERSONAS.fuenf, path: '/zuteilung/uebersicht' },
+	{ who: PERSONAS.fuenf, path: '/verwaltung/studiengaenge' },
+	{ who: PERSONAS.sechs, path: '/verwaltung/personen' },
+	{ who: PERSONAS.sechs, path: '/verwaltung/fachgruppen' },
+	{ who: PERSONAS.sechs, path: '/verwaltung/zpa' },
+	{ who: PERSONAS.sechs, path: '/verwaltung/zugriffe' },
+	{ who: PERSONAS.sechs, path: '/verwaltung/diagnose' }
+];
+
+test.describe('every page across widths', () => {
+	// Plus the smallest phone still in use, where a card's label goes above its value.
+	for (const viewport of [{ name: 'small phone', width: 320, height: 568 }, ...VIEWPORTS]) {
+		test(`${viewport.name} (${viewport.width}px): nothing scrolls sideways, nothing hides`, async ({
+			asPersona
+		}) => {
+			test.setTimeout(120_000);
+			for (const { who, path } of EVERY_PAGE) {
+				const page = await asPersona(who);
+				await page.setViewportSize({ width: viewport.width, height: viewport.height });
+				await gotoRendered(page, path);
+				// The tables decide after hydration whether their columns fit.
+				await page.waitForFunction(
+					() => document.querySelectorAll('table.table-stack:not(.measured)').length === 0
+				);
+
+				const found = await page.evaluate(() => {
+					const root = document.documentElement;
+					const hidden = [...document.querySelectorAll('main *')]
+						.filter((el) => {
+							// A code sample, or the box around one.
+							if (el.closest('pre') || el.querySelector(':scope > pre')) return false;
+							const style = getComputedStyle(el);
+							return (
+								['auto', 'scroll'].includes(style.overflowX) && el.scrollWidth > el.clientWidth + 1
+							);
+						})
+						.map(
+							(el) =>
+								`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)} ` +
+								`(${el.scrollWidth} in ${el.clientWidth})`
+						);
+					return { page: root.scrollWidth - root.clientWidth, hidden };
+				});
+
+				expect(found.page, `${path}: the page scrolls sideways`).toBeLessThanOrEqual(1);
+				expect(found.hidden, `${path}: content hidden behind a sideways scroll`).toEqual([]);
+				await page.close();
+			}
+		});
+	}
 });
