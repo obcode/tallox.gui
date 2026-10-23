@@ -41,6 +41,17 @@ test.describe('accessibility', () => {
 		await checkA11y(page);
 	});
 
+	// The process chart on /ablauf is a grid of its own: headings per phase, the lane names for
+	// screen readers inside each cell, and a different layout below lg.
+	for (const width of [1440, 375]) {
+		test(`the walk-through with its chart (${width}px)`, async ({ asPersona, checkA11y }) => {
+			const page = await asPersona(PERSONAS.eins);
+			await page.setViewportSize({ width, height: 900 });
+			await gotoRendered(page, '/ablauf');
+			await checkA11y(page);
+		});
+	}
+
 	// One test of its own for every rule in KNOWN_A11Y_DEBT, so that the open finding is named
 	// in every report. `fixme` means: known, not fixed, does not block — unlike `skip`, which
 	// also stands for "does not run here" and is therefore overlooked.

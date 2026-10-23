@@ -47,6 +47,32 @@ Die Abbildung Phase → Schritte steht in `guide.test.ts`; E2E prüft nur, was i
 Stufe 2 (Assistent über das Fakultätsmodell) ist geplant, aber nicht gebaut — Stand und offene
 Fragen in der privaten Workspace-Notiz `help-assistant` (tallox.dev).
 
+## Prozessbild (2026-10-23)
+
+Gewünscht: „den Ablauf richtig schön graphisch“, und zwar auf `/ablauf`, nicht als Artifact oder
+in Claude Design. Oben auf der Seite steht jetzt **„Das Semester im Überblick“**
+(`ProcessChart.svelte`, Logik in **`$lib/processChart.ts`**): Phasen als Spalten, Rollen als
+Bahnen, in jeder Zelle die Schritte mit ihrer Nummer als Sprunglink auf `#schritt-N` in der
+Liste darunter.
+
+- **Nur aus `GUIDE` abgeleitet**, kein zweites Bild von Hand. Spalte = erste Phase in `due`, die
+  eine Phase des geplanten Semesters ist; „Planungssemester setzen“ (`UNSET`/`FINAL`) bekommt die
+  eigene Spalte **„Auftakt“**, „Abschließen“ (bewusst ohne `due`) landet in `FINAL`. Bahn = erste
+  Rolle in `who`; leer = „Alle“. ADMIN und Partner haben keine Bahn, `laneOf` wirft dann.
+- **`oneWay: true`** an den beiden unumkehrbaren Dekanatsschritten (Wunsch-SWS einfrieren und
+  veröffentlichen, Wünsche veröffentlichen), im Bild als Plakette „nicht umkehrbar“. Der Test
+  verlangt, dass ihr Text „nicht zurücknehmen“ sagt.
+- Ab `lg` richten sich die Bahnen über **`grid-rows-subgrid`** über die Spalten aus, die Köpfe sind
+  Chevrons per `clip-path`. Darunter ist jede Phase eine eigene Karte, und die Rolle steht in
+  der Zelle (bei `lg` bleibt sie als `sr-only` für Screenreader).
+- **Kontrastfalle:** Der Kopf der aktuellen Phase war zuerst `bg-primary`. `primary` auf
+  `primary-content` bei 14 px erreicht auf `winter` und `corporate` nur 4,13:1. Jetzt sind alle
+  Köpfe `neutral`; die Plakette „hier stehen wir“ und die `border-primary`-Kästen markieren die
+  Phase. Abgesichert durch den eigenen Block in `contrast.spec.ts` (alle Themes, 1440 px) und
+  durch zwei axe-Läufe in `a11y.spec.ts` (1440 und 375 px).
+- Tests: `processChart.test.ts` pinnt die Plätze und die Nummern; E2E `smoke.spec.ts` ›
+  „draws the semester as phases and roles“, ohne Phasenabhängiges.
+
 ## Wie es gebaut ist
 
 - **`src/lib/guide.ts`** hält den Ablauf als Daten (gerendert unter `/ablauf`): zwei Abschnitte („Einmal einrichten",
