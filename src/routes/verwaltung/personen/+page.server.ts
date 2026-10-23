@@ -33,6 +33,9 @@ const TeacherAccountsDocument = graphql(`
 				programmes {
 					code
 				}
+				partnerProgrammes {
+					code
+				}
 			}
 		}
 		programmes {

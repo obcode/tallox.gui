@@ -31,6 +31,8 @@ export type TeacherAccountRow = {
 		active: boolean;
 		roles: readonly string[];
 		programmes: readonly { code: string }[];
+		/** The programmes a PARTNER_READER grant follows; empty for everybody else. */
+		partnerProgrammes: readonly { code: string }[];
 	} | null;
 };
 

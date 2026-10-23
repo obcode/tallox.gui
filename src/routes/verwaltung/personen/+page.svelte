@@ -465,6 +465,46 @@
 											{/if}
 										</div>
 									{/if}
+
+									{#if account.roles.includes('PARTNER_READER')}
+										<!-- Rare here: the list holds the ZPA's teachers, and a partner faculty's
+										     colleagues are mostly created under "Konten". Offered all the same, so the
+										     two tabs do not disagree about what a partner needs. -->
+										<div class="mt-2 flex flex-wrap items-center gap-1">
+											<span class="text-base-content/80 text-xs">Partner für:</span>
+											{#each data.programmes as programme (programme.code)}
+												{@const assigned = account.partnerProgrammes.some(
+													(p) => p.code === programme.code
+												)}
+												<form method="POST" action="?/programmes" use:enhance={save(account.id)}>
+													<input type="hidden" name="id" value={account.id} />
+													<input type="hidden" name="role" value="PARTNER_READER" />
+													{#each programmesAfterToggle(account.partnerProgrammes, programme.code, !assigned) as wanted (wanted)}
+														<input type="hidden" name="programmes" value={wanted} />
+													{/each}
+													<button
+														type="submit"
+														role="switch"
+														aria-checked={assigned}
+														aria-label="Partner für {programme.code}"
+														disabled={saving.has(account.id)}
+														title={programme.title}
+														class="btn btn-xs {assigned ? 'btn-secondary' : 'btn-outline'}"
+													>
+														{programme.code}
+													</button>
+												</form>
+											{/each}
+											{#if account.partnerProgrammes.length === 0}
+												<span
+													class="badge badge-warning badge-sm"
+													title="Ohne Zuordnung liest diese Partnerfakultät nichts"
+												>
+													Partner ohne Studiengang
+												</span>
+											{/if}
+										</div>
+									{/if}
 								{:else}
 									<span class="text-base-content/80 text-sm">— kein Konto —</span>
 								{/if}
