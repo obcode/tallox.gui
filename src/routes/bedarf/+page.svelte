@@ -261,10 +261,10 @@
 			return 'Zum Bearbeiten bitte einen Studiengang wählen.';
 		}
 		if (leadsNothing) {
-			return 'Ihre Studiengangsleitung ist noch keinem Studiengang zugeordnet.';
+			return 'Deine Studiengangsleitung ist noch keinem Studiengang zugeordnet.';
 		}
 		if (!mayPlan) {
-			return 'Diesen Studiengang leiten Sie nicht.';
+			return 'Diesen Studiengang leitest Du nicht.';
 		}
 		return '';
 	});
@@ -807,8 +807,8 @@
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<p class="text-base-content/90 text-sm">
 				<span class="badge badge-warning badge-sm align-middle">Kein Studiengang</span>
-				Ihre Studiengangsleitung ist noch keinem Studiengang zugeordnet — bitte in der Verwaltung eintragen
-				lassen. Lesen können Sie den Bedarf trotzdem.
+				Deine Studiengangsleitung ist noch keinem Studiengang zugeordnet — bitte in der Verwaltung eintragen
+				lassen. Lesen kannst Du den Bedarf trotzdem.
 			</p>
 		</div>
 	{/if}
@@ -1402,9 +1402,9 @@
 				<div class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4">
 					<h2 class="font-medium">Anfragen anderer Studiengänge</h2>
 					<p class="text-base-content/80 text-sm">
-						Ein anderer Studiengang möchte ein Modul gemeinsam mit Ihnen anbieten. Bestätigen heißt:
-						die Veranstaltung findet einmal statt, Sie halten sie, und ihre SWS zählen einmal — bei
-						Ihnen.
+						Ein anderer Studiengang möchte ein Modul gemeinsam mit Dir anbieten. Bestätigen heißt:
+						die Veranstaltung findet einmal statt, Dein Studiengang hält sie, und ihre SWS zählen
+						einmal — bei Deinem.
 					</p>
 					{#each openCoverageRequests as request (request.guestId)}
 						<div class="flex flex-wrap items-center gap-2">
@@ -1463,7 +1463,7 @@
 					)} — {coverageSubject.module.name} gemeinsam mit einem anderen Studiengang planen
 				</h2>
 				<p class="text-base-content/80 text-sm">
-					Der Bedarf bleibt bestehen und zählt weiter für Ihren Studiengang. Was sich ändert: die
+					Der Bedarf bleibt bestehen und zählt weiter für Deinen Studiengang. Was sich ändert: die
 					Veranstaltung findet einmal statt, der andere Studiengang hält sie, und ihre SWS zählen
 					dort. Wirksam wird das erst, wenn die dortige Leitung zustimmt. Anfragen bei:
 				</p>

@@ -185,7 +185,7 @@
 				</a>
 				<span class="text-base-content/80 text-sm">
 					Planung je Teil mit Besetzung und das SWS-Controlling von {semesterName(data.selected)} — zum
-					Weiterarbeiten in einer Tabelle. Besetzungen nur, soweit Sie sie hier sehen dürfen.
+					Weiterarbeiten in einer Tabelle. Besetzungen nur, soweit Du sie hier sehen darfst.
 				</span>
 			</div>
 		{/if}

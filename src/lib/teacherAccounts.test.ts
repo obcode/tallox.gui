@@ -52,7 +52,8 @@ const ACCOUNT = {
 	mail: 'eins@example.org',
 	active: true,
 	roles: ['LECTURER'],
-	programmes: [{ code: 'IF' }]
+	programmes: [{ code: 'IF' }],
+	partnerProgrammes: []
 };
 
 describe('labels', () => {

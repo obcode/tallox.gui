@@ -226,6 +226,27 @@ test.describe('admitting people from the ZPA list', () => {
 		await expect(reloaded.getByRole('switch', { name: 'E2E' })).toBeChecked();
 	});
 
+	// The same in the list as on the accounts tab: the programmes a partner faculty follows.
+	test('grants the partner role, and the programmes it follows beside it', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/personen');
+
+		const row = page.getByRole('row').filter({ hasText: 'Sieben, Prof.' });
+		await row.getByRole('switch', { name: 'Partnerfakultät' }).click();
+		await expect(row.getByText('Partner ohne Studiengang')).toBeVisible();
+
+		await row.getByRole('switch', { name: 'Partner für E2E' }).click();
+		await expect(row.getByRole('switch', { name: 'Partner für E2E' })).toBeChecked();
+		await expect(row.getByText('Partner ohne Studiengang')).toHaveCount(0);
+
+		// Taken back again, so the other tests in this file find Sieben as they expect him.
+		await row.getByRole('switch', { name: 'Partner für E2E' }).click();
+		await row.getByRole('switch', { name: 'Partnerfakultät' }).click();
+		await expect(row.getByRole('switch', { name: 'Partnerfakultät' })).not.toBeChecked();
+	});
+
 	test('shows the same person on the accounts tab', async ({ asPersona }) => {
 		// The two tabs are two readings of the same table, and somebody admitted on one has to be
 		// administrable on the other — that is where the expiry and the deactivation live.

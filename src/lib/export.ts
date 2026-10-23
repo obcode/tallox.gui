@@ -281,7 +281,7 @@ export function noticeLines(
 	if (!assignmentsPublishedAt) {
 		lines.push(
 			'Die Zuteilung dieses Semesters ist noch nicht veröffentlicht. Besetzungen erscheinen nur, ' +
-				'soweit Sie sie in Tallox sehen dürfen – eine leere Zelle heißt nicht unbedingt „unbesetzt“.',
+				'soweit Du sie in Tallox sehen darfst – eine leere Zelle heißt nicht unbedingt „unbesetzt“.',
 			''
 		);
 	}

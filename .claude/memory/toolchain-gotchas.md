@@ -64,3 +64,11 @@ generischen Meldung — `svelte-check` bleibt grün. Reihenfolge deshalb immer `
 **nicht** neu und testet gegen den alten Stand. Ein Fehler, der nach dem Fix bleibt, ist deshalb
 zuerst eine Frage an `ps`, nicht an den Code. Ein manuell gestarteter Preview, der „Port 4173 is in
 use" meldet, hat es gerade verraten.
+
+Nachtrag 2026-10-23: `pkill -f 'vite preview'` erwischt den Server nicht immer — er läuft als
+`node …/vite/bin/vite.js preview` auf `[::1]:4173`. Sicher ist `ss -ltnp | grep 4173` → `kill <pid>`.
+Ein abgebrochener E2E-Lauf (Timeout des aufrufenden Befehls) lässt ihn liegen.
+
+**Dasselbe auf der Backend-Seite:** ein altes Binary auf `:8080` lässt jede Seite mit neuem Feld
+als **403 „Das hat nicht geklappt“** erscheinen (GraphQL-Validierungsfehler → generische
+Ablehnung). 45 rote Tests in 14 Minuten statt ~330 grüne in 1,5 sind die Umgebung, nicht der Code.
