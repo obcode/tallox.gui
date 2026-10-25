@@ -181,7 +181,7 @@
 							<div class="border-base-300 bg-base-100 mt-2 max-w-md rounded-lg border p-3">
 								<p class="text-base-content/90 mb-3 text-sm">
 									Danach sieht das ganze Kollegium, wer sich wo eingetragen hat; über die
-									Schnittstelle auch mit Stufe und Notiz.
+									Schnittstelle auch mit Stufe. Notizen und Zeitpunkte bleiben bei den Zuständigen.
 									<strong>Das lässt sich nicht zurücknehmen.</strong>
 								</p>
 								<p class="text-base-content/80 mb-3 text-sm">

@@ -37,7 +37,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie schließe ich die Wunschrunde meiner Fachgruppe, und wie öffne ich sie wieder?',
 		answer:
-			'Auf der Zuteilungsseite, je Fachgruppe und Semester. Offen ist sie von Anfang an: freischalten muss niemand etwas. Wer schließt, arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit. Das Dekanat kann die Wünsche eines Semesters erst veröffentlichen, wenn alle Fachgruppen mit Instanzen ihre Runde geschlossen haben; eine offene Runde hält die Veröffentlichung für alle auf. Wer nach der Veröffentlichung wieder öffnet, macht jede neue Eintragung sofort sichtbar, deshalb nur in Absprache.',
+			'Auf der Zuteilungsseite, je Fachgruppe und Semester. Offen ist sie von Anfang an: freischalten muss niemand etwas. Wer schließt, arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit. Das Dekanat kann die Wünsche eines Semesters erst veröffentlichen, wenn alle Fachgruppen mit Instanzen ihre Runde geschlossen haben; eine offene Runde hält die Veröffentlichung für alle auf. Wer nach der Veröffentlichung wieder öffnet, macht jede neue Eintragung sofort sichtbar; die Seite fragt deshalb noch einmal nach. Bitte nur in Absprache mit dem Dekanat.',
 		who: ['SUBJECT_GROUP_LEAD'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
@@ -129,7 +129,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wer sieht meine Wünsche?',
 		answer:
-			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe und Notiz. Veröffentlicht wird erst, wenn alle Fachgruppen ihre Wunschrunde geschlossen haben.',
+			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe. Deine Notiz und wann Du Dich eingetragen hast, lesen weiter nur die Zuständigen. Veröffentlicht wird erst, wenn alle Fachgruppen ihre Wunschrunde geschlossen haben.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'

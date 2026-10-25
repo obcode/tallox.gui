@@ -511,11 +511,26 @@
 							dazukommen.
 						{:else}
 							Die Wunschphase von <strong>{data.group.name}</strong> ist geschlossen.
+							{#if data.semester.wishesPublishedAt}
+								Die Wünsche sind schon veröffentlicht: wer jetzt wieder öffnet, macht jede neue
+								Eintragung sofort für alle sichtbar. Bitte nur in Absprache mit dem Dekanat.
+							{/if}
 						{/if}
 					</span>
-					<button type="submit" class="btn btn-sm">
-						{roundOpen ? 'Wunschphase schließen' : 'Wunschphase öffnen'}
-					</button>
+					<!-- Reopening after publication is the one switch here with a consequence nobody
+					     can take back, so it gets the second click the semester page gives publishing. -->
+					{#if !roundOpen && data.semester.wishesPublishedAt}
+						<details>
+							<summary class="btn btn-sm">Wunschphase öffnen …</summary>
+							<button type="submit" class="btn btn-sm btn-warning mt-2">
+								Ja, trotz Veröffentlichung öffnen
+							</button>
+						</details>
+					{:else}
+						<button type="submit" class="btn btn-sm">
+							{roundOpen ? 'Wunschphase schließen' : 'Wunschphase öffnen'}
+						</button>
+					{/if}
 				</div>
 			</form>
 		{:else}
