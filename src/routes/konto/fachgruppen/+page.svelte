@@ -26,8 +26,10 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Meine Fachgruppen</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
-			In welchen Fächern Du arbeitest. Das trägst Du selbst ein — es ist keine Berechtigung, sondern
-			eine Aussage über Dich, und niemand muss sie Dir erteilen.
+			In welchen Fächern Du arbeitest. Das trägst Du selbst ein — es ist eine Aussage über Dich, und
+			niemand muss sie Dir erteilen. Leserechte gibt sie keine. Sie bestimmt aber zweierlei: für
+			welche Module Du Kompetenzen angeben kannst, und welche Fachgruppenleitungen Deine gewünschten
+			SWS sehen.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Wozu es dient: die <a class="link" href={resolve('/wuensche')}>Wunschseite</a> zeigt Deine Fachgruppen
@@ -36,8 +38,8 @@
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Die <strong>Leitung</strong> einer Fachgruppe ist etwas anderes: sie besetzt deren Instanzen
-			und sieht vor dem Stichtag die Wünsche darauf. Die wird in der Verwaltung vergeben und nicht
-			hier. Wer welche Fachgruppe leitet, steht unter
+			und sieht vor der Veröffentlichung die Wünsche darauf. Die wird in der Verwaltung vergeben und
+			nicht hier. Wer welche Fachgruppe leitet, steht unter
 			<a class="link" href={resolve('/verwaltung/fachgruppen')}
 				>Alle Fachgruppen und ihre Leitungen</a
 			>.

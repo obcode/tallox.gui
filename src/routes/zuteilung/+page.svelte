@@ -755,7 +755,7 @@
 												{#if position === 0 && block.projectBased}
 													<span
 														class="badge badge-secondary badge-sm ml-1 align-middle"
-														title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
+														title="Praxisbegleitende Lehrveranstaltung — wird zuletzt vergeben"
 														>PBLV</span
 													>
 												{/if}

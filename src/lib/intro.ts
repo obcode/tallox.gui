@@ -32,11 +32,11 @@ export const PROMISES: readonly IntroPromise[] = [
 	},
 	{
 		title: 'Personaldaten bleiben in der angemeldeten Sitzung',
-		text: 'Tallox hat eine offene Schnittstelle für eigene Auswertungen. Was Personen betrifft, gibt sie über ein Token aber nicht heraus: unveröffentlichte Wünsche anderer, die Verwaltung von Personen und Rollen, das Zugriffsprotokoll und alles rund um Deputat. Ein Token in einem Skript liest still und in großer Menge; eine Anmeldung im Browser ist einer Person zuzuordnen.'
+		text: 'Tallox hat eine offene Schnittstelle für eigene Auswertungen. Was Personen betrifft, gibt sie über ein Token aber nicht heraus: unveröffentlichte Wünsche anderer, die gewünschten und eingeplanten SWS anderer, die Liste „SWS im Kollegium“, Notizen zu Personen, die Verwaltung von Personen und Rollen und das Zugriffsprotokoll. Ein Token in einem Skript liest still und in großer Menge; eine Anmeldung im Browser ist einer Person zuzuordnen.'
 	},
 	{
 		title: 'Die Regeln stehen im Server, nicht in der Oberfläche',
-		text: 'Was Du sehen und ändern darfst, entscheidet der Server, und zwar für die Oberfläche und die Schnittstelle gleich. Ein Knopf, der fehlt, ist nur die Folge davon. Es gibt keine Rolle, die alles sieht, auch die Administration liest vor der Veröffentlichung keine Wünsche.'
+		text: 'Was Du sehen und ändern darfst, entscheidet der Server, und zwar für die Oberfläche und die Schnittstelle gleich. Ein Knopf, der fehlt, ist nur die Folge davon. Es gibt keine Rolle, die alles sieht, auch die Administration liest vor der Veröffentlichung keine Wünsche. Muss sie doch hineinsehen, kann sie sich die Rolle Dekanat oder eine Leitung nur befristet geben, höchstens 30 Tage, und das steht jeden Tag im Zugriffsbericht.'
 	}
 ];
 
@@ -74,7 +74,7 @@ export const PHASES: readonly IntroPhase[] = [
 	{
 		phase: 'ASSIGNMENT',
 		happens:
-			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum, im Regelfall eine Person für alle Teile eines Zuges. Dabei sehen sie die Wünsche, die Kompetenzen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
+			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum, im Regelfall eine Person für alle Teile eines Zuges. Dabei sehen sie die Wünsche, die Kompetenzen und, für die Mitglieder ihrer Fachgruppen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
 		forYou:
 			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert, bis das Dekanat die Zuteilung veröffentlicht. Ändern kann sie sich auch danach noch, bis das Semester vorbei ist, etwa wenn jemand ausfällt.',
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
@@ -143,7 +143,7 @@ export const GLOSSARY: readonly IntroTerm[] = [
 	},
 	{
 		term: 'PBLV',
-		text: 'Projektbasierte Lehrveranstaltung. Nach Verabredung der Fakultät werden sie zuletzt vergeben, damit sie nicht als Lückenfüller enden.'
+		text: 'Praxisbegleitende Lehrveranstaltung. Nach Verabredung der Fakultät werden sie zuletzt vergeben, damit sie nicht als Lückenfüller enden.'
 	}
 ];
 

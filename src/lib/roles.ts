@@ -28,7 +28,8 @@ export const ROLE_HINTS: Record<Role, string> = {
 		'Liest studiengangsübergreifend, schaltet die Phasen und veröffentlicht Wünsche und Zuteilung.',
 	PARTNER_READER:
 		'Liest Bedarf, Statistik und veröffentlichte Zuteilung der zugeordneten Studiengänge — allein vergeben weniger als ein normales Konto, keine Wünsche, keine Eintragungen.',
-	ADMIN: 'Verwaltet Personen, Rollen und Tokens. Liest bewusst keine Wünsche.'
+	ADMIN:
+		'Verwaltet Personen, Rollen und Tokens. Liest bewusst keine Wünsche; die Rolle Dekanat oder eine Leitung gibt sie sich selbst nur befristet.'
 };
 
 /**

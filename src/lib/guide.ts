@@ -82,7 +82,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Personen zulassen und Rollen vergeben',
 				who: ['ADMIN'],
 				where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }],
-				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und haben damit die Rolle Dozierende. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles. Kolleginnen und Kollegen der Partnerfakultäten (FK10, MUC.DAI, MUC.HEALTH, DPH) bekommen nur die Rolle Partnerfakultät und die Studiengänge, denen sie folgen: sie lesen Bedarf, Statistik und veröffentlichte Zuteilung dieser Studiengänge und tragen nichts ein.'
+				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und haben damit die Rolle Dozierende. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles. Kolleginnen und Kollegen der Partnerfakultäten (FK10, MUC.DAI, MUC.HEALTH, DPH) bekommen nur die Rolle Partnerfakultät und die Studiengänge, denen sie folgen: sie lesen Bedarf, Statistik und veröffentlichte Zuteilung dieser Studiengänge, nicht die Liste des Kollegiums, und tragen nichts ein. Sich selbst gibt die Administration die Rolle Dekanat oder eine Leitung nur befristet, höchstens 30 Tage; der tägliche Zugriffsbericht nennt solche Rollen, solange sie gelten.'
 			},
 			{
 				title: 'Festlegen, welche Studiengänge die Fakultät plant',
@@ -94,7 +94,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Fachgruppen anlegen, Leitung und Mitglieder eintragen',
 				who: ['ADMIN'],
 				where: [{ href: '/verwaltung/fachgruppen', label: 'Fachgruppen' }],
-				text: 'Mathematik, Softwarefächer, Technische Informatik: die fachliche Gruppierung von Modulen und Personen, unabhängig vom Semester. Die Leitung ist eine Berechtigung und wird nur an Personen mit der Rolle Fachgruppenleitung vergeben. Keine Fachgruppe ohne Leitung, die Seite zählt die offenen. Die Mitgliedschaft berechtigt zu nichts, alle können sie auch selbst pflegen.'
+				text: 'Mathematik, Softwarefächer, Technische Informatik: die fachliche Gruppierung von Modulen und Personen, unabhängig vom Semester. Die Leitung ist eine Berechtigung und wird nur an Personen mit der Rolle Fachgruppenleitung vergeben. Keine Fachgruppe ohne Leitung, die Seite zählt die offenen. Die Mitgliedschaft gibt keine Leserechte, alle können sie auch selbst pflegen. Sie bestimmt aber, für welche Module jemand Kompetenzen angibt und welche Leitung die gewünschten SWS der Person sieht.'
 			},
 			{
 				title: 'Module den Fachgruppen zuordnen',
@@ -109,16 +109,16 @@ export const GUIDE: readonly GuideSection[] = [
 				text: 'Das ZPA nennt nur eine Zahl je Modul. Ob 4 SWS zwei Stunden Vorlesung und zwei Stunden Praktikum sind, weiß nur die Fakultät, deshalb trägt es die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat auf der Modulseite ein. Einmal je Modul, nicht jedes Semester. Ohne Aufteilung lässt sich keine Instanz anmelden. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.'
 			},
 			{
-				title: 'Projektbasierte Lehrveranstaltungen kennzeichnen',
+				title: 'Praxisbegleitende Lehrveranstaltungen (PBLV) kennzeichnen',
 				who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/module', label: 'Modulkatalog' }],
-				text: 'Welche Module PBLVs sind, sagt das ZPA nicht. Dieselben Personen wie bei der SWS-Aufteilung kennzeichnen sie auf der Modulseite, einmal je Modul. PBLVs tragen dann überall eine Marke und stehen bei der Zuteilung am Ende, weil sie zuletzt vergeben werden.'
+				text: 'Welche Module PBLVs sind, sagt das ZPA nur in einzelnen Studiengängen, als Korb. Dieselben Personen wie bei der SWS-Aufteilung kennzeichnen sie auf der Modulseite, einmal je Modul. PBLVs tragen dann im Modulkatalog, im Bedarf, in der Zuteilung und in deren Übersicht eine Marke und stehen bei der Zuteilung am Ende, weil sie zuletzt vergeben werden.'
 			},
 			{
 				title: 'Die eigenen Fachgruppen wählen',
 				who: [],
 				where: [{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }],
-				text: 'In welchen Fächern Du arbeitest. Eine Aussage über Dich, keine Berechtigung, deshalb trägst Du sie selbst ein. Die Wunschseite zeigt Deine Fachgruppen zuerst; eintragen kannst Du Dich trotzdem überall.'
+				text: 'In welchen Fächern Du arbeitest. Eine Aussage über Dich, deshalb trägst Du sie selbst ein; Leserechte gibt sie keine. Die Wunschseite zeigt Deine Fachgruppen zuerst; eintragen kannst Du Dich trotzdem überall. Kompetenzen gibst Du für die Module Deiner Fachgruppen an, und deren Leitungen sehen Deine gewünschten SWS.'
 			},
 			{
 				title: 'Die eigenen Kompetenzen angeben',
@@ -154,11 +154,11 @@ export const GUIDE: readonly GuideSection[] = [
 			},
 			{
 				title: 'Interesse bekunden',
-				who: [],
+				who: ['LECTURER'],
 				where: [{ href: '/wuensche', label: 'Wünsche' }],
 				due: ['WISHES'],
 				when: 'Semesterwoche 6–7',
-				text: 'Alle tragen an den Instanzen ein, was sie halten würden, mit Priorität und Notiz, und darüber, wie viele SWS modulbehaftete Lehre (ohne Abschlussarbeiten) sie in dem Semester übernehmen möchten, als Bereich von–bis. Die SWS-Angabe lesen bis zur Veröffentlichung nur die Leitungen der eigenen Fachgruppen und das Dekanat. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Wunschrunde jeder Fachgruppe ist offen, bis ihre Leitung sie schließt; wer schließt, arbeitet mit dem, was gesammelt wurde. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
+				text: 'Alle tragen an den Instanzen ein, was sie halten würden, mit Priorität und Notiz, und darüber, wie viele SWS modulbehaftete Lehre (ohne Abschlussarbeiten) sie in dem Semester übernehmen möchten, als Bereich von–bis. Die SWS-Angabe lesen bis zur Veröffentlichung nur die Leitungen der eigenen Fachgruppen und das Dekanat. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Die Wunschrunde jeder Fachgruppe ist offen, bis ihre Leitung sie schließt; wer schließt, arbeitet mit dem, was gesammelt wurde. Veröffentlicht wird erst, wenn alle Runden geschlossen sind. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
 			},
 			{
 				title: 'Die Wunsch-SWS einfrieren, prüfen und veröffentlichen',
@@ -170,7 +170,7 @@ export const GUIDE: readonly GuideSection[] = [
 				],
 				due: ['WISHES'],
 				when: 'zum Stichtag des Dekanats, in der Regel mit der Wunschphase (Semesterwoche 6–7)',
-				text: 'Zum Stichtag friert das Dekanat die SWS-Angaben des Semesters ein; danach ändert sie niemand mehr selbst. Die Fakultätsleitung geht sie auf Plausibilität durch und klärt grobe Abweichungen mit den Betroffenen; die Korrektur trägt das Dekanat unter „SWS im Kollegium“ ein. Dann veröffentlicht das Dekanat die Angaben: Das ganze Kollegium sieht, wer wie viel halten möchte, und auf dieser Grundlage wird geplant. Notizen bleiben vertraulich. Engpässe werden im Gespräch gelöst: Wer besetzt, bespricht mit der Fakultätsleitung, was offen ist und wer es inhaltlich übernehmen könnte. Einfrieren und Veröffentlichen lassen sich nicht zurücknehmen.'
+				text: 'Zum Stichtag friert das Dekanat die SWS-Angaben des Semesters ein; danach ändert sie niemand mehr selbst. Die Fakultätsleitung geht sie auf Plausibilität durch und klärt grobe Abweichungen mit den Betroffenen; die Korrektur trägt das Dekanat unter „SWS im Kollegium“ ein. Dann veröffentlicht das Dekanat die Angaben: Das ganze Kollegium sieht im Browser, wer wie viel halten möchte, und auf dieser Grundlage wird geplant. Notizen bleiben vertraulich. Engpässe werden im Gespräch gelöst: Wer besetzt, bespricht mit der Fakultätsleitung, was offen ist und wer es inhaltlich übernehmen könnte. Einfrieren und Veröffentlichen lassen sich nicht zurücknehmen.'
 			},
 			{
 				title: 'Die Wunschrunde der Fachgruppe schließen',
@@ -187,7 +187,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['WISHES'],
 				when: 'Ende Semesterwoche 7',
-				text: 'Ab dann sieht das ganze Kollegium alle Eintragungen des Semesters. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
+				text: 'Erst wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Ab dann sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe und Notiz. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
 			},
 			{
 				title: 'Die Instanzen besetzen',
@@ -195,7 +195,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
 				due: ['ASSIGNMENT'],
 				when: 'Semesterwoche 8–9',
-				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Zur Auswahl stehen alle Lehrenden, auch Lehrbeauftragte ohne Tallox-Konto; wer sich für den Zug eingetragen hat, steht oben unter „Gewünscht“. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Neben dem Namen steht, wie viele SWS jemand halten möchte, sofern angegeben, und wie viele schon eingeplant sind, über alle Fachgruppen; die Aufteilung je Fachgruppe zeigt „SWS im Kollegium“, ohne die Module zu nennen. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: projektbasierte Lehrveranstaltungen werden zuletzt vergeben; gekennzeichnete PBLVs stehen deshalb am Ende der Liste. Wer Bachelor- und Mastermodule getrennt besetzt, zeigt nur einen Abschluss an oder gruppiert die Tabelle nach Studiengang. Was jemandem zugeteilt ist, sieht die Person selbst unter „Meine Lehre → Zuteilungen“, bis zur Veröffentlichung als Entwurf. Nach der Veröffentlichung liest das ganze Kollegium unter „Zuteilung → Übersicht“, wer was hält. Auch jetzt lässt sich der Bedarf noch ändern, bis hin zu ganzen Modulen, die wegfallen oder dazukommen.'
+				text: 'Die Fachgruppenleitung besetzt die Instanzen ihrer Fachgruppe, im Regelfall eine Person für alle Teile eines Zuges; Vorlesung und Praktikum können getrennt vergeben werden, wo es so abgesprochen ist. Zur Auswahl stehen alle Lehrenden, auch Lehrbeauftragte ohne Tallox-Konto; wer sich für den Zug eingetragen hat, steht oben unter „Gewünscht“. Eine Fachgruppe kann das gemeinsam in einem Termin durchgehen: gleichzeitiges Arbeiten ist sicher, weil jede Änderung die Zuteilung nennt, die man vor sich sah — wer einen veralteten Stand hat, bekommt einen Hinweis, statt jemandem die Entscheidung zu überschreiben. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung veröffentlicht. Neben dem Namen von Mitgliedern der eigenen Fachgruppen steht, wie viele SWS jemand halten möchte, sofern angegeben, und wie viele schon eingeplant sind, über alle Fachgruppen; die Aufteilung je Fachgruppe zeigt „SWS im Kollegium“, ohne die Module zu nennen. Für andere steht dort nichts, bis die Zuteilung veröffentlicht ist. Verabredung der Fakultät, nicht vom Werkzeug erzwungen: praxisbegleitende Lehrveranstaltungen (PBLV) werden zuletzt vergeben; gekennzeichnete PBLVs stehen deshalb am Ende der Liste. Wer Bachelor- und Mastermodule getrennt besetzt, zeigt nur einen Abschluss an oder gruppiert die Tabelle nach Studiengang. Was jemandem zugeteilt ist, sieht die Person selbst unter „Meine Lehre → Zuteilungen“, bis zur Veröffentlichung als Entwurf. Nach der Veröffentlichung liest das ganze Kollegium unter „Zuteilung → Übersicht“, wer was hält. Auch jetzt lässt sich der Bedarf noch ändern, bis hin zu ganzen Modulen, die wegfallen oder dazukommen.'
 			},
 			{
 				title: 'Die Zuteilung veröffentlichen',

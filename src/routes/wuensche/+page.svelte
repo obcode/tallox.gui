@@ -382,9 +382,13 @@
 			ein, was Du halten würdest, und wie gern.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
-			<strong>Was Du hier einträgst, sehen andere bis zum Stichtag nicht</strong> — auch nicht als Anzahl.
-			Das ist der Zweck der Wunschphase: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“
-			ist, bevor er sich einträgt.
+			<strong
+				>Was Du hier einträgst, sehen bis zur Veröffentlichung nur die zuständigen Leitungen und das
+				Dekanat</strong
+			> — die übrigen Kolleginnen und Kollegen auch nicht als Anzahl. Das ist der Zweck der Wunschphase:
+			niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist, bevor man sich einträgt. Ab der
+			Veröffentlichung sieht das Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit
+			Stufe und Notiz.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Wer welchen <em>Teil</em> übernimmt — Vorlesung, ein einzelnes Praktikum — wird erst bei der Zuteilung
@@ -393,8 +397,8 @@
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Jede Fachgruppe führt ihre eigene Wunschrunde: die <strong>Fachgruppenleitung</strong> öffnet
-			und schließt sie, und veröffentlicht werden die Wünsche eines Semesters vom Dekanat. Welche
-			Module zuerst stehen, bestimmst Du unter
+			und schließt sie, und veröffentlicht werden die Wünsche eines Semesters vom Dekanat, erst wenn
+			alle Fachgruppen ihre Runde geschlossen haben. Welche Module zuerst stehen, bestimmst Du unter
 			<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a>.
 		</p>
 	</div>

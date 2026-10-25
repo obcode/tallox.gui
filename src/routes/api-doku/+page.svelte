@@ -34,10 +34,11 @@
 			<p>
 				Ein Unterschied bleibt, und er ist Absicht: <strong
 					>einige Felder antworten über ein Token nicht</strong
-				>. Personalbezogenes wie der Deputatsstand, fremde noch unveröffentlichte Wünsche, Notizen
-				zu Personen, das Protokoll — und die Tokenverwaltung selbst. Ein langlebiges Token in einem
-				Skript ist eine andere Risikoklasse als eine angemeldete Sitzung: es ermöglicht stillen
-				Massenabruf und trennt „wer hat das gesehen" von einem Anmeldevorgang.
+				>. Personalbezogenes wie fremde noch unveröffentlichte Wünsche, die gewünschten und
+				eingeplanten SWS anderer, Notizen zu Personen, das Protokoll — und die Tokenverwaltung
+				selbst. Ein langlebiges Token in einem Skript ist eine andere Risikoklasse als eine
+				angemeldete Sitzung: es ermöglicht stillen Massenabruf und trennt „wer hat das gesehen" von
+				einem Anmeldevorgang.
 			</p>
 			<p>
 				Solche Felder liefern <span class="font-mono">null</span>, statt die ganze Abfrage scheitern

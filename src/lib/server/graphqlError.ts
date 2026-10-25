@@ -47,6 +47,9 @@ const PASS_THROUGH = new Set([
 	// "This person already exists" is simply the more useful answer there.
 	'FORBIDDEN',
 	'LAST_ADMIN',
+	// An administrator giving themselves a wish-reading role without an expiry: about the
+	// caller's own grant, and the sentence says what to do.
+	'SELF_GRANT_MUST_EXPIRE',
 	'INVALID_MAIL',
 	'INVALID_ID',
 	'PERSON_EXISTS',
@@ -64,6 +67,9 @@ const PASS_THROUGH = new Set([
 	'PHASE_NOT_ADJACENT',
 	'PHASE_MOVED_ON',
 	'PHASE_UNKNOWN',
+	// Publishing the wishes while a subject group's round is open. It names the open groups,
+	// which every colleague can read in the list of subject groups anyway.
+	'WISH_WINDOWS_OPEN',
 	// The module catalogue. Published by the examination office and not confidential, so the
 	// sentences give nothing away — and two of them are the whole point of having distinct
 	// codes at all.

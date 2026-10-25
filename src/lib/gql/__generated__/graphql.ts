@@ -445,7 +445,10 @@ export type ProgrammeStatus =
 export type Role =
   /** Administers people, roles and tokens. Not a reader of unpublished wishes. */
   | 'ADMIN'
-  /** Reads across programmes for the import/export statistics, keeps the teaching-load traffic light. */
+  /**
+   * Reads across programmes and every unpublished wish of the faculty, switches the phases, publishes
+   * the wishes and the assignments, and freezes, corrects and publishes the desired teaching hours.
+   */
   | 'DEANS_OFFICE'
   /** Teaches, keeps a profile and a competence profile, registers interest in instances. */
   | 'LECTURER'
