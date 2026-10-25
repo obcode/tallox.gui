@@ -136,3 +136,10 @@ ist es nur noch in der Verwaltung, wo es beim Anlegen einmal vergeben wird. Inte
 trägt überall die ID, seit diesem Umbau auch auf `/wuensche/kollegium`. E2E sucht Fachgruppen
 über den Namen. Die Fixture-Namen fangen teils gleich an („Testfachgruppe“,
 „Kompetenz-Testfachgruppe“), deshalb `/^Testfachgruppe/`.
+
+## „Berechtigt zu nichts“ war zu kurz (2026-10-25)
+
+Die Seiten sagten „berechtigt zu nichts“ bzw. „keine Berechtigung“. Genau ist: Mitgliedschaft gibt
+keine Leserechte, bestimmt aber, für welche Module jemand Kompetenzen angeben kann und welche
+Fachgruppenleitung die Wunsch-SWS der Person liest. So steht es jetzt auf `/konto/fachgruppen`,
+`/konto/rollen`, `/verwaltung/fachgruppen`, in `help.ts` und `guide.ts`.

@@ -316,11 +316,8 @@
 		{/if}
 	</div>
 
-	<section
-		class="border-base-300 bg-base-100 rounded-lg border p-4"
-		aria-labelledby="project-based"
-	>
-		<h2 id="project-based" class="mb-2 flex items-center gap-2 font-medium">
+	<section class="border-base-300 bg-base-100 rounded-lg border p-4" aria-labelledby="pblv">
+		<h2 id="pblv" class="mb-2 flex items-center gap-2 font-medium">
 			<span aria-hidden="true">🧭</span> Praxisbegleitende Lehrveranstaltung (PBLV)
 		</h2>
 		<p class="text-base-content/80 mb-3 max-w-3xl text-sm">

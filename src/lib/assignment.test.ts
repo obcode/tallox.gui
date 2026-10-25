@@ -610,7 +610,7 @@ describe('moduleBlocks', () => {
 	});
 
 	// The process gives PBLVs out last, and the screen is read top to bottom.
-	it('puts the project-based courses after everything else', () => {
+	it('puts the PBLVs after everything else', () => {
 		const pblv = cohortGroups(
 			[instance({ id: 'p', module: { id: 'p', name: 'Agiles Projekt', projectBased: true } })],
 			[]

@@ -37,9 +37,16 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie schließe ich die Wunschrunde meiner Fachgruppe, und wie öffne ich sie wieder?',
 		answer:
-			'Auf der Zuteilungsseite, je Fachgruppe und Semester. Offen ist sie von Anfang an: freischalten muss niemand etwas. Wer schließt, arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit.',
+			'Auf der Zuteilungsseite, je Fachgruppe und Semester. Offen ist sie von Anfang an: freischalten muss niemand etwas. Wer schließt, arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit. Das Dekanat kann die Wünsche eines Semesters erst veröffentlichen, wenn alle Fachgruppen mit Instanzen ihre Runde geschlossen haben; eine offene Runde hält die Veröffentlichung für alle auf. Wer nach der Veröffentlichung wieder öffnet, macht jede neue Eintragung sofort sichtbar, deshalb nur in Absprache.',
 		who: ['SUBJECT_GROUP_LEAD'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
+		question: 'Wie sehe ich als Administration in unveröffentlichte Wünsche hinein?',
+		answer:
+			'Gar nicht mit der Administration allein: sie liest bewusst keine Wünsche. Wer hineinsehen muss, gibt sich unter Personen und Rollen die Rolle Dekanat oder eine Leitung, sich selbst aber nur mit „Befristet bis“, höchstens 30 Tage; ohne Datum lehnt Tallox das ab. Solange die Rolle gilt, steht sie jede Nacht im Zugriffsbericht. Anderen Personen lässt sich jede Rolle auch unbefristet geben.',
+		who: ['ADMIN'],
+		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	},
 	{
 		question: 'Wie melde ich, dass der Bedarf meines Studiengangs steht?',

@@ -44,7 +44,7 @@ export type InstanceLike = {
 		id: string;
 		name: string;
 		subjectGroup?: { id: string; code: string } | null;
-		/** A project-based course (PBLV): given out last. */
+		/** A practice-accompanying course (PBLV, `projectBased` is the older name): given out last. */
 		projectBased?: boolean;
 	};
 	parts: PartLike[];
