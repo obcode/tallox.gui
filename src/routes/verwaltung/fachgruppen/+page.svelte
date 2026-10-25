@@ -49,10 +49,11 @@
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			<strong>Mitgliedschaft und Leitung sind zweierlei.</strong> Die Mitgliedschaft sagt, in
-			welchen Fächern jemand arbeitet, und berechtigt zu nichts — sie bestimmt, was die Wunschseite
-			zuerst anbietet. Die Leitung ist eine Berechtigung: sie entscheidet, wer die Instanzen der
-			Fachgruppe besetzt und wer vor dem Stichtag die Wünsche darauf sieht. Welche Module zu einer
-			Gruppe gehören — jedes zu genau einer —, wird im
+			welchen Fächern jemand arbeitet, und gibt keine Leserechte. Sie bestimmt, was die Wunschseite
+			zuerst anbietet, für welche Module jemand Kompetenzen angeben kann und welche Leitung die
+			gewünschten SWS der Person sieht. Die Leitung ist eine Berechtigung: sie entscheidet, wer die
+			Instanzen der Fachgruppe besetzt und wer vor der Veröffentlichung die Wünsche darauf sieht.
+			Welche Module zu einer Gruppe gehören — jedes zu genau einer —, wird im
 			<a class="link" href={resolve('/module')}>Modulkatalog</a> zugeordnet.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">

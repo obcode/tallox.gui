@@ -106,8 +106,8 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, in welchen Fächern ich arbeite?',
 		answer:
-			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Jedes Häkchen ist sofort gespeichert. Das ist eine Aussage über Dich und keine Berechtigung: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall.',
-		who: [],
+			'Unter „Meine Lehre → Fachgruppen“, einmal und nicht jedes Semester. Jedes Häkchen ist sofort gespeichert. Das ist eine Aussage über Dich und gibt keine Leserechte: die Wunschseite zeigt Deine Fachgruppen zuerst, eintragen kannst Du Dich trotzdem überall. Zweierlei hängt aber daran: Kompetenzen gibst Du nur für Module Deiner Fachgruppen an, und deren Leitungen sehen Deine gewünschten SWS.',
+		who: ['LECTURER'],
 		where: [{ href: '/konto/fachgruppen', label: 'Meine Fachgruppen' }],
 		stage: 'ONCE'
 	},
@@ -115,15 +115,15 @@ export const HELP: readonly HelpEntry[] = [
 		question: 'Wie trage ich einen Wunsch ein, und wie ziehe ich ihn zurück?',
 		answer:
 			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist. Welche Wunschrunden geschlossen sind, steht einmal über der Tabelle; die betroffenen Züge tragen die Marke „Wunschrunde geschlossen“.',
-		who: [],
+		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
 	},
 	{
 		question: 'Wer sieht meine Wünsche?',
 		answer:
-			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium alle Eintragungen des Semesters.',
-		who: [],
+			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe und Notiz. Veröffentlicht wird erst, wenn alle Fachgruppen ihre Wunschrunde geschlossen haben.',
+		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
 	},
@@ -131,14 +131,14 @@ export const HELP: readonly HelpEntry[] = [
 		question: 'Wie sage ich, dass ich nur die Vorlesung oder nur ein Praktikum halten möchte?',
 		answer:
 			'In der Notiz zum Wunsch. Gewünscht wird die Instanz, also etwa ein Modul für einen Zug; wer welchen Teil hält, legt die Fachgruppenleitung erst bei der Zuteilung fest, weil das eine Absprache zwischen mehreren ist.',
-		who: [],
+		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
 	},
 	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
-			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
+			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
 		who: ['DEANS_OFFICE'],
 		where: [{ href: '/semester', label: 'Semester und Phasen' }]
 	},
@@ -184,7 +184,7 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
-		question: 'Wann werden projektbasierte Lehrveranstaltungen vergeben?',
+		question: 'Wann werden praxisbegleitende Lehrveranstaltungen (PBLV) vergeben?',
 		answer:
 			'Zuletzt, damit sie nicht als Lückenfüller vergeben werden. Das ist eine Verabredung der Fakultät; Tallox erzwingt es nicht.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
@@ -256,7 +256,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, wer wie viele SWS halten möchte?',
 		answer:
-			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat; vorher sehen sie nur die Leitungen der jeweiligen Fachgruppen und das Dekanat. „Eingeplant“ ist bis zur Veröffentlichung der Zuteilung ein Entwurf. Der Balken je Zeile zeigt beides auf einen Blick: gefüllt ist, was eingeplant ist, der umrandete Bereich ist der Wunsch; daneben steht „unter Wunsch“, „im Wunschbereich“ oder „über Wunsch“. Alle Balken haben dieselbe Skala.',
+			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat, und was eingeplant ist, sobald die Zuteilung veröffentlicht ist. Vorher siehst Du in der Liste nur Deine eigene Zeile; die Leitungen sehen die Mitglieder ihrer Fachgruppen, das Dekanat alle. Die Liste gibt es nur im Browser, nicht über ein Token. Der Balken je Zeile zeigt beides auf einen Blick: gefüllt ist, was eingeplant ist, der umrandete Bereich ist der Wunsch; daneben steht „unter Wunsch“, „im Wunschbereich“ oder „über Wunsch“. Alle Balken haben dieselbe Skala.',
 		who: [],
 		where: [{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }],
 		stage: 'EACH_SEMESTER'
@@ -264,14 +264,14 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Meine SWS-Angabe ist eingefroren, stimmt aber nicht mehr. Was nun?',
 		answer:
-			'Nach dem Stichtag ändert nur noch das Dekanat eine Angabe, nach Absprache mit Dir. Die Fakultätsleitung geht die Angaben ohnehin auf Plausibilität durch und meldet sich bei groben Abweichungen. Eine Korrektur steht danach mit dem Namen der Person aus dem Dekanat neben Deiner Angabe; Deine Notiz bleibt.',
+			'Nach dem Einfrieren ändert nur noch das Dekanat eine Angabe, nach Absprache mit Dir. Die Fakultätsleitung geht die Angaben ohnehin auf Plausibilität durch und meldet sich bei groben Abweichungen. Eine Korrektur steht danach mit dem Namen der Person aus dem Dekanat neben Deiner Angabe; Deine Notiz bleibt.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }]
 	},
 	{
 		question: 'Wie sehe ich, ob jemand schon in einer anderen Fachgruppe verplant ist?',
 		answer:
-			'Beim Besetzen steht neben dem Namen, wie viele SWS die Person halten möchte und wie viele schon eingeplant sind, über alle Fachgruppen. Die Aufteilung je Fachgruppe zeigt „SWS im Kollegium“: Du siehst sie für die Mitglieder Deiner Fachgruppen schon während der Planung, ohne zu sehen, welche Module das sind. Dann weißt Du, mit welcher Leitung Du sprechen musst.',
+			'Beim Besetzen steht neben dem Namen von Mitgliedern Deiner Fachgruppen, wie viele SWS die Person halten möchte und wie viele schon eingeplant sind, über alle Fachgruppen. Für andere, für Lehrbeauftragte ohne Konto und für Studiengangsleitungen steht dort nichts, bis die Zuteilung veröffentlicht ist. Die Aufteilung je Fachgruppe zeigt „SWS im Kollegium“: Du siehst sie für die Mitglieder Deiner Fachgruppen schon während der Planung, ohne zu sehen, welche Module das sind. Dann weißt Du, mit welcher Leitung Du sprechen musst.',
 		who: ['SUBJECT_GROUP_LEAD'],
 		where: [
 			{ href: '/zuteilung', label: 'Zuteilung' },
@@ -281,7 +281,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie friere ich die Wunsch-SWS ein und veröffentliche sie?',
 		answer:
-			'Unter „Semester und Phasen“, je Semester. „Wunsch-SWS einfrieren“ ist der Stichtag: Danach kann niemand die eigene Angabe mehr ändern. Unter „SWS im Kollegium“ korrigiert das Dekanat dann, was mit den Betroffenen abgesprochen ist. „Wunsch-SWS veröffentlichen“ macht die Bereiche für alle sichtbar, die Notizen nicht. Beides lässt sich nicht zurücknehmen und geht nur im Browser.',
+			'Unter „Semester und Phasen“, je Semester. „Wunsch-SWS einfrieren“ setzt den Stichtag: Danach kann niemand die eigene Angabe mehr ändern. Unter „SWS im Kollegium“ korrigiert das Dekanat dann, was mit den Betroffenen abgesprochen ist. „Wunsch-SWS veröffentlichen“ macht die Bereiche für alle im Browser sichtbar, die Notizen nicht. Beides lässt sich nicht zurücknehmen und geht nur im Browser.',
 		who: ['DEANS_OFFICE'],
 		where: [
 			{ href: '/semester', label: 'Semester und Phasen' },
@@ -291,7 +291,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie kennzeichne ich ein Modul als PBLV?',
 		answer:
-			'Auf der Modulseite unter „Projektbasierte Lehrveranstaltung (PBLV)“. Das dürfen die Fachgruppenleitung des Moduls, die Studiengangsleitung seines Heimatstudiengangs und das Dekanat. Gekennzeichnete PBLVs stehen bei der Zuteilung am Ende.',
+			'Auf der Modulseite unter „Praxisbegleitende Lehrveranstaltung (PBLV)“. Das dürfen die Fachgruppenleitung des Moduls, die Studiengangsleitung seines Heimatstudiengangs und das Dekanat. Gekennzeichnete PBLVs stehen bei der Zuteilung am Ende.',
 		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/module', label: 'Modulkatalog' }]
 	},
@@ -305,7 +305,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',
 		answer:
-			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht alles wie alle anderen.',
+			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Die Liste „SWS im Kollegium“ bleibt für sie leer. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht, was das Kollegium sieht.',
 		who: ['ADMIN'],
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	}

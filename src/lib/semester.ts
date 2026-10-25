@@ -31,7 +31,8 @@ export const PHASE_LABELS: Record<Phase, string> = {
 
 export const PHASE_HINTS: Record<Phase, string> = {
 	DEMAND_PLANNING: 'Die Studiengangsleitungen legen fest, welche Instanzen angeboten werden.',
-	WISHES: 'Dozierende bekunden Interesse. Die Eintragungen sind vertraulich.',
+	WISHES:
+		'Dozierende bekunden Interesse. Die Eintragungen sind vertraulich, bis das Dekanat sie veröffentlicht.',
 	ASSIGNMENT: 'Die Fachgruppenleitungen besetzen die Instanzen.',
 	REVIEW:
 		'Die Studiengangsleitungen prüfen Zuschnitt, Besetzung und SWS-Controlling. Bis zum Semesterende bleibt alles änderbar.',

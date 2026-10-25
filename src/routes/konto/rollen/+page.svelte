@@ -152,8 +152,8 @@
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<h2 class="font-medium">Meine Fachgruppen</h2>
 		<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
-			In welchen Fächern Du arbeitest. <strong>Das ist keine Berechtigung</strong> — es entscheidet,
-			was die
+			In welchen Fächern Du arbeitest. <strong>Das gibt keine Leserechte</strong> — es entscheidet,
+			für welche Module Du Kompetenzen angeben kannst und was die
 			<a class="link" href={resolve('/wuensche')}>Wunschseite</a> Dir zuerst zeigt. Mitglied zu sein
 			ist etwas anderes, als die Fachgruppe zu leiten. Ändern unter
 			<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a>.

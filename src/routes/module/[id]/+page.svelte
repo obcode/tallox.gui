@@ -321,11 +321,12 @@
 		aria-labelledby="project-based"
 	>
 		<h2 id="project-based" class="mb-2 flex items-center gap-2 font-medium">
-			<span aria-hidden="true">🧭</span> Projektbasierte Lehrveranstaltung (PBLV)
+			<span aria-hidden="true">🧭</span> Praxisbegleitende Lehrveranstaltung (PBLV)
 		</h2>
 		<p class="text-base-content/80 mb-3 max-w-3xl text-sm">
 			PBLVs werden zuletzt vergeben, damit sie nicht als Lückenfüller weggeschnappt werden. Das ZPA
-			kennzeichnet sie nicht, deshalb trägt die Fakultät es hier einmal je Modul ein.
+			führt sie nur in einzelnen Studiengängen als Korb, deshalb trägt die Fakultät es hier einmal
+			je Modul ein.
 		</p>
 		{#if maySplit}
 			<form method="POST" action="?/projectBased" use:enhance class="flex items-center gap-3">

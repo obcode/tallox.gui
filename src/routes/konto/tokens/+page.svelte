@@ -128,7 +128,7 @@
 					name="description"
 					required
 					maxlength="200"
-					placeholder="z. B. Auswertung Deputat im Notebook"
+					placeholder="z. B. SWS-Controlling im Notebook"
 					value={refusal?.description ?? ''}
 				/>
 			</label>

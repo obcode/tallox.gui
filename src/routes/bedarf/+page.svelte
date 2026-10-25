@@ -1643,7 +1643,7 @@
 															{#if row.module.projectBased}
 																<span
 																	class="badge badge-secondary badge-sm"
-																	title="Projektbasierte Lehrveranstaltung — wird zuletzt vergeben"
+																	title="Praxisbegleitende Lehrveranstaltung — wird zuletzt vergeben"
 																	>PBLV</span
 																>
 															{/if}
