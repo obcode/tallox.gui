@@ -234,3 +234,12 @@ Eine Zelle wird über ihren **zugänglichen Namen** gefunden (`Wunsch für IF2A 
 über die Spaltennummer: die Zahl der Zug-Spalten hängt an den Daten, und ein Locator, der zählt,
 zeigt nach einer Fixture-Änderung immer noch auf _ein_ Auswahlfeld — nur auf das falsche, und der
 Test scheitert woanders.
+
+## Nach der Veröffentlichung (2026-10-25)
+
+Seit Backend `feat(wishes): keep the note …` sieht das Kollegium nach der Veröffentlichung, wer sich
+wo eingetragen hat, mit Stufe; Notiz und `createdAt`/`updatedAt` fremder Wünsche kommen leer bzw.
+`null`. Die Wunschseite zeigt ohnehin nur Namen. Wiederöffnen einer Runde nach der
+Veröffentlichung braucht auf der Zuteilungsseite einen zweiten Klick („Ja, trotz Veröffentlichung
+öffnen“). Kein E2E-Test dafür: er müsste das geteilte Zuteilungssemester veröffentlichen, und das
+stört parallel laufende Specs.
