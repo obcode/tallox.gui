@@ -114,12 +114,14 @@ const TEACHING: NavItem = {
 			exact: true
 		},
 		{
-			// No colleaguesOnly and no roles: everybody reads the published figures, and before
-			// publication the page says so instead of showing a table of empty cells.
+			// No roles: every colleague reads the published figures, and before publication the page
+			// says so instead of showing a table of empty cells. colleaguesOnly, because the roster
+			// is the faculty's own — the backend gives a partner faculty an empty list.
 			emoji: '⚖️',
 			label: 'SWS im Kollegium',
 			href: '/wuensche/kollegium',
-			hint: 'Wer wie viele SWS halten möchte und wer schon wie viel eingeplant ist'
+			hint: 'Wer wie viele SWS halten möchte und wer schon wie viel eingeplant ist, sobald das Dekanat es veröffentlicht hat',
+			colleaguesOnly: true
 		},
 		{
 			emoji: '📅',
