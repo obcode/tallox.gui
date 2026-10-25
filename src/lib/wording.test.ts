@@ -20,6 +20,14 @@ const FORBIDDEN: { name: string; pattern: RegExp }[] = [
 		name: 'paired pronoun',
 		pattern: /\b(?:er oder sie|sie oder er|ihm oder ihr|ihr oder ihm)\b/iu
 	},
+	// The generic masculine about a person — "bevor er sich einträgt" about anybody at all. Narrow,
+	// because "er" is also the Studiengang or the Vorschlag of the sentence before; the reflexive
+	// after a conjunction is the shape the person-sentences take. The same pattern as the backend's
+	// internal/arch/wording_test.go.
+	{
+		name: 'generic masculine',
+		pattern: /\b(?:bevor|ob|wenn|dass|weil|damit|sobald|sodass) er sich\b/iu
+	},
 	// The interface says "Du". Narrow on purpose: "Sie wird einmal eingetragen" is the pronoun, and
 	// "Ihre Leitung" after a subject group is its leadership — neither is addressing the reader.
 	{
@@ -73,7 +81,11 @@ describe('German wording', () => {
 		['Treten Sie zuerst der Fachgruppe bei.', true],
 		['in eine Fachgruppe, die Sie leiten', true],
 		['Sie wird einmal eingetragen', false],
-		['Ihre Leitung besetzt die Instanzen ihrer Module', false]
+		['Ihre Leitung besetzt die Instanzen ihrer Module', false],
+		['ob ein Fach besetzt ist, bevor er sich einträgt', true],
+		['bevor man sich einträgt', false],
+		['Wer hier steht, hat eine HM-Kennung', false],
+		['ob er zum Bachelor oder zum Master führt', false]
 	])('classifies %s', (text, forbidden) => {
 		expect(FORBIDDEN.some(({ pattern }) => pattern.test(text))).toBe(forbidden);
 	});
