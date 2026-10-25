@@ -178,7 +178,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/zuteilung', label: 'Zuteilung' }],
 				due: ['WISHES'],
 				when: 'Ende Semesterwoche 7',
-				text: 'Die Wunschrunde jeder Fachgruppe ist offen, solange niemand sie schließt; eintragen kann man sich also, ohne dass vorher jemand etwas freischaltet. Die Fachgruppenleitung schließt sie auf der Zuteilungsseite, wenn gesammelt ist, und arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit, etwa wenn sich jemand verspätet meldet.'
+				text: 'Die Wunschrunde jeder Fachgruppe ist offen, solange niemand sie schließt; eintragen kann man sich also, ohne dass vorher jemand etwas freischaltet. Die Fachgruppenleitung schließt sie auf der Zuteilungsseite, wenn gesammelt ist, und arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit, etwa wenn sich jemand verspätet meldet. Sind die Wünsche schon veröffentlicht, ist jede neue Eintragung sofort für alle sichtbar; die Seite fragt deshalb noch einmal nach, und das gehört mit dem Dekanat abgesprochen.'
 			},
 			{
 				title: 'Die Wünsche veröffentlichen',
