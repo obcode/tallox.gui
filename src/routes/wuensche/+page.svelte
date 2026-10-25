@@ -388,7 +388,7 @@
 			> — die übrigen Kolleginnen und Kollegen auch nicht als Anzahl. Das ist der Zweck der Wunschphase:
 			niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist, bevor man sich einträgt. Ab der
 			Veröffentlichung sieht das Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit
-			Stufe und Notiz.
+			Stufe. Deine Notiz und wann Du Dich eingetragen hast, bleiben bei den Zuständigen.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Wer welchen <em>Teil</em> übernimmt — Vorlesung, ein einzelnes Praktikum — wird erst bei der Zuteilung

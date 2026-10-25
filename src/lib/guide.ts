@@ -187,7 +187,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['WISHES'],
 				when: 'Ende Semesterwoche 7',
-				text: 'Erst wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Ab dann sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe und Notiz. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
+				text: 'Erst wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Ab dann sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe. Notizen und Zeitpunkte der Eintragung lesen weiter nur die Zuständigen. Das lässt sich nicht zurücknehmen. Die Zuteilung schließt direkt an.'
 			},
 			{
 				title: 'Die Instanzen besetzen',

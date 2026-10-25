@@ -28,7 +28,7 @@ export type IntroPromise = { title: string; text: string };
 export const PROMISES: readonly IntroPromise[] = [
 	{
 		title: 'Wünsche sind vertraulich, bis sie veröffentlicht werden',
-		text: 'Bis das Dekanat die Wünsche eines Semesters veröffentlicht, sehen Deine Eintragungen nur Du, die zuständigen Leitungen von Studiengang und Fachgruppe und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl und keine Markierung „hier gibt es schon Interesse“. Der Zweck: kein Windhundverfahren. Wer neu ist, soll sich für ein Fach eintragen können, ohne dass es wie ein Angriff auf jemanden wirkt, der es seit Jahren hält.'
+		text: 'Bis das Dekanat die Wünsche eines Semesters veröffentlicht, sehen Deine Eintragungen nur Du, die zuständigen Leitungen von Studiengang und Fachgruppe und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl und keine Markierung „hier gibt es schon Interesse“. Der Zweck: kein Windhundverfahren. Wer neu ist, soll sich für ein Fach eintragen können, ohne dass es wie ein Angriff auf jemanden wirkt, der es seit Jahren hält. Auch nach der Veröffentlichung bleiben die Notiz und der Zeitpunkt der Eintragung bei den Zuständigen; alle sehen nur, wer sich wo eingetragen hat.'
 	},
 	{
 		title: 'Personaldaten bleiben in der angemeldeten Sitzung',
