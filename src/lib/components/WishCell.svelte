@@ -6,6 +6,7 @@
 		WISH_PRIORITIES,
 		WISH_PRIORITY_HINTS,
 		WISH_PRIORITY_LABELS,
+		wisherLabel,
 		type WishChoice,
 		type WishLike
 	} from '$lib/wishes';
@@ -94,7 +95,7 @@
 			never appear here.
 		-->
 		<p class="text-base-content/80 text-xs">
-			Außerdem: {others.map((o) => o.person.name).join(', ')}
+			Außerdem: {others.map(wisherLabel).join(', ')}
 		</p>
 	{/if}
 </div>

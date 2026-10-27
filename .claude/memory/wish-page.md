@@ -243,3 +243,26 @@ wo eingetragen hat, mit Stufe; Notiz und `createdAt`/`updatedAt` fremder Wünsch
 Veröffentlichung braucht auf der Zuteilungsseite einen zweiten Klick („Ja, trotz Veröffentlichung
 öffnen“). Kein E2E-Test dafür: er müsste das geteilte Zuteilungssemester veröffentlichen, und das
 stört parallel laufende Specs.
+
+## „Davon übernehme ich: nur einen“ (2026-10-27)
+
+Collab: ein Modul in Zug A und B, jemand übernimmt einen davon, egal welchen. Entschieden (Oliver):
+weiter ein Wunsch je Zug, dazu eine **Obergrenze je Zeile** (Backend `setWishTrackLimit`,
+`Wish.trackLimit`, siehe `go/wishes.md`).
+
+- Das Auswahlfeld steht unter dem Modulnamen und erscheint erst ab **zwei eigenen** Wünschen in der
+  Zeile: Optionen „alle“ und 1…n−1. Es hängt im selben Formular wie die Zellen; sein Name ist
+  `limit:` plus alle Zug-Instanzen der Zeile (`trackLimitField`), damit die Action ohne zweite
+  Abfrage weiß, welche gespeicherten Wünsche dazugehören. Fehlt das Feld (zu wenig Wünsche,
+  `disabled` in geschlossener Runde), heißt das „unverändert“, nie „alle“.
+- Geschrieben wird **nach** den Wünschen derselben Speicherung (`trackLimitChanges`): sonst lehnt das
+  Backend eine Grenze für eine Zeile ab, deren erster Wunsch erst in diesem Rundlauf ankommt. Eine
+  Zeile, die nach dem Speichern keinen Wunsch mehr hat, bleibt unberührt — das Backend hat die
+  Grenze mit dem letzten Wunsch schon entfernt.
+- Die SWS-Summe von „Meine Eintragungen“ zählt unter einer Grenze nur die teuersten N Züge
+  (`boundedHours`) — weiter eine Obergrenze, aber zwei Züge als ein Angebot sind ein Zug.
+- Neben fremden Namen (`wisherLabel`: „Prof. Eins (nur einen der Züge)“) auf der Wunschseite nach
+  der Veröffentlichung und auf der Zuteilungsseite, dort auch im Hinweis der Kandidatenauswahl.
+  Ohne Anzahl der gewünschten Züge im Text — die Grenze ist die Aussage, nicht die Zahl.
+- E2E: der zweite Zug wird im Test selbst im **späteren** Semester angelegt und von `reset` wieder
+  entfernt — der Tabellentest behauptet für das erste Semester genau eine Zug-Spalte.

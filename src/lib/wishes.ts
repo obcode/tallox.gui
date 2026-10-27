@@ -171,7 +171,38 @@ export type WishLike = {
 	note: string;
 	person: { mail: string; name: string };
 	instance: WishInstanceLike;
+	/**
+	 * The owner's bound on the cohorts of this module in this programme: of those they wished for,
+	 * at most this many. Null for none. The same on every wish of the group.
+	 */
+	trackLimit?: number | null;
 };
+
+/**
+ * „nur einen der Züge“ — how a bound reads beside a name or an entry. Empty for no bound.
+ *
+ * Without the number of cohorts: beside somebody else's name that number would be how many
+ * cohorts they wished for, which the reader can see anyway where they may, and the sentence is
+ * about the bound, not about the count.
+ */
+export function trackLimitLabel(limit: number | null | undefined): string {
+	if (limit == null) return '';
+	return limit === 1 ? 'nur einen der Züge' : `höchstens ${limit} der Züge`;
+}
+
+/** A name with the bound behind it: „Prof. Eins (nur einen der Züge)“. */
+export function wisherLabel(wish: Pick<WishLike, 'person' | 'trackLimit'>): string {
+	const bound = trackLimitLabel(wish.trackLimit);
+	return bound === '' ? wish.person.name : `${wish.person.name} (${bound})`;
+}
+
+/**
+ * The choices for „Davon übernehme ich“: every bound below the number of cohorts wished for.
+ * A bound of all of them is no bound, and is the empty choice.
+ */
+export function trackLimitChoices(wishedCohorts: number): number[] {
+	return Array.from({ length: Math.max(0, wishedCohorts - 1) }, (_, i) => i + 1);
+}
 
 /**
  * How a wished-for instance reads in one line: `IF3A · Analysis`.
@@ -531,17 +562,92 @@ export function ownWishesBySemester(wishes: readonly WishLike[]): OwnWishSemeste
 
 	for (const wish of wishes) {
 		const code = wish.instance.semester ?? '';
-		const hours = wish.instance.teachingHours ?? 0;
 		const existing = bySemester.get(code);
 		if (existing) {
 			existing.wishes.push(wish);
-			existing.teachingHours += hours;
 			continue;
 		}
-		bySemester.set(code, { code, wishes: [wish], teachingHours: hours });
+		bySemester.set(code, { code, wishes: [wish], teachingHours: 0 });
 	}
+	for (const group of bySemester.values()) group.teachingHours = boundedHours(group.wishes);
 
 	return [...bySemester.values()].sort((a, b) => a.code.localeCompare(b.code));
+}
+
+/**
+ * What one person's own entries add up to, with their bounds applied.
+ *
+ * Under „höchstens N“ only the N dearest cohorts of that module in that programme count: it is
+ * still an upper bound, and two cohorts offered as one are one cohort's hours, not two.
+ */
+export function boundedHours(wishes: readonly WishLike[]): number {
+	const groups = new Map<string, { limit: number | null; hours: number[] }>();
+	for (const wish of wishes) {
+		const key = [
+			wish.instance.semester ?? '',
+			wish.instance.programme.code,
+			wish.instance.module.id
+		].join('\u0000');
+		const group = groups.get(key) ?? { limit: null, hours: [] };
+		group.limit = wish.trackLimit ?? group.limit;
+		group.hours.push(wish.instance.teachingHours ?? 0);
+		groups.set(key, group);
+	}
+	let total = 0;
+	for (const { limit, hours } of groups.values()) {
+		const counted = [...hours].sort((a, b) => b - a).slice(0, limit ?? hours.length);
+		total += counted.reduce((sum, h) => sum + h, 0);
+	}
+	return total;
+}
+
+/** One „Davon übernehme ich“ field as it comes back from the form. */
+export type TrackLimitEntry = {
+	/** The cohorts of the row, in order; the first names the bound to the backend. */
+	instanceIds: string[];
+	/** The bound chosen, or null for „alle“. */
+	limit: number | null;
+};
+
+/** The form name of a row's bound: `limit:` and the row's cohorts. */
+export function trackLimitField(instanceIds: readonly string[]): string {
+	return `limit:${instanceIds.join(',')}`;
+}
+
+/** The way back from {@link trackLimitField}; null for a value that is not a bound. */
+export function parseTrackLimitField(name: string, value: string): TrackLimitEntry | null {
+	const instanceIds = name
+		.slice('limit:'.length)
+		.split(',')
+		.filter((id) => id !== '');
+	if (instanceIds.length === 0) return null;
+	if (value === '') return { instanceIds, limit: null };
+	const limit = Number(value);
+	return Number.isInteger(limit) && limit >= 1 ? { instanceIds, limit } : null;
+}
+
+/**
+ * Which bounds have to be written, after the wishes of the same save.
+ *
+ * Against what was stored, like the wishes. A row that ends this save with no wish of the
+ * caller's is left alone: the backend refuses a bound on nothing, and withdrawing the last wish
+ * has dropped it already.
+ */
+export function trackLimitChanges(
+	entries: readonly TrackLimitEntry[],
+	wishedAfterSave: ReadonlySet<string>,
+	stored: readonly { instanceId: string; trackLimit?: number | null }[]
+): { instanceId: string; limit: number | null }[] {
+	const storedLimit = new Map(stored.map((w) => [w.instanceId, w.trackLimit ?? null]));
+	const changes: { instanceId: string; limit: number | null }[] = [];
+	for (const entry of entries) {
+		if (!entry.instanceIds.some((id) => wishedAfterSave.has(id))) continue;
+		const before =
+			entry.instanceIds.map((id) => storedLimit.get(id)).find((l) => l !== undefined) ?? null;
+		if (before === entry.limit) continue;
+		changes.push({ instanceId: entry.instanceIds[0], limit: entry.limit });
+	}
+	return changes;
 }
 
 /** One cell as it comes back out of the form. */

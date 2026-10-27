@@ -46,6 +46,9 @@
 		wishTint,
 		OWN_WISH_SORT,
 		trackSortKey,
+		trackLimitChoices,
+		trackLimitField,
+		trackLimitLabel,
 		wishSortValue,
 		type OwnWishSortKey,
 		type WishRow,
@@ -256,6 +259,7 @@
 					)}
 					{@const closedReason = rowClosedReason(row, closed)}
 					{@const demandHint = demandStateHint(row, settled)}
+					{@const ownCohorts = row.cohorts.filter((c) => mine.has(c.instanceId))}
 					<tr>
 						<td class="align-top font-mono text-xs {rowTint}">{studyGroupLabel(row)}</td>
 						<td class="align-top {rowTint}">
@@ -296,6 +300,37 @@
 								<span class="block text-xs">
 									{row.module.subjectGroup.name}
 								</span>
+							{/if}
+							{#if ownCohorts.length >= 2}
+								{@const rowLimit =
+									ownCohorts
+										.map((c) => mine.get(c.instanceId)?.trackLimit)
+										.find((l) => l != null) ?? null}
+								<!--
+									„Einen der beiden Züge, egal welcher“: a wish per cohort and a bound on them. Only
+									once two are wished for, because a bound on one cohort says nothing. Keyed on the
+									stored bound for the reason WishCell is keyed: start over exactly when what is
+									saved has changed. A disabled select is not submitted, which the action reads as
+									„unchanged“.
+								-->
+								{#key rowLimit}
+									<label class="mt-1 flex flex-wrap items-center gap-1 text-xs">
+										<span>Davon übernehme ich</span>
+										<select
+											name={trackLimitField(row.cohorts.map((c) => c.instanceId))}
+											class="select select-bordered select-xs w-auto"
+											aria-label={`Wie viele Züge von ${row.module.name} höchstens`}
+											disabled={!open || closedReason !== null}
+										>
+											<option value="" selected={rowLimit === null}>alle</option>
+											{#each trackLimitChoices(ownCohorts.length) as n (n)}
+												<option value={String(n)} selected={rowLimit === n}>
+													{n === 1 ? 'nur einen' : `höchstens ${n}`}
+												</option>
+											{/each}
+										</select>
+									</label>
+								{/key}
 							{/if}
 						</td>
 						<!-- Also not muted, for the same reason as the short code one cell further on. -->
@@ -394,6 +429,12 @@
 			Wer welchen <em>Teil</em> übernimmt — Vorlesung, ein einzelnes Praktikum — wird erst bei der Zuteilung
 			festgelegt, weil das eine Absprache zwischen mehreren ist. Wenn Du dazu schon etwas sagen willst,
 			schreib es in die Notiz: „nur die Vorlesung“, „lieber Zug B“.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Gibt es ein Modul in mehreren Zügen und Du würdest einen davon übernehmen, egal welchen: trag
+			Dich für alle in Frage kommenden Züge ein und wähle unter dem Modulnamen „Davon übernehme ich:
+			nur einen“. Das sehen die Zuteilenden neben Deinem Namen, und nach der Veröffentlichung auch
+			das Kollegium.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Jede Fachgruppe führt ihre eigene Wunschrunde: die <strong>Fachgruppenleitung</strong> öffnet
@@ -590,8 +631,8 @@
 			</h2>
 			<p class="text-base-content/80 max-w-3xl text-sm">
 				Alles, was Du eingetragen hast — über alle Semester, nicht nur über das oben ausgewählte.
-				Die SWS je Semester sind das, was die eingetragenen Züge zusammen kosten; wer davon welchen
-				Teil hält, entscheidet die Zuteilung.
+				Die SWS je Semester sind das, was die eingetragenen Züge zusammen kosten — bei „nur einen
+				der Züge“ zählt nur einer; wer davon welchen Teil hält, entscheidet die Zuteilung.
 			</p>
 
 			<div class="flex flex-col gap-3">
@@ -655,7 +696,14 @@
 									-->
 									{#each sortRows(group.wishes, ownSort, OWN_WISH_SORT) as wish (wish.id)}
 										<tr class={wishTint(wish.priority)}>
-											<td class="font-medium">{wishRowLabel(wish.instance)}</td>
+											<td class="font-medium">
+												{wishRowLabel(wish.instance)}
+												{#if wish.trackLimit != null}
+													<span class="block text-xs font-normal"
+														>{trackLimitLabel(wish.trackLimit)}</span
+													>
+												{/if}
+											</td>
 											<td>{WISH_PRIORITY_LABELS[wish.priority]}</td>
 											<td>{wish.note}</td>
 										</tr>

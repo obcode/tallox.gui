@@ -32,6 +32,13 @@ import {
 	wishChanges,
 	wishRowLabel,
 	wishRows,
+	boundedHours,
+	parseTrackLimitField,
+	trackLimitChanges,
+	trackLimitChoices,
+	trackLimitField,
+	trackLimitLabel,
+	wisherLabel,
 	wishTint,
 	wishesAreOpen,
 	desiredHoursLabel,
@@ -761,5 +768,71 @@ describe('sorting the wish table', () => {
 		expect(OWN_WISH_SORT.label(w)).toBe(wishRowLabel(w.instance));
 		expect(OWN_WISH_SORT.priority(w)).toBe(1);
 		expect(OWN_WISH_SORT.note(w)).toBe('nur VL');
+	});
+});
+
+describe('the bound on cohorts', () => {
+	const cohort = (id: string, track: string, hours: number, trackLimit: number | null = null) => ({
+		...wish(id, `i-${id}`, 'eins@example.org', 'Eins', '2027-SS', hours),
+		trackLimit,
+		instance: { ...wish(id, `i-${id}`, 'e', 'E', '2027-SS', hours).instance, track }
+	});
+
+	it('reads as a phrase beside a name, and as nothing without a bound', () => {
+		expect(trackLimitLabel(1)).toBe('nur einen der Züge');
+		expect(trackLimitLabel(2)).toBe('höchstens 2 der Züge');
+		expect(trackLimitLabel(null)).toBe('');
+		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, trackLimit: 1 })).toBe(
+			'Eins (nur einen der Züge)'
+		);
+		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, trackLimit: null })).toBe('Eins');
+	});
+
+	it('offers every bound below the number of cohorts wished for', () => {
+		// A bound of all of them is no bound; that is „alle“, the empty choice.
+		expect(trackLimitChoices(2)).toEqual([1]);
+		expect(trackLimitChoices(3)).toEqual([1, 2]);
+		expect(trackLimitChoices(1)).toEqual([]);
+	});
+
+	it('counts only the dearest cohorts under a bound', () => {
+		// „Einen der beiden, egal welchen“ is one cohort's hours, not two — and still an upper
+		// bound, so the dearer one.
+		expect(boundedHours([cohort('a', 'A', 6, 1), cohort('b', 'B', 4, 1)])).toBe(6);
+		expect(boundedHours([cohort('a', 'A', 6), cohort('b', 'B', 4)])).toBe(10);
+		expect(
+			boundedHours([cohort('a', 'A', 2, 2), cohort('b', 'B', 4, 2), cohort('c', 'C', 3, 2)])
+		).toBe(7);
+		expect(
+			ownWishesBySemester([cohort('a', 'A', 6, 1), cohort('b', 'B', 4, 1)])[0].teachingHours
+		).toBe(6);
+	});
+
+	it('travels through the form and back', () => {
+		const name = trackLimitField(['i-a', 'i-b']);
+		expect(parseTrackLimitField(name, '1')).toEqual({ instanceIds: ['i-a', 'i-b'], limit: 1 });
+		expect(parseTrackLimitField(name, '')).toEqual({ instanceIds: ['i-a', 'i-b'], limit: null });
+		expect(parseTrackLimitField(name, '0')).toBeNull();
+		expect(parseTrackLimitField(name, 'x')).toBeNull();
+		expect(parseTrackLimitField('limit:', '1')).toBeNull();
+	});
+
+	it('writes only what changed, and nothing on a row left without a wish', () => {
+		const entry = { instanceIds: ['i-a', 'i-b'], limit: 1 };
+		const stored = [
+			{ instanceId: 'i-a', trackLimit: null },
+			{ instanceId: 'i-b', trackLimit: null }
+		];
+		expect(trackLimitChanges([entry], new Set(['i-a', 'i-b']), stored)).toEqual([
+			{ instanceId: 'i-a', limit: 1 }
+		]);
+		const already = stored.map((w) => ({ ...w, trackLimit: 1 }));
+		expect(trackLimitChanges([entry], new Set(['i-a', 'i-b']), already)).toEqual([]);
+		expect(trackLimitChanges([{ ...entry, limit: null }], new Set(['i-b']), already)).toEqual([
+			{ instanceId: 'i-a', limit: null }
+		]);
+		// Every wish of the row withdrawn in this save: the backend dropped the bound with the last
+		// one, and would refuse a new one.
+		expect(trackLimitChanges([entry], new Set(), stored)).toEqual([]);
 	});
 });

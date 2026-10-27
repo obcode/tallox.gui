@@ -3,7 +3,7 @@ import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
 import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
-import { desiredHoursLabel } from '$lib/wishes';
+import { desiredHoursLabel, trackLimitLabel } from '$lib/wishes';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -87,6 +87,8 @@ export type WishLike = {
 	note: string;
 	person: { id: string; name: string; mail?: string | null };
 	instance: { id: string };
+	/** „Of these cohorts, at most this many“ — see `trackLimitLabel`. */
+	trackLimit?: number | null;
 };
 
 /** One statement of a module's competence pool, as much of it as the candidate list needs. */
@@ -547,7 +549,10 @@ export function candidatesFor(
 		// between two programmes' colleagues for one event, and they should know it.
 		const from = wish.instance.id === instanceIds[0] ? '' : programmeOf.get(wish.instance.id);
 		const words = WISH_WORDS[wish.priority] ?? '';
-		const base = wish.note ? `${words} · ${wish.note}` : words;
+		// „nur einen der Züge“ belongs beside the level: whoever fills IF4B should know that the
+		// same person may be offering themselves for IF4A instead.
+		const bound = trackLimitLabel(wish.trackLimit);
+		const base = [words, bound, wish.note].filter((w) => w !== '').join(' · ');
 		add(
 			{
 				personId: wish.person.id,

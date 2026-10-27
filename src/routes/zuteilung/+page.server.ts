@@ -153,6 +153,7 @@ const AssignmentDocument = graphql(`
 			id
 			priority
 			note
+			trackLimit
 			person {
 				id
 				name

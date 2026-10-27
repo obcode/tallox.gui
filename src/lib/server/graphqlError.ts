@@ -155,6 +155,9 @@ const PASS_THROUGH = new Set([
 	'WISH_WINDOW_CLOSED',
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
+	// The bound on one's own cohorts: the refusal reads only the caller's own wishes.
+	'WISH_TRACK_LIMIT_INVALID',
+	'WISH_TRACK_LIMIT_WITHOUT_WISHES',
 	'WISH_PRIORITY_INVALID',
 	// The desired teaching hours: the range, a finished semester, the freeze. All are about the
 	// caller's own figure or about the semester's state, which every colleague reads, so none says
