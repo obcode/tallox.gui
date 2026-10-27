@@ -4,7 +4,15 @@ import type { WishPriority } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
 import { parseDesiredRange } from '$lib/desiredHours';
-import { isWishChoice, othersForWishScreen, wishChanges, type WishEntry } from '$lib/wishes';
+import {
+	isWishChoice,
+	othersForWishScreen,
+	parseTrackLimitField,
+	trackLimitChanges,
+	wishChanges,
+	type TrackLimitEntry,
+	type WishEntry
+} from '$lib/wishes';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -121,6 +129,7 @@ const WishesDocument = graphql(`
 			id
 			priority
 			note
+			trackLimit
 			person {
 				mail
 				name
@@ -149,6 +158,7 @@ const WishesDocument = graphql(`
 			id
 			priority
 			note
+			trackLimit
 			person {
 				mail
 				name
@@ -241,6 +251,7 @@ const MyWishesDocument = graphql(`
 			id
 			priority
 			note
+			trackLimit
 			instance {
 				id
 			}
@@ -269,6 +280,12 @@ const SetDesiredHoursDocument = graphql(`
 			minHours
 			maxHours
 		}
+	}
+`);
+
+const SetWishTrackLimitDocument = graphql(`
+	mutation SetWishTrackLimit($instance: ID!, $maxTracks: Int) {
+		setWishTrackLimit(courseInstanceId: $instance, maxTracks: $maxTracks)
 	}
 `);
 
@@ -363,6 +380,7 @@ export const actions: Actions = {
 		const semester = String(form.get('semester') ?? '');
 
 		const entries = new Map<string, WishEntry>();
+		const limits: TrackLimitEntry[] = [];
 		const entryFor = (instanceId: string) => {
 			const existing = entries.get(instanceId);
 			if (existing) return existing;
@@ -383,6 +401,11 @@ export const actions: Actions = {
 				entryFor(key.slice('wish:'.length)).priority = text;
 			} else if (key.startsWith('note:')) {
 				entryFor(key.slice('note:'.length)).note = text.trim();
+			} else if (key.startsWith('limit:')) {
+				// „Davon übernehme ich höchstens …“ — one per row, present only where the row has two
+				// or more of the caller's wishes. Absent means unchanged, never „alle“.
+				const limit = parseTrackLimitField(key, text);
+				if (limit) limits.push(limit);
 			}
 		}
 
@@ -424,6 +447,27 @@ export const actions: Actions = {
 				// their wording, and everything else becomes a generic sentence. On this page that
 				// matters more than anywhere else — a passed-through uniqueness violation is exactly
 				// the leak the rule exists to prevent.
+				refusals.push({ instanceId: change.instanceId, message: toRefusal(err).message });
+			}
+		}
+
+		// After the wishes, because a bound needs one of them to qualify: a row whose first wish
+		// arrives in this very save would otherwise be refused.
+		const wishedAfterSave = new Set(
+			[...entries.values()].filter((e) => e.priority !== '').map((e) => e.instanceId)
+		);
+		for (const change of trackLimitChanges(
+			limits,
+			wishedAfterSave,
+			stored.myWishes.map((w) => ({ instanceId: w.instance.id, trackLimit: w.trackLimit }))
+		)) {
+			try {
+				await backendRequest(SetWishTrackLimitDocument, {
+					instance: change.instanceId,
+					maxTracks: change.limit
+				});
+				saved++;
+			} catch (err) {
 				refusals.push({ instanceId: change.instanceId, message: toRefusal(err).message });
 			}
 		}

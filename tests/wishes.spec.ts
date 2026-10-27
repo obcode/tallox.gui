@@ -18,11 +18,24 @@ test.describe.configure({ mode: 'serial' });
 
 const URL = `/wuensche?semester=${WISHES.semester}`;
 
+/**
+ * A second cohort of the seeded module in the later semester, made by the one test that needs it
+ * and taken away by `reset`. Not in the seed: the table test asserts the first semester has exactly
+ * one cohort column, and the later semester is this file's own.
+ */
+const SECOND_COHORT = {
+	instance: '0e2e0000-0000-4000-8000-000000000048',
+	lecture: '0e2e0000-0000-4000-8000-000000000049'
+} as const;
+
 /** Everything these tests registered, and the publication they may have caused. */
 function reset(): void {
 	runSql(
 		`DELETE FROM wish WHERE course_instance_id IN
-		   ('${WISHES.instance}', '${WISHES.laterInstance}');
+		   ('${WISHES.instance}', '${WISHES.laterInstance}', '${SECOND_COHORT.instance}');
+		 DELETE FROM wish_track_limit WHERE module_id = '${WISHES.module}';
+		 DELETE FROM course_instance WHERE id = '${SECOND_COHORT.instance}';
+		 UPDATE course_instance SET track = '' WHERE id = '${WISHES.laterInstance}';
 		 DELETE FROM desired_teaching_hours WHERE semester_id IN
 		   (SELECT id FROM semester WHERE code IN ('${WISHES.semester}', '${WISHES.laterSemester}'));
 		 UPDATE semester SET wishes_published_at = NULL, phase = 'WISHES',
@@ -182,6 +195,51 @@ test.describe('the wish phase', () => {
 		// And back to nothing: the empty option is how a wish is withdrawn.
 		await cell(page).selectOption('');
 		await expect(mine()).toHaveCount(0);
+	});
+
+	test('one of two cohorts, either one: two wishes and „nur einen“', async ({ asPersona }) => {
+		// Collab: a module in cohorts A and B, and somebody who takes one of them and does not mind
+		// which. Until now that was a sentence in a note.
+		runSql(
+			`UPDATE course_instance SET track = 'A' WHERE id = '${WISHES.laterInstance}';
+			 INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+			                              programme_semester)
+			 SELECT '${SECOND_COHORT.instance}', semester_id, module_id, programme_id, 'B', 3
+			   FROM course_instance WHERE id = '${WISHES.laterInstance}';
+			 INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
+			 VALUES ('${SECOND_COHORT.lecture}', '${SECOND_COHORT.instance}', 'LECTURE', 0, 2);`,
+			'adding a second cohort'
+		);
+		try {
+			const page = await asPersona(PERSONAS.eins);
+			await gotoRendered(page, `/wuensche?semester=${WISHES.laterSemester}`);
+			const mine = () => summaryFor(page, WISHES.laterSemester);
+			const cohort = (track: string) =>
+				page.getByRole('combobox', { name: new RegExp(`Wunsch für \\S*${track} · E2E Fachmodul`) });
+			const bound = page.getByRole('combobox', { name: /Wie viele Züge von E2E Fachmodul/ });
+
+			// One wish is not yet a choice between cohorts, so there is nothing to bound.
+			await cohort('A').selectOption('HAPPY_TO');
+			await expect(mine().getByRole('cell', { name: 'gerne' })).toBeVisible();
+			await expect(bound).toHaveCount(0);
+
+			await cohort('B').selectOption('IF_NEEDED');
+			await expect(mine().getByRole('cell', { name: 'notfalls' })).toBeVisible();
+			await expect(mine().getByText('4 SWS')).toBeVisible();
+
+			await bound.selectOption('1');
+			await expect(mine().getByText('nur einen der Züge').first()).toBeVisible();
+			// Two cohorts offered as one are one cohort's hours.
+			await expect(mine().getByText('2 SWS')).toBeVisible();
+			await expect(bound).toHaveValue('1');
+
+			// And lifted again.
+			await bound.selectOption('');
+			await expect(mine().getByText('nur einen der Züge')).toHaveCount(0);
+			await expect(mine().getByText('4 SWS')).toBeVisible();
+		} finally {
+			reset();
+		}
 	});
 
 	test('my own entries span every semester, grouped by it', async ({ asPersona }) => {

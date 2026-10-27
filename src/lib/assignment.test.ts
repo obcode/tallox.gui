@@ -178,6 +178,19 @@ describe('candidatesFor', () => {
 		expect(out[1].hint).toContain('nur die Vorlesung');
 	});
 
+	it('says beside the level that somebody takes only one of the cohorts', () => {
+		// Whoever fills IF4B should know that the same person may be offering themselves for IF4A.
+		const bounded: WishLike[] = [
+			{ ...wishes[1], trackLimit: 1 },
+			{ ...wishes[0], trackLimit: null }
+		];
+		const out = candidatesFor(['i1'], bounded, [], [], []);
+		expect(out.find((c) => c.personId === 'per2')!.hint).toBe(
+			'notfalls · nur einen der Züge · nur die Vorlesung'
+		);
+		expect(out.find((c) => c.personId === 'per1')!.hint).toBe('unbedingt');
+	});
+
 	it('does not offer somebody who wished for a different cohort', () => {
 		const out = candidatesFor(['i1'], wishes, [], [], []);
 		expect(out.map((c) => c.personId)).not.toContain('per9');

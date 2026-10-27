@@ -45,6 +45,7 @@
 	import { trackSaves } from '$lib/saveOnLeave';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
+	import { wisherLabel } from '$lib/wishes';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
 	import { DELIVERY_LABELS, MAX_TOPIC_LENGTH, hoursLabel, withTopic } from '$lib/demand';
 	import type { ActionData, PageData } from './$types';
@@ -838,7 +839,7 @@
 												{/if}
 												{#if wishesHere.length > 0}
 													<p class="text-base-content/80 mt-1 text-xs">
-														Eingetragen: {wishesHere.map((w) => w.person.name).join(', ')}
+														Eingetragen: {wishesHere.map(wisherLabel).join(', ')}
 													</p>
 												{/if}
 												<!-- A refusal belongs to a part, and the parts may be folded away. Where

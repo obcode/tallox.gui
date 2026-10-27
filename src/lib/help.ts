@@ -143,6 +143,14 @@ export const HELP: readonly HelpEntry[] = [
 		stage: 'EACH_SEMESTER'
 	},
 	{
+		question: 'Wie sage ich, dass ich nur einen von mehreren Zügen übernehme, egal welchen?',
+		answer:
+			'Trag Dich für jeden Zug ein, der in Frage kommt, jeweils mit eigener Stufe. Sobald es zwei sind, steht unter dem Modulnamen „Davon übernehme ich“: „nur einen“ heißt einer davon, egal welcher, bei drei Zügen geht auch „höchstens 2“. Die Fachgruppenleitung sieht das bei der Zuteilung neben Deinem Namen, nach der Veröffentlichung auch das Kollegium. In der SWS-Summe Deiner Eintragungen zählt dann nur der teuerste Zug. Ziehst Du alle Wünsche für das Modul zurück, verschwindet die Angabe mit.',
+		who: ['LECTURER'],
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
+	},
+	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
 			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
@@ -152,7 +160,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wen kann ich bei der Zuteilung auswählen?',
 		answer:
-			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
+			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz und gegebenenfalls „nur einen der Züge“, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
