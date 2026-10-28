@@ -839,6 +839,9 @@ describe('who may see the gap list', () => {
 
 	it('is not a mere member — membership grants nothing', () => {
 		expect(mayShowGaps('g1', ['LECTURER'], [])).toBe(false);
+		// A lead previewing the lecturer's view: the led groups still come from `me`, the role
+		// does not — and without the role the wishes the gaps are computed from are withheld.
+		expect(mayShowGaps('g1', ['LECTURER'], led)).toBe(false);
 	});
 
 	it('is not a study programme lead, whose reach is the other axis', () => {
