@@ -329,6 +329,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wie sehe ich nur die Module eines Korbs?',
+		answer:
+			'Studiengang wählen, dann über der Tabelle unter „Korb“ den Korb der Prüfungsordnung auswählen — in der Übersicht wie beim Bearbeiten. Ein Modul in zwei Körben erscheint in beiden. Unter „Sortierung“ ordnet „nach Korb“ die Module innerhalb jedes Fachsemesters nach ihrem Korb statt nach dem Namen; ein Modul in zwei Körben steht dann einmal, beim ersten. Die Auswahl steht in der Adresse, ein Link darauf lässt sich weitergeben.',
+		who: [],
+		where: [{ href: '/bedarf', label: 'Bedarf' }]
+	},
+	{
 		question: 'Kann ich über die Schnittstelle planen, etwa mit einem KI-Assistenten?',
 		answer:
 			'Ja, mit einem Planungs-Token. Unter „Tokens“ beim Anlegen „Volle Reichweite“ ankreuzen: Das Token kann dann alles, was Du im Browser kannst, also Bedarf erklären, Teile zuteilen und, wenn Deine Rolle es erlaubt, veröffentlichen, und es liest dabei, was Du im Browser liest, auch unveröffentlichte Wünsche in Deinem Bereich. Es gilt höchstens 90 Tage und steht im nächtlichen Zugriffsbericht. Ein normales Token ohne Häkchen ist für Auswertungen: Es plant nicht und liest fremde Wünsche erst nach der Veröffentlichung. Kein Token erreicht die Tokenverwaltung, Personen und Rollen oder das Zugriffsprotokoll. Was das Token liest, liest ein Assistent mit; deshalb ein eigenes Token je Aufgabe, so kurz wie möglich, und danach widerrufen.',

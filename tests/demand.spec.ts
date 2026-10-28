@@ -669,6 +669,50 @@ test.describe('the demand table', () => {
 		await expect(page.getByLabel('Art', { exact: true })).toHaveValue('MIXED');
 	});
 
+	// A programme whose modules all sit in one Fachsemester is structured by its baskets alone, so
+	// the page filters and sorts by them — the choice in the address like every other filter.
+	test('filters and sorts by basket, and the choice survives the other filters', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		// Both terms, so the elective of the other term is in the list as well.
+		await gotoRendered(page, `${DEMAND_URL}&turnus=alle`);
+
+		const basket = page.getByLabel('Korb', { exact: true });
+		await basket.selectOption('E2E WPF-Korb');
+		await expect(page).toHaveURL(/korb=E2E\+WPF-Korb/);
+		await expect(page).toHaveURL(/turnus=alle/);
+		await expect(page).toHaveURL(/bearbeiten=1/);
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toBeVisible();
+		await expect(page.getByRole('row', { name: /E2E Modul mit Aufteilung/ })).toHaveCount(0);
+		await checkA11y(page);
+
+		// The search row is a form of its own and carries the basket along.
+		await page.getByRole('button', { name: 'Anzeigen' }).click();
+		await expect(page).toHaveURL(/korb=E2E\+WPF-Korb/);
+		await expect(page.getByLabel('Korb', { exact: true })).toHaveValue('E2E WPF-Korb');
+
+		// Every basket again, ordered by basket: in the second Fachsemester the compulsory module
+		// („E2E Pflichtkorb“) now comes before the elective, where by name it came after.
+		await page.getByLabel('Korb', { exact: true }).selectOption('');
+		await expect(page).not.toHaveURL(/korb=/);
+		const pair = page
+			.getByRole('row')
+			.filter({ hasText: /E2E Modul (ohne Aufteilung|zum Ändern)/ });
+		await expect(pair.first()).toContainText('E2E Modul ohne Aufteilung');
+		await page.getByLabel('Sortierung', { exact: true }).selectOption('korb');
+		await expect(page).toHaveURL(/sortierung=korb/);
+		await expect(pair.first()).toContainText('E2E Modul zum Ändern');
+		await expect(pair.last()).toContainText('E2E Modul ohne Aufteilung');
+
+		// Usable at the narrowest width as well.
+		await page.setViewportSize({ width: 320, height: 800 });
+		const box = await page.getByLabel('Korb', { exact: true }).boundingBox();
+		expect(box).not.toBeNull();
+		expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+	});
+
 	// The cohort year, said where the course is entered rather than looked for afterwards.
 	//
 	// The test above is the other half of this one: a local course counts in no set of

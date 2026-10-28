@@ -17,6 +17,8 @@
 		moduleName
 	} from '$lib/catalogue';
 	import {
+		arrangeByBasket,
+		basketOptions,
 		byYear,
 		cohortLabel,
 		compareWithPrevious,
@@ -89,7 +91,9 @@
 		{ name: 'art', value: data.selected.duty },
 		{ name: 'turnus', value: data.selected.bothTerms ? 'alle' : '' },
 		{ name: 'offen', value: data.selected.onlyEstimated ? '1' : '' },
-		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '' }
+		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '' },
+		{ name: 'korb', value: data.selected.basket },
+		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' }
 	]);
 
 	/**
@@ -108,10 +112,14 @@
 		demandRows(data.modules, data.instances, data.previousInstances, data.selected.previous)
 	);
 	const shown = $derived(
-		rows.filter(
-			(row) =>
-				(!data.selected.onlyEstimated || row.module.splitIsEstimated) &&
-				(!data.selected.onlyPlanned || row.planned)
+		arrangeByBasket(
+			rows.filter(
+				(row) =>
+					(!data.selected.onlyEstimated || row.module.splitIsEstimated) &&
+					(!data.selected.onlyPlanned || row.planned)
+			),
+			data.selected.basket,
+			data.selected.order
 		)
 	);
 	const groups = $derived(byYear(shown));
@@ -199,6 +207,21 @@
 	 * `policy.MayWriteDemand`, asked again on every save and on the token path too.
 	 */
 	const editing = $derived(data.selected.editing && mayPlan && data.selected.programme !== '');
+
+	/**
+	 * The baskets of the chosen programme, for the "Korb" selection in both views.
+	 *
+	 * Only with a programme: a basket belongs to one programme's regulations, and across all of
+	 * them the same name can mean different things. The chosen one stays in the list even when no
+	 * row has it any more, or the selection would show „alle“ while still filtering.
+	 */
+	const baskets = $derived.by(() => {
+		if (data.selected.programme === '') return [];
+		const options = basketOptions(editing ? rows : data.instances);
+		if (data.selected.basket !== '' && !options.includes(data.selected.basket))
+			options.push(data.selected.basket);
+		return options;
+	});
 
 	/**
 	 * Somebody who holds the role and has not been given a programme.
@@ -1082,6 +1105,49 @@
 				<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
 			</form>
 		{/if}
+
+		<!--
+			Basket and order, in both views. A programme like one whose modules all sit in the first
+			Fachsemester is structured by its baskets alone, and the year groups say nothing there.
+
+			Its own form, because it switches on change and the search above must not: a filter of
+			dropdowns submits itself, a search field waits for its button.
+		-->
+		{#if baskets.length > 0}
+			<form method="GET" class="flex flex-wrap items-end gap-3" data-testid="basket-filter">
+				{@render carriedOver(['korb', 'sortierung'])}
+				{#if editing}
+					<input type="hidden" name="bearbeiten" value="1" />
+				{/if}
+				<label class="form-control">
+					<span class="label-text text-sm">Korb</span>
+					<select
+						name="korb"
+						aria-label="Korb"
+						class="select select-bordered select-sm max-w-full"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					>
+						<option value="">alle</option>
+						{#each baskets as basket (basket)}
+							<option value={basket} selected={data.selected.basket === basket}>{basket}</option>
+						{/each}
+					</select>
+				</label>
+				<label class="form-control">
+					<span class="label-text text-sm">Sortierung</span>
+					<select
+						name="sortierung"
+						aria-label="Sortierung"
+						class="select select-bordered select-sm"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					>
+						<option value="">nach Name</option>
+						<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
+					</select>
+				</label>
+				<noscript><button type="submit" class="btn btn-primary btn-sm">Anzeigen</button></noscript>
+			</form>
+		{/if}
 	</div>
 
 	{#if editing}
@@ -1679,7 +1745,12 @@
 				its rows are modules nobody has ticked, so it is a work list, and that belongs to
 				somebody else.
 			-->
-			<DemandOverview instances={data.instances} programme={data.selected.programme} />
+			<DemandOverview
+				instances={data.instances}
+				programme={data.selected.programme}
+				basket={data.selected.basket}
+				order={data.selected.order}
+			/>
 		{:else}
 			{#if shown.length === 0}
 				<div class="border-base-300 bg-base-100 rounded-lg border p-4">

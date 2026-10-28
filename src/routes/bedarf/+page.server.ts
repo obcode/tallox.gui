@@ -1,6 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
-import { formatChanges, previousComparableSemester, topicChanges } from '$lib/demand';
+import {
+	formatChanges,
+	previousComparableSemester,
+	topicChanges,
+	type DemandOrder
+} from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
 	CourseType,
@@ -532,6 +537,11 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 	const term = bothTerms ? '' : semesterTerm(semester);
 	const onlyEstimated = url.searchParams.get('offen') === '1';
 	const onlyPlanned = url.searchParams.get('geplant') === '1';
+	// The basket filter and order, in the address like the other filters so a link to one
+	// programme's basket can be sent on. Applied on the page to rows already loaded, as with
+	// `offen` and `geplant`: the baskets are catalogue data and come with every row.
+	const basket = (url.searchParams.get('korb') ?? '').trim();
+	const order: DemandOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
 	// The edit mode, as a parameter rather than as browser state: two views under one address
 	// cannot be sent to a colleague, and the back button would leave the wrong one showing.
 	const editing = url.searchParams.get('bearbeiten') === '1';
@@ -671,6 +681,8 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 			duty,
 			onlyEstimated,
 			onlyPlanned,
+			basket,
+			order,
 			bothTerms,
 			editing,
 			foreignSearch,

@@ -280,3 +280,21 @@ von der Bedarfsseite aus kein Weg zur Übertragung.
 - **Zwei Knöpfe, „Schließen“ und „Dialog schließen“, kollidieren in Playwright** (Teilstring) —
   der Knopf nach dem Übertragen heißt deshalb „Fertig“.
 - E2E: `tests/demand-split.spec.ts`, Fixture `DEMAND_SPLIT` (E2A, `…0f1`/`…0f2`).
+
+## Korb-Filter und -Sortierung (2026-10-28)
+
+Wunsch aus der Fakultät: ein Studiengang, dessen Module alle im 1. Fachsemester liegen, gliedert
+sich nur über seine Wahlpflicht-Körbe. `?korb=` und `?sortierung=korb` stehen in `filterFields`,
+gelten in **beiden** Sichten (nur mit gewähltem Studiengang) und werden auf schon geladene Zeilen
+angewandt (`arrangeByBasket` in `$lib/demand`), wie `offen`/`geplant`. Ein eigenes GET-Formular,
+weil es beim Wechsel abschickt und das Suchformular nicht.
+
+- **Keine Gruppierung mit Überschrift je Korb:** ein Modul in zwei Körben stünde zweimal mit
+  Eingabefeldern da. Filter: erscheint in jedem seiner Körbe; Sortierung: einmal, beim ersten
+  Korb (alphabetisch), Zeilen ohne Korb zuletzt. Die Sortierung ist stabil und vergleicht nur den
+  Korb, die Fachsemester-Gruppen und ihre SWS bleiben gleich.
+- Pflicht-Körbe werden angeboten, obwohl `basketLabel` sie unter dem Namen weglässt.
+- Ein gewählter Korb, den keine Zeile mehr hat, bleibt in der Auswahl — sonst stünde „alle“ da,
+  während gefiltert wird.
+- `/zuteilung` bewusst noch nicht (Rückmeldung: dort weniger wichtig); die Funktionen passen dort
+  genauso.
