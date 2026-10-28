@@ -212,6 +212,8 @@ These follow from the domain, not from taste. Full reasoning in the backend's
   every such field — and the playground is off in production. `diagnoseAccess` was shipped
   without a page and was therefore unreachable by anybody. Check the directive when adding a
   backend field, before assuming the console covers it.
+  `@fullReach` fields are different: a token minted with full reach (the „Planungs-Token“) gets
+  them through the console too, a plain token gets `null` or `FULL_REACH_REQUIRED`.
 - **Build the navigation from `session.effectiveRoles`, never from `me.roles`.** The two
   differ the moment somebody narrows their roles, and a menu built from the held ones shows
   the view of a person whose permissions the server is no longer applying — which answers

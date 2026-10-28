@@ -271,7 +271,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, wer wie viele SWS halten möchte?',
 		answer:
-			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat, und was eingeplant ist, sobald die Zuteilung veröffentlicht ist. Vorher siehst Du in der Liste nur Deine eigene Zeile; die Leitungen sehen die Mitglieder ihrer Fachgruppen, das Dekanat alle. Die Liste gibt es nur im Browser, nicht über ein Token. Der Balken je Zeile zeigt beides auf einen Blick: gefüllt ist, was eingeplant ist, der umrandete Bereich ist der Wunsch; daneben steht „unter Wunsch“, „im Wunschbereich“ oder „über Wunsch“. Alle Balken haben dieselbe Skala.',
+			'Unter „Meine Lehre → SWS im Kollegium“: alle mit ihren Fachgruppen, dem Bereich, den sie halten möchten, und dem, was schon eingeplant ist, aufgeteilt nach Fachgruppe. So sieht man, ob man jemandem etwas wegnimmt, der es noch braucht. Die Bereiche sieht das ganze Kollegium, sobald das Dekanat sie veröffentlicht hat, und was eingeplant ist, sobald die Zuteilung veröffentlicht ist. Vorher siehst Du in der Liste nur Deine eigene Zeile; die Leitungen sehen die Mitglieder ihrer Fachgruppen, das Dekanat alle. Die Liste gibt es nur im Browser und über ein Planungs-Token mit voller Reichweite, nicht über ein normales Token. Der Balken je Zeile zeigt beides auf einen Blick: gefüllt ist, was eingeplant ist, der umrandete Bereich ist der Wunsch; daneben steht „unter Wunsch“, „im Wunschbereich“ oder „über Wunsch“. Alle Balken haben dieselbe Skala.',
 		who: [],
 		where: [{ href: '/wuensche/kollegium', label: 'SWS im Kollegium' }],
 		stage: 'EACH_SEMESTER'
@@ -296,7 +296,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie friere ich die Wunsch-SWS ein und veröffentliche sie?',
 		answer:
-			'Unter „Semester und Phasen“, je Semester. „Wunsch-SWS einfrieren“ setzt den Stichtag: Danach kann niemand die eigene Angabe mehr ändern. Unter „SWS im Kollegium“ korrigiert das Dekanat dann, was mit den Betroffenen abgesprochen ist. „Wunsch-SWS veröffentlichen“ macht die Bereiche für alle im Browser sichtbar, die Notizen nicht. Beides lässt sich nicht zurücknehmen und geht nur im Browser.',
+			'Unter „Semester und Phasen“, je Semester. „Wunsch-SWS einfrieren“ setzt den Stichtag: Danach kann niemand die eigene Angabe mehr ändern. Unter „SWS im Kollegium“ korrigiert das Dekanat dann, was mit den Betroffenen abgesprochen ist. „Wunsch-SWS veröffentlichen“ macht die Bereiche für alle im Browser sichtbar, die Notizen nicht. Beides lässt sich nicht zurücknehmen und geht nur im Browser oder mit einem Planungs-Token mit voller Reichweite.',
 		who: ['DEANS_OFFICE'],
 		where: [
 			{ href: '/semester', label: 'Semester und Phasen' },
@@ -316,6 +316,13 @@ export const HELP: readonly HelpEntry[] = [
 			'Unter Statistik, Abschnitt „Wahlpflicht nach Korb“, für den gewählten Studiengang: eigene und fremde Module, je Korb der Prüfungsordnung mit den SWS. Ein Modul in zwei Körben steht in beiden.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/statistik', label: 'Statistik' }]
+	},
+	{
+		question: 'Kann ich über die Schnittstelle planen, etwa mit einem KI-Assistenten?',
+		answer:
+			'Ja, mit einem Planungs-Token. Unter „Tokens“ beim Anlegen „Volle Reichweite“ ankreuzen: Das Token kann dann alles, was Du im Browser kannst, also Bedarf erklären, Teile zuteilen und, wenn Deine Rolle es erlaubt, veröffentlichen, und es liest dabei, was Du im Browser liest, auch unveröffentlichte Wünsche in Deinem Bereich. Es gilt höchstens 90 Tage und steht im nächtlichen Zugriffsbericht. Ein normales Token ohne Häkchen ist für Auswertungen: Es plant nicht und liest fremde Wünsche erst nach der Veröffentlichung. Kein Token erreicht die Tokenverwaltung, Personen und Rollen oder das Zugriffsprotokoll. Was das Token liest, liest ein Assistent mit; deshalb ein eigenes Token je Aufgabe, so kurz wie möglich, und danach widerrufen.',
+		who: [],
+		where: [{ href: '/konto/tokens', label: 'Tokens' }]
 	},
 	{
 		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',

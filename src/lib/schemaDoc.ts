@@ -14,12 +14,13 @@ import type { GraphQLNamedType } from 'graphql';
  * introspection and therefore does not know either. That affects both of the backend's
  * directives, and both work around it with prose, because descriptions do travel:
  *
- * - `@interactiveOnly` is spelled out in the description of each affected field.
+ * - `@interactiveOnly` and `@fullReach` are spelled out in the description of each affected
+ *   field.
  * - `@scope` does it from the other end, at the area: every `ScopeArea` value lists its
  *   fields. In the backend `TestScopeAreasListTheirFields` keeps those lists current.
  *
  * The console on the documentation page is the second answer: anybody who wants to be sure
- * queries the field with a token and sees `null` or `INSUFFICIENT_SCOPE`.
+ * queries the field with a token and sees `null`, `FULL_REACH_REQUIRED` or `INSUFFICIENT_SCOPE`.
  */
 
 export type FieldArg = {

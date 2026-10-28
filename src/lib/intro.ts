@@ -31,8 +31,8 @@ export const PROMISES: readonly IntroPromise[] = [
 		text: 'Bis das Dekanat die Wünsche eines Semesters veröffentlicht, sehen Deine Eintragungen nur Du, die zuständigen Leitungen von Studiengang und Fachgruppe und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl und keine Markierung „hier gibt es schon Interesse“. Der Zweck: kein Windhundverfahren. Wer neu ist, soll sich für ein Fach eintragen können, ohne dass es wie ein Angriff auf jemanden wirkt, der es seit Jahren hält. Auch nach der Veröffentlichung bleiben die Notiz und der Zeitpunkt der Eintragung bei den Zuständigen; alle sehen nur, wer sich wo eingetragen hat.'
 	},
 	{
-		title: 'Personaldaten bleiben in der angemeldeten Sitzung',
-		text: 'Tallox hat eine offene Schnittstelle für eigene Auswertungen. Was Personen betrifft, gibt sie über ein Token aber nicht heraus: unveröffentlichte Wünsche anderer, die gewünschten und eingeplanten SWS anderer, die Liste „SWS im Kollegium“, Notizen zu Personen, die Verwaltung von Personen und Rollen und das Zugriffsprotokoll. Ein Token in einem Skript liest still und in großer Menge; eine Anmeldung im Browser ist einer Person zuzuordnen.'
+		title: 'Personaldaten bleiben bei denen, die sie sehen dürfen',
+		text: 'Tallox hat eine offene Schnittstelle für eigene Auswertungen. Ein normales Token gibt, was Personen betrifft, nichts heraus: keine unveröffentlichten Wünsche anderer, keine gewünschten und eingeplanten SWS anderer, nicht die Liste „SWS im Kollegium“. Ein Token in einem Skript liest still und in großer Menge; eine Anmeldung im Browser ist einer Person zuzuordnen. Wer über die Schnittstelle planen will, etwa mit einem KI-Assistenten, legt ausdrücklich ein Planungs-Token an: Es kann so viel wie die Person im Browser, nicht mehr, gilt höchstens 90 Tage und steht jeden Tag im Zugriffsbericht. Die Verwaltung von Personen und Rollen, die Tokens selbst und das Zugriffsprotokoll erreicht kein Token.'
 	},
 	{
 		title: 'Die Regeln stehen im Server, nicht in der Oberfläche',

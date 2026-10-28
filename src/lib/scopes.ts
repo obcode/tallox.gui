@@ -15,14 +15,16 @@ export type AreaChoice = 'none' | ScopeVerb;
  * The areas a token can actually reach, so the only ones worth a control.
  *
  * `PUBLIC` is left out because a scope list cannot narrow it away — a checkbox for it would do
- * nothing whichever way it is set. `TOKENS` and `ADMIN` are left out because their fields are
- * `@interactiveOnly` and unreachable through a token at all; ticking one would produce a token
- * that is narrowed *away* from everything else in exchange for an area it still cannot use.
+ * nothing whichever way it is set. `TOKENS` is left out because its fields are `@interactiveOnly`
+ * and unreachable through any token; ticking it would produce a token narrowed *away* from
+ * everything else in exchange for an area it still cannot use. `ADMIN` is offered since tokens
+ * with full reach exist: an administrator's planning token reaches the subject groups and the
+ * module import there (people, roles and the access log stay browser-only).
  *
  * "It is harmless" is not a reason to show a control — see CLAUDE.md. UNREACHABLE_AREAS below
  * keeps this list honest as areas are added.
  */
-export const SELECTABLE_AREAS: readonly ScopeArea[] = ['PROFILE', 'PLANNING', 'WISHES'];
+export const SELECTABLE_AREAS: readonly ScopeArea[] = ['PROFILE', 'PLANNING', 'WISHES', 'ADMIN'];
 
 /**
  * The areas deliberately not offered, and why.
@@ -34,15 +36,14 @@ export const SELECTABLE_AREAS: readonly ScopeArea[] = ['PROFILE', 'PLANNING', 'W
  */
 export const UNREACHABLE_AREAS: Partial<Record<ScopeArea, string>> = {
 	PUBLIC: 'Lässt sich nicht einschränken — die Version beantwortet der Server immer.',
-	TOKENS: 'Über ein Token grundsätzlich nicht erreichbar.',
-	ADMIN: 'Über ein Token grundsätzlich nicht erreichbar.'
+	TOKENS: 'Über ein Token grundsätzlich nicht erreichbar.'
 };
 
 export const AREA_LABELS: Record<ScopeArea, string> = {
 	PUBLIC: 'Serverversion',
 	PROFILE: 'Eigenes Profil',
 	PLANNING: 'Planung',
-	WISHES: 'Eigene Wünsche',
+	WISHES: 'Wünsche und Kompetenzen',
 	TOKENS: 'Tokenverwaltung',
 	ADMIN: 'Verwaltung'
 };
@@ -50,13 +51,15 @@ export const AREA_LABELS: Record<ScopeArea, string> = {
 export const AREA_HINTS: Record<ScopeArea, string> = {
 	PUBLIC: 'Welche Version des Servers antwortet.',
 	PROFILE: 'Wer Du bist und welche Rollen Du hast.',
-	PLANNING: 'Semester, Fachgruppen und Bedarf — und später Zuteilung und Statistik.',
-	// Named for what a token actually reaches here: through a token even a lead sees only
-	// their own wishes, whatever role they hold. The scope limits the surface, the visibility
-	// rule the rows.
-	WISHES: 'Eigene Interessensbekundungen lesen und eintragen.',
+	PLANNING:
+		'Semester, Fachgruppen, Bedarf, Zuteilung und Statistik — planen nur mit voller Reichweite.',
+	// Named for what a token actually reaches here: through a plain token even a lead sees only
+	// their own wishes, whatever role they hold; with full reach what the role shows in the
+	// browser. The scope limits the surface, the visibility rule the rows.
+	WISHES:
+		'Eigene Wünsche und Kompetenzen; mit voller Reichweite auch, was Deine Rolle sonst zeigt.',
 	TOKENS: 'Eigene Tokens anlegen und widerrufen.',
-	ADMIN: 'Personen und Rollen.'
+	ADMIN: 'Fachgruppen und ZPA-Import — nur mit voller Reichweite und Administrationsrolle.'
 };
 
 export const CHOICE_LABELS: Record<AreaChoice, string> = {
