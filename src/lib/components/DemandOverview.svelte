@@ -21,6 +21,9 @@
 		moduleRowKey,
 		moduleRows,
 		partGroupLabel,
+		splitDrift,
+		splitSummary,
+		storedTrackHours,
 		type ModuleRow,
 		type ReadInstanceLike
 	} from '$lib/demand';
@@ -62,6 +65,28 @@
 	};
 
 	const rows = $derived(moduleRows(instances));
+
+	const byId = $derived(new Map(instances.map((i) => [i.id, i] as const)));
+
+	/**
+	 * Whether a row's stored parts have drifted from its module's split.
+	 *
+	 * This table adds up the stored parts and the planning table multiplies the split by the
+	 * groups. Once a split is corrected and not carried over the two differ, and without a word
+	 * here the reader has two figures for one cohort and no way to tell which one is wrong.
+	 */
+	function driftOf(row: ModuleRow<ModuleShape>) {
+		const cohorts = row.cohorts.flatMap((c) => {
+			const instance = byId.get(c.instanceId);
+			return instance ? [instance] : [];
+		});
+		if (cohorts.length !== row.cohorts.length) return null;
+		return splitDrift(
+			row.module,
+			row.teachingHours,
+			cohorts.map((c) => storedTrackHours(c, row.module.practicalKind))
+		);
+	}
 	const groups = $derived(byProgramme(rows));
 </script>
 
@@ -90,6 +115,7 @@
 			</thead>
 			<tbody>
 				{#each list as row (moduleRowKey(row))}
+					{@const drift = driftOf(row)}
 					<tr>
 						<td class="align-top">
 							<a class="link font-medium" href={resolve('/module/[id]', { id: row.module.id })}>
@@ -202,6 +228,24 @@
 									</span>
 								{/each}
 							</span>
+							<!-- Under the cohorts, because the parts are what the sentence is about. -->
+							{#if drift}
+								<p class="text-base-content/80 mt-1 flex flex-wrap items-baseline gap-1 text-xs">
+									<span class="badge badge-warning badge-sm">nicht übertragen</span>
+									<span>
+										Die gespeicherten Teile ergeben {hoursLabel(drift.stored)}, die aktuelle
+										Aufteilung ({splitSummary(row.module.components)}) {hoursLabel(drift.bySplit)}.
+									</span>
+									<span>
+										Übertragen lässt sie sich auf der
+										<a
+											class="link"
+											href="{resolve('/module/[id]', { id: row.module.id })}#split-instances"
+											>Modulseite</a
+										>.
+									</span>
+								</p>
+							{/if}
 						</td>
 						<td class="align-top text-right whitespace-nowrap">{hoursLabel(row.teachingHours)}</td>
 					</tr>

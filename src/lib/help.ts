@@ -73,6 +73,17 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question:
+			'Ich habe die SWS-Aufteilung geändert, aber der Bedarf zeigt noch die alten SWS. Warum?',
+		answer:
+			'Eine Instanz übernimmt die Aufteilung, wenn sie angelegt oder eine Gruppe ergänzt wird, und behält ihre SWS danach, auch wenn sich die Aufteilung später ändert. Die Bedarfsseite sagt das: in der Zeile steht „nicht übertragen“ mit beiden Zahlen, beim Bearbeiten neben „(gespeichert …)“. Wer die Aufteilung ändern darf (Studiengangsleitung des Heimatstudiengangs, Fachgruppenleitung des Moduls, Dekanat), überträgt sie mit „Vorschau: übertragen“ und dann „Jetzt übertragen“, oder auf der Modulseite unter „Bestehende Instanzen“. Nach „Aufteilung ändern“ auf der Bedarfsseite fragt Tallox von selbst. Übertragen wird auf alle Instanzen des Moduls in laufenden Semestern, in allen Studiengängen; von Hand geänderte SWS werden überschrieben, besetzte Teile nicht entfernt. Die Vorschau zeigt vorher, was sich ändert.',
+		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/bedarf', label: 'Bedarf' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
 		question: 'Wie halten zwei Studiengänge eine Vorlesung gemeinsam?',
 		answer:
 			'Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten, und es zahlt der Studiengang, der die Veranstaltung hält. Wer eine eigene Variante will, plant sie separat und zahlt sie selbst.',

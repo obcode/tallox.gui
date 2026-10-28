@@ -106,7 +106,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Die SWS-Aufteilung je Modul eintragen',
 				who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
 				where: [{ href: '/module', label: 'Modulkatalog' }],
-				text: 'Das ZPA nennt nur eine Zahl je Modul. Ob 4 SWS zwei Stunden Vorlesung und zwei Stunden Praktikum sind, weiß nur die Fakultät, deshalb trägt es die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat auf der Modulseite ein. Einmal je Modul, nicht jedes Semester. Ohne Aufteilung lässt sich keine Instanz anmelden. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.'
+				text: 'Das ZPA nennt nur eine Zahl je Modul. Ob 4 SWS zwei Stunden Vorlesung und zwei Stunden Praktikum sind, weiß nur die Fakultät, deshalb trägt es die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat auf der Modulseite ein. Einmal je Modul, nicht jedes Semester. Ohne Aufteilung lässt sich keine Instanz anmelden. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird. Bestehende Instanzen behalten ihre SWS, wenn sich die Aufteilung später ändert; die Bedarfsseite markiert solche Zeilen mit „nicht übertragen“, und übertragen wird mit Vorschau dort oder auf der Modulseite.'
 			},
 			{
 				title: 'Praxisbegleitende Lehrveranstaltungen (PBLV) kennzeichnen',

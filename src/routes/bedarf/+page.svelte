@@ -31,6 +31,7 @@
 		DELIVERY_LABELS,
 		sharingState,
 		separatelyPlannedIn,
+		splitDrift,
 		splitSummary,
 		trackLetters,
 		MAX_TRACKS,
@@ -38,6 +39,7 @@
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import GearIcon from '$lib/components/GearIcon.svelte';
+	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
 	import NoteIcon from '$lib/components/NoteIcon.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
@@ -610,6 +612,81 @@
 			covered: !!row.tracks[i]?.coveredBy?.acceptedAt
 		}));
 		return plannedHours(effectiveComponents(row.module), row.module.practicalKind, tracks);
+	}
+
+	/**
+	 * Whether the stored parts of a row have drifted from its module's split.
+	 *
+	 * The cohorts as they are stored, not as the row is being edited: an unsaved group is not
+	 * drift, it is a change on its way. Without this the SWS column showed the split's figure with
+	 * „(gespeichert …)“ beside it for good, which read as a save that never happened — while the
+	 * overview, adding up the stored parts, showed the other figure.
+	 */
+	function driftOf(row: Row) {
+		if (!row.planned) return null;
+		return splitDrift(
+			row.module,
+			row.teachingHours,
+			row.tracks.map((t) => ({
+				groups: t.groups,
+				borrowedKinds: t.borrowedKinds,
+				covered: !!t.coveredBy?.acceptedAt
+			}))
+		);
+	}
+
+	/**
+	 * Whether carrying the split over can still reach this semester. The backend leaves the
+	 * instances of a FINAL semester alone, so offering it there would offer nothing.
+	 */
+	const splitCarriesOver = $derived(data.current?.phase !== 'FINAL');
+
+	/**
+	 * The question after a split was changed, or the preview asked for from a row.
+	 *
+	 * Asked only where there is something to say: a module with no instance in a running semester,
+	 * or whose instances already follow the split, gets no dialog — a question with no decision in
+	 * it teaches people to click dialogs away. After carrying over it stays open with the result,
+	 * which is the answer to the click.
+	 */
+	const splitResult = $derived.by(() => {
+		if (!form || !('splitReport' in form) || !form.splitReport) return null;
+		const report = form.splitReport;
+		const pending = report.changed.length > 0 || report.refused.length > 0;
+		if (report.dryRun && !pending && 'confirmed' in form) return null;
+		const row = rows.find((r) => r.module.id === form.splitModuleId);
+		return {
+			report,
+			moduleId: form.splitModuleId,
+			name: row ? moduleName(row.module) : 'dieses Moduls',
+			afterChange: 'confirmed' in form
+		};
+	});
+
+	/** Dismissal, by the result it dismissed — a new result is a new question. */
+	let dismissedSplit = $state<unknown>(null);
+	const splitDialog = $derived(splitResult && dismissedSplit !== form ? splitResult : null);
+	let splitEl = $state<HTMLDialogElement | null>(null);
+	let upgradingSplit = false;
+
+	// The same upgrade as the withdrawal question: rendered with `open` so it is there without
+	// JavaScript, raised to a real modal with it.
+	$effect(() => {
+		const el = splitEl;
+		if (!el || el.matches(':modal')) return;
+		upgradingSplit = true;
+		el.close();
+		el.showModal();
+		setTimeout(() => (upgradingSplit = false), 0);
+	});
+
+	function dismissSplit() {
+		dismissedSplit = form;
+	}
+
+	function onSplitClose() {
+		if (upgradingSplit || splitEl?.open) return;
+		dismissSplit();
 	}
 
 	/** The cohort year as the row currently states it, for the label. */
@@ -1334,6 +1411,85 @@
 		</dialog>
 	{/if}
 
+	<!--
+		Carrying a changed split over to the existing instances.
+
+		An instance keeps the parts it was declared with, so a split changed from a row reaches none
+		of them until somebody carries it over — and nothing on this page said so. The question comes
+		right after the change, with the backend's preview in it, and the same preview can be asked
+		for from any row whose stored parts have drifted. The work is the module page's mutation;
+		this is only a second place to ask for it.
+
+		A modal for the reason the withdrawal question is one, and built the same way: `open` as an
+		attribute so it stands without JavaScript, raised to a real modal with it.
+	-->
+	{#if splitDialog}
+		<dialog
+			bind:this={splitEl}
+			open
+			class="modal"
+			aria-labelledby="split-apply-title"
+			onclose={onSplitClose}
+		>
+			<div class="modal-box">
+				<h2 id="split-apply-title" class="mb-2 font-medium">
+					Aufteilung von {splitDialog.name} auf bestehende Instanzen übertragen?
+				</h2>
+				{#if splitDialog.report.dryRun}
+					<p class="text-base-content/90 mb-3 text-sm">
+						{#if splitDialog.afterChange}
+							Die neue Aufteilung ist gespeichert.
+						{/if}
+						Bestehende Instanzen behalten ihre gespeicherten SWS, bis Du die Aufteilung überträgst — in
+						allen Studiengängen, in denen das Modul in einem laufenden Semester geplant ist. Von Hand
+						geänderte SWS werden dabei überschrieben, besetzte Teile werden nicht entfernt.
+					</p>
+				{/if}
+				<SplitApplicationReport report={splitDialog.report} />
+				<div class="modal-action flex-wrap">
+					{#if splitDialog.report.dryRun && splitDialog.report.changed.length > 0}
+						<form
+							method="POST"
+							action="?/applySplit"
+							use:enhance={() =>
+								async ({ update }) => {
+									await update({ reset: false });
+								}}
+						>
+							<input type="hidden" name="moduleId" value={splitDialog.moduleId} />
+							<button type="submit" name="dryRun" value="0" class="btn btn-primary btn-sm">
+								Jetzt übertragen
+							</button>
+						</form>
+					{/if}
+					<!-- Like „Abbrechen“ in the withdrawal question: without JavaScript a GET to the same
+					     address, which is what leaving it as it is means. -->
+					<form method="GET" onsubmit={dismissSplit}>
+						{@render carriedOver([])}
+						<input type="hidden" name="bearbeiten" value="1" />
+						<button type="submit" class="btn btn-sm">
+							{splitDialog.report.dryRun ? 'Nicht übertragen' : 'Fertig'}
+						</button>
+					</form>
+				</div>
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button type="submit" aria-label="Dialog schließen">schließen</button>
+			</form>
+		</dialog>
+	{/if}
+
+	<!--
+		What the rows' „Vorschau: übertragen“ buttons submit. A form of its own outside the table,
+		referenced by `form=`, for the reason the coverage picker is: forms do not nest, and a button
+		inside the table form would send the whole table along with it.
+	-->
+	{#if editing}
+		<form method="POST" action="?/applySplit" id="split-apply" use:enhance>
+			<input type="hidden" name="dryRun" value="1" />
+		</form>
+	{/if}
+
 	{#if !chosen}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 			<p class="text-base-content/80 text-sm">
@@ -1784,6 +1940,11 @@
 														</button>
 														<span class="text-base-content/80 basis-full text-xs">
 															Leer oder 0 entfernt einen Teil. Weitere Teile auf der Modulseite.
+															{#if row.planned}
+																Bestehende Instanzen behalten ihre gespeicherten SWS; nach dem
+																Speichern zeigt eine Vorschau, was sich beim Übertragen ändern
+																würde.
+															{/if}
 														</span>
 													</div>
 												{:else}
@@ -2235,6 +2396,7 @@
 											</td>
 											<td class="text-base-content/90 whitespace-nowrap">
 												{#if draft(row).offered}
+													{@const drift = driftOf(row)}
 													{hoursLabel(liveHours(row))}
 													{#if row.planned && liveHours(row) !== row.teachingHours}
 														<!-- What is on the screen is not yet what is in the
@@ -2243,6 +2405,42 @@
 														<span class="text-base-content/80 text-xs">
 															(gespeichert {hoursLabel(row.teachingHours)})
 														</span>
+													{/if}
+													<!-- The other reason the two figures differ, and the one that does
+													     not go away by saving: the stored parts keep the hours of an
+													     older split. Said here, with the way to fix it, because the
+													     overview shows the stored figure and nothing else would explain
+													     why the two screens disagree. -->
+													{#if drift}
+														<div
+															class="mt-1 flex flex-col items-start gap-1 text-xs whitespace-normal"
+														>
+															<span class="badge badge-warning badge-sm">nicht übertragen</span>
+															<span class="text-base-content/80">
+																Die gespeicherten Teile ergeben {hoursLabel(drift.stored)}, die
+																Aufteilung {hoursLabel(drift.bySplit)}.
+																{#if !splitCarriesOver}
+																	Im abgeschlossenen Semester bleibt es dabei.
+																{:else if !maySplit(row.module)}
+																	Übertragen können die Studiengangsleitung des Heimatstudiengangs,
+																	die Fachgruppenleitung des Moduls und das Dekanat.
+																{/if}
+															</span>
+															{#if splitCarriesOver && maySplit(row.module)}
+																<button
+																	type="submit"
+																	form="split-apply"
+																	name="moduleId"
+																	value={row.module.id}
+																	class="btn btn-xs"
+																	aria-label="Vorschau: Aufteilung von {moduleName(
+																		row.module
+																	)} auf Instanzen übertragen"
+																>
+																	Vorschau: übertragen
+																</button>
+															{/if}
+														</div>
 													{/if}
 												{:else if row.planned}
 													<span class="text-base-content/80">

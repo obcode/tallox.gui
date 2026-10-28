@@ -257,3 +257,26 @@ splitIsEstimated` — das wäre nie mehr wahr. Warum Popover und kein daisyUI-Dr
 Und die **Lesesicht** hat jetzt `table-fixed` mit Spaltenanteilen wie die Planungstabelle: vorher
 maß jeder Fachsemester-Block seine Spalten selbst, und der Modulname nahm mal die Hälfte, mal ein
 Drittel. Test: die „Teile"-Spalte beginnt in jedem Block am selben x.
+
+## Aufteilung nicht übertragen (2026-10-28)
+
+Rückmeldung aus der Fakultät: ein FWP-Platzhalter, Praktikum später von 4 auf 2 SWS korrigiert.
+Die Planungstabelle zeigte 6 SWS „(gespeichert 10 SWS)“, die Lesesicht 10 — ohne Erklärung, und
+von der Bedarfsseite aus kein Weg zur Übertragung.
+
+- **`splitDrift` in `$lib/demand`** vergleicht die gespeicherte Summe mit dem, was die
+  bestätigte Aufteilung für die _gespeicherten_ Züge ergäbe (`plannedHours` mit
+  `storedTrackHours`). Nicht mit dem Entwurf: eine ungespeicherte Gruppe ist keine Abweichung.
+  Geschätzte Aufteilung → nie Abweichung (das Backend antwortet `MODULE_NOT_DECOMPOSED`).
+- **Beide Sichten sagen es:** Badge „nicht übertragen“ mit beiden Zahlen. Lesesicht verlinkt auf
+  `/module/[id]#split-instances`, die Planungszeile hat „Vorschau: übertragen“ (nur bei
+  `maySplit`, sonst der Satz, wer es darf; im FINAL-Semester nichts, das Backend lässt es aus).
+- **Nach „Aufteilung ändern“** holt `confirmSplit` selbst die Vorschau (wie die Modulseite), und
+  ein Modal fragt — nur, wenn sich etwas ändern würde. Aktion `applySplit` ruft dieselbe
+  Mutation; Dokument und Aufruf liegen in `$lib/server/splitApplication.ts`, die Berichtszeilen
+  in `SplitApplicationReport.svelte`, beides auch von der Modulseite benutzt.
+- Der Zeilenknopf zeigt per `form="split-apply"` auf ein eigenes Formular außerhalb der Tabelle
+  (dieselbe Regel wie beim Deckungs-Picker).
+- **Zwei Knöpfe, „Schließen“ und „Dialog schließen“, kollidieren in Playwright** (Teilstring) —
+  der Knopf nach dem Übertragen heißt deshalb „Fertig“.
+- E2E: `tests/demand-split.spec.ts`, Fixture `DEMAND_SPLIT` (E2A, `…0f1`/`…0f2`).

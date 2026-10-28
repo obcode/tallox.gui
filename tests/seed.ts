@@ -1132,6 +1132,58 @@ export function splitStatements(): string[] {
 }
 
 /**
+ * A split corrected after the instance was declared, seen from the demand page.
+ *
+ * The reported case: lecture 2 + lab 2 in the split, while the instance still holds lecture 2 and
+ * two labs of 4 from an earlier split — 10 SWS stored, 6 by the split. Its own programme, module
+ * and ids, so that nothing the module page's split test does can meet it; Vier leads the
+ * programme, which is the person the gap was reported by.
+ */
+export const DEMAND_SPLIT = {
+	semester: ASSIGNMENTS.semester,
+	programme: 'E2A',
+	module: '0e2e0000-0000-4000-8000-0000000000f1',
+	moduleName: 'E2E Aufteilung im Bedarf nachgezogen',
+	instance: '0e2e0000-0000-4000-8000-0000000000f2'
+} as const;
+
+export function demandSplitStatements(): string[] {
+	const programme = quote(DEMAND_SPLIT.programme);
+	return [
+		`DELETE FROM course_instance WHERE id = '${DEMAND_SPLIT.instance}';`,
+		`DELETE FROM module_component WHERE module_id = '${DEMAND_SPLIT.module}';`,
+
+		`INSERT INTO semester (code, phase) VALUES (${quote(DEMAND_SPLIT.semester)}, 'ASSIGNMENT')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO programme (code, title) VALUES (${programme}, 'Bedarfsaufteilung-Teststudiengang')
+		 ON CONFLICT (code) DO NOTHING;`,
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${DEMAND_SPLIT.module}', p.id, ${quote(DEMAND_SPLIT.moduleName)}, 'SU_WITH_LAB',
+		        'EVERY_SEMESTER', 4, 5
+		   FROM programme p WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
+		`INSERT INTO module_component (module_id, kind, teaching_hours, position)
+		 VALUES ('${DEMAND_SPLIT.module}', 'LECTURE', 2, 0), ('${DEMAND_SPLIT.module}', 'LAB', 2, 1);`,
+
+		`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+		                              programme_semester)
+		 SELECT '${DEMAND_SPLIT.instance}', s.id, '${DEMAND_SPLIT.module}', pr.id, '', 2
+		   FROM semester s, programme pr
+		  WHERE s.code = ${quote(DEMAND_SPLIT.semester)} AND pr.code = ${programme};`,
+		`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+		 VALUES ('${DEMAND_SPLIT.instance}', 'LECTURE', 0, 2),
+		        ('${DEMAND_SPLIT.instance}', 'LAB', 1, 4),
+		        ('${DEMAND_SPLIT.instance}', 'LAB', 2, 4);`,
+
+		`INSERT INTO person_programme_scope (person_id, role, programme_id)
+		 SELECT p.id, 'PROGRAMME_LEAD', pr.id FROM person p, programme pr
+		  WHERE p.mail = 'prof.vier@example.org' AND pr.code = ${programme}
+		 ON CONFLICT DO NOTHING;`
+	];
+}
+
+/**
  * A module over two semesters: 8 SWS in the catalogue as SU mit Übung, taught 2 + 2 in each
  * semester. No split yet, so the page proposes one — and what it proposes depends on the mark.
  */
