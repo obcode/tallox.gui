@@ -2,6 +2,7 @@ import { error, fail, isHttpError } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
+import { applyModuleSplit, previewModuleSplit } from '$lib/server/splitApplication';
 import { toRefusal } from '$lib/server/graphqlError';
 import { ALL_PART_KINDS } from '$lib/catalogue';
 import type { Actions, PageServerLoad } from './$types';
@@ -141,59 +142,6 @@ const SetComponentsDocument = graphql(`
 	}
 `);
 
-const ApplySplitDocument = graphql(`
-	mutation ApplyModuleSplitToInstances($moduleId: ID!, $dryRun: Boolean!) {
-		applyModuleSplitToInstances(moduleId: $moduleId, dryRun: $dryRun) {
-			dryRun
-			unchanged
-			changed {
-				instance {
-					id
-					semester
-					track
-					programmeSemester
-					programme {
-						code
-					}
-				}
-				teachingHoursBefore
-				teachingHoursAfter
-			}
-			refused {
-				instance {
-					id
-					semester
-					track
-					programmeSemester
-					programme {
-						code
-					}
-				}
-				kind
-				code
-				message
-			}
-		}
-	}
-`);
-
-/**
- * What carrying the split over would do, or `null` where there is nothing to ask about.
- *
- * Asked right after a split is saved, so the person sees in the same moment that the existing
- * instances did not change with it — the gap the faculty reported was that nobody could tell.
- * A refusal here is no reason to spoil a save that worked: the split is stored, and the preview
- * button below the form asks again and shows the refusal there.
- */
-async function previewSplit(moduleId: string) {
-	try {
-		const data = await backendRequest(ApplySplitDocument, { moduleId, dryRun: true });
-		return data.applyModuleSplitToInstances;
-	} catch {
-		return null;
-	}
-}
-
 export const load: PageServerLoad = async ({ params }) => {
 	try {
 		const data = await backendRequest(ModuleDocument, { id: params.id });
@@ -280,7 +228,7 @@ export const actions: Actions = {
 			return fail(400, toRefusal(err));
 		}
 		// An empty split cleared the module; there is nothing to carry over.
-		const splitPreview = components.length > 0 ? await previewSplit(params.id) : null;
+		const splitPreview = components.length > 0 ? await previewModuleSplit(params.id) : null;
 		return { saved: true, splitPreview };
 	},
 
@@ -294,8 +242,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const dryRun = form.get('dryRun') !== '0';
 		try {
-			const data = await backendRequest(ApplySplitDocument, { moduleId: params.id, dryRun });
-			return { splitApplication: data.applyModuleSplitToInstances };
+			return { splitApplication: await applyModuleSplit(params.id, dryRun) };
 		} catch (err) {
 			return fail(400, toRefusal(err));
 		}
