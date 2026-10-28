@@ -14,6 +14,7 @@ import type {
 /** One instance the picker may offer as the holder of somebody else's demand. */
 type CoverageCandidate = CoverageCandidatesQuery['courseInstances'][number];
 import { backendRequest } from '$lib/server/backend';
+import { applyModuleSplit, previewModuleSplit } from '$lib/server/splitApplication';
 import { toRefusal } from '$lib/server/graphqlError';
 import { semesterTerm } from '$lib/semester';
 import type { Actions, PageServerLoad } from './$types';
@@ -1115,6 +1116,29 @@ export const actions: Actions = {
 		} catch (err) {
 			return fail(400, refusalFor(err));
 		}
-		return { confirmed: moduleId };
+		// The existing instances keep their parts, and nobody would notice from here: the row
+		// shows the split, not the parts. So the preview is asked for at once, the same one the
+		// module page asks for after saving a split, and the page offers to carry it over.
+		const splitReport = await previewModuleSplit(moduleId);
+		return { confirmed: moduleId, splitModuleId: moduleId, splitReport };
+	},
+
+	/**
+	 * Carry a module's split over to its existing instances — `dryRun=1` for the preview, `0` to do
+	 * it. The same mutation and the same two submits as on the module page, reached from a row
+	 * whose stored parts have drifted from the split, or from the question after changing it.
+	 *
+	 * Whether this person may is `policy.MayWriteModuleSplit`, asked by the backend — the same
+	 * people who may change the split.
+	 */
+	applySplit: async ({ request }) => {
+		const form = await request.formData();
+		const moduleId = String(form.get('moduleId') ?? '');
+		const dryRun = form.get('dryRun') !== '0';
+		try {
+			return { splitModuleId: moduleId, splitReport: await applyModuleSplit(moduleId, dryRun) };
+		} catch (err) {
+			return fail(400, refusalFor(err));
+		}
 	}
 };

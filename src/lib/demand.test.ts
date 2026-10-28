@@ -25,6 +25,8 @@ import {
 	partGroupLabel,
 	partLabel,
 	plannedHours,
+	splitDrift,
+	storedTrackHours,
 	previousComparableSemester,
 	separatelyPlannedIn,
 	splitSummary,
@@ -577,6 +579,89 @@ describe('plannedHours', () => {
 	// nothing and the lecture is counted once.
 	it('ignores the groups where there is no practical unit', () => {
 		expect(plannedHours([{ kind: 'LECTURE', teachingHours: 4 }], null, [{ groups: 3 }])).toBe(4);
+	});
+});
+
+describe('splitDrift', () => {
+	// The reported case: a placeholder planned as lecture 2 + lab 4 with two groups, the lab
+	// corrected to 2 afterwards. The parts keep 2 + 4 + 4 = 10; the split says 2 + 2 + 2 = 6.
+	const corrected = {
+		splitIsEstimated: false,
+		practicalKind: 'LAB' as const,
+		components: [
+			{ kind: 'LECTURE' as const, teachingHours: 2 },
+			{ kind: 'LAB' as const, teachingHours: 2 }
+		]
+	};
+
+	it('reports stored parts that no longer follow the split', () => {
+		expect(splitDrift(corrected, 10, [{ groups: 2 }])).toEqual({ stored: 10, bySplit: 6 });
+	});
+
+	it('is null where the parts follow the split', () => {
+		expect(splitDrift(corrected, 6, [{ groups: 2 }])).toBeNull();
+	});
+
+	// An estimate cannot be carried over — the backend refuses with MODULE_NOT_DECOMPOSED — so
+	// there is nothing to offer and nothing to say.
+	it('is null for an estimated or missing split', () => {
+		expect(splitDrift({ ...corrected, splitIsEstimated: true }, 10, [{ groups: 2 }])).toBeNull();
+		expect(splitDrift({ ...corrected, components: [] }, 10, [{ groups: 2 }])).toBeNull();
+	});
+
+	it('is null for a row with no stored cohort', () => {
+		expect(splitDrift(corrected, 0, [])).toBeNull();
+	});
+
+	it('tolerates the rounding of decimal hours', () => {
+		const decimal = {
+			...corrected,
+			components: [{ kind: 'LECTURE' as const, teachingHours: 0.1 }]
+		};
+		expect(
+			splitDrift(decimal, 0.30000000000000004, [{ groups: 0 }, { groups: 0 }, { groups: 0 }])
+		).toBeNull();
+	});
+
+	// A lecture held once for two cohorts and a cohort another programme holds are not drift:
+	// both are already part of what the split gives the stored cohorts.
+	it('reads a shared lecture and a covered cohort the way the stored sum does', () => {
+		const tracks = [
+			storedTrackHours(
+				{
+					parts: [
+						{ kind: 'LECTURE', teachingHours: 2, sharedAcrossTracks: true },
+						{ kind: 'LAB', teachingHours: 2 }
+					]
+				},
+				'LAB'
+			),
+			storedTrackHours(
+				{
+					parts: [{ kind: 'LAB', teachingHours: 2 }],
+					borrowedParts: [{ part: { kind: 'LECTURE' } }]
+				},
+				'LAB'
+			),
+			storedTrackHours({ parts: [], coveredBy: { acceptedAt: '2026-10-01T00:00:00Z' } }, 'LAB')
+		];
+		expect(splitDrift(corrected, 6, tracks)).toBeNull();
+	});
+
+	// A divided lab is still one group, and its pieces add up to the hours it had.
+	it('counts a divided part once', () => {
+		const track = storedTrackHours(
+			{
+				parts: [
+					{ kind: 'LECTURE', teachingHours: 2 },
+					{ id: 'lab', kind: 'LAB', teachingHours: 1 },
+					{ kind: 'LAB', teachingHours: 1, dividedFrom: 'lab', taughtBy: 'FK 04' }
+				]
+			},
+			'LAB'
+		);
+		expect(track.groups).toBe(1);
+		expect(splitDrift(corrected, 4, [track])).toBeNull();
 	});
 });
 

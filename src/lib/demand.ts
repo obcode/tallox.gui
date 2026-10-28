@@ -739,6 +739,66 @@ export function plannedHours(
 	return total;
 }
 
+/** A module, as much of it as comparing stored parts with its split needs. */
+export type SplitModuleLike = {
+	splitIsEstimated: boolean;
+	practicalKind?: InstancePartKind | null;
+	components: readonly { kind: InstancePartKind; teachingHours: number }[];
+};
+
+/** A stored cohort, as much of it as `storedTrackHours` reads. */
+export type StoredCohortLike = {
+	parts: readonly PartLike[];
+	borrowedParts?: readonly { part: Pick<PartLike, 'kind'> }[];
+	coveredBy?: { acceptedAt?: string | null } | null;
+};
+
+/**
+ * A stored cohort as the arithmetic of `plannedHours` reads it: its groups, what it borrows from
+ * a sibling, and whether another programme holds it.
+ */
+export function storedTrackHours(
+	cohort: StoredCohortLike,
+	practicalKind: InstancePartKind | null | undefined
+): TrackHours {
+	return {
+		groups: groupsOf(cohort.parts, practicalKind),
+		borrowedKinds: (cohort.borrowedParts ?? []).map((b) => b.part.kind),
+		covered: !!cohort.coveredBy?.acceptedAt
+	};
+}
+
+/** Stored hours against what the module's split gives the same cohorts. */
+export type SplitDrift = { stored: number; bySplit: number };
+
+/**
+ * Whether stored cohorts have drifted from their module's split, and by how much.
+ *
+ * An instance copies its parts' hours from the split when it is declared or a group is added,
+ * and keeps them. Corrected afterwards, the split reaches no existing instance until somebody
+ * carries it over — and until then the planning table, which multiplies the split by the groups,
+ * and the overview, which adds up the stored parts, show two different figures for one cohort.
+ * This is the comparison that tells them apart, so both screens can say so.
+ *
+ * `null` where nothing drifted, and where there is no confirmed split to compare with: an estimate
+ * is not something anybody can carry over, and the backend refuses with MODULE_NOT_DECOMPOSED.
+ * Hand-edited hours count as drift too — carrying the split over would overwrite them, which is
+ * what the preview is there to show.
+ */
+export function splitDrift(
+	module: SplitModuleLike,
+	stored: number,
+	tracks: readonly TrackHours[]
+): SplitDrift | null {
+	if (module.splitIsEstimated || module.components.length === 0 || tracks.length === 0) {
+		return null;
+	}
+	const bySplit = plannedHours(module.components, module.practicalKind, tracks);
+	// Hours are decimals (1.5 SWS), and a sum of them is not exact.
+	if (Math.abs(bySplit - stored) < 1e-6) return null;
+	return { stored, bySplit };
+}
+
 /**
  * The overview.
  *

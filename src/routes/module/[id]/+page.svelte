@@ -22,7 +22,7 @@
 	} from '$lib/catalogue';
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 	import HandbookLink from '$lib/components/HandbookLink.svelte';
-	import { changedLines, refusedLines, splitSummary } from '$lib/splitApplication';
+	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
 	import { hasAnyRole } from '$lib/roles';
 	import type { ActionData, PageData } from './$types';
 
@@ -118,8 +118,6 @@
 				? form.splitPreview
 				: null
 	);
-	const splitChanged = $derived(splitReport ? changedLines(splitReport) : []);
-	const splitRefused = $derived(splitReport ? refusedLines(splitReport) : []);
 
 	// Grouped by programme, because "where does this count" is a question about programmes and
 	// the versions are the detail underneath.
@@ -499,31 +497,7 @@
 				</p>
 
 				{#if splitReport}
-					<p class="text-base-content/90 text-sm">
-						{#if splitReport.dryRun}
-							<span class="badge badge-info badge-sm align-middle">Vorschau</span>
-						{:else}
-							<span class="badge badge-ghost badge-sm align-middle">Übertragen</span>
-						{/if}
-						{splitSummary(splitReport)}
-					</p>
-					{#if splitChanged.length > 0}
-						<ul class="text-base-content/90 mt-2 flex flex-col gap-1 text-sm">
-							{#each splitChanged as line, i (i)}
-								<li><span class="font-medium">{line.label}:</span> {line.text}</li>
-							{/each}
-						</ul>
-					{/if}
-					{#if splitRefused.length > 0}
-						<p class="text-base-content/90 mt-3 text-sm">
-							<span class="badge badge-warning badge-sm align-middle">Bleibt, wie es ist</span>
-						</p>
-						<ul class="text-base-content/90 mt-1 flex flex-col gap-1 text-sm">
-							{#each splitRefused as line, i (i)}
-								<li><span class="font-medium">{line.label}:</span> {line.text}</li>
-							{/each}
-						</ul>
-					{/if}
+					<SplitApplicationReport report={splitReport} />
 				{/if}
 
 				<form method="POST" action="?/applySplit" use:enhance class="mt-3 flex flex-wrap gap-2">
