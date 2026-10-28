@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
 import {
+	cieChanges,
 	formatChanges,
 	previousComparableSemester,
 	topicChanges,
@@ -149,6 +150,7 @@ const DemandDocument = graphql(`
 			delivery
 			taughtInEnglish
 			taughtInEnglishOverridden
+			cie
 			topic
 			programme {
 				code
@@ -326,6 +328,15 @@ const DemandDocument = graphql(`
 const SetFormatDocument = graphql(`
 	mutation SetCohortFormatFromDemand($id: ID!, $delivery: DeliveryFormat!, $english: Boolean) {
 		setCourseInstanceFormat(id: $id, delivery: $delivery, taughtInEnglish: $english) {
+			id
+		}
+	}
+`);
+
+/** Whether a cohort is listed as a course in English (CiE). */
+const SetCieDocument = graphql(`
+	mutation SetCohortCieFromDemand($id: ID!, $cie: Boolean!) {
+		setCourseInstanceCiE(id: $id, cie: $cie) {
 			id
 		}
 	}
@@ -551,6 +562,7 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 	// `offen` and `geplant`: the baskets are catalogue data and come with every row.
 	const basket = (url.searchParams.get('korb') ?? '').trim();
 	const order: DemandOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
+	const onlyCie = url.searchParams.get('cie') === '1';
 	// The edit mode, as a parameter rather than as browser state: two views under one address
 	// cannot be sent to a colleague, and the back button would leave the wrong one showing.
 	const editing = url.searchParams.get('bearbeiten') === '1';
@@ -692,6 +704,7 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 			onlyPlanned,
 			basket,
 			order,
+			onlyCie,
 			bothTerms,
 			editing,
 			foreignSearch,
@@ -834,6 +847,10 @@ export const actions: Actions = {
 					delivery: change.delivery,
 					english: change.taughtInEnglish
 				});
+			}
+			// The CiE listing beside it, under the same rule.
+			for (const change of cieChanges(form)) {
+				await backendRequest(SetCieDocument, { id: change.instanceId, cie: change.cie });
 			}
 			// Which seminar a cohort of an umbrella module is — the same pattern, and the same
 			// reason it is not part of planDemand: the subject group lead may write it too.

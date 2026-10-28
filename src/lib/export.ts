@@ -65,6 +65,8 @@ export type ExportInstance = {
 	covers: readonly CoverageLike[];
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
+	/** Whether the cohort is listed as a course in English (CiE). */
+	cie?: boolean;
 	/** Which seminar the cohort is, for an umbrella module. */
 	topic?: string | null;
 };
@@ -85,6 +87,7 @@ export const PLANNING_HEADER = [
 	'Fachgruppe',
 	'Durchführung',
 	'Englisch',
+	'CiE',
 	'Teil',
 	'SWS (Lehrperson)',
 	'Für alle Züge',
@@ -122,7 +125,8 @@ export function planningRows(
 			instance.module.zpaId ?? '',
 			instance.module.subjectGroup?.name ?? '',
 			instance.delivery ? DELIVERY_LABELS[instance.delivery] : '',
-			instance.taughtInEnglish ? 'ja' : ''
+			instance.taughtInEnglish ? 'ja' : '',
+			instance.cie ? 'ja' : ''
 		];
 		const hint = instanceHint(instance);
 
@@ -317,7 +321,7 @@ export function exportSheets(input: ExportInput): ExportSheet[] {
 			name: 'Planung',
 			header: PLANNING_HEADER,
 			rows: planningRows(input.instances, input.assignments),
-			widths: [11, 12, 8, 40, 28, 10, 11, 18, 9, 14, 10, 10, 28, 28, 28, 30]
+			widths: [11, 12, 8, 40, 28, 10, 11, 18, 9, 6, 14, 10, 10, 28, 28, 28, 30]
 		},
 		{
 			name: 'SWS je Studiengang',

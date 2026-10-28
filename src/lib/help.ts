@@ -210,6 +210,16 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question: 'Wie kennzeichne ich einen Zug als Block, auf Englisch oder als CiE?',
+		answer:
+			'Je Zug auf der Zuteilungsseite und auf der Bedarfsseite. „Englisch“ sagt, in welcher Sprache der Zug läuft; ohne eigene Angabe gilt, was das ZPA für das Modul angibt, und das steht dann als „(Standard)“ daneben. „CiE“ (Courses in English) ist eine eigene Kennzeichnung, die nur von Hand gesetzt wird: ein Zug kann auf Englisch laufen, ohne als CiE angeboten zu werden. Setzen dürfen das die Fachgruppenleitung des Moduls, die Studiengangsleitung für ihren Studiengang und das Dekanat, bis das Semester abgeschlossen ist. Alle drei erscheinen als Plakette in den Übersichten und als eigene Spalten im Semester-Export; mit „nur CiE“ über der Tabelle zeigen Bedarf und Zuteilung nur die als CiE gekennzeichneten Züge.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/bedarf', label: 'Bedarf' }
+		]
+	},
+	{
 		question: 'Wann werden praxisbegleitende Lehrveranstaltungen (PBLV) vergeben?',
 		answer:
 			'Zuletzt, damit sie nicht als Lückenfüller vergeben werden. Das ist eine Verabredung der Fakultät; Tallox erzwingt es nicht.',

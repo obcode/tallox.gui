@@ -12,7 +12,7 @@ import {
 	UNFILED
 } from '$lib/assignment';
 import { parseDegreeParam } from '$lib/catalogue';
-import { formatChanges, topicChanges } from '$lib/demand';
+import { cieChanges, formatChanges, topicChanges } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -79,6 +79,7 @@ const AssignmentDocument = graphql(`
 			delivery
 			taughtInEnglish
 			taughtInEnglishOverridden
+			cie
 			topic
 			programme {
 				code
@@ -281,6 +282,14 @@ const SetFormatDocument = graphql(`
 	}
 `);
 
+const SetCieDocument = graphql(`
+	mutation SetCourseInstanceCiE($id: ID!, $cie: Boolean!) {
+		setCourseInstanceCiE(id: $id, cie: $cie) {
+			id
+		}
+	}
+`);
+
 const ClearDocument = graphql(`
 	mutation ClearAssignment($id: ID!) {
 		clearAssignment(id: $id)
@@ -344,6 +353,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	// The view, not the data: both cut what the page already loaded, so neither reaches the query.
 	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
 	const byProgramme = url.searchParams.get('nach') === 'studiengang';
+	const onlyCie = url.searchParams.get('cie') === '1';
 
 	const ask = (semester: string) =>
 		backendRequest(AssignmentDocument, {
@@ -404,7 +414,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		// `group` above is the resolved group and stays null for the sentinel — the two are
 		// deliberately not the same field, so that "no group chosen" and "the instances in no
 		// group" cannot be confused for one another.
-		selected: { semester: wanted, group, search, degree, byProgramme },
+		selected: { semester: wanted, group, search, degree, byProgramme, onlyCie },
 		unusable
 	};
 };
@@ -518,6 +528,16 @@ export const actions: Actions = {
 				saved += 1;
 			} catch (err) {
 				refusals.push({ partId: `format:${change.instanceId}`, message: toRefusal(err).message });
+			}
+		}
+
+		// Whether a cohort is listed as CiE, the same way: only the cohorts whose box changed.
+		for (const change of cieChanges(form)) {
+			try {
+				await backendRequest(SetCieDocument, { id: change.instanceId, cie: change.cie });
+				saved += 1;
+			} catch (err) {
+				refusals.push({ partId: `cie:${change.instanceId}`, message: toRefusal(err).message });
 			}
 		}
 

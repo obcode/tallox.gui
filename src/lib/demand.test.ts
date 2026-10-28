@@ -22,6 +22,8 @@ import {
 	coversLabel,
 	formatBadges,
 	formatChanges,
+	cieChanges,
+	rowListsCie,
 	partGroupLabel,
 	partLabel,
 	plannedHours,
@@ -1163,6 +1165,51 @@ describe('formatBadges', () => {
 			'Block',
 			'Englisch'
 		]);
+	});
+	it('marks a CiE listing on its own, independent of the language', () => {
+		expect(formatBadges({ delivery: 'WEEKLY', taughtInEnglish: false, cie: true })).toEqual([
+			'CiE'
+		]);
+	});
+});
+
+describe('cieChanges', () => {
+	const formOf = (entries: [string, string][]) => {
+		const form = new FormData();
+		for (const [k, v] of entries) form.append(k, v);
+		return form;
+	};
+
+	it('reports only the cohorts whose box changed', () => {
+		const form = formOf([
+			['cie0:a', 'false'],
+			['cie0:b', 'false'],
+			['cie:b', 'true'],
+			['cie0:c', 'true'],
+			['cie:c', 'true']
+		]);
+		expect(cieChanges(form)).toEqual([{ instanceId: 'b', cie: true }]);
+	});
+
+	it('reads an unticked box as taken off the list', () => {
+		expect(cieChanges(formOf([['cie0:a', 'true']]))).toEqual([{ instanceId: 'a', cie: false }]);
+	});
+
+	it('ignores a box without its original', () => {
+		expect(cieChanges(formOf([['cie:a', 'true']]))).toEqual([]);
+	});
+});
+
+describe('rowListsCie', () => {
+	const format = (cie: boolean) => ({ cie });
+	it('keeps a row where any cohort is listed', () => {
+		expect(rowListsCie({ tracks: [{ format: format(false) }, { format: format(true) }] })).toBe(
+			true
+		);
+	});
+	it('drops a row where none is, and one without formats', () => {
+		expect(rowListsCie({ tracks: [{ format: format(false) }] })).toBe(false);
+		expect(rowListsCie({ tracks: [{}] })).toBe(false);
 	});
 });
 

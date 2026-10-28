@@ -458,3 +458,62 @@ test.describe('how a cohort is taught', () => {
 		await expect(delivery(page)).toHaveValue('BLOCK');
 	});
 });
+
+// The CiE listing, set beside the language and independent of it. Set by the lead of the subject
+// group here, read back on the demand screen as a badge, and kept by the filter "nur CiE" on both.
+test.describe('a cohort listed as a course in English', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	const cie = (page: Page) =>
+		page.getByRole('checkbox', {
+			name: new RegExp(`^${ASSIGNMENTS.moduleName} in .* als CiE$`)
+		});
+	const english = (page: Page) =>
+		page.getByRole('checkbox', {
+			name: new RegExp(`^${ASSIGNMENTS.moduleName} in .* auf Englisch$`)
+		});
+	const demand = `/bedarf?semester=${ASSIGNMENTS.semester}&studiengang=${ASSIGNMENTS.programme}`;
+
+	test('the lead of the subject group lists a cohort as CiE, and it stays', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(cie(page)).not.toBeChecked();
+
+		// Before anything is listed, the filter keeps nothing of this module.
+		await gotoRendered(page, `${URL}&cie=1`);
+		await expect(cie(page)).toHaveCount(0);
+
+		await gotoRendered(page, URL);
+		await cie(page).check();
+		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(cie(page)).toBeChecked();
+		// The language is a separate statement and has not moved.
+		await expect(english(page)).not.toBeChecked();
+
+		await gotoRendered(page, `${URL}&cie=1`);
+		await expect(cie(page)).toBeChecked();
+
+		// The demand overview shows the badge, and its filter keeps the row.
+		await gotoRendered(page, `${demand}&cie=1`);
+		const row = page.getByRole('row', { name: new RegExp(ASSIGNMENTS.moduleName) });
+		await expect(row.getByText('CiE', { exact: true })).toBeVisible();
+		await expect(row.getByText('Englisch', { exact: true })).toHaveCount(0);
+	});
+
+	test('unticking takes the cohort off the list', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(cie(page)).toBeChecked();
+
+		await cie(page).uncheck();
+		await expect(page.getByText(/1 Änderung gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, `${URL}&cie=1`);
+		await expect(cie(page)).toHaveCount(0);
+	});
+});

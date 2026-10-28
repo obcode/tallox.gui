@@ -21,6 +21,7 @@
 		cohortsWithoutInterest,
 		isWideOpen,
 		instancesOfTab,
+		instancesListedAsCie,
 		instancesOfDegree,
 		programmeSections,
 		programmesWithoutDegree,
@@ -87,7 +88,12 @@
 	const tabInstances = $derived(instancesOfTab(data.instances, tab));
 
 	/** What the table shows: the tab, cut to one degree where somebody chose one. */
-	const shown = $derived(instancesOfDegree(tabInstances, data.selected.degree));
+	const shown = $derived(
+		instancesListedAsCie(
+			instancesOfDegree(tabInstances, data.selected.degree),
+			data.selected.onlyCie
+		)
+	);
 
 	const groups: CohortGroup[] = $derived(cohortGroups(shown, data.assignments as AssignmentLike[]));
 	const progress = $derived(fillProgress(groups));
@@ -251,7 +257,8 @@
 		{ name: 'fachgruppe', value: data.selected.group },
 		{ name: 'q', value: data.selected.search },
 		{ name: 'abschluss', value: degreeParam(data.selected.degree) },
-		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' }
+		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' },
+		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' }
 	]);
 
 	/**
@@ -448,7 +455,7 @@
 			bachelor and master modules separately.
 		-->
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-3">
-			{@render carriedOver(['abschluss', 'nach'])}
+			{@render carriedOver(['abschluss', 'nach', 'cie'])}
 			<label class="form-control">
 				<span class="label-text text-sm">Abschluss</span>
 				<select
@@ -476,6 +483,17 @@
 					<option value="">Modul</option>
 					<option value="studiengang" selected={data.selected.byProgramme}>Studiengang</option>
 				</select>
+			</label>
+			<label class="flex items-center gap-2 pb-1 text-sm">
+				<input
+					name="cie"
+					type="checkbox"
+					value="1"
+					checked={data.selected.onlyCie}
+					class="checkbox checkbox-sm"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				nur CiE
 			</label>
 			<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 		</form>
@@ -874,7 +892,9 @@
 											     beside the controls: an unticked box sends nothing, and the save only
 											     writes a cohort whose controls differ from what was drawn. -->
 												{#if group.instance.delivery}
-													{@const formatRefusal = refusalFor.get(`format:${group.instance.id}`)}
+													{@const formatRefusal =
+														refusalFor.get(`format:${group.instance.id}`) ??
+														refusalFor.get(`cie:${group.instance.id}`)}
 													<input
 														type="hidden"
 														name="fmt0:{group.instance.id}"
@@ -884,6 +904,11 @@
 														type="hidden"
 														name="en0:{group.instance.id}"
 														value={String(group.instance.taughtInEnglish ?? false)}
+													/>
+													<input
+														type="hidden"
+														name="cie0:{group.instance.id}"
+														value={String(group.instance.cie ?? false)}
 													/>
 													<div class="mt-1 flex flex-wrap items-center gap-3">
 														<select
@@ -916,6 +941,21 @@
 															{#if !group.instance.taughtInEnglishOverridden}
 																<span class="text-base-content/70">(Standard)</span>
 															{/if}
+														</label>
+														<label
+															class="flex items-center gap-1 text-xs"
+															title="Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache."
+														>
+															<input
+																type="checkbox"
+																name="cie:{group.instance.id}"
+																value="true"
+																class="checkbox checkbox-xs"
+																aria-label="{block.name} in {group.label} als CiE"
+																disabled={!open}
+																checked={group.instance.cie}
+															/>
+															CiE
 														</label>
 													</div>
 													{#if formatRefusal}
