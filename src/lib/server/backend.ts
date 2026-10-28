@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from '$env/dynamic/private';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { GraphQLClient, type Variables } from 'graphql-request';
+import { ClientError, GraphQLClient, type Variables } from 'graphql-request';
 import { assumeHeaderValue } from '$lib/assumedRoles';
 
 /**
@@ -77,5 +77,53 @@ export function backendRequest<TResult, TVariables extends Variables>(
 	// the request, and a place where a caller can pass some in is the place where a forwarded
 	// Authorization header eventually shows up.
 	const widened = document as TypedDocumentNode<TResult, Variables>;
-	return backendClient().request<TResult>(widened, variables);
+	return backendClient()
+		.request<TResult>(widened, variables)
+		.catch((err: unknown) => {
+			throw withoutPayload(err);
+		});
+}
+
+/** One GraphQL error as the backend sends it: the sentence, and the code the interface branches on. */
+export type BackendGraphQLError = {
+	message?: string;
+	extensions?: { code?: string } | null;
+};
+
+/**
+ * What a failed backend request throws out of `backendRequest`.
+ *
+ * graphql-request's own `ClientError` carries the whole exchange: the query, the variables,
+ * the response data, and a message that is all of that as JSON. Every `load` that does not
+ * catch it turns into a 500 whose message goes to the container log and to the error collector
+ * — with the variables in it, and the variables are mail addresses, wish notes and desired
+ * hours. This type keeps what the interface reads (`response.status`, `response.errors`) and
+ * nothing of what the person typed.
+ */
+export class BackendError extends Error {
+	readonly response: { status: number; errors: BackendGraphQLError[] };
+
+	constructor(status: number, errors: BackendGraphQLError[]) {
+		super(errors[0]?.message || `backend answered ${status}`);
+		this.name = 'BackendError';
+		this.response = { status, errors };
+	}
+}
+
+/**
+ * Turns graphql-request's `ClientError` into a `BackendError`, and leaves every other error
+ * as it is: a network failure carries no payload of ours.
+ */
+export function withoutPayload(err: unknown): unknown {
+	if (!(err instanceof ClientError)) return err;
+
+	const errors = Array.isArray(err.response.errors) ? err.response.errors : [];
+	return new BackendError(
+		err.response.status,
+		errors.map((e) => ({
+			message: typeof e?.message === 'string' ? e.message : undefined,
+			extensions:
+				e?.extensions && typeof e.extensions.code === 'string' ? { code: e.extensions.code } : null
+		}))
+	);
 }
