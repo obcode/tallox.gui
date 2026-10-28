@@ -312,7 +312,7 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		emoji: '🔑',
 		label: 'Tokens',
 		href: '/konto/tokens',
-		hint: 'Personal Access Tokens für eigene Auswertungen'
+		hint: 'Personal Access Tokens für Auswertungen und zum Planen über die API'
 	}
 ];
 

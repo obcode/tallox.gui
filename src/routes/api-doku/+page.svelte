@@ -32,19 +32,27 @@
 				sofort mit.
 			</p>
 			<p>
-				Ein Unterschied bleibt, und er ist Absicht: <strong
-					>einige Felder antworten über ein Token nicht</strong
-				>. Personalbezogenes wie fremde noch unveröffentlichte Wünsche, die gewünschten und
-				eingeplanten SWS anderer, Notizen zu Personen, das Protokoll — und die Tokenverwaltung
-				selbst. Ein langlebiges Token in einem Skript ist eine andere Risikoklasse als eine
-				angemeldete Sitzung: es ermöglicht stillen Massenabruf und trennt „wer hat das gesehen" von
-				einem Anmeldevorgang.
+				Es gibt zwei Arten von Tokens. Ein <strong>normales Token</strong> ist für Auswertungen: es
+				liest, was alle lesen dürfen, und Deine eigenen Daten, aber
+				<strong>keine fremden unveröffentlichten Wünsche</strong>, keine gewünschten und
+				eingeplanten SWS anderer, und es plant nicht. Ein langlebiges Token in einem Skript ist eine
+				andere Risikoklasse als eine angemeldete Sitzung: es ermöglicht stillen Massenabruf und
+				trennt „wer hat das gesehen" von einem Anmeldevorgang. Solche Felder liefern
+				<span class="font-mono">null</span>, Planungsaktionen den Code
+				<span class="font-mono">FULL_REACH_REQUIRED</span>.
 			</p>
 			<p>
-				Solche Felder liefern <span class="font-mono">null</span>, statt die ganze Abfrage scheitern
-				zu lassen — die übrigen Felder der Abfrage kommen also normal zurück. Wo das nicht geht,
-				weil das Feld nicht leer sein darf, kommt eine Fehlermeldung mit dem Code
-				<span class="font-mono">INTERACTIVE_ONLY</span>.
+				Ein <strong>Planungs-Token mit voller Reichweite</strong> kann alles, was Du im Browser kannst:
+				Bedarf erklären und ändern, Teile zuteilen, veröffentlichen — und es liest dabei, was Du im Browser
+				liest. Du wählst es beim Anlegen ausdrücklich, es gilt höchstens 90 Tage und steht im nächtlichen
+				Zugriffsbericht.
+			</p>
+			<p>
+				Für <strong>kein</strong> Token erreichbar sind die Tokenverwaltung selbst, die Verwaltung
+				von Personen und Rollen und das Zugriffsprotokoll — sonst könnte ein abhandengekommenes
+				Token sich selbst verlängern oder Rechte vergeben. Dort kommt
+				<span class="font-mono">null</span>
+				oder der Code <span class="font-mono">INTERACTIVE_ONLY</span>.
 			</p>
 		</div>
 	</div>
@@ -57,7 +65,8 @@
 			<p class="text-base-content/90 text-sm">
 				Unter <a class="link" href={resolve('/konto/tokens')}>Konto → Tokens</a>. Das Token wird
 				genau einmal angezeigt; Tallox speichert davon nur eine Prüfsumme. Gültigkeit standardmäßig
-				90 Tage, höchstens 365 — es gibt bewusst kein Token ohne Ablauf.
+				90 Tage, höchstens 365, ein Planungs-Token höchstens 90 — es gibt bewusst kein Token ohne
+				Ablauf.
 			</p>
 		</div>
 
@@ -104,6 +113,26 @@
 			Das Token gehört in eine Umgebungsvariable, nicht in den Quelltext — ein Skript mit einem
 			Token darin ist der wahrscheinlichste Weg, auf dem eines abhandenkommt.
 		</p>
+	</div>
+
+	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+		<h2 class="mb-2 flex items-center gap-2 font-medium">
+			<span aria-hidden="true">🤖</span> Mit einem KI-Assistenten planen
+		</h2>
+		<div class="text-base-content/90 flex flex-col gap-2 text-sm">
+			<p>
+				Ein Assistent wie Claude kann über diese API planen, wenn Du ihm ein Planungs-Token gibst:
+				Endpunkt-URL, das Token als <span class="font-mono">Authorization: Bearer …</span>, und den
+				Hinweis, dass das Schema per Introspection abfragbar ist. Er sieht und darf dann genau das,
+				was Du im Browser siehst und darfst.
+			</p>
+			<p class="text-base-content/80">
+				Bedenke dabei: was das Token liest, liest der Assistent mit — in Deinem Bereich auch
+				unveröffentlichte Wünsche des Kollegiums. Lege für jede Aufgabe ein eigenes Token an, so
+				kurz gültig wie möglich, und widerrufe es danach auf der
+				<a class="link" href={resolve('/konto/tokens')}>Token-Seite</a>.
+			</p>
+		</div>
 	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">

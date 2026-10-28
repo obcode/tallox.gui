@@ -94,7 +94,19 @@ describe('selectedScopes', () => {
 	it('ignores an area the dialogue does not offer', () => {
 		// Can only come from a hand-written POST. The backend refuses what it does not accept
 		// anyway; this is a form parser and not a second gate.
-		expect(selectedScopes({ ADMIN: 'WRITE' })).toEqual([]);
+		expect(selectedScopes({ TOKENS: 'WRITE' })).toEqual([]);
+	});
+
+	it('offers ADMIN, which a full-reach token of an administrator reaches in part', () => {
+		// Subject groups and the module import answer a full-reach token; people, roles and the
+		// access log answer none. Narrowing a token to ADMIN is therefore a real choice now.
+		expect(SELECTABLE_AREAS).toContain('ADMIN');
+		expect(selectedScopes({ ADMIN: 'READ' })).toEqual([{ area: 'ADMIN', verb: 'READ' }]);
+	});
+
+	it('still withholds TOKENS, which no token reaches', () => {
+		expect(SELECTABLE_AREAS).not.toContain('TOKENS');
+		expect(UNREACHABLE_AREAS.TOKENS).toBeTruthy();
 	});
 
 	it('never emits the same area twice', () => {

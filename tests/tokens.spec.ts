@@ -204,3 +204,81 @@ test.describe('token scopes', () => {
 		await expect(page.getByLabel('Neues Token')).toHaveCount(0);
 	});
 });
+
+test.describe('planning tokens with full reach', () => {
+	const endpoint = () =>
+		`${process.env.TALLOX_SERVER?.replace('/query', '') ?? 'http://localhost:8080'}/api/graphql`;
+
+	// Personnel data of others, behind @fullReach. A lecturer's full-reach token reads the list
+	// as the lecturer reads it in the browser; a plain token is refused with the door's code.
+	const overview =
+		'{ session { fullReach } desiredHoursOverview(semester: "2027-SS") { __typename } }';
+
+	async function mint(
+		page: import('@playwright/test').Page,
+		description: string,
+		fullReach: boolean
+	): Promise<string> {
+		await gotoRendered(page, '/konto/tokens');
+		await page.getByLabel('Wofür?').fill(description);
+		if (fullReach) await page.getByRole('checkbox', { name: /Volle Reichweite/ }).check();
+		await page.getByRole('button', { name: 'Anlegen' }).click();
+		return page.getByLabel('Neues Token').inputValue();
+	}
+
+	test('a full-reach token reaches what the browser reaches, a plain one does not', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		const plain = await mint(page, `Plain ${Date.now()}`, false);
+		const full = await mint(page, `Planning ${Date.now()}`, true);
+
+		const asFull = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${full}` },
+			data: { query: overview }
+		});
+		const fullBody = await asFull.json();
+		expect(fullBody).not.toHaveProperty('errors');
+		expect(fullBody.data.session.fullReach).toBe(true);
+
+		const asPlain = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${plain}` },
+			data: { query: overview }
+		});
+		const plainBody = await asPlain.json();
+		expect(plainBody.errors?.[0]?.extensions?.code).toBe('FULL_REACH_REQUIRED');
+
+		// And the list says which one is which — the owner has to be able to find the token that
+		// reads confidential data when it is time to revoke it.
+		await gotoRendered(page, '/konto/tokens');
+		const row = page.getByRole('row').filter({ hasText: 'Planning' }).last();
+		await expect(row.getByText('volle Reichweite')).toBeVisible();
+	});
+
+	test('a full-reach token is refused for longer than 90 days', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, '/konto/tokens');
+
+		const description = `Too long ${Date.now()}`;
+		await page.getByLabel('Wofür?').fill(description);
+		await page.getByRole('checkbox', { name: /Volle Reichweite/ }).check();
+		await expect(page.getByText('Planungs-Token: höchstens 90 Tage.')).toBeVisible();
+		// Ticking the box once emptied the description: Svelte re-applied value={…} when the
+		// lifetime hint changed. Without this line the test below passed on an empty form,
+		// refused by the browser rather than by the backend.
+		await expect(page.getByLabel('Wofür?')).toHaveValue(description);
+
+		// The field's own max would stop a browser from submitting; the rule is the backend's, so
+		// the test removes the hint and checks the refusal that a hand-written POST would get.
+		const days = page.getByLabel('Gültig für (Tage)');
+		await days.evaluate((input) => input.removeAttribute('max'));
+		await days.fill('120');
+		await page.getByRole('button', { name: 'Anlegen' }).click();
+
+		await expect(page.getByText('Fehlgeschlagen')).toBeVisible();
+		await expect(
+			page.getByText(/Planungs-Token mit voller Reichweite gilt höchstens 90 Tage/)
+		).toBeVisible();
+		await expect(page.getByLabel('Neues Token')).toHaveCount(0);
+	});
+});

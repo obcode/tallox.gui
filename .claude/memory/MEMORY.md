@@ -36,3 +36,4 @@ Kolleginnen und Kollegen.
 - [Laufenden ZPA-Abgleich verfolgen](zpa-run-polling.md) — depends/invalidate je Sekunde, Körnung Endpunkt (gemessen), aria-live nur auf dem Satz, E2E per runSql
 - [Tabellen werden Karten](responsive-tables.md) — `table-stack` + `use:stackedTable` statt `overflow-x-auto`, Reiter brechen um, und der Test, der versteckte Spalten auf jeder Seite findet
 - [Grafische Übersichten](visual-overview.md) — Phasen-Leiste, Kontingent- und SWS-Balken, Besetzungsstand, geschlossene Wunschrunden in einem Satz
+- [Planungs-Token in der Token-Seite](planning-token-ui.md) — Häkchen statt Scope, Hinweis und Badge, und warum `value={…}` neben einem reaktiven Geschwister das Feld leert

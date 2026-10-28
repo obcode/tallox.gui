@@ -16,6 +16,7 @@ const MyTokens = graphql(`
 			lastUsedAt
 			revokedAt
 			scopes
+			fullReach
 		}
 	}
 `);
@@ -25,11 +26,13 @@ const CreateToken = graphql(`
 		$description: String!
 		$expiresInDays: Int
 		$scopes: [ScopeGrantInput!]
+		$fullReach: Boolean!
 	) {
 		createPersonalAccessToken(
 			description: $description
 			expiresInDays: $expiresInDays
 			scopes: $scopes
+			fullReach: $fullReach
 		) {
 			secret
 			token {
@@ -40,6 +43,7 @@ const CreateToken = graphql(`
 				lastUsedAt
 				revokedAt
 				scopes
+				fullReach
 			}
 		}
 	}
@@ -98,8 +102,17 @@ export const actions: Actions = {
 			});
 		}
 
+		// Full reach is a checkbox, and an unticked checkbox sends nothing — so absent means no.
+		// The 90-day ceiling is the backend's; the page only says so.
+		const fullReach = form.get('fullReach') === 'yes';
+
 		try {
-			const data = await backendRequest(CreateToken, { description, expiresInDays, scopes });
+			const data = await backendRequest(CreateToken, {
+				description,
+				expiresInDays,
+				scopes,
+				fullReach
+			});
 			// The plaintext token comes back here exactly once and is stored nowhere — not in the
 			// session, not in a cookie, not in the log. Anybody who loses it creates a new one
 			// and revokes this one.

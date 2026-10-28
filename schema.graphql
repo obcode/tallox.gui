@@ -10,26 +10,42 @@ directive @defer(
 ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 """
-Marks a field that only answers in a signed-in browser session, never through a Personal
-Access Token.
+Marks a field that answers in a signed-in browser session **and** through a Personal Access
+Token minted with `fullReach: true` — but not through a plain token.
+
+**On a nullable field a plain token gets `null`**, and the rest of the query still answers. On a
+field that cannot be null, and on every mutation, the call is refused with the error code
+`FULL_REACH_REQUIRED`.
+
+Behind it: the planning itself — declaring and changing the demand, filling and clearing parts,
+dividing them, the coverage handshake, applying a module split — other people's desired and
+assigned teaching hours, the competences of teachers without an account, publishing and freezing
+a semester, running the subject groups and the module import. Your roles decide all of it as
+they do in the browser; full reach only removes the difference between the two doors.
+
+Why a plain token does not get these: through it, other people's unpublished wishes, assignments
+and competences collapse to your own, and a refusal like `INSTANCE_IN_USE` would tell it what
+the rows do not. A full-reach token reads what you read in the browser, so its refusals tell it
+nothing new. Mint one under „API-Tokens“, for at most 90 days.
+"""
+directive @fullReach on FIELD_DEFINITION
+
+"""
+Marks a field that only answers in a signed-in browser session, never through any Personal
+Access Token — not even one with full reach.
 
 **On a nullable field you get `null`**, and the rest of your query still answers — so a script
 that asks for something interactive-only alongside other fields keeps the other fields. On a
 field that cannot be null, and on every mutation, the call is refused with the error code
 `INTERACTIVE_ONLY`.
 
-Behind it: other people's unpublished wishes, other people's desired and assigned teaching hours,
-the faculty roster with those hours, free-text notes about people, the audit
-log, token management itself, and every mutation that writes the demand.
-A long-lived token in a script is a different risk from a login: it makes silent bulk export
-possible and separates "who saw this" from any sign-in. Token management is on the list because a
-leaked token that can mint its successors would outlive its own expiry date.
+Behind it is deliberately little: token management itself, who has an account and which roles
+it holds, and the access log. A leaked token that can mint its successors would outlive its own
+expiry date; one that can grant roles or read the record of what tokens did would be the one
+credential the audit cannot catch up with.
 
-Writing the demand is on it for a less obvious reason, and it is worth reading once: a withdrawal
-refused with `INSTANCE_IN_USE` is an answer about wishes. Interactively that gives nothing away —
-whoever may write a programme's demand may already read its unpublished wishes — but through a
-token the wish rule reaches only your own, so a dry-run plan would have been a free, traceless
-enumeration of which instances somebody wants. See the note at the top of `demand.graphqls`.
+Everything else a browser session can do, a token minted with `fullReach` can do too — see
+`@fullReach`.
 """
 directive @interactiveOnly on FIELD_DEFINITION
 
@@ -351,12 +367,13 @@ How many hours a week one person already holds in a semester: in total, and by t
 the modules they hold them in.
 
 **Readable before the assignments are published, by more than the person**, which no other sum over
-assignments is: in a signed-in session the lead of any subject group the person is a member of reads
+assignments is: with full reach the lead of any subject group the person is a member of reads
 it, and the dean's office — so that whoever fills an instance can see that a colleague is already
 full in another group, and whom to talk to. It names no module, instance or part. Once
-`Semester.assignmentsPublishedAt` is set, everybody reads everybody's in a signed-in session.
-Through a Personal Access Token it is your own in every state: the published assignments are public
-row by row, but everybody's totals in one call are personnel data in bulk.
+`Semester.assignmentsPublishedAt` is set, everybody reads everybody's with full reach.
+Through a plain Personal Access Token it is your own in every state: the published assignments are
+public row by row, but everybody's totals in one call are personnel data in bulk. "With full reach"
+means a signed-in browser session or a token minted with `fullReach`.
 """
 type AssignedLoad {
   """Whose load it is."""
@@ -1222,7 +1239,7 @@ means "not stated", which is different from `0`.
 Three states, set by the dean's office on the semester:
 
 - **Open** — the person states and changes their own. Read by the person, through either door; in
-  an interactive session also by the lead of any subject group the person is a member of, and by
+  a session with full reach also by the lead of any subject group the person is a member of, and by
   the dean's office.
 - **Frozen** (`Semester.desiredHoursFrozenAt`) — only the dean's office changes a figure, with
   `correctDesiredTeachingHours`, after agreeing it with the person.
@@ -1250,7 +1267,7 @@ type DesiredTeachingHours {
   """
   The person's own words: „gern als Block“, „Forschungssemester im Herbst“. Empty when you may read
   the range but not the note — which is everybody but the person, the leads of their subject groups
-  and the dean's office, in an interactive session.
+  and the dean's office, with full reach.
   """
   note: String!
 
@@ -2063,8 +2080,10 @@ type ModuleWithoutCompetence {
 """
 Everything that changes something.
 
-All of it is `@interactiveOnly` for now: writing happens in a signed-in browser session, not
-through a Personal Access Token.
+Most of it is `@fullReach`: it answers in a signed-in browser session and through a token minted
+with `fullReach`, and refuses a plain token with `FULL_REACH_REQUIRED`. Token management, person and
+role administration are `@interactiveOnly` and answer no token at all. Writing your own wishes,
+competences and desired hours works through every token. Each field says which applies.
 """
 type Mutation {
   """
@@ -2101,6 +2120,18 @@ type Mutation {
     never two different things.
     """
     scopes: [ScopeGrantInput!]
+
+    """
+    Mint a token with full reach: it reaches what you reach in a signed-in browser session —
+    other people's unpublished wishes, assignments and competences as far as your roles allow,
+    and every planning move marked `@fullReach` (declaring demand, filling parts, publishing).
+    Token management, person and role administration and the access log stay browser-only.
+    
+    For planning from a script or an assistant. **At most 90 days** (`TOKEN_LIFETIME_OUT_OF_RANGE`
+    otherwise), fixed at creation, and listed in the nightly access report while it is valid.
+    Whatever reads the token's answers reads confidential data — an assistant included.
+    """
+    fullReach: Boolean! = false
   ): CreatedPersonalAccessToken!
 
   """
@@ -2462,7 +2493,7 @@ type Mutation {
   read — nothing is removed there at all, so the answer says nothing about whether anybody holds
   it). A cohort covered by another programme holds no parts and is skipped.
   
-  Allowed for whoever may call `setModuleComponents`. `@interactiveOnly` because it can answer
+  Allowed for whoever may call `setModuleComponents`. `@fullReach` because it can answer
   `PART_ASSIGNED`, like every write that can. `MODULE_NOT_DECOMPOSED` where there is no split.
   """
   applyModuleSplitToInstances(
@@ -2578,10 +2609,11 @@ type Mutation {
   than a second computation that might disagree. It also records nothing about the semester: the
   row that says a decision was taken comes into being with the decision, not with the preview.
   
-  It is the reason every mutation in this file is `@interactiveOnly`. A dry run is free, leaves no
-  trace and reports `INSTANCE_IN_USE` per cohort — which through a Personal Access Token would be
-  "which of this programme's instances are wished for", in one call, with no login event. See the
-  note at the top of this file.
+  It is the reason every mutation in this file is `@fullReach`. A dry run is free, leaves no
+  trace and reports `INSTANCE_IN_USE` per cohort — which through a plain Personal Access Token
+  would be "which of this programme's instances are wished for", in one call, with no login
+  event. A token minted with `fullReach` may call it: it reads those wishes anyway. See the note at
+  the top of this file.
   """
   planDemand(
     """Four digits, a hyphen and SS or WS, for example `2027-SS`."""
@@ -2679,9 +2711,9 @@ type Mutation {
   kind of thing named. "This instance has three wishes" is the confidential fact with the names
   taken out.
   
-  Only in a signed-in browser session: through a Personal Access Token this fails with
-  `INTERACTIVE_ONLY`. The refusal above is an answer about wishes, and through a token the wish
-  rule reaches only your own — see the note at the top of this file.
+  In a signed-in browser session or with a token minted with `fullReach`; through a plain token
+  this fails with `FULL_REACH_REQUIRED`. The refusal above is an answer about wishes, and through
+  a plain token the wish rule reaches only your own — see the note at the top of this file.
   
   Returns the id of the withdrawn instance, so that a list can drop it without asking again.
   """
@@ -2931,8 +2963,8 @@ type Mutation {
   entry made in that round would be visible the moment it is made. A module in no subject group has
   no round to close and does not hold it up.
   
-  Only in a signed-in browser session: through a Personal Access Token this fails with
-  `INTERACTIVE_ONLY`.
+  In a signed-in browser session or with a token minted with `fullReach`; through a plain token
+  this fails with `FULL_REACH_REQUIRED`.
   """
   publishWishes(code: String!): Semester!
 
@@ -2941,9 +2973,8 @@ type Mutation {
   
   **There is no way back.** Calling it twice is not an error and does not move the timestamp.
   
-  `@interactiveOnly` for the same reason `publishWishes` is: it cannot be undone, and it is the
-  moment a confidentiality rule stops applying. An act that cannot be walked back should be
-  attributable to a sign-in rather than to a string in a script.
+  `@fullReach` like `publishWishes`: it cannot be undone and is the moment a confidentiality rule
+  stops applying, so a plain token does not get it; a token minted with `fullReach` does.
   """
   publishAssignments(code: String!): Semester!
 
@@ -2952,7 +2983,7 @@ type Mutation {
   figure. The deadline, made an act.
   
   **There is no way back.** Calling it twice is not an error and does not move the timestamp.
-  Interactive only, like the publications.
+  `@fullReach`, like the publications.
   """
   freezeDesiredHours(code: String!): Semester!
 
@@ -2967,8 +2998,7 @@ type Mutation {
   """
   Create a subject group.
   
-  Administration, and only in a signed-in browser session — the same terms as every other act
-  that shapes who may do what here.
+  Administration, in a signed-in browser session or with a token minted with `fullReach`.
   """
   createSubjectGroup(
     """
@@ -3170,8 +3200,8 @@ type Mutation {
   Change somebody's figure after the freeze: what the dean's office agreed with the person in the
   plausibility check. Both ends `null` takes it back. Recorded as a correction (`correctedBy`).
   
-  The dean's office in a signed-in session only — through a Personal Access Token `FORBIDDEN`, said
-  as a refusal rather than the `null` of `@interactiveOnly`, because `null` here already means "taken
+  The dean's office with full reach only — through a plain Personal Access Token `FORBIDDEN`, said
+  as a refusal rather than the `null` of `@fullReach`, because `null` here already means "taken
   back". `DESIRED_HOURS_NOT_FROZEN` while the figures are still the people's own to change,
   `DESIRED_HOURS_PHASE_CLOSED` once the semester is finished.
   """
@@ -3200,8 +3230,8 @@ type Mutation {
   while after a successful run, because this reaches into another institution's system and a
   button that can be held down should not be able to hammer it.
   
-  Interactive only. It is an outbound call using a shared credential, and the record of who
-  asked for it should be a person who signed in rather than a token in a script.
+  `@fullReach`: in a signed-in browser session or with a token minted with `fullReach`. It is an
+  outbound call using a shared credential; the access log records which token asked for it.
   """
   syncZpaNow: ZpaSyncRun!
 
@@ -3213,8 +3243,8 @@ type Mutation {
   3861 objects that have not moved.
   
   Unlike `syncZpaNow` this reaches nothing outside this database, so there is nothing to hammer
-  and no cooling-off period. Interactive only all the same — it rewrites the catalogue everybody
-  plans with, and that should be attributable to somebody who signed in.
+  and no cooling-off period. `@fullReach` like `syncZpaNow` — it rewrites the catalogue everybody
+  plans with, so a plain token does not get it.
   """
   projectZpaCatalogue: ZpaCatalogueProjection!
 }
@@ -3223,7 +3253,7 @@ type Mutation {
 A person in the planning.
 
 Carries identity and roles, nothing else. Teaching hours and notes about people are not
-reachable here — see the `@interactiveOnly` note in the API documentation.
+reachable here — see the `@fullReach` note in the API documentation.
 """
 type Person {
   id: ID!
@@ -3327,6 +3357,14 @@ type PersonalAccessToken {
   bounded by its owner's roles alone.
   """
   scopes: [String!]!
+
+  """
+  Whether this token was minted with full reach: it reaches what you reach in a signed-in browser
+  session — the planning moves marked `@fullReach`, and the unpublished rows your roles let you
+  read — except token management, person and role administration and the access log. Fixed at
+  creation.
+  """
+  fullReach: Boolean!
   createdAt: Time!
 
   """
@@ -4117,9 +4155,10 @@ type Query {
   "refused" and "empty" is exactly the fact being protected, so a refusal would turn this field
   into an oracle for it.
   
-  Through a Personal Access Token this collapses to your own entries whatever your role — a
+  Through a plain Personal Access Token this collapses to your own entries whatever your role — a
   long-lived token in a script makes silent bulk export possible and decouples "who saw this" from
-  any login event. Your own stay readable, because they are your data.
+  any login event. Your own stay readable, because they are your data. A token minted with
+  `fullReach` reads what your roles allow in the browser.
   """
   wishes(
     """Four digits, a hyphen and SS or WS, for example `2027-SS`."""
@@ -4150,10 +4189,11 @@ type Query {
   The desired teaching hours of a semester, as many as you may see.
   
   **Not an error when you may see none**, for the reason `wishes` gives: whether a colleague has
-  stated a figure is the fact the rule protects. Through a Personal Access Token this is your own
-  entry whatever your role and whatever the state of the semester. Once the dean's office publishes
-  the figures, everybody reads them in a signed-in session; a script does not, because the whole
-  faculty's teaching plans in one call are personnel data in bulk.
+  stated a figure is the fact the rule protects. Through a plain Personal Access Token this is your
+  own entry whatever your role and whatever the state of the semester. Once the dean's office
+  publishes the figures, everybody reads them with full reach — a signed-in session or a token
+  minted with `fullReach`; a plain token does not, because the whole faculty's teaching plans in
+  one call are personnel data in bulk.
   """
   desiredTeachingHours(
     """Four digits, a hyphen and SS or WS."""
@@ -4172,8 +4212,8 @@ type Query {
   everybody for the dean's office. A partner faculty gets an empty list: the faculty's roster is
   not what it follows.
   
-  Signed-in sessions only: a roster of the faculty with everybody's teaching plans is the bulk
-  export a token must not make possible.
+  With full reach only (`@fullReach`): a roster of the faculty with everybody's teaching plans is
+  the bulk export a plain token must not make possible.
   """
   desiredHoursOverview(
     """Four digits, a hyphen and SS or WS."""
@@ -4356,15 +4396,19 @@ enum ScopeArea {
   groups, and — as they arrive — the demand, the assignments and the statistics.
   
   The first area worth narrowing a token to. `PUBLIC` and `PROFILE` are you describing
-  yourself; `TOKENS` and `ADMIN` are unreachable through a token at all.
+  yourself; `TOKENS` is unreachable through a token at all, and `ADMIN` partly.
+  
+  Every planning move is in this area, and the ones whose refusals answer questions about other
+  people's rows are `@fullReach`: a plain token reads them, a token minted with full reach
+  also makes them.
   
   Fields: `semesters`, `semester`, `planningSemester`, `programmes`, `programme`, `modules`,
   `module`, `teachers`,
   `courseInstances`, `courseInstance`, `teachingLoad`, `studyYearLoad`, `programmeQuotas`, `setProgrammeQuota`,
   `advanceSemesterPhase`, `setPlanningSemester`,
   `publishWishes`, `publishAssignments`,
-  # setAssignment and clearAssignment are here and are @interactiveOnly: their refusals answer
-  # "is this part taken", which through a token the read rule would not.
+  # setAssignment and clearAssignment are here and are @fullReach: their refusals answer
+  # "is this part taken", which through a plain token the read rule would not.
   
   `assignments`, `myAssignments`, `assignedTeachingHours`, `setAssignment`, `clearAssignment`, `setCourseInstanceFormat`,
   `setModuleComponents`, `applyModuleSplitToInstances`, `setModuleProjectBased`,
@@ -4373,15 +4417,15 @@ enum ScopeArea {
   `changeCourseInstance`, `setCourseInstanceTopic`, `withdrawCourseInstance`, `addInstancePart`, `changeInstancePart`,
   `removeInstancePart`, `shareInstancePartAcrossTracks`, `splitInstancePartAcrossTracks`,
   
-  # Dividing a part and handing it to another faculty are @interactiveOnly like setAssignment:
+  # Dividing a part and handing it to another faculty are @fullReach like setAssignment:
   # both answer PART_ASSIGNED, which says whether somebody holds the part.
   
   `divideInstancePart`, `rejoinInstancePart`, `setInstancePartTaughtBy`,
   
-  # The coverage handshake is here and is @interactiveOnly for the same reason setAssignment is:
+  # The coverage handshake is here and is @fullReach for the same reason setAssignment is:
   # agreeing can answer `PART_ASSIGNED`, which says a part of the asking cohort is already filled.
-  # Interactively that reveals nothing to somebody who may already read that programme's
-  # assignments; through a token it would.
+  # With full reach that reveals nothing to somebody who may already read that programme's
+  # assignments; through a plain token it would.
   
   `requestInstanceCoverage`, `acceptInstanceCoverage`, `releaseInstanceCoverage`,
   `copyDemandFromSemester`, `planDemand`,
@@ -4390,10 +4434,10 @@ enum ScopeArea {
   `subjectGroups`, `subjectGroup`, `mySubjectGroups`, `modulesWithoutSubjectGroup`,
   `subjectGroupsWithoutLead`, `setMySubjectGroups`, `setModulesSubjectGroup`,
   
-  # The dean's office's three acts on the desired teaching hours, all browser-only: there is no
+  # The dean's office's three acts on the desired teaching hours, all @fullReach: there is no
   # unfreezing and no un-publishing, and a correction changes somebody else's statement. The
-  # correction refuses a token in the domain rather than by @interactiveOnly, whose null would
-  # read as "taken back".
+  # correction refuses a plain token in the domain rather than by the directive, whose null
+  # would read as "taken back".
   
   `freezeDesiredHours`, `publishDesiredHours`, `correctDesiredTeachingHours`.
   """
@@ -4409,8 +4453,9 @@ enum ScopeArea {
   faculty with it. The reverse matters more — an evaluation script scoped to `PLANNING` does not
   thereby reach anybody's wishes.
   
-  What this area does **not** do is decide what is visible. Through a token the wish rule collapses
-  to your own entries whatever the scope says: the area bounds the surface, the policy bounds the
+  What this area does **not** do is decide what is visible. Through a plain token the wish rule
+  collapses to your own entries whatever the scope says; through one minted with full reach it
+  is what your roles allow in the browser. The area bounds the surface, the policy bounds the
   rows.
   
   Competences are here and not under `PROFILE` because "würde ich gern halten" is a wish without a
@@ -4435,15 +4480,20 @@ enum ScopeArea {
   TOKENS
 
   """
-  Running the installation: user and role administration, the module import, and the access
-  log. Also `@interactiveOnly`, for the same reason.
+  Running the installation: user and role administration, the subject groups, the module
+  import, and the access log. All of it needs ADMIN (reading the import also the dean's office).
+  
+  Split by the Kind directives. Who has an account, which roles it holds, admitting teachers
+  without one, and the access log are `@interactiveOnly` — granting access and reading the record
+  of what tokens did stay tied to a sign-in. The subject groups and the module import are
+  `@fullReach`: an administrator may run them from a token minted with full reach.
   
   The import is here rather than under `PLANNING` because what these fields expose is the
   operation — did the nightly job run, what did it change, run it now, what did it make of the
   untidy parts — and not the catalogue it produces. The catalogue itself is planning data and
-  lives under `PLANNING`. An area of its own was considered and rejected: every field it could
-  hold is unreachable through a token anyway, so it would be a promise in an enum that
-  colleagues can read via introspection and never use.
+  lives under `PLANNING`. An area of its own was considered and rejected when every field it
+  could hold was unreachable through a token; it may be worth having now that the import is
+  reachable with full reach, and would arrive with the scope dialog that needs it.
   
   Fields: `people`, `person`, `roleGrants`, `diagnoseAccess`, `teacherAccounts`,
   `createPerson`, `renamePerson`, `setPersonRoles`, `setPersonActive`, `setPersonProgrammes`,
@@ -4621,6 +4671,15 @@ type Session {
   concluding that something is empty.
   """
   interactive: Boolean!
+
+  """
+  Whether this caller reaches what a signed-in browser session reaches: `true` in the browser and
+  for a token minted with `fullReach`, `false` for a plain token.
+  
+  `false` means the `@fullReach` fields will answer `null` or `FULL_REACH_REQUIRED`. The
+  `@interactiveOnly` fields follow `interactive`, whatever this says.
+  """
+  fullReach: Boolean!
 }
 
 """
@@ -4954,7 +5013,8 @@ type Wish {
   about two people, and turning it into a field would ask one of them to decide it alone.
   
   Read by whoever could read the wish before publication: the owner, the leads responsible for it
-  in a signed-in session, the dean's office. Publication makes visible who wants what, not the
+  with full reach (a signed-in session or a full-reach token), the dean's
+  office. Publication makes visible who wants what, not the
   owner's own words; for everybody else this is the empty string.
   """
   note: String!
