@@ -93,8 +93,9 @@
 			<!--
 				Next to the identity and visible at every width, not in the area bar: that one shows
 				the planning process in its order, and feedback is not a step in it. Below `sm` the
-				speech-bubble icon stands alone — the row is 375px wide there, and the `title` still
-				carries the name.
+				speech-bubble icon stands alone — the row is 375px wide there — and the word stays in
+				the accessible name as `sr-only` text. Not via `title`: that is a tooltip whose wording
+				changes, and when it was reworded the link lost its name on phones.
 
 				`target="_blank"`, because the target lies outside this application: whoever wants
 				to remark on something in the middle of a half-filled demand table should not have
@@ -113,7 +114,7 @@
 					class="btn btn-ghost btn-sm gap-1.5 font-normal"
 					title="Fehler, Wünsche und Fragen zu Tallox — öffnet die Anliegen der Fakultät in einem neuen Tab"
 				>
-					<span aria-hidden="true">💬</span><span class="hidden sm:inline">Feedback</span>
+					<span aria-hidden="true">💬</span><span class="sr-only sm:not-sr-only">Feedback</span>
 				</a>
 			{/if}
 

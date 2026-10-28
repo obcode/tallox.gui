@@ -79,9 +79,12 @@ test.describe('the feedback entry', () => {
 		await page.setViewportSize({ width: 375, height: 812 });
 		await gotoRendered(page, '/');
 
-		// The label is hidden below `sm`; the accessible name comes from the title instead.
-		await expect(
-			page.getByRole('banner').getByRole('link', { name: /Feedback|Rückmeldungen/ })
-		).toBeVisible();
+		// The word is only visually hidden below `sm`; the accessible name keeps it. It once came
+		// from the title, and rewording the tooltip took the name away on phones.
+		const link = page.getByRole('banner').getByRole('link', { name: 'Feedback', exact: true });
+		await expect(link).toBeVisible();
+		// And it stays the narrow icon-only button the 375px row has room for.
+		const box = await link.boundingBox();
+		expect(box?.width ?? 0).toBeLessThan(60);
 	});
 });
