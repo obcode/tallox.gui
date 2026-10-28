@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { secureCookieAttribute } from '$lib/cookies';
 	import { invalidateAll } from '$app/navigation';
 	import { ASSUME_COOKIE } from '$lib/assumedRoles';
 	import { roleLabels } from '$lib/roles';
@@ -6,7 +7,7 @@
 	let { effectiveRoles }: { effectiveRoles: readonly string[] } = $props();
 
 	async function reset() {
-		document.cookie = `${ASSUME_COOKIE}=; path=/; max-age=0; samesite=lax`;
+		document.cookie = `${ASSUME_COOKIE}=; path=/; max-age=0; samesite=lax${secureCookieAttribute(location.protocol)}`;
 		await invalidateAll();
 	}
 </script>
