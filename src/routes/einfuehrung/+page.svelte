@@ -186,6 +186,19 @@
 					Der <a class="link" href={resolve('/ablauf')}>Ablauf der Einsatzplanung</a> beschreibt jeden
 					Schritt, mit wer, wo und wann.
 				</li>
+				{#if data.feedbackUrl}
+					<!-- The target lies outside this application and comes from the deployment's
+					     environment, as in the NavBar; the lint rule cannot tell that from a dynamic href. -->
+					<li>
+						Fehlt etwas, stimmt etwas nicht, oder bleibt eine Frage offen:
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+						<a class="link" href={data.feedbackUrl} target="_blank" rel="noopener noreferrer"
+							>Feedback</a
+						>
+						(💬 oben in der Leiste) führt zu den Anliegen der Fakultät. Dort schreibst Du mit Deiner HM-Kennung
+						einen Fehler, einen Wunsch oder eine Frage auf und bekommst eine Rückmeldung.
+					</li>
+				{/if}
 			</ul>
 		</section>
 	</div>

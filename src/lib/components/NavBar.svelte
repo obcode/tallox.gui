@@ -111,7 +111,7 @@
 					target="_blank"
 					rel="noopener noreferrer"
 					class="btn btn-ghost btn-sm gap-1.5 font-normal"
-					title="Rückmeldungen zu Tallox — öffnet die Seite der Fakultät in einem neuen Tab"
+					title="Fehler, Wünsche und Fragen zu Tallox — öffnet die Anliegen der Fakultät in einem neuen Tab"
 				>
 					<span aria-hidden="true">💬</span><span class="hidden sm:inline">Feedback</span>
 				</a>
