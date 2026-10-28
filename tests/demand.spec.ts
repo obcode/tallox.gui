@@ -376,9 +376,13 @@ test.describe('the demand table', () => {
 
 			// Any save sends every row. This one only adds, so it must go through without asking.
 			await tick(/E2E Modul zum Bestätigen/).check();
-			await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+			// The report says „0 zurückgezogen“ for five seconds, exactly as long as a negative
+			// expectation waits, so the count is read from the report rather than raced against it.
+			await expect(page.getByText('1 angelegt, 0 geändert, 0 zurückgezogen')).toBeVisible({
+				timeout: 15_000
+			});
 			await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toHaveCount(0);
-			await expect(page.getByText(/zurückgezogen/)).toHaveCount(0);
+			await expect(page.getByText(/[1-9]\d* zurückgezogen/)).toHaveCount(0);
 			await expect(tick(/E2E Modul zum Ändern/)).toBeChecked();
 		} finally {
 			// Back to where the test before left the table, for the ones that follow.
