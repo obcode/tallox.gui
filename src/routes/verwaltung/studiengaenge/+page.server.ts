@@ -169,7 +169,11 @@ export const actions: Actions = {
 			.replace(',', '.');
 		const teachingHours = raw === '' ? null : Number(raw);
 
-		if (teachingHours !== null && Number.isNaN(teachingHours)) {
+		if (!Number.isInteger(studyYear)) {
+			return fail(400, { message: 'Das Studienjahr muss eine ganze Zahl sein.', programme });
+		}
+		// isFinite rather than isNaN: `Infinity` is not NaN and would travel as a Float.
+		if (teachingHours !== null && !Number.isFinite(teachingHours)) {
 			return fail(400, { message: 'Das Kontingent muss eine Zahl sein.', programme });
 		}
 		try {

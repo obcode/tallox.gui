@@ -6,6 +6,7 @@ Wissensbasis des Frontends. Übergreifendes und Betriebswissen liegt im privaten
 **Dieses Repo ist öffentlich.** Keine Hostnamen, keine Zugangsdaten, keine Namen von
 Kolleginnen und Kollegen.
 
+- [Security-Audit 2026-10](security-audit-2026-10.md) — F1–F4/H1–H7 und die Regel „ClientError verlässt backend.ts nie“; nach dem Deploy ein GlitchTip-Event prüfen
 - [Identität über AsyncLocalStorage](auth-header-relay.md) — warum der SSR-Hop X-Remote-User selbst mitschicken muss
 - [Keine Aggregate über unveröffentlichte Wünsche](no-wish-aggregates.md) — der Leckkanal, den Zeilenfilterung nicht schließt
 - [Themewahl im Cookie](theme-cookie.md) — warum nicht localStorage, und warum die Allowlist eine Sicherheitsgrenze ist

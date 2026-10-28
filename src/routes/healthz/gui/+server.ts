@@ -14,14 +14,18 @@ import type { RequestHandler } from './$types';
  * plexams and glabs.
  *
  * Deliberately checks nothing else: not the identity, not tallox-api, not the database. It
- * answers one question — is this process alive and which build is it — and it has to keep
- * answering when the backend is gone, because that outage has its own watchman. A liveness
- * endpoint that depends on other services reports their failures as its own, which makes both
- * signals useless.
+ * answers one question — is this process alive — and it has to keep answering when the backend
+ * is gone, because that outage has its own watchman. A liveness endpoint that depends on other
+ * services reports their failures as its own, which makes both signals useless.
+ *
+ * Only the status, since 2026-10-28: the route sits outside the login gate, and the build
+ * version and time were a fingerprint handed to anybody who could reach the host. Which build
+ * runs is in the footer of every page for whoever is signed in, and in the deploy's own
+ * smoke check through the backend's `buildInfo`.
  */
 export const GET: RequestHandler = () =>
 	json(
-		{ status: 'ok', version: __APP_VERSION__, built: __BUILD_TIME__ },
+		{ status: 'ok' },
 		// A cached liveness answer is a lie with a timestamp on it.
 		{ headers: { 'Cache-Control': 'no-store' } }
 	);

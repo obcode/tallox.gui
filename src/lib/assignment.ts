@@ -934,7 +934,11 @@ export function mayShowGaps(
 ): boolean {
 	if (tab === null || tab === UNFILED) return false;
 	if (roles.includes('DEANS_OFFICE')) return true;
-	return led.some((g) => g.id === tab);
+	// Both: the led groups come from `me`, which the role preview does not narrow, while the
+	// wish list the gaps are computed from does get narrowed. A lead previewing the lecturer's
+	// view would otherwise be shown "nobody wished" for cohorts whose wishes were simply
+	// withheld — wrong, and wrong in the direction that gets somebody an unwanted assignment.
+	return roles.includes('SUBJECT_GROUP_LEAD') && led.some((g) => g.id === tab);
 }
 
 /** How far a selection of cohorts is filled, by parts and by hours. */

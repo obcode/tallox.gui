@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { secureCookieAttribute } from '$lib/cookies';
 	import {
 		SYSTEM_THEME,
 		THEME_COOKIE,
@@ -29,7 +30,7 @@
 
 		// SameSite=Lax, no Secure: the value is a preference, not a secret, and in local
 		// development the app runs over http.
-		document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax`;
+		document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax${secureCookieAttribute(location.protocol)}`;
 	}
 
 	const light = THEMES.filter((t) => !t.dark);

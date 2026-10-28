@@ -1050,3 +1050,56 @@ test.describe('coverage across study programmes', () => {
 		await expect(withdrawn.getByRole('button', { name: 'gemeinsam planen' }).first()).toBeVisible();
 	});
 });
+
+/**
+ * The role preview and the filing field (GUI audit 2026-10-28, F4).
+ *
+ * Which subject groups the create form offers used to be computed from the *held* roles, so a
+ * dean's office member who had narrowed themselves to a programme lead was still offered every
+ * group — and the server then refused the write. The field has to follow the effective roles,
+ * like everything else the preview exists to show.
+ */
+test.describe('the role preview on the demand table', () => {
+	const grantLead = `
+		INSERT INTO person_role (person_id, role)
+		SELECT id, 'PROGRAMME_LEAD' FROM person WHERE mail = 'dekanat@example.org'
+		ON CONFLICT DO NOTHING;
+		INSERT INTO person_programme_scope (person_id, role, programme_id)
+		SELECT p.id, 'PROGRAMME_LEAD', pr.id FROM person p, programme pr
+		 WHERE p.mail = 'dekanat@example.org' AND pr.code = ${quoted(CATALOGUE.programme)}
+		ON CONFLICT DO NOTHING;`;
+	const revokeLead = `
+		DELETE FROM person_role
+		 WHERE role = 'PROGRAMME_LEAD'
+		   AND person_id = (SELECT id FROM person WHERE mail = 'dekanat@example.org');`;
+
+	test.beforeEach(() => {
+		test.skip(!runSql(grantLead, 'lend the dean a programme lead'), 'needs TALLOX_DB_URL');
+	});
+	test.afterEach(() => {
+		runSql(revokeLead, 'take the programme lead back');
+	});
+
+	test('offers the filing field by the effective roles, not the held ones', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await page.goto(DEMAND_URL);
+		const form = page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen');
+
+		// Held: DEANS_OFFICE files into every group, so the field is there.
+		await form.click();
+		await expect(page.getByText('Fachgruppe', { exact: true })).toBeVisible();
+
+		// Narrowed to the programme lead, who leads no subject group: the field goes, and the
+		// sentence that says where the new course lands takes its place. The page still renders
+		// as a planner's, because the lead is scoped to this programme.
+		await page
+			.context()
+			.addCookies([{ name: 'tallox_assume', value: 'PROGRAMME_LEAD', url: page.url() }]);
+		await page.reload();
+		await form.click();
+		await expect(page.getByText('Fachgruppe', { exact: true })).toHaveCount(0);
+		await expect(page.getByText('keiner Fachgruppe')).toBeVisible();
+	});
+});

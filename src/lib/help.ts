@@ -44,7 +44,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie sehe ich als Administration in unveröffentlichte Wünsche hinein?',
 		answer:
-			'Gar nicht mit der Administration allein: sie liest bewusst keine Wünsche. Wer hineinsehen muss, gibt sich unter Personen und Rollen die Rolle Dekanat oder eine Leitung, sich selbst aber nur mit „Befristet bis“, höchstens 30 Tage; ohne Datum lehnt Tallox das ab. Solange die Rolle gilt, steht sie jede Nacht im Zugriffsbericht. Anderen Personen lässt sich jede Rolle auch unbefristet geben.',
+			'Gar nicht mit der Administration allein: sie liest bewusst keine Wünsche. Wer hineinsehen muss, gibt sich unter Personen und Rollen die Rolle Dekanat oder eine Leitung, sich selbst aber nur mit „Befristet bis“, höchstens 30 Tage; ohne Datum lehnt Tallox das ab. Solange die Rolle gilt, steht sie jede Nacht im Zugriffsbericht. Anderen Personen lässt sich jede Rolle auch unbefristet geben — die Administrationsrolle sogar nur so: sie ist die Rolle, die alle anderen wieder hereinlässt, und lässt sich deshalb nicht befristen.',
 		who: ['ADMIN'],
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	},
@@ -320,7 +320,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',
 		answer:
-			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Die Liste „SWS im Kollegium“ bleibt für sie leer. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht, was das Kollegium sieht.',
+			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Die Liste „SWS im Kollegium“ bleibt für sie leer, ebenso die Lehrendenliste und die Namen hinter Fachgruppen- und Studiengangsleitung: sie liest die Struktur, nicht das Kollegium. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht, was das Kollegium sieht.',
 		who: ['ADMIN'],
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	}

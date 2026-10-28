@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { secureCookieAttribute } from '$lib/cookies';
 	import { invalidateAll } from '$app/navigation';
 	import { ASSUME_COOKIE, ASSUME_COOKIE_MAX_AGE, serializeAssumedRoles } from '$lib/assumedRoles';
 	import { mayPreviewRoles, ROLE_LABELS, sortRoles } from '$lib/roles';
@@ -25,14 +26,14 @@
 	// deliberately reads no unpublished wishes, and a preview that got around that would not be
 	// a preview.
 	async function assume(roles: string[]) {
-		document.cookie = `${ASSUME_COOKIE}=${serializeAssumedRoles(roles)}; path=/; max-age=${ASSUME_COOKIE_MAX_AGE}; samesite=lax`;
+		document.cookie = `${ASSUME_COOKIE}=${serializeAssumedRoles(roles)}; path=/; max-age=${ASSUME_COOKIE_MAX_AGE}; samesite=lax${secureCookieAttribute(location.protocol)}`;
 		await invalidateAll();
 	}
 
 	async function reset() {
 		// max-age=0 rather than a sentinel value: "not narrowed" is the absence of the cookie,
 		// and one state should have only one representation.
-		document.cookie = `${ASSUME_COOKIE}=; path=/; max-age=0; samesite=lax`;
+		document.cookie = `${ASSUME_COOKIE}=; path=/; max-age=0; samesite=lax${secureCookieAttribute(location.protocol)}`;
 		await invalidateAll();
 	}
 </script>

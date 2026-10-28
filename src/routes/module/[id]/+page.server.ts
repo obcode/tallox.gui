@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, isHttpError } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
@@ -202,7 +202,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		}
 		return { module: data.module, me: data.me, subjectGroups: data.subjectGroups };
 	} catch (err) {
-		if (err && typeof err === 'object' && 'status' in err) throw err;
+		// Kit's own 404 from above passes; everything else is the backend refusing.
+		if (isHttpError(err)) throw err;
 		error(403, toRefusal(err).message);
 	}
 };

@@ -504,7 +504,19 @@ const FileLocalDocument = graphql(`
 
 const DUTY_VALUES: DutyStatus[] = ['COMPULSORY', 'ELECTIVE', 'MIXED'];
 
-export const load: PageServerLoad = async ({ url }) => {
+/**
+ * A group count from a form field: a non-negative whole number, or zero for anything else.
+ *
+ * `Number()` alone lets `NaN` through (JSON `null`) and `Infinity` as a float, both of which the
+ * backend refuses — correctly, but generically. Zero is what an emptied field means here, so
+ * garbage reads as an emptied field rather than as a sentence nobody can act on.
+ */
+function wholeNumberOrZero(raw: FormDataEntryValue | null): number {
+	const n = Number(raw ?? 0);
+	return Number.isInteger(n) && n >= 0 ? n : 0;
+}
+
+export const load: PageServerLoad = async ({ url, parent }) => {
 	const semester = url.searchParams.get('semester') ?? '';
 	const programme = url.searchParams.get('studiengang') ?? '';
 	const search = url.searchParams.get('q') ?? '';
@@ -632,8 +644,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		// Which subject groups this person may file a new module into. An administrator and the
 		// dean's office reach all of them; a subject group lead reaches the ones she leads; and
 		// for everybody else the list is empty and the field does not appear.
+		// The *effective* roles, not the held ones: under the role preview an administrator
+		// narrowed to a lecturer must not be offered a field the server will refuse. Same source
+		// as module/+page.svelte, which has always read it from the session.
 		filingGroups: filingGroupsFor(
-			data.me?.roles ?? [],
+			(await parent()).session?.effectiveRoles ?? [],
 			data.subjectGroups,
 			data.me?.subjectGroupsLed ?? []
 		),
@@ -688,7 +703,7 @@ function entriesFrom(form: FormData): DemandEntryInput[] {
 			for (let i = 0; form.has(`track:${moduleId}:${i}`); i++) {
 				tracks.push({
 					track: String(form.get(`track:${moduleId}:${i}`) ?? ''),
-					groups: Math.max(0, Number(form.get(`groups:${moduleId}:${i}`) ?? 0))
+					groups: wholeNumberOrZero(form.get(`groups:${moduleId}:${i}`))
 				});
 			}
 

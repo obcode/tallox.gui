@@ -3,6 +3,8 @@ import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { env } from '$env/dynamic/private';
 import { authContext } from '$lib/server/backend';
+import { stripIdentityHeaders } from '$lib/server/reporting';
+import { isRefusedPath } from '$lib/requestPath';
 import { ASSUME_COOKIE, parseAssumedRoles } from '$lib/assumedRoles';
 import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
 
@@ -24,7 +26,12 @@ if (reporting) {
 		environment: env.SENTRY_ENVIRONMENT || 'production',
 		// Errors only — GlitchTip does not read traces.
 		tracesSampleRate: 0,
-		sendDefaultPii: false
+		sendDefaultPii: false,
+		// No request headers at all. `sendDefaultPii: false` strips the cookie and the IP headers
+		// and keeps the rest — and the rest includes the identity the proxy set on the request.
+		// The URL and the method are enough to find a failure; a mail address is not needed to.
+		integrations: [Sentry.requestDataIntegration({ include: { headers: false } })],
+		beforeSend: stripIdentityHeaders
 	});
 }
 
@@ -32,6 +39,10 @@ if (reporting) {
 export const handleError = Sentry.handleErrorWithSentry();
 
 export const guiHandle: Handle = async ({ event, resolve }) => {
+	if (isRefusedPath(event.url.pathname)) {
+		return new Response('Bad Request', { status: 400 });
+	}
+
 	const remoteUser = event.request.headers.get('x-remote-user') || undefined;
 	const remoteDisplayname = event.request.headers.get('x-remote-displayname') || undefined;
 
