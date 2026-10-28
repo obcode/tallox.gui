@@ -1323,3 +1323,23 @@ export function arrangeByBasket<T extends BasketLike>(
 	const kept = rows.filter((row) => inBasket(row, basket));
 	return order === 'basket' ? sortByBasket(kept) : kept;
 }
+
+/**
+ * The address without the named parameters that are present but empty, or `null` when none is.
+ *
+ * A GET form sends every select it holds, so choosing „alle“ or „nach Name“ leaves `korb=` and
+ * `sortierung=` behind. They mean the same as no parameter, and a link sent on should not carry
+ * them: the load redirects to the clean address instead.
+ */
+export function withoutEmptyParams(
+	params: URLSearchParams,
+	names: readonly string[]
+): URLSearchParams | null {
+	const empty = names.filter(
+		(name) => params.has(name) && params.getAll(name).every((v) => v.trim() === '')
+	);
+	if (empty.length === 0) return null;
+	const clean = new URLSearchParams(params);
+	for (const name of empty) clean.delete(name);
+	return clean;
+}

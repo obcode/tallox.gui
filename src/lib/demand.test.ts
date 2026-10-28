@@ -40,6 +40,7 @@ import {
 	firstBasket,
 	inBasket,
 	sortByBasket,
+	withoutEmptyParams,
 	type DemandRow,
 	type InstanceLike,
 	type ModuleLike,
@@ -1217,5 +1218,25 @@ describe('baskets', () => {
 		expect(sorted.map((g) => [g.programmeSemester, g.teachingHours, g.rows.length])).toEqual(
 			plain.map((g) => [g.programmeSemester, g.teachingHours, g.rows.length])
 		);
+	});
+});
+
+describe('withoutEmptyParams', () => {
+	it('drops the named parameters that are present but empty, and keeps the rest', () => {
+		const params = new URLSearchParams('semester=2029-WS&korb=&sortierung=&art=');
+		expect(withoutEmptyParams(params, ['korb', 'sortierung'])?.toString()).toBe(
+			'semester=2029-WS&art='
+		);
+	});
+
+	it('answers null when there is nothing to drop', () => {
+		expect(
+			withoutEmptyParams(new URLSearchParams('korb=Korb+A&sortierung=korb'), ['korb', 'sortierung'])
+		).toBeNull();
+		expect(withoutEmptyParams(new URLSearchParams('semester=2029-WS'), ['korb'])).toBeNull();
+	});
+
+	it('treats blanks as empty', () => {
+		expect(withoutEmptyParams(new URLSearchParams('korb=+'), ['korb'])?.toString()).toBe('');
 	});
 });

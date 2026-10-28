@@ -4,6 +4,7 @@ import {
 	formatChanges,
 	previousComparableSemester,
 	topicChanges,
+	withoutEmptyParams,
 	type DemandOrder
 } from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
@@ -523,6 +524,14 @@ function wholeNumberOrZero(raw: FormDataEntryValue | null): number {
 }
 
 export const load: PageServerLoad = async ({ url, parent }) => {
+	// A basket of „alle“ and the order „nach Name“ are the absence of a choice, and the address
+	// says so by not naming them: the basket form sends its selects empty, and a link sent on
+	// should read the same as one typed. Before anything is loaded, so the redirect costs nothing.
+	const clean = withoutEmptyParams(url.searchParams, ['korb', 'sortierung']);
+	if (clean !== null) {
+		const query = clean.toString();
+		redirect(303, query === '' ? url.pathname : `${url.pathname}?${query}`);
+	}
 	const semester = url.searchParams.get('semester') ?? '';
 	const programme = url.searchParams.get('studiengang') ?? '';
 	const search = url.searchParams.get('q') ?? '';
