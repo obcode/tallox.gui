@@ -415,10 +415,7 @@ export type Phase =
    * over — a colleague falling ill before the first lecture is handled here.
    */
   | 'REVIEW'
-  /**
-   * Lecturers register interest. Entries are confidential until they are published
-   * — which is a separate decision, see `wishesPublishedAt`.
-   */
+  /** Lecturers register interest. Entries are confidential until they are published — which is a separate decision, see `wishesPublishedAt`. */
   | 'WISHES';
 
 /** Whether this faculty plans a study programme. */
@@ -611,10 +608,7 @@ export type ScopeGrantInput = {
 export type ScopeVerb =
   /** Queries. */
   | 'READ'
-  /**
-   * Mutations — and queries in the same area, because a token that may change
-   * something and not look at it is not a capability anybody wants.
-   */
+  /** Mutations — and queries in the same area, because a token that may change something and not look at it is not a capability anybody wants. */
   | 'WRITE';
 
 /**

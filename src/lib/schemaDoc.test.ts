@@ -127,6 +127,55 @@ describe('the real schema', () => {
 	});
 });
 
+describe('field access', () => {
+	const ACCESS_SDL = `
+directive @interactiveOnly on FIELD_DEFINITION
+directive @fullReach on FIELD_DEFINITION
+directive @scope(area: ScopeArea!, verb: ScopeVerb!) on FIELD_DEFINITION
+
+enum ScopeArea { TOKENS PLANNING }
+enum ScopeVerb { READ WRITE }
+
+type Query {
+	"Tokens."
+	myTokens: [ID!] @interactiveOnly @scope(area: TOKENS, verb: READ)
+	"Planning."
+	plan: ID! @fullReach @scope(area: PLANNING, verb: WRITE)
+	"Open."
+	open: ID
+}
+`;
+	const fields = buildSchemaDoc(ACCESS_SDL).roots[0].fields;
+	const access = (name: string) => fields.find((f) => f.name === name)?.access;
+
+	it('reads the directives applied to a field', () => {
+		expect(access('myTokens')).toEqual({
+			interactiveOnly: true,
+			fullReach: false,
+			scope: { area: 'TOKENS', verb: 'READ' }
+		});
+		expect(access('plan')).toEqual({
+			interactiveOnly: false,
+			fullReach: true,
+			scope: { area: 'PLANNING', verb: 'WRITE' }
+		});
+	});
+
+	it('reports a field without directives as open', () => {
+		expect(access('open')).toEqual({ interactiveOnly: false, fullReach: false, scope: null });
+	});
+
+	it('finds every kind of directive in the committed schema', () => {
+		// The committed file must be the release SDL, not introspection output: introspection
+		// drops every usage, and the reference would quietly show no door at all.
+		const doc = buildSchemaDoc(readFileSync('schema.graphql', 'utf8'));
+		const all = [...doc.roots, ...doc.types].flatMap((t) => t.fields.map((f) => f.access));
+		expect(all.some((a) => a.interactiveOnly)).toBe(true);
+		expect(all.some((a) => a.fullReach)).toBe(true);
+		expect(all.some((a) => a.scope !== null)).toBe(true);
+	});
+});
+
 describe('anchorFor', () => {
 	it('produces a jump target without special characters', () => {
 		expect(anchorFor('PersonalAccessToken')).toBe('typ-PersonalAccessToken');

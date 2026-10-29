@@ -36,11 +36,15 @@ pnpm test       # vitest
 pnpm test:e2e   # playwright, needs a running backend
 ```
 
-After a backend schema change, with the backend running:
+`schema.graphql` is the SDL attached to a tallox.go release; `schema.tag` names which. After a
+backend release with a schema change:
 
 ```bash
-pnpm run update-schema   # fetch schema.graphql, then codegen
+pnpm run update-schema v5.34.0   # fetch that release's schema.graphql, pin it, then codegen
 ```
+
+Against an unreleased backend, locally only: `pnpm run update-schema:live`. CI accepts only a
+released schema.
 
 ## Configuration
 

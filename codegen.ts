@@ -8,13 +8,19 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 // matching result without anybody writing the type next to it by hand.
 //
 // The source is the committed schema.graphql, not the running backend: that way `pnpm codegen`
-// works offline and in CI. It is refreshed with `pnpm run update-schema`.
+// works offline and in CI. It is the SDL attached to the tallox.go release named in schema.tag,
+// refreshed with `pnpm run update-schema`.
+//
+// The two variables exist for one check only: the E2E job validates this application's
+// documents against the schema of the backend commit it runs with, writing the output to a
+// scratch directory. Codegen fails when a document asks for a field that schema does not have,
+// which is the break the pinned copy alone would hide until a page came up empty.
 const config: CodegenConfig = {
-	schema: './schema.graphql',
+	schema: process.env.TALLOX_CODEGEN_SCHEMA ?? './schema.graphql',
 	documents: ['src/**/*.{ts,svelte}', '!src/lib/gql/__generated__/**'],
 	ignoreNoDocuments: true,
 	generates: {
-		'./src/lib/gql/__generated__/': {
+		[process.env.TALLOX_CODEGEN_OUT ?? './src/lib/gql/__generated__/']: {
 			preset: 'client',
 			config: {
 				useTypeImports: true,

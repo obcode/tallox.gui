@@ -24,7 +24,9 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"codegen": "graphql-codegen",
-		"update-schema": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${TALLOX_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
+		"$comment:update-schema": "Takes schema.graphql from the tallox.go release pinned in schema.tag (or the tag given as argument). update-schema:live introspects a running backend instead, for work on an unreleased backend; CI only accepts a released schema.",
+		"update-schema": "bash scripts/update-schema.sh",
+		"update-schema:live": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${TALLOX_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
 	},
 	"dependencies": {
 		"@sentry/sveltekit": "^10.70.0",

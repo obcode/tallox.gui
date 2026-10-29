@@ -1,5 +1,5 @@
-import { buildSchema, GraphQLEnumType, GraphQLObjectType, GraphQLScalarType } from 'graphql';
-import type { GraphQLNamedType } from 'graphql';
+import { buildSchema, GraphQLEnumType, GraphQLObjectType, GraphQLScalarType, Kind } from 'graphql';
+import type { ConstDirectiveNode, GraphQLNamedType } from 'graphql';
 
 /**
  * The API reference built from the schema rather than from prose.
@@ -9,15 +9,12 @@ import type { GraphQLNamedType } from 'graphql';
  * schema (`pnpm run update-schema`), exactly what `pnpm codegen` reads too: the reference
  * cannot diverge from the typed documents.
  *
- * **What the reference cannot show:** where a directive was applied. GraphQL introspection
- * reports the *definition* of a directive but never its usages — `schema.graphql` comes out of
- * introspection and therefore does not know either. That affects both of the backend's
- * directives, and both work around it with prose, because descriptions do travel:
- *
- * - `@interactiveOnly` and `@fullReach` are spelled out in the description of each affected
- *   field.
- * - `@scope` does it from the other end, at the area: every `ScopeArea` value lists its
- *   fields. In the backend `TestScopeAreasListTheirFields` keeps those lists current.
+ * **Where a directive was applied** is part of it since the file is the canonical SDL of a
+ * tallox.go release rather than introspection output: introspection reports the *definition* of
+ * a directive but never its usages, the release file prints both. Each field therefore carries
+ * its `access` — `@interactiveOnly`, `@fullReach` and `@scope(area:, verb:)` — and the page shows
+ * it next to the field. The descriptions still spell the first two out, and every `ScopeArea`
+ * value still lists its fields, for anybody who reads the schema through introspection.
  *
  * The console on the documentation page is the second answer: anybody who wants to be sure
  * queries the field with a token and sees `null`, `FULL_REACH_REQUIRED` or `INSUFFICIENT_SCOPE`.
@@ -30,12 +27,25 @@ export type FieldArg = {
 	defaultValue: string | null;
 };
 
+/**
+ * Which door a field needs, read from the directives applied to it in the SDL.
+ *
+ * `scope` is null where the field carries no `@scope` — a type's own fields, reached through a
+ * root field that has one.
+ */
+export type FieldAccess = {
+	interactiveOnly: boolean;
+	fullReach: boolean;
+	scope: { area: string; verb: string } | null;
+};
+
 export type SchemaField = {
 	name: string;
 	type: string;
 	description: string | null;
 	args: FieldArg[];
 	deprecationReason: string | null;
+	access: FieldAccess;
 };
 
 export type SchemaType = {
@@ -90,6 +100,24 @@ export function buildSchemaDoc(sdl: string): SchemaDoc {
 	return { roots, types };
 }
 
+function accessOf(directives: readonly ConstDirectiveNode[]): FieldAccess {
+	const has = (name: string) => directives.some((d) => d.name.value === name);
+	const scope = directives.find((d) => d.name.value === 'scope');
+	// Both arguments are enum values in the schema, so their literal is the value's name.
+	const argument = (name: string) => {
+		const value = scope?.arguments?.find((a) => a.name.value === name)?.value;
+		return value?.kind === Kind.ENUM ? value.value : null;
+	};
+	const area = argument('area');
+	const verb = argument('verb');
+
+	return {
+		interactiveOnly: has('interactiveOnly'),
+		fullReach: has('fullReach'),
+		scope: area && verb ? { area, verb } : null
+	};
+}
+
 function describe(type: GraphQLNamedType): SchemaType | null {
 	if (type instanceof GraphQLObjectType) {
 		return {
@@ -101,6 +129,7 @@ function describe(type: GraphQLNamedType): SchemaType | null {
 				type: field.type.toString(),
 				description: field.description ?? null,
 				deprecationReason: field.deprecationReason ?? null,
+				access: accessOf(field.astNode?.directives ?? []),
 				args: field.args.map((arg) => ({
 					name: arg.name,
 					type: arg.type.toString(),
