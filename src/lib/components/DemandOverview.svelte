@@ -218,12 +218,14 @@
 											<span class="badge badge-info badge-sm">{mark}</span>
 										{/each}
 										{#if cohort.coveredBy}
-											<span class="badge badge-outline badge-sm">
+											<span class="badge badge-outline badge-sm h-auto py-0.5 text-left">
 												{coverageLabel(cohort.coveredBy)}
 											</span>
 										{/if}
 										{#each cohort.covers ?? [] as covered, i (i)}
-											<span class="badge badge-outline badge-sm">{coversLabel(covered)}</span>
+											<span class="badge badge-outline badge-sm h-auto py-0.5 text-left"
+												>{coversLabel(covered)}</span
+											>
 										{/each}
 										<!--
 											And the case that previously had no display at all: the same module,
@@ -232,7 +234,7 @@
 											know that. What it can do is say it.
 										-->
 										{#if (cohort.alsoPlannedSeparately ?? []).length > 0}
-											<span class="badge badge-ghost badge-sm">
+											<span class="badge badge-ghost badge-sm h-auto py-0.5 text-left">
 												{alsoPlannedLabel(cohort.alsoPlannedSeparately ?? [])}
 											</span>
 										{/if}

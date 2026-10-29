@@ -2371,14 +2371,17 @@
 																</div>
 															{/if}
 															{#if row.tracks[i]?.coveredBy}
-																<span class="badge badge-outline badge-sm">
+																<!-- `h-auto`: daisyUI fixes a badge to one line's height, and this sentence
+																     wraps in a narrow column — it then spilled over the stepper and the
+																     select beside it. -->
+																<span class="badge badge-outline badge-sm h-auto py-0.5 text-left">
 																	{coverageLabel(row.tracks[i].coveredBy!)}
 																</span>
 															{:else if row.tracks[i]?.borrowedKinds.length}
 																<span class="badge badge-ghost badge-sm">Vorlesung geteilt</span>
 															{/if}
 															{#each row.tracks[i]?.covers ?? [] as covers, c (c)}
-																<span class="badge badge-outline badge-sm"
+																<span class="badge badge-outline badge-sm h-auto py-0.5 text-left"
 																	>{coversLabel(covers)}</span
 																>
 															{/each}

@@ -51,6 +51,34 @@ async function openRowMenu(row: Locator): Promise<void> {
 	await row.getByRole('button', { name: /^Weitere Einstellungen für/ }).click();
 }
 
+/**
+ * Asserts that a badge holds its own text and covers none of the controls beside it.
+ *
+ * daisyUI gives a badge the height of one line. A sentence that wraps in a narrow column then
+ * spills out of its frame and over the stepper and select next to it — and the frame's bounding
+ * box alone never shows that, because it stays one line high. So both: the text fits the box,
+ * and the box meets no control in the same line of the cell.
+ */
+async function expectBadgeClearOfControls(badge: Locator): Promise<void> {
+	const overflow = await badge.evaluate((el) => el.scrollHeight - el.clientHeight);
+	expect(overflow, 'badge text spills out of its frame').toBeLessThanOrEqual(1);
+
+	const box = await badge.boundingBox();
+	expect(box).not.toBeNull();
+	const controls = badge.locator('xpath=..').locator('input:not([type=hidden]), select, button');
+	for (const control of await controls.all()) {
+		if (!(await control.isVisible())) continue;
+		const other = await control.boundingBox();
+		if (!box || !other) continue;
+		const overlaps =
+			box.x < other.x + other.width - 1 &&
+			other.x < box.x + box.width - 1 &&
+			box.y < other.y + other.height - 1 &&
+			other.y < box.y + box.height - 1;
+		expect(overlaps, `badge overlaps ${await control.getAttribute('aria-label')}`).toBe(false);
+	}
+}
+
 test.describe('the demand table', () => {
 	test('arrives prefilled from the previous comparable semester', async ({
 		asPersona,
@@ -1048,6 +1076,28 @@ test.describe('coverage across study programmes', () => {
 		await expect(held.getByText(/gemeinsam mit E2H1, dort gehalten/)).toBeVisible();
 		// Its group count is not its own to set any more.
 		await expect(held.getByRole('spinbutton', { name: /^Gruppen von/ })).toBeDisabled();
+
+		// The label wraps in a narrow column, and its frame has to grow with it rather than lay
+		// the second line over the stepper and the select beside it — at every width.
+		const label = held.getByText(/gemeinsam mit E2H1, dort gehalten/).filter({ visible: true });
+		for (const width of [320, 375, 768, 1024, 1440]) {
+			await page.setViewportSize({ width, height: 900 });
+			await expectBadgeClearOfControls(label);
+		}
+		// The fixture's programme code is short, and the sentence fits on one line at all of those
+		// widths; real codes and a real table squeeze the column until it wraps. So the column is
+		// squeezed here by hand, to the width of its longest word.
+		await label.evaluate((el) => {
+			(el.parentElement as HTMLElement).style.maxWidth = '6rem';
+		});
+		// Lines of text, counted from the text itself: the frame's height is exactly what is wrong.
+		const lines = await label.evaluate((el) => {
+			const range = document.createRange();
+			range.selectNodeContents(el);
+			return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+		});
+		expect(lines, 'the label wraps in the squeezed column').toBeGreaterThan(1);
+		await expectBadgeClearOfControls(label);
 	});
 
 	// And the way out, which is what makes one-sided coupling fair: nobody is held to a state they
