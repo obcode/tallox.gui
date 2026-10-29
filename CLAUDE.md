@@ -40,7 +40,9 @@ pnpm format
 pnpm test                # vitest
 pnpm test:e2e            # playwright, needs a running backend
 pnpm codegen             # regenerate typed documents from schema.graphql
-pnpm run update-schema   # refetch schema from $TALLOX_SERVER, then codegen
+pnpm run update-schema   # schema.graphql from the tallox.go release in schema.tag, then codegen
+pnpm run update-schema v5.34.0   # pin a newer release
+pnpm run update-schema:live      # introspect $TALLOX_SERVER instead (unreleased backend only)
 ```
 
 `pnpm dev` binds `127.0.0.1` on purpose: without it Vite binds only `::1` and the
@@ -100,6 +102,16 @@ Two deliberate choices, both lessons from the sibling project:
 GraphQL documents go through **graphql-codegen `client-preset`** (`graphql(...)` tagged
 documents, typed end to end) — not untyped template strings. `schema.graphql` is the
 committed copy of the backend schema; codegen reads that file, so it works offline and in CI.
+
+**The schema comes from a backend release, not from a running server.** tallox.go attaches its
+canonical SDL to every release; `schema.tag` names the one this GUI is built against, and the
+`quality` job refuses a `schema.graphql` that is not byte for byte that release's file. So a
+GUI change that needs a new field waits for the backend release that ships it — contract first.
+`update-schema:live` is for trying things locally against an unreleased backend and never for a
+commit. The E2E job additionally validates every document against the schema of the backend
+commit it runs with (`TALLOX_CODEGEN_SCHEMA`), which catches a field the backend removed after
+the pinned release. The release file also carries the directive usages, which is where the
+schema reference gets its door badges from (`$lib/schemaDoc.ts`).
 
 ## Conventions
 

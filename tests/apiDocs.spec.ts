@@ -59,6 +59,18 @@ test.describe('API documentation', () => {
 		await expect(page.getByText('[PersonalAccessToken!]').first()).toBeVisible();
 	});
 
+	test('the schema reference shows which door a field needs', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/api-doku/schema');
+
+		// Only the release SDL carries the directive usages; introspection output has none, and
+		// this row would show no badge at all.
+		await expect(page.getByText(/Version v\d+\.\d+\.\d+/)).toBeVisible();
+		const row = page.getByRole('row').filter({ hasText: 'myTokens' }).first();
+		await expect(row.getByText('nur Browser')).toBeVisible();
+		await expect(row.getByText(/TOKENS · lesen/)).toBeVisible();
+	});
+
 	test('both pages are accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.eins);
 

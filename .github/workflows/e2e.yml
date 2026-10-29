@@ -100,6 +100,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The GUI is built against the schema of a pinned backend release; this run uses a later
+      # backend commit. Validating every document of this application against that commit's
+      # schema.graphql catches a removed or renamed field before a page renders empty, and it
+      # fails with the name of the document instead of a timeout somewhere in Playwright.
+      - name: GUI documents against the backend schema
+        env:
+          TALLOX_CODEGEN_SCHEMA: .backend/schema.graphql
+          TALLOX_CODEGEN_OUT: ${{ runner.temp }}/codegen/
+        run: pnpm codegen
+
       # Explicit, although `prepare` already does it on install: .svelte-kit/tsconfig.json is
       # pulled in by the root tsconfig via `extends`, and Playwright loads its config *before*
       # the webServer builds. If the file is missing, the run fails before the first test with

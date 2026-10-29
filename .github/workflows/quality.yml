@@ -62,3 +62,13 @@ jobs:
             echo "Führe 'pnpm codegen' aus und committe das Ergebnis."
             exit 1
           fi
+
+  # schema.graphql is not written here but taken from a tallox.go release (schema.tag names
+  # which). A file fetched with `update-schema:live` from an unreleased backend, or edited by
+  # hand, would describe a contract that no release carries.
+  schema:
+    name: Schema ist das eines Releases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/update-schema.sh --check

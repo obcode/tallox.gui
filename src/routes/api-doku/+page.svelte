@@ -155,6 +155,12 @@
 			und Felder, direkt aus dem Schema erzeugt, also nie veraltet.
 		</p>
 		<p class="text-base-content/80 mt-2 text-sm">
+			Dieselbe Schema-Datei hängt an jedem Release des Servers auf GitHub (<span class="font-mono"
+				>schema.graphql</span
+			>). Anders als die Introspection zeigt sie an jedem Feld, welche Tür, welcher Bereich und
+			welche Token-Art es braucht. Sie ist der Vertrag: Was ein Release entfernt, steht dort.
+		</p>
+		<p class="text-base-content/80 mt-2 text-sm">
 			Das Schema ist außerdem per Introspection abfragbar. Editoren und Codegeneratoren finden damit
 			alles selbst; für GraphQL-Werkzeuge genügt die Endpunkt-URL und das Token.
 		</p>

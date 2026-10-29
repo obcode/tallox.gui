@@ -343,6 +343,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/konto/tokens', label: 'Tokens' }]
 	},
 	{
+		question: 'Wie sehe ich, ob ein Feld mit meinem Token antwortet?',
+		answer:
+			'In der Schema-Referenz (API-Dokumentation, verlinkt unter „Tokens“) steht an jedem Feld, welche Tür es braucht: „nur Browser“ antwortet keinem Token, „volle Reichweite“ nur dem Browser und einem Planungs-Token, und der Bereich daneben ist der, den das Token freigegeben haben muss. Dieselbe Schema-Datei hängt an jedem Release des Servers auf GitHub, für eigene Werkzeuge und Codegeneratoren. Wer sichergehen will, fragt das Feld in der Konsole auf derselben Seite mit dem Token ab.',
+		who: [],
+		where: [{ href: '/konto/tokens', label: 'Tokens' }]
+	},
+	{
 		question: 'Wie lasse ich jemanden einer Partnerfakultät zu?',
 		answer:
 			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Die Liste „SWS im Kollegium“ bleibt für sie leer, ebenso die Lehrendenliste und die Namen hinter Fachgruppen- und Studiengangsleitung: sie liest die Struktur, nicht das Kollegium. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht, was das Kollegium sieht.',

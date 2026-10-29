@@ -4,10 +4,13 @@
 //
 // It is the same file `pnpm codegen` generates the types from. The reference therefore cannot
 // diverge from what this application itself queries.
+//
+// schema.tag names the tallox.go release the file was taken from, so the page can say which.
 import schemaSDL from '../../../../schema.graphql?raw';
+import schemaTag from '../../../../schema.tag?raw';
 import { buildSchemaDoc } from '$lib/schemaDoc';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	return { doc: buildSchemaDoc(schemaSDL) };
+	return { doc: buildSchemaDoc(schemaSDL), release: schemaTag.trim() };
 };

@@ -13,8 +13,18 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Schema-Referenz</h1>
 		<p class="text-base-content/80 text-sm">
-			Erzeugt aus dem Schema des Servers, nicht von Hand geschrieben — sie kann also nicht veralten.
-			Zurück zur <a class="link" href={resolve('/api-doku')}>API-Dokumentation</a>.
+			Erzeugt aus der Schema-Datei des Servers, Version <span class="font-mono">{data.release}</span
+			>, nicht von Hand geschrieben — sie kann also nicht veralten. Zurück zur
+			<a class="link" href={resolve('/api-doku')}>API-Dokumentation</a>.
+		</p>
+		<p class="text-base-content/80 mt-2 text-sm">
+			An jedem Feld steht, welche Tür es braucht: <span class="badge badge-outline badge-sm"
+				>nur Browser</span
+			>
+			antwortet keinem Token, <span class="badge badge-outline badge-sm">volle Reichweite</span> nur
+			dem Browser und einem Planungs-Token. Der Bereich, etwa
+			<span class="badge badge-ghost badge-sm font-mono">PLANNING · ändern</span>, ist der, den ein
+			Token dafür freigegeben haben muss.
 		</p>
 	</div>
 
@@ -85,6 +95,23 @@
 								<tr>
 									<td class="align-top font-mono whitespace-nowrap">
 										{field.name}
+										{#if field.access.interactiveOnly || field.access.fullReach || field.access.scope}
+											<div class="mt-1 flex flex-wrap gap-1 font-sans">
+												{#if field.access.interactiveOnly}
+													<span class="badge badge-outline badge-sm">nur Browser</span>
+												{/if}
+												{#if field.access.fullReach}
+													<span class="badge badge-outline badge-sm">volle Reichweite</span>
+												{/if}
+												{#if field.access.scope}
+													<span class="badge badge-ghost badge-sm font-mono">
+														{field.access.scope.area} · {field.access.scope.verb === 'WRITE'
+															? 'ändern'
+															: 'lesen'}
+													</span>
+												{/if}
+											</div>
+										{/if}
 										{#if field.args.length > 0}
 											<div class="text-base-content/80 text-xs">
 												{#each field.args as arg (arg.name)}
