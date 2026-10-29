@@ -167,6 +167,17 @@ Falle beim Einbau: das EN-Kästchen machte `row.getByRole('checkbox')` in `deman
 mehrdeutig, und sein `aria-label` mit Modulnamen floss in den Zellnamen ein — Locators
 seitdem `input[name="offer"]` bzw. `exact: true`.
 
+**CiE und Sprachregel (2026-10-28/29, Issue #41).** Neben „Englisch“ ein Kästchen „CiE“
+(`cie:<id>`/`cie0:<id>`, `cieChanges`), Filter `?cie=1`. Seit dem zweiten Schritt sind beide
+Kästchen gesperrt, wo `module.englishPossible` false ist und sie nicht schon angehakt sind
+(`englishClosed` in `$lib/demand`, Titel `ENGLISH_NOT_OFFERED`); das Backend lehnt dasselbe mit
+`ENGLISH_NOT_OFFERED` ab (auf der Allowlist in `graphqlError.ts`). CiE setzen auch die zugeteilten
+Lehrenden, unter „Meine Zuteilungen“ (Action `?/cie`, autosave, ein Kästchen je Zug über
+`cieRows`). Am Wunsch „als CiE anbieten“ in `WishCell`; die Leitung liest es als „(als CiE)“ in
+`wisherLabel`. Falle: Zuteilungen und Wünsche lieferten ihren Zug bis 2026-10-29 nur mit Modul-ID
+und -Name, `cie`/`delivery`/`englishPossible` waren dort immer Standardwerte — im Backend behoben,
+E2E prüft es über „Meine Zuteilungen“.
+
 ## Aufteilen und andere Fakultät (seit 2026-10-17)
 
 Für die Ausnahme „4 + 4 SWS, je zur Hälfte bei einer anderen Fakultät“ (Collab-Anforderung).

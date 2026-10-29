@@ -271,6 +271,29 @@ test.describe('the wish phase', () => {
 		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
 	});
 
+	test('a wish may offer to give the cohort as CiE', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		const offer = () => page.getByRole('checkbox', { name: /E2E Fachmodul als CiE anbieten/ });
+
+		await gotoRendered(page, URL);
+		// Only beside a wish: nothing to offer without one.
+		await expect(offer()).toHaveCount(0);
+		await cell(page).selectOption('HAPPY_TO');
+		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
+
+		const saved = page.waitForResponse(
+			(r) => r.request().method() === 'POST' && r.url().includes('/wuensche')
+		);
+		await offer().check();
+		await saved;
+
+		await gotoRendered(page, URL);
+		await expect(offer()).toBeChecked();
+
+		await cell(page).selectOption('');
+		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
+	});
+
 	test('a chosen cell is marked, and unchosen ones are not', async ({ asPersona }) => {
 		// Reported as a wish after the first version: „wo habe ich etwas stehen" is what somebody
 		// scans this table for, and the answer should be readable off the surface rather than by

@@ -90,6 +90,7 @@ const AssignmentDocument = graphql(`
 				id
 				name
 				projectBased
+				englishPossible
 				subjectGroup {
 					id
 					code
@@ -153,6 +154,7 @@ const AssignmentDocument = graphql(`
 		wishes(semester: $semester) @include(if: $withSemester) {
 			id
 			priority
+			cie
 			note
 			trackLimit
 			person {

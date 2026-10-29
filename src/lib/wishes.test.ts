@@ -458,16 +458,28 @@ describe('othersByInstance', () => {
 });
 
 describe('wishChanges', () => {
-	const stored = (instanceId: string, priority: StoredWish['priority'], note = ''): StoredWish => ({
+	const stored = (
+		instanceId: string,
+		priority: StoredWish['priority'],
+		note = '',
+		cie = false
+	): StoredWish => ({
 		id: `w-${instanceId}`,
 		instanceId,
 		priority,
-		note
+		note,
+		cie
 	});
-	const entry = (instanceId: string, priority: WishEntry['priority'], note = ''): WishEntry => ({
+	const entry = (
+		instanceId: string,
+		priority: WishEntry['priority'],
+		note = '',
+		cie = false
+	): WishEntry => ({
 		instanceId,
 		priority,
-		note
+		note,
+		cie
 	});
 
 	it('produces nothing for the cells nobody touched', () => {
@@ -488,8 +500,8 @@ describe('wishChanges', () => {
 		);
 
 		expect(changes).toEqual([
-			{ kind: 'set', instanceId: 'i1', priority: 'FIRST_CHOICE', note: '' },
-			{ kind: 'set', instanceId: 'i2', priority: 'IF_NEEDED', note: '' }
+			{ kind: 'set', instanceId: 'i1', priority: 'FIRST_CHOICE', note: '', cie: false },
+			{ kind: 'set', instanceId: 'i2', priority: 'IF_NEEDED', note: '', cie: false }
 		]);
 	});
 
@@ -500,7 +512,19 @@ describe('wishChanges', () => {
 		);
 
 		expect(changes).toEqual([
-			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: 'nur die Vorlesung' }
+			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: 'nur die Vorlesung', cie: false }
+		]);
+	});
+
+	it('notices a CiE offer made or taken back on its own', () => {
+		expect(
+			wishChanges(
+				[entry('i1', 'HAPPY_TO', '', true), entry('i2', 'HAPPY_TO')],
+				[stored('i1', 'HAPPY_TO'), stored('i2', 'HAPPY_TO', '', true)]
+			)
+		).toEqual([
+			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: '', cie: true },
+			{ kind: 'set', instanceId: 'i2', priority: 'HAPPY_TO', note: '', cie: false }
 		]);
 	});
 
@@ -786,6 +810,10 @@ describe('the bound on cohorts', () => {
 			'Eins (nur einen der Züge)'
 		);
 		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, trackLimit: null })).toBe('Eins');
+		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, cie: true })).toBe('Eins (als CiE)');
+		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, trackLimit: 1, cie: true })).toBe(
+			'Eins (als CiE, nur einen der Züge)'
+		);
 	});
 
 	it('offers every bound below the number of cohorts wished for', () => {

@@ -1235,6 +1235,22 @@ export function formatBadges(
 	return out;
 }
 
+/** Why the English and CiE boxes of a cohort cannot be ticked. */
+export const ENGLISH_NOT_OFFERED = 'Laut Modulhandbuch nicht auf Englisch angeboten.';
+
+/**
+ * Whether a cohort's English or CiE box is closed: the module description does not name English
+ * (`Module.englishPossible`) and the box is not ticked already. A box ticked before the rule existed
+ * stays open, so that it can be taken back. The backend refuses the same with `ENGLISH_NOT_OFFERED`;
+ * this only spares somebody the refusal. An unknown value (an older backend) closes nothing.
+ */
+export function englishClosed(
+	englishPossible: boolean | null | undefined,
+	ticked: boolean | null | undefined
+): boolean {
+	return englishPossible === false && ticked !== true;
+}
+
 /**
  * Whether any cohort of a row is listed as a course in English (CiE) — what the filter `nur CiE`
  * on the demand page keeps. A row of last semester's cohorts carries no format and never matches.

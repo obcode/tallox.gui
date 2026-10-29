@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { teachingBySemester, type MyAssignmentLike } from './myAssignments';
+import { cieRows, teachingBySemester, type MyAssignmentLike } from './myAssignments';
 
 function assignment(
 	semester: string,
@@ -59,5 +59,20 @@ describe('my teaching by semester', () => {
 		);
 		expect(only.teachingHours).toBe(2);
 		expect(only.partsWithoutHours).toBe(1);
+	});
+});
+
+describe('which rows carry the CiE box', () => {
+	it('gives each cohort one box, on its first row', () => {
+		const lecture = assignment('2027-WS', 'Analysis', 2, 'A');
+		const lab = {
+			...lecture,
+			id: 'lab',
+			part: { ...lecture.part, id: 'p-lab', kind: 'LAB' as const }
+		};
+		const other = assignment('2027-WS', 'Analysis', 2, 'B');
+		expect(cieRows([lecture, lab, other])).toEqual(new Set([lecture.id, other.id]));
+		expect(cieRows([lab, lecture])).toEqual(new Set(['lab']));
+		expect(cieRows([])).toEqual(new Set());
 	});
 });

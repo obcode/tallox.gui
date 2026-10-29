@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { ENGLISH_NOT_OFFERED, englishClosed } from '$lib/demand';
 	import {
 		WISH_NONE,
 		WISH_NONE_LABEL,
@@ -33,7 +34,8 @@
 		label,
 		wish,
 		others,
-		open
+		open,
+		englishPossible
 	}: {
 		instanceId: string;
 		/** `IF2A · Softwareentwicklung II` — the accessible name of both fields in this cell. */
@@ -48,10 +50,14 @@
 		 */
 		others: readonly WishLike[];
 		open: boolean;
+		/** Whether the module description names English, which a CiE offer needs. */
+		englishPossible?: boolean;
 	} = $props();
 
 	let choice = $state<WishChoice>(untrack(() => wish?.priority) ?? WISH_NONE);
 	let note = $state(untrack(() => wish?.note) ?? '');
+	let cie = $state(untrack(() => wish?.cie) ?? false);
+	const cieClosed = $derived(englishClosed(englishPossible, cie));
 </script>
 
 <div class="flex flex-col gap-1">
@@ -86,6 +92,25 @@
 			class="input input-bordered input-xs w-full min-w-40"
 			disabled={!open}
 		/>
+		<!-- An offer to give it in English. It decides nothing in the assignment; the lead reads it
+		     beside the name. -->
+		<label
+			class="flex items-center gap-1 text-xs"
+			title={cieClosed
+				? ENGLISH_NOT_OFFERED
+				: 'Ich würde diesen Zug als Course in English (CiE) anbieten. Das ist ein Angebot, kein Vorrang bei der Zuteilung.'}
+		>
+			<input
+				type="checkbox"
+				name="cie:{instanceId}"
+				value="true"
+				bind:checked={cie}
+				class="checkbox checkbox-xs"
+				aria-label="{label} als CiE anbieten"
+				disabled={!open || cieClosed}
+			/>
+			als CiE anbieten
+		</label>
 	{/if}
 
 	{#if others.length > 0}

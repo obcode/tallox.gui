@@ -3,15 +3,23 @@
 	import { resolve } from '$app/paths';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { formatHours } from '$lib/catalogue';
-	import { cohortLabel, formatBadges, partLabel } from '$lib/demand';
-	import { teachingBySemester } from '$lib/myAssignments';
+	import {
+		ENGLISH_NOT_OFFERED,
+		cohortLabel,
+		englishClosed,
+		formatBadges,
+		partLabel
+	} from '$lib/demand';
+	import { cieRows, teachingBySemester } from '$lib/myAssignments';
+	import { autosave } from '$lib/saveOnLeave';
 	import { semesterName } from '$lib/semester';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const semesters = $derived(teachingBySemester(data.assignments, new Set(data.published)));
+	const finished = $derived(new Set(data.finished));
 
 	type AssignmentSortKey = 'module' | 'cohort' | 'part';
 	type Assignment = (typeof semesters)[number]['assignments'][number];
@@ -52,6 +60,7 @@
 	{/if}
 
 	{#each semesters as semester (semester.code)}
+		{@const withCie = cieRows(semester.assignments)}
 		<section
 			class="border-base-300 bg-base-100 rounded-lg border p-4"
 			aria-labelledby="semester-{semester.code}"
@@ -91,6 +100,7 @@
 								onsort={onAssignmentSort}
 							/>
 							<SortHeader label="Teil" key="part" sort={assignmentSort} onsort={onAssignmentSort} />
+							<th>CiE</th>
 							<th>Notiz</th>
 						</tr>
 					</thead>
@@ -119,6 +129,47 @@
 									{/each}
 								</td>
 								<td class="whitespace-nowrap">{partLabel(a.part)}</td>
+								<td>
+									<!-- Once per cohort: CiE belongs to the cohort, not to the part. -->
+									{#if withCie.has(a.id)}
+										{@const closed = englishClosed(
+											a.instance.module.englishPossible,
+											a.instance.cie
+										)}
+										<form method="POST" action="?/cie" use:autosave={{ label: 'CiE' }}>
+											<input type="hidden" name="id" value={a.instance.id} />
+											<label
+												class="flex items-center gap-1 text-sm"
+												title={closed
+													? ENGLISH_NOT_OFFERED
+													: 'Als Course in English (CiE) angeboten. Das kannst Du für jeden Zug setzen, den Du hältst.'}
+											>
+												<input
+													type="checkbox"
+													name="cie"
+													value="true"
+													class="checkbox checkbox-sm"
+													aria-label="{a.instance.module.name} in {cohortLabel(
+														a.instance.programme.code,
+														a.instance.programmeSemester,
+														a.instance.track
+													)} als CiE"
+													checked={a.instance.cie}
+													disabled={closed || finished.has(semester.code)}
+												/>
+												CiE
+											</label>
+											<noscript
+												><button type="submit" class="btn btn-xs">Speichern</button></noscript
+											>
+										</form>
+										{#if form?.cieRefusal?.id === a.instance.id}
+											<span class="badge badge-error mt-1 whitespace-normal">
+												{form.cieRefusal.message}
+											</span>
+										{/if}
+									{/if}
+								</td>
 								<td class="text-base-content/90 text-sm">{a.note}</td>
 							</tr>
 						{/each}

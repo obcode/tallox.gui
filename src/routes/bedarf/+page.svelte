@@ -31,6 +31,8 @@
 		coverageLabel,
 		coversLabel,
 		DELIVERY_LABELS,
+		ENGLISH_NOT_OFFERED,
+		englishClosed,
 		sharingState,
 		separatelyPlannedIn,
 		splitDrift,
@@ -2435,9 +2437,14 @@
 																</select>
 																<label
 																	class="flex items-center gap-1 text-xs"
-																	title={format.taughtInEnglishOverridden
-																		? 'Für diesen Zug festgelegt.'
-																		: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
+																	title={englishClosed(
+																		row.module.englishPossible,
+																		format.taughtInEnglish
+																	)
+																		? ENGLISH_NOT_OFFERED
+																		: format.taughtInEnglishOverridden
+																			? 'Für diesen Zug festgelegt.'
+																			: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
 																>
 																	<input
 																		type="checkbox"
@@ -2449,7 +2456,11 @@
 																			yearOf(row),
 																			letter
 																		)} auf Englisch"
-																		disabled={!mayPlan}
+																		disabled={!mayPlan ||
+																			englishClosed(
+																				row.module.englishPossible,
+																				format.taughtInEnglish
+																			)}
 																		checked={format.taughtInEnglish}
 																		onchange={scheduleSave}
 																	/>
@@ -2457,7 +2468,9 @@
 																</label>
 																<label
 																	class="flex items-center gap-1 text-xs"
-																	title="Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache."
+																	title={englishClosed(row.module.englishPossible, format.cie)
+																		? ENGLISH_NOT_OFFERED
+																		: 'Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache.'}
 																>
 																	<input
 																		type="checkbox"
@@ -2469,7 +2482,8 @@
 																			yearOf(row),
 																			letter
 																		)} als CiE"
-																		disabled={!mayPlan}
+																		disabled={!mayPlan ||
+																			englishClosed(row.module.englishPossible, format.cie)}
 																		checked={format.cie}
 																		onchange={scheduleSave}
 																	/>

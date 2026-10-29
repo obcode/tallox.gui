@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import {
 	borrowedFromLabel,
+	englishClosed,
 	byProgramme,
 	byYear,
 	cohortLabel,
@@ -1285,5 +1286,22 @@ describe('withoutEmptyParams', () => {
 
 	it('treats blanks as empty', () => {
 		expect(withoutEmptyParams(new URLSearchParams('korb=+'), ['korb'])?.toString()).toBe('');
+	});
+});
+
+describe('englishClosed', () => {
+	it('closes an unticked box where the module description names no English', () => {
+		expect(englishClosed(false, false)).toBe(true);
+		expect(englishClosed(false, undefined)).toBe(true);
+	});
+
+	it('leaves a box open that is ticked already, so it can be taken back', () => {
+		expect(englishClosed(false, true)).toBe(false);
+	});
+
+	it('leaves it open where English is possible, or nothing is known', () => {
+		expect(englishClosed(true, false)).toBe(false);
+		expect(englishClosed(undefined, false)).toBe(false);
+		expect(englishClosed(null, false)).toBe(false);
 	});
 });

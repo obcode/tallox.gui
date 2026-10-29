@@ -77,6 +77,7 @@ const WishesDocument = graphql(`
 			module {
 				id
 				name
+				englishPossible
 				subjectGroup {
 					id
 					code
@@ -130,6 +131,7 @@ const WishesDocument = graphql(`
 			id
 			priority
 			note
+			cie
 			trackLimit
 			person {
 				mail
@@ -159,6 +161,7 @@ const WishesDocument = graphql(`
 			id
 			priority
 			note
+			cie
 			trackLimit
 			person {
 				mail
@@ -252,6 +255,7 @@ const MyWishesDocument = graphql(`
 			id
 			priority
 			note
+			cie
 			trackLimit
 			instance {
 				id
@@ -261,11 +265,12 @@ const MyWishesDocument = graphql(`
 `);
 
 const SetWishDocument = graphql(`
-	mutation SetWish($instance: ID!, $priority: WishPriority!, $note: String) {
-		setWish(courseInstanceId: $instance, priority: $priority, note: $note) {
+	mutation SetWish($instance: ID!, $priority: WishPriority!, $note: String, $cie: Boolean!) {
+		setWish(courseInstanceId: $instance, priority: $priority, note: $note, cie: $cie) {
 			id
 			priority
 			note
+			cie
 		}
 	}
 `);
@@ -385,7 +390,7 @@ export const actions: Actions = {
 		const entryFor = (instanceId: string) => {
 			const existing = entries.get(instanceId);
 			if (existing) return existing;
-			const fresh: WishEntry = { instanceId, priority: '', note: '' };
+			const fresh: WishEntry = { instanceId, priority: '', note: '', cie: false };
 			entries.set(instanceId, fresh);
 			return fresh;
 		};
@@ -402,6 +407,8 @@ export const actions: Actions = {
 				entryFor(key.slice('wish:'.length)).priority = text;
 			} else if (key.startsWith('note:')) {
 				entryFor(key.slice('note:'.length)).note = text.trim();
+			} else if (key.startsWith('cie:')) {
+				entryFor(key.slice('cie:'.length)).cie = text === 'true';
 			} else if (key.startsWith('limit:')) {
 				// „Davon übernehme ich höchstens …“ — one per row, present only where the row has two
 				// or more of the caller's wishes. Absent means unchanged, never „alle“.
@@ -423,7 +430,8 @@ export const actions: Actions = {
 				id: w.id,
 				instanceId: w.instance.id,
 				priority: w.priority,
-				note: w.note
+				note: w.note,
+				cie: w.cie
 			}))
 		);
 
@@ -439,7 +447,8 @@ export const actions: Actions = {
 					await backendRequest(SetWishDocument, {
 						instance: change.instanceId,
 						priority: change.priority as WishPriority,
-						note: change.note === '' ? null : change.note
+						note: change.note === '' ? null : change.note,
+						cie: change.cie
 					});
 				}
 				saved++;
