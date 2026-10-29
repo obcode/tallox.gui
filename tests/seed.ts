@@ -794,6 +794,13 @@ export const DEGREES = {
 		E2M: '0e2e0000-0000-4000-8000-0000000000d7',
 		E2O: '0e2e0000-0000-4000-8000-0000000000d8'
 	},
+	/** Regulations of the bachelor's and the unrecorded programme, for the basket. */
+	spos: {
+		E2B: '0e2e0000-0000-4000-8000-0000000000d9',
+		E2O: '0e2e0000-0000-4000-8000-0000000000da'
+	},
+	/** One basket name in two programmes' regulations: two baskets, not one. */
+	basket: 'E2E Wahlpflicht',
 	moduleName: 'E2E Abschlussmodul'
 } as const;
 
@@ -842,6 +849,23 @@ export function degreeStatements(): string[] {
 			  WHERE s.code = ${quote(DEGREES.semester)} AND pr.code = ${quote(p.code)};`,
 			`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
 			 VALUES ('${DEGREES.parts[p.code]}', '${DEGREES.instances[p.code]}', 'LECTURE', 0, 4);`
+		]),
+
+		// The basket filter on the assignment screen: the module is an elective in a basket of the
+		// same name in the bachelor's and the unrecorded programme. Not in the master's, whose
+		// catalogue the module spec expects it to be absent from.
+		...(['E2B', 'E2O'] as const).flatMap((code) => [
+			`INSERT INTO spo (id, programme_id, version, valid_from, primuss_id)
+			 SELECT '${DEGREES.spos[code]}', id, 2025, '2025-10-01', '07-${code}-2025'
+			   FROM programme WHERE code = ${quote(code)}
+			 ON CONFLICT (programme_id, version) DO NOTHING;`,
+			`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, baskets,
+			                              source_rows, min_programme_semester)
+			 SELECT '${DEGREES.module}', s.id, false, ARRAY['${code}-M-01'],
+			        ARRAY[${quote(DEGREES.basket)}], 1, 1
+			   FROM spo s JOIN programme pr ON pr.id = s.programme_id
+			  WHERE pr.code = ${quote(code)} AND s.version = 2025
+			 ON CONFLICT (module_id, spo_id) DO UPDATE SET baskets = EXCLUDED.baskets;`
 		])
 	];
 }

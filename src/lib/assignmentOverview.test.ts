@@ -61,4 +61,21 @@ describe('the assignment overview', () => {
 		const [p] = assignmentOverview([covered], []);
 		expect(p.modules[0].cohorts[0].heldWith).toBe('IF2A');
 	});
+
+	// Within each programme, by first basket and then name, modules without a basket last.
+	it('sorts the modules of a programme by basket where asked', () => {
+		const withBaskets = (id: string, module: string, baskets: string[]): OverviewInstance => ({
+			...instance(id, 'IG', module, '', [{ id: `${id}-p`, kind: 'LECTURE' }]),
+			baskets
+		});
+		const instances = [
+			withBaskets('a', 'Analysis', ['Wahlpflicht B']),
+			withBaskets('b', 'Betriebssysteme', []),
+			withBaskets('c', 'Compilerbau', ['Wahlpflicht A'])
+		];
+		const names = (order: 'name' | 'basket') =>
+			assignmentOverview(instances, [], order)[0].modules.map((m) => m.name);
+		expect(names('name')).toEqual(['Analysis', 'Betriebssysteme', 'Compilerbau']);
+		expect(names('basket')).toEqual(['Compilerbau', 'Analysis', 'Betriebssysteme']);
+	});
 });

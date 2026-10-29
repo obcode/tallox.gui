@@ -44,6 +44,7 @@
 		programmeLabel
 	} from '$lib/catalogue';
 	import { trackSaves } from '$lib/saveOnLeave';
+	import { basketValue, cohortBasketOptions, cohortsInBasket } from '$lib/basket';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
 	import { wisherLabel } from '$lib/wishes';
@@ -87,13 +88,36 @@
 	/** The instances of the tab, before the degree filter: what the notice below is about. */
 	const tabInstances = $derived(instancesOfTab(data.instances, tab));
 
-	/** What the table shows: the tab, cut to one degree where somebody chose one. */
+	/** What the table shows: the tab, cut to one degree, to CiE and to a basket where chosen. */
 	const shown = $derived(
-		instancesListedAsCie(
-			instancesOfDegree(tabInstances, data.selected.degree),
-			data.selected.onlyCie
+		cohortsInBasket(
+			instancesListedAsCie(
+				instancesOfDegree(tabInstances, data.selected.degree),
+				data.selected.onlyCie
+			),
+			data.selected.basket
 		)
 	);
+
+	/** The chosen basket as the address carries it, or empty for „alle“. */
+	const basketParam = $derived(
+		data.selected.basket === null
+			? ''
+			: basketValue(data.selected.basket.programme, data.selected.basket.basket)
+	);
+
+	/**
+	 * The baskets of the tab's cohorts, for the "Korb" selection. A choice that names no basket on
+	 * this tab — a link from another subject group — stays selectable, so the empty table explains
+	 * itself and can be undone.
+	 */
+	const baskets = $derived.by(() => {
+		const options = cohortBasketOptions(tabInstances);
+		const chosen = data.selected.basket;
+		if (chosen !== null && !options.some((o) => o.value === basketParam))
+			options.push({ value: basketParam, label: `${chosen.programme} · ${chosen.basket}` });
+		return options;
+	});
 
 	const groups: CohortGroup[] = $derived(cohortGroups(shown, data.assignments as AssignmentLike[]));
 	const progress = $derived(fillProgress(groups));
@@ -113,7 +137,7 @@
 	 */
 	const sections = $derived(
 		data.selected.byProgramme
-			? programmeSections(groups)
+			? programmeSections(groups, data.selected.order)
 			: [{ programme: null, blocks: moduleBlocks(groups) }]
 	);
 
@@ -258,7 +282,9 @@
 		{ name: 'q', value: data.selected.search },
 		{ name: 'abschluss', value: degreeParam(data.selected.degree) },
 		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' },
-		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' }
+		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' },
+		{ name: 'korb', value: basketParam },
+		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' }
 	]);
 
 	/**
@@ -455,7 +481,13 @@
 			bachelor and master modules separately.
 		-->
 		<form method="GET" class="mt-5 flex flex-wrap items-end gap-3">
-			{@render carriedOver(['abschluss', 'nach', 'cie'])}
+			{@render carriedOver([
+				'abschluss',
+				'nach',
+				'cie',
+				...(baskets.length > 0 ? ['korb'] : []),
+				...(baskets.length > 0 && data.selected.byProgramme ? ['sortierung'] : [])
+			])}
 			<label class="form-control">
 				<span class="label-text text-sm">Abschluss</span>
 				<select
@@ -495,6 +527,38 @@
 				/>
 				nur CiE
 			</label>
+			{#if baskets.length > 0}
+				<label class="form-control">
+					<span class="label-text text-sm">Korb</span>
+					<select
+						name="korb"
+						aria-label="Korb"
+						class="select select-bordered select-sm max-w-full"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					>
+						<option value="">alle</option>
+						{#each baskets as option (option.value)}
+							<option value={option.value} selected={basketParam === option.value}>
+								{option.label}
+							</option>
+						{/each}
+					</select>
+				</label>
+				{#if data.selected.byProgramme}
+					<label class="form-control">
+						<span class="label-text text-sm">Sortierung</span>
+						<select
+							name="sortierung"
+							aria-label="Sortierung"
+							class="select select-bordered select-sm"
+							onchange={(e) => e.currentTarget.form?.requestSubmit()}
+						>
+							<option value="">nach Name</option>
+							<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
+						</select>
+					</label>
+				{/if}
+			{/if}
 			<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 		</form>
 
@@ -630,7 +694,19 @@
 			</div>
 		{/if}
 
-		{#if groups.length === 0 && data.selected.degree !== null && tabInstances.length > 0}
+		{#if groups.length === 0 && data.selected.basket !== null && tabInstances.length > 0}
+			<div class="card bg-base-200 mt-4 max-w-prose">
+				<div class="card-body">
+					<h2 class="card-title text-base">Nichts zu besetzen</h2>
+					<p>
+						Im Korb <strong>{data.selected.basket.programme} · {data.selected.basket.basket}</strong
+						>
+						hat <strong>{data.group?.name ?? 'diese Auswahl'}</strong> mit dieser Auswahl keine Instanz.
+						Mit „alle“ bei „Korb“ stehen die übrigen wieder da.
+					</p>
+				</div>
+			</div>
+		{:else if groups.length === 0 && data.selected.degree !== null && tabInstances.length > 0}
 			<div class="card bg-base-200 mt-4 max-w-prose">
 				<div class="card-body">
 					<h2 class="card-title text-base">Nichts zu besetzen</h2>

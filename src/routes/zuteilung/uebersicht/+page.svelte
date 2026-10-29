@@ -2,14 +2,37 @@
 	import { stackedTable } from '$lib/stackedTable';
 	import { resolve } from '$app/paths';
 	import { assignmentOverview } from '$lib/assignmentOverview';
+	import { basketValue, cohortBasketOptions, cohortsInBasket } from '$lib/basket';
 	import { PART_KIND_LABELS, formatHours, programmeLabel } from '$lib/catalogue';
 	import { semesterName } from '$lib/semester';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	/** The chosen basket as the address carries it, or empty for „alle“. */
+	const basketParam = $derived(
+		data.selected.basket === null
+			? ''
+			: basketValue(data.selected.basket.programme, data.selected.basket.basket)
+	);
+
+	/** The baskets of the loaded cohorts; a chosen one stays selectable even where none matches. */
+	const baskets = $derived.by(() => {
+		const options = cohortBasketOptions(data.instances);
+		const chosen = data.selected.basket;
+		if (chosen !== null && !options.some((o) => o.value === basketParam))
+			options.push({ value: basketParam, label: `${chosen.programme} · ${chosen.basket}` });
+		return options;
+	});
+
 	const overview = $derived(
-		data.published ? assignmentOverview(data.instances, data.assignments) : []
+		data.published
+			? assignmentOverview(
+					cohortsInBasket(data.instances, data.selected.basket),
+					data.assignments,
+					data.selected.order
+				)
+			: []
 	);
 	const semesterTabs = $derived([...data.semesters].reverse());
 </script>
@@ -59,6 +82,34 @@
 				{/each}
 			</select>
 		</label>
+		{#if baskets.length > 0}
+			<label class="flex flex-col gap-1">
+				<span class="label-text text-sm">Korb</span>
+				<select
+					name="korb"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					class="select select-sm w-64 max-w-full"
+				>
+					<option value="">alle</option>
+					{#each baskets as option (option.value)}
+						<option value={option.value} selected={basketParam === option.value}>
+							{option.label}
+						</option>
+					{/each}
+				</select>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="label-text text-sm">Sortierung</span>
+				<select
+					name="sortierung"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					class="select select-sm w-40 max-w-full"
+				>
+					<option value="">nach Name</option>
+					<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
+				</select>
+			</label>
+		{/if}
 		<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 	</form>
 

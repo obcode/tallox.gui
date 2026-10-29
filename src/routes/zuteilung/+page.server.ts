@@ -12,7 +12,8 @@ import {
 	UNFILED
 } from '$lib/assignment';
 import { parseDegreeParam } from '$lib/catalogue';
-import { cieChanges, formatChanges, topicChanges } from '$lib/demand';
+import { parseBasketChoice, type CohortOrder } from '$lib/basket';
+import { cieChanges, formatChanges, topicChanges, withoutEmptyParams } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -81,6 +82,8 @@ const AssignmentDocument = graphql(`
 			taughtInEnglishOverridden
 			cie
 			topic
+			# The module's baskets in this cohort's own programme: the "Korb" filter and order.
+			baskets
 			programme {
 				code
 				title
@@ -347,6 +350,13 @@ function isGroupID(tab: string): boolean {
 }
 
 export const load: PageServerLoad = async ({ url }) => {
+	// „alle“ baskets and the order „nach Name“ are the absence of a choice, and the address says so
+	// by not naming them — the same clean-up as on `/bedarf`, before anything is loaded.
+	const clean = withoutEmptyParams(url.searchParams, ['korb', 'sortierung']);
+	if (clean !== null) {
+		const query = clean.toString();
+		redirect(303, query === '' ? url.pathname : `${url.pathname}?${query}`);
+	}
 	const wanted = url.searchParams.get('semester') ?? '';
 	const group = url.searchParams.get('fachgruppe') ?? '';
 	const search = (url.searchParams.get('q') ?? '').trim();
@@ -354,6 +364,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
 	const byProgramme = url.searchParams.get('nach') === 'studiengang';
 	const onlyCie = url.searchParams.get('cie') === '1';
+	// A basket of one programme, and the order inside each programme. Cuts of what is loaded, like
+	// the degree; the order only applies with the grouping by programme, see `moduleBlocks`.
+	const basket = parseBasketChoice(url.searchParams.get('korb'));
+	const order: CohortOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
 
 	const ask = (semester: string) =>
 		backendRequest(AssignmentDocument, {
@@ -414,7 +428,16 @@ export const load: PageServerLoad = async ({ url }) => {
 		// `group` above is the resolved group and stays null for the sentinel — the two are
 		// deliberately not the same field, so that "no group chosen" and "the instances in no
 		// group" cannot be confused for one another.
-		selected: { semester: wanted, group, search, degree, byProgramme, onlyCie },
+		selected: {
+			semester: wanted,
+			group,
+			search,
+			degree,
+			byProgramme,
+			onlyCie,
+			basket,
+			order
+		},
 		unusable
 	};
 };
