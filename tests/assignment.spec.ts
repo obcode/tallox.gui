@@ -517,3 +517,76 @@ test.describe('a cohort listed as a course in English', () => {
 		await expect(cie(page)).toHaveCount(0);
 	});
 });
+
+// English only where the module description names it; CiE also by whoever teaches the cohort, on
+// „Meine Zuteilungen“; and a CiE offer with the wish, read by the lead beside the name.
+test.describe('English where the module description names it, and CiE by who teaches', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	const cie = (page: Page) =>
+		page.getByRole('checkbox', {
+			name: new RegExp(`^${ASSIGNMENTS.moduleName} in .* als CiE$`)
+		});
+	const english = (page: Page) =>
+		page.getByRole('checkbox', {
+			name: new RegExp(`^${ASSIGNMENTS.moduleName} in .* auf Englisch$`)
+		});
+
+	test('a module whose description names no English closes both boxes', async ({ asPersona }) => {
+		await runSql(
+			`UPDATE module SET other_language = NULL WHERE id = '${ASSIGNMENTS.module}';`,
+			'making the module German only'
+		);
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(english(page)).toBeDisabled();
+		await expect(cie(page)).toBeDisabled();
+		await expect(
+			page.locator('label[title="Laut Modulhandbuch nicht auf Englisch angeboten."]')
+		).toHaveCount(2);
+
+		await reset();
+		await gotoRendered(page, URL);
+		await expect(english(page)).toBeEnabled();
+		await expect(cie(page)).toBeEnabled();
+	});
+
+	test('the lecturer who holds a part lists the cohort as CiE under „Meine Zuteilungen“', async ({
+		asPersona
+	}) => {
+		await runSql(
+			`INSERT INTO assignment (instance_part_id, person_id)
+			 SELECT '${ASSIGNMENTS.labOne}', id FROM person WHERE mail = '${PERSONAS.zwei.mail}';`,
+			'assigning a laboratory group to Zwei'
+		);
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, '/konto/zuteilungen');
+		await expect(cie(page)).toHaveCount(1);
+		await expect(cie(page)).not.toBeChecked();
+
+		await cie(page).check();
+		// Saved once the page has its data back: the cohort then carries the CiE badge.
+		await expect(page.locator('.badge', { hasText: /^CiE$/ })).toBeVisible();
+
+		await gotoRendered(page, '/konto/zuteilungen');
+		await expect(cie(page)).toBeChecked();
+
+		// The lead sees the same listing where the cohort is staffed.
+		const lead = await asPersona(PERSONAS.drei);
+		await gotoRendered(lead, URL);
+		await expect(cie(lead)).toBeChecked();
+	});
+
+	test('a CiE offer rides on the wish, and the lead reads it beside the name', async ({
+		asPersona
+	}) => {
+		await runSql(
+			`UPDATE wish SET cie = true WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+			'offering CiE with the seeded wish'
+		);
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name} (als CiE)`)).toBeVisible();
+	});
+});

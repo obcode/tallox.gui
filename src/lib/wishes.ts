@@ -176,6 +176,11 @@ export type WishLike = {
 	 * at most this many. Null for none. The same on every wish of the group.
 	 */
 	trackLimit?: number | null;
+	/**
+	 * The owner's offer to give the cohort as a course in English. An offer only: it lists nothing
+	 * and decides nothing in the assignment. Visible wherever the wish is, like the priority.
+	 */
+	cie?: boolean;
 };
 
 /**
@@ -191,9 +196,9 @@ export function trackLimitLabel(limit: number | null | undefined): string {
 }
 
 /** A name with the bound behind it: „Prof. Eins (nur einen der Züge)“. */
-export function wisherLabel(wish: Pick<WishLike, 'person' | 'trackLimit'>): string {
-	const bound = trackLimitLabel(wish.trackLimit);
-	return bound === '' ? wish.person.name : `${wish.person.name} (${bound})`;
+export function wisherLabel(wish: Pick<WishLike, 'person' | 'trackLimit' | 'cie'>): string {
+	const marks = [wish.cie ? 'als CiE' : '', trackLimitLabel(wish.trackLimit)].filter((m) => m);
+	return marks.length === 0 ? wish.person.name : `${wish.person.name} (${marks.join(', ')})`;
 }
 
 /**
@@ -223,6 +228,8 @@ export type WishModule = {
 	name: string;
 	programmeSemester?: number | null;
 	subjectGroup?: { id: string; code: string; name: string } | null;
+	/** Whether the module description names English, which a CiE offer needs. */
+	englishPossible?: boolean;
 };
 
 /** One row of the wish table: a module in a study programme, with its cohorts. */
@@ -655,6 +662,8 @@ export type WishEntry = {
 	instanceId: string;
 	priority: WishChoice;
 	note: string;
+	/** Whether the CiE box was ticked. Absent from the form means no. */
+	cie: boolean;
 };
 
 /** What the caller has stored for one instance, as the diff below needs it. */
@@ -663,11 +672,12 @@ export type StoredWish = {
 	instanceId: string;
 	priority: WishPriorityValue;
 	note: string;
+	cie: boolean;
 };
 
 /** What has to happen to one instance for the form to become the stored state. */
 export type WishChange =
-	| { kind: 'set'; instanceId: string; priority: WishPriorityValue; note: string }
+	| { kind: 'set'; instanceId: string; priority: WishPriorityValue; note: string; cie: boolean }
 	| { kind: 'withdraw'; instanceId: string; wishId: string };
 
 /**
@@ -699,14 +709,20 @@ export function wishChanges(
 			}
 			continue;
 		}
-		if (current && current.priority === entry.priority && current.note === entry.note) {
+		if (
+			current &&
+			current.priority === entry.priority &&
+			current.note === entry.note &&
+			current.cie === entry.cie
+		) {
 			continue;
 		}
 		changes.push({
 			kind: 'set',
 			instanceId: entry.instanceId,
 			priority: entry.priority,
-			note: entry.note
+			note: entry.note,
+			cie: entry.cie
 		});
 	}
 	return changes;

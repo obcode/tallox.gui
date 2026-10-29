@@ -46,6 +46,8 @@ export type InstanceLike = {
 		subjectGroup?: { id: string; code: string } | null;
 		/** A practice-accompanying course (PBLV, `projectBased` is the older name): given out last. */
 		projectBased?: boolean;
+		/** Whether the module description names English; see `englishClosed` in `$lib/demand`. */
+		englishPossible?: boolean;
 	};
 	parts: PartLike[];
 	/** How the cohort is taught; see `formatChanges` in `$lib/demand`. */

@@ -48,7 +48,14 @@
 	import { facultiesElsewhere } from '$lib/demand';
 	import { wisherLabel } from '$lib/wishes';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
-	import { DELIVERY_LABELS, MAX_TOPIC_LENGTH, hoursLabel, withTopic } from '$lib/demand';
+	import {
+		DELIVERY_LABELS,
+		ENGLISH_NOT_OFFERED,
+		MAX_TOPIC_LENGTH,
+		englishClosed,
+		hoursLabel,
+		withTopic
+	} from '$lib/demand';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -924,9 +931,14 @@
 														</select>
 														<label
 															class="flex items-center gap-1 text-xs"
-															title={group.instance.taughtInEnglishOverridden
-																? 'Für diesen Zug festgelegt.'
-																: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
+															title={englishClosed(
+																group.instance.module.englishPossible,
+																group.instance.taughtInEnglish
+															)
+																? ENGLISH_NOT_OFFERED
+																: group.instance.taughtInEnglishOverridden
+																	? 'Für diesen Zug festgelegt.'
+																	: 'Wie im Modulkatalog des ZPA angegeben, sonst Deutsch.'}
 														>
 															<input
 																type="checkbox"
@@ -934,7 +946,11 @@
 																value="true"
 																class="checkbox checkbox-xs"
 																aria-label="{block.name} in {group.label} auf Englisch"
-																disabled={!open}
+																disabled={!open ||
+																	englishClosed(
+																		group.instance.module.englishPossible,
+																		group.instance.taughtInEnglish
+																	)}
 																checked={group.instance.taughtInEnglish}
 															/>
 															Englisch
@@ -944,7 +960,12 @@
 														</label>
 														<label
 															class="flex items-center gap-1 text-xs"
-															title="Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache."
+															title={englishClosed(
+																group.instance.module.englishPossible,
+																group.instance.cie
+															)
+																? ENGLISH_NOT_OFFERED
+																: 'Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache.'}
 														>
 															<input
 																type="checkbox"
@@ -952,7 +973,11 @@
 																value="true"
 																class="checkbox checkbox-xs"
 																aria-label="{block.name} in {group.label} als CiE"
-																disabled={!open}
+																disabled={!open ||
+																	englishClosed(
+																		group.instance.module.englishPossible,
+																		group.instance.cie
+																	)}
 																checked={group.instance.cie}
 															/>
 															CiE

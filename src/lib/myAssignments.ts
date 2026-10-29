@@ -71,3 +71,21 @@ export function teachingBySemester<T extends MyAssignmentLike>(
 	}
 	return [...bySemester.values()].sort((a, b) => b.code.localeCompare(a.code));
 }
+
+/**
+ * The assignments that carry their cohort's CiE box: the first of each cohort.
+ *
+ * CiE belongs to the cohort, and somebody who holds the lecture and a laboratory group of one
+ * cohort has two rows for it — two boxes for one value would disagree the moment one is ticked.
+ * Chosen in the order given, so the box sits where the cohort first appears in the table.
+ */
+export function cieRows(assignments: readonly MyAssignmentLike[]): Set<string> {
+	const seen = new Set<string>();
+	const out = new Set<string>();
+	for (const a of assignments) {
+		if (seen.has(a.instance.id)) continue;
+		seen.add(a.instance.id);
+		out.add(a.id);
+	}
+	return out;
+}

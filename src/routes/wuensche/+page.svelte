@@ -362,6 +362,7 @@
 											{wish}
 											others={others[cohort.instanceId] ?? []}
 											open={open && closedReason === null}
+											englishPossible={row.module.englishPossible}
 										/>
 									{/key}
 									<!-- Block and English sit with the track, not with the module: two tracks

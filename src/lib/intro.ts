@@ -68,7 +68,7 @@ export const PHASES: readonly IntroPhase[] = [
 		happens:
 			'Das Kollegium bekundet Interesse an den Instanzen. Jede Fachgruppe sammelt in ihrer eigenen Wunschrunde; die ist offen, bis die Fachgruppenleitung sie schließt.',
 		forYou:
-			'Jetzt bist Du dran: an jeder Instanz, die Du halten würdest, „unbedingt“, „gerne“ oder „notfalls“ setzen, und wenn Du nur die Vorlesung oder nur ein Praktikum möchtest, das in die Notiz schreiben. Würdest Du von einem Modul nur einen der Züge übernehmen, egal welchen, trag Dich für alle ein und wähle unter dem Modulnamen „Davon übernehme ich: nur einen“. Über der Tabelle gibst Du an, wie viele SWS modulbehaftete Lehre Du in dem Semester übernehmen möchtest, als Bereich von–bis, bis zum Stichtag des Dekanats. Bis zur Veröffentlichung sieht das niemand außer den Zuständigen; danach sieht das ganze Kollegium die Bereiche unter „SWS im Kollegium“.',
+			'Jetzt bist Du dran: an jeder Instanz, die Du halten würdest, „unbedingt“, „gerne“ oder „notfalls“ setzen, und wenn Du nur die Vorlesung oder nur ein Praktikum möchtest, das in die Notiz schreiben. Würdest Du von einem Modul nur einen der Züge übernehmen, egal welchen, trag Dich für alle ein und wähle unter dem Modulnamen „Davon übernehme ich: nur einen“. Würdest Du einen Zug als Course in English halten, kreuze „als CiE anbieten“ an; das geht, wo das Modulhandbuch Englisch nennt. Über der Tabelle gibst Du an, wie viele SWS modulbehaftete Lehre Du in dem Semester übernehmen möchtest, als Bereich von–bis, bis zum Stichtag des Dekanats. Bis zur Veröffentlichung sieht das niemand außer den Zuständigen; danach sieht das ganze Kollegium die Bereiche unter „SWS im Kollegium“.',
 		where: [{ href: '/wuensche', label: 'Wünsche' }]
 	},
 	{
@@ -76,7 +76,7 @@ export const PHASES: readonly IntroPhase[] = [
 		happens:
 			'Die Fachgruppenleitungen besetzen die Instanzen, Teil für Teil: wer die Vorlesung hält und wer welches Praktikum, im Regelfall eine Person für alle Teile eines Zuges. Dabei sehen sie die Wünsche, die Kompetenzen und, für die Mitglieder ihrer Fachgruppen, die gewünschten SWS und wie viel jemand schon eingeplant ist, auch in anderen Fachgruppen.',
 		forYou:
-			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert, bis das Dekanat die Zuteilung veröffentlicht. Ändern kann sie sich auch danach noch, bis das Semester vorbei ist, etwa wenn jemand ausfällt.',
+			'Unter „Meine Lehre → Zuteilungen“ steht schon während der Zuteilung, was Dir zugeteilt ist, als Entwurf markiert, bis das Dekanat die Zuteilung veröffentlicht. Ändern kann sie sich auch danach noch, bis das Semester vorbei ist, etwa wenn jemand ausfällt. Dort kreuzt Du auch „CiE“ an, wenn Du einen Zug als Course in English hältst.',
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
 	},
 	{

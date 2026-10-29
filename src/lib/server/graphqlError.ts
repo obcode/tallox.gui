@@ -202,6 +202,9 @@ const PASS_THROUGH = new Set([
 	'PART_NOT_DIVIDED',
 	'TAUGHT_BY_TOO_LONG',
 	'INSTANCE_TAUGHT_ELSEWHERE',
+	// English, or CiE, where the module description does not name English. A fact about the
+	// catalogue, which everybody reads, and none about anybody's interest.
+	'ENGLISH_NOT_OFFERED',
 	// The two planning marks. Nothing confidential on this path at all: which programmes have
 	// settled their demand and which subjects take entries is public to anybody with an account,
 	// and the refusals name which lead to go and see.

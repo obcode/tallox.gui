@@ -162,6 +162,17 @@ export const HELP: readonly HelpEntry[] = [
 		stage: 'EACH_SEMESTER'
 	},
 	{
+		question: 'Wie biete ich an, einen Kurs als CiE (Courses in English) zu halten?',
+		answer:
+			'Beim Wunsch: Sobald eine Stufe gesetzt ist, steht darunter „als CiE anbieten“. Das ist ein Angebot und kein Vorrang bei der Zuteilung. Die Fachgruppenleitung sieht es neben Deinem Namen, nach der Veröffentlichung auch das Kollegium; vorher ist es so vertraulich wie der Wunsch. Ist Dir der Zug zugeteilt, setzt Du CiE unter „Meine Lehre → Zuteilungen“ selbst, bis das Semester abgeschlossen ist. Beides geht nur, wenn das Modulhandbuch Englisch nennt.',
+		who: ['LECTURER'],
+		where: [
+			{ href: '/wuensche', label: 'Wünsche' },
+			{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }
+		],
+		stage: 'EACH_SEMESTER'
+	},
+	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
 			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
@@ -171,7 +182,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wen kann ich bei der Zuteilung auswählen?',
 		answer:
-			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz und gegebenenfalls „nur einen der Züge“, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
+			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz und gegebenenfalls „als CiE“ oder „nur einen der Züge“, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
@@ -212,7 +223,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie kennzeichne ich einen Zug als Block, auf Englisch oder als CiE?',
 		answer:
-			'Je Zug auf der Zuteilungsseite und auf der Bedarfsseite. „Englisch“ sagt, in welcher Sprache der Zug läuft; ohne eigene Angabe gilt, was das ZPA für das Modul angibt, und das steht dann als „(Standard)“ daneben. „CiE“ (Courses in English) ist eine eigene Kennzeichnung, die nur von Hand gesetzt wird: ein Zug kann auf Englisch laufen, ohne als CiE angeboten zu werden. Setzen dürfen das die Fachgruppenleitung des Moduls, die Studiengangsleitung für ihren Studiengang und das Dekanat, bis das Semester abgeschlossen ist. Alle drei erscheinen als Plakette in den Übersichten und als eigene Spalten im Semester-Export; mit „nur CiE“ über der Tabelle zeigen Bedarf und Zuteilung nur die als CiE gekennzeichneten Züge.',
+			'Je Zug auf der Zuteilungsseite und auf der Bedarfsseite. „Englisch“ sagt, in welcher Sprache der Zug läuft; ohne eigene Angabe gilt, was das ZPA für das Modul angibt, und das steht dann als „(Standard)“ daneben. „CiE“ (Courses in English) ist eine eigene Kennzeichnung, die nur von Hand gesetzt wird: ein Zug kann auf Englisch laufen, ohne als CiE angeboten zu werden. Setzen dürfen das die Fachgruppenleitung des Moduls, die Studiengangsleitung für ihren Studiengang und das Dekanat, bis das Semester abgeschlossen ist; CiE dürfen außerdem die Lehrenden setzen, die einen Teil des Zugs halten. „Englisch“ und „CiE“ lassen sich nur ankreuzen, wenn das Modulhandbuch Englisch als Unterrichtssprache oder als weitere mögliche Sprache nennt; sonst ist das Häkchen gesperrt. Alle drei erscheinen als Plakette in den Übersichten und als eigene Spalten im Semester-Export; mit „nur CiE“ über der Tabelle zeigen Bedarf und Zuteilung nur die als CiE gekennzeichneten Züge.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/zuteilung', label: 'Zuteilung' },
@@ -268,7 +279,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, was ich tatsächlich halte?',
 		answer:
-			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“. Ändern kann sich die Zuteilung bis zum Ende des Semesters, auch nach der Veröffentlichung, etwa wenn jemand ausfällt.',
+			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“. Ändern kann sich die Zuteilung bis zum Ende des Semesters, auch nach der Veröffentlichung, etwa wenn jemand ausfällt. Je Zug kannst Du dort auch „CiE“ ankreuzen, wenn Du ihn als Course in English anbietest.',
 		who: ['LECTURER'],
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }],
 		stage: 'AFTERWARDS'

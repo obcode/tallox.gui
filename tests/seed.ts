@@ -716,11 +716,13 @@ export function assignmentStatements(): string[] {
 
 		`INSERT INTO programme (code, title) VALUES (${programme}, 'Zuteilungs-Teststudiengang')
 		 ON CONFLICT (code) DO NOTHING;`,
+		// German with English possible, the commonest real case: English and CiE may be ticked.
+		// Back to that on every reset, because one test takes the possibility away.
 		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
-		                     contact_hours_per_week, credits)
+		                     contact_hours_per_week, credits, other_language)
 		 SELECT '${ASSIGNMENTS.module}', id, ${quote(ASSIGNMENTS.moduleName)}, 'SU_WITH_LAB',
-		        'EVERY_SEMESTER', 6, 5 FROM programme WHERE code = ${programme}
-		 ON CONFLICT (id) DO NOTHING;`,
+		        'EVERY_SEMESTER', 6, 5, 'EN' FROM programme WHERE code = ${programme}
+		 ON CONFLICT (id) DO UPDATE SET other_language = 'EN';`,
 
 		`INSERT INTO subject_group (id, code, name)
 		 VALUES ('${ASSIGNMENTS.subjectGroup}', ${quote(ASSIGNMENTS.subjectGroupCode)},
@@ -875,11 +877,12 @@ export function wishStatements(): string[] {
 
 		`INSERT INTO programme (code, title) VALUES (${programme}, 'Wunsch-Teststudiengang')
 		 ON CONFLICT (code) DO NOTHING;`,
+		// English possible, so that a wish may offer CiE.
 		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
-		                     contact_hours_per_week, credits)
+		                     contact_hours_per_week, credits, other_language)
 		 SELECT '${WISHES.module}', id, 'E2E Fachmodul', 'SU_WITH_LAB',
-		        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${programme}
-		 ON CONFLICT (id) DO NOTHING;`,
+		        'EVERY_SEMESTER', 4, 5, 'EN' FROM programme WHERE code = ${programme}
+		 ON CONFLICT (id) DO UPDATE SET other_language = 'EN';`,
 
 		`INSERT INTO subject_group (id, code, name)
 		 VALUES ('${WISHES.subjectGroup}', ${quote(WISHES.subjectGroupCode)}, 'Testfachgruppe')
