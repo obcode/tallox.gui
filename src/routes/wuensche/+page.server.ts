@@ -68,6 +68,7 @@ const WishesDocument = graphql(`
 			teachingHours
 			delivery
 			taughtInEnglish
+			cie
 			topic
 			programme {
 				code

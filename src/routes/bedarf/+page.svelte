@@ -37,7 +37,8 @@
 		splitSummary,
 		trackLetters,
 		MAX_TRACKS,
-		MAX_TOPIC_LENGTH
+		MAX_TOPIC_LENGTH,
+		rowListsCie
 	} from '$lib/demand';
 	import DemandOverview from '$lib/components/DemandOverview.svelte';
 	import GearIcon from '$lib/components/GearIcon.svelte';
@@ -93,7 +94,8 @@
 		{ name: 'offen', value: data.selected.onlyEstimated ? '1' : '' },
 		{ name: 'geplant', value: data.selected.onlyPlanned ? '1' : '' },
 		{ name: 'korb', value: data.selected.basket },
-		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' }
+		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' },
+		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' }
 	]);
 
 	/**
@@ -116,7 +118,8 @@
 			rows.filter(
 				(row) =>
 					(!data.selected.onlyEstimated || row.module.splitIsEstimated) &&
-					(!data.selected.onlyPlanned || row.planned)
+					(!data.selected.onlyPlanned || row.planned) &&
+					(!data.selected.onlyCie || rowListsCie(row))
 			),
 			data.selected.basket,
 			data.selected.order
@@ -1100,6 +1103,17 @@
 						class="checkbox checkbox-sm"
 					/>
 					nur geplante
+				</label>
+
+				<label class="flex items-center gap-2 pb-1 text-sm">
+					<input
+						name="cie"
+						type="checkbox"
+						value="1"
+						checked={data.selected.onlyCie}
+						class="checkbox checkbox-sm"
+					/>
+					nur CiE
 				</label>
 
 				<button type="submit" class="btn btn-primary btn-sm">Anzeigen</button>
@@ -2400,6 +2414,11 @@
 																	name="en0:{format.id}"
 																	value={String(format.taughtInEnglish)}
 																/>
+																<input
+																	type="hidden"
+																	name="cie0:{format.id}"
+																	value={String(format.cie)}
+																/>
 																<select
 																	name="fmt:{format.id}"
 																	class="select select-bordered select-xs w-auto"
@@ -2435,6 +2454,26 @@
 																		onchange={scheduleSave}
 																	/>
 																	EN
+																</label>
+																<label
+																	class="flex items-center gap-1 text-xs"
+																	title="Als Course in English (CiE) angeboten. Eigene Kennzeichnung, unabhängig von der Unterrichtssprache."
+																>
+																	<input
+																		type="checkbox"
+																		name="cie:{format.id}"
+																		value="true"
+																		class="checkbox checkbox-xs"
+																		aria-label="{moduleName(row.module)} in {cohortLabel(
+																			data.selected.programme,
+																			yearOf(row),
+																			letter
+																		)} als CiE"
+																		disabled={!mayPlan}
+																		checked={format.cie}
+																		onchange={scheduleSave}
+																	/>
+																	CiE
 																</label>
 																<!-- Which seminar this cohort is, for an umbrella module planned as
 																     one cohort per seminar. Only where there are several cohorts or a

@@ -26,6 +26,7 @@ const ExportDocument = graphql(`
 			note
 			delivery
 			taughtInEnglish
+			cie
 			topic
 			programme {
 				code

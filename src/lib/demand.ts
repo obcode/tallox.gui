@@ -261,6 +261,8 @@ export type InstanceLike<M extends { id: string } = { id: string }> = {
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
 	taughtInEnglishOverridden?: boolean;
+	/** Whether the cohort is listed as a course in English (CiE); see `cieChanges`. */
+	cie?: boolean;
 	/** Which seminar this cohort is, for an umbrella module; `null` for nearly every cohort. */
 	topic?: string | null;
 };
@@ -474,7 +476,7 @@ function rowFor<M extends ModuleLike>(
 function formatOf(
 	instance: Pick<
 		InstanceLike,
-		'id' | 'delivery' | 'taughtInEnglish' | 'taughtInEnglishOverridden' | 'topic'
+		'id' | 'delivery' | 'taughtInEnglish' | 'taughtInEnglishOverridden' | 'cie' | 'topic'
 	>
 ): FormatLike | undefined {
 	if (instance.delivery === undefined) return undefined;
@@ -483,6 +485,7 @@ function formatOf(
 		delivery: instance.delivery,
 		taughtInEnglish: instance.taughtInEnglish ?? false,
 		taughtInEnglishOverridden: instance.taughtInEnglishOverridden ?? false,
+		cie: instance.cie ?? false,
 		topic: instance.topic ?? null
 	};
 }
@@ -837,6 +840,7 @@ export type ReadInstanceLike<M extends RowModule = ModuleLike> = {
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
 	taughtInEnglishOverridden?: boolean;
+	cie?: boolean;
 	topic?: string | null;
 };
 
@@ -1167,6 +1171,11 @@ export type FormatLike = {
 	delivery: DeliveryFormat;
 	taughtInEnglish: boolean;
 	taughtInEnglishOverridden: boolean;
+	/**
+	 * Whether the cohort is listed as a course in English (CiE). Set by hand, and not the same as
+	 * `taughtInEnglish`: a cohort can run in English without being listed.
+	 */
+	cie: boolean;
 	/** Which seminar the cohort is; see `withTopic`. */
 	topic?: string | null;
 };
@@ -1216,10 +1225,43 @@ export function topicChanges(form: FormData): TopicChange[] {
  * The short marks a cohort carries where it is only read: nothing for the ordinary weekly German
  * cohort, so the marks stand out where they mean something.
  */
-export function formatBadges(instance: Pick<FormatLike, 'delivery' | 'taughtInEnglish'>): string[] {
+export function formatBadges(
+	instance: Pick<FormatLike, 'delivery' | 'taughtInEnglish'> & { cie?: boolean }
+): string[] {
 	const out: string[] = [];
 	if (instance.delivery === 'BLOCK') out.push('Block');
 	if (instance.taughtInEnglish) out.push('Englisch');
+	if (instance.cie) out.push('CiE');
+	return out;
+}
+
+/**
+ * Whether any cohort of a row is listed as a course in English (CiE) — what the filter `nur CiE`
+ * on the demand page keeps. A row of last semester's cohorts carries no format and never matches.
+ */
+export function rowListsCie(row: { tracks: readonly { format?: { cie: boolean } }[] }): boolean {
+	return row.tracks.some((track) => track.format?.cie === true);
+}
+
+/** What one cohort's CiE box says, if it differs from what the page rendered. */
+export type CieChange = { instanceId: string; cie: boolean };
+
+/**
+ * The cohorts whose CiE box changed, read out of a submitted form.
+ *
+ * Same shape as `formatChanges`: each cohort renders `cie0:<id>` with the value it was drawn with
+ * beside the checkbox `cie:<id>` (absent when unticked), and only a cohort whose box differs is
+ * written.
+ */
+export function cieChanges(form: FormData): CieChange[] {
+	const out: CieChange[] = [];
+	for (const [key, original] of form) {
+		if (!key.startsWith('cie0:')) continue;
+		const id = key.slice('cie0:'.length);
+		const cie = form.get(`cie:${id}`) === 'true';
+		if (cie === (String(original) === 'true')) continue;
+		out.push({ instanceId: id, cie });
+	}
 	return out;
 }
 

@@ -53,6 +53,8 @@ export type InstanceLike = {
 	taughtInEnglish?: boolean;
 	/** Whether the language is a decision about this cohort rather than the catalogue's. */
 	taughtInEnglishOverridden?: boolean;
+	/** Whether the cohort is listed as a course in English (CiE), set by hand. */
+	cie?: boolean;
 	/** Which seminar the cohort is, for an umbrella module; see `withTopic` in `$lib/demand`. */
 	topic?: string | null;
 	/**
@@ -825,6 +827,19 @@ export function instancesOfDegree<T extends { programme: { degree?: Degree | nul
 ): T[] {
 	if (degree === null) return [...instances];
 	return instances.filter((i) => i.programme.degree === degree);
+}
+
+/**
+ * The instances listed as a course in English (CiE), where somebody asked for only those.
+ *
+ * Like the degree, a cut of what the page already loaded: the filter `nur CiE`.
+ */
+export function instancesListedAsCie<T extends { cie?: boolean }>(
+	instances: readonly T[],
+	onlyCie: boolean
+): T[] {
+	if (!onlyCie) return [...instances];
+	return instances.filter((i) => i.cie === true);
 }
 
 /**

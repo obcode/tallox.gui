@@ -20,6 +20,7 @@ import {
 	type InstanceLike,
 	type WishLike,
 	instancesOfTab,
+	instancesListedAsCie,
 	instancesOfDegree,
 	programmesWithoutDegree,
 	programmeSections,
@@ -926,5 +927,22 @@ describe('fillProgress', () => {
 
 	it('is empty for nothing shown', () => {
 		expect(fillProgress([])).toEqual({ parts: 0, filledParts: 0, hours: 0, filledHours: 0 });
+	});
+});
+
+describe('instancesListedAsCie', () => {
+	const listed = { id: 'a', cie: true };
+	const unlisted = { id: 'b', cie: false };
+	const unknown: { id: string; cie?: boolean } = { id: 'c' };
+
+	it('keeps everything without the filter', () => {
+		expect(instancesListedAsCie([listed, unlisted, unknown], false)).toEqual([
+			listed,
+			unlisted,
+			unknown
+		]);
+	});
+	it('keeps only the listed cohorts with it', () => {
+		expect(instancesListedAsCie([listed, unlisted, unknown], true)).toEqual([listed]);
 	});
 });

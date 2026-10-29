@@ -30,6 +30,7 @@ const MyAssignmentsDocument = graphql(`
 				programmeSemester
 				delivery
 				taughtInEnglish
+				cie
 				programme {
 					code
 				}

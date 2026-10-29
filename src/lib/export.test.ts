@@ -171,6 +171,21 @@ describe('planningRows', () => {
 		]);
 	});
 
+	it('has a column of its own for the CiE listing', () => {
+		const rows = planningRows(
+			[
+				instance('i1', { taughtInEnglish: false, cie: true }),
+				instance('i2', { track: 'B', taughtInEnglish: true, cie: false })
+			],
+			[]
+		);
+		expect(rows.map((r) => [r[col('Englisch')], r[col('CiE')]])).toEqual([
+			['', 'ja'],
+			['ja', '']
+		]);
+		expect(rows.every((r) => r.length === PLANNING_HEADER.length)).toBe(true);
+	});
+
 	it('keeps a cohort without parts and names the gap', () => {
 		const rows = planningRows([instance('i1')], []);
 		expect(rows[0][col('Hinweis')]).toBe('keine Teile angelegt');
