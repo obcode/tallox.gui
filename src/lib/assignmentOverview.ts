@@ -1,4 +1,5 @@
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import { compareFirstBaskets, firstOf, type CohortOrder } from '$lib/basket';
 import { cohortLabel } from '$lib/demand';
 
 /** An instance as the overview asks for it. */
@@ -8,6 +9,8 @@ export type OverviewInstance = {
 	programmeSemester?: number | null;
 	programme: { code: string; title: string };
 	module: { id: string; name: string; projectBased?: boolean };
+	/** The module's baskets in this cohort's programme; see `$lib/basket`. */
+	baskets?: readonly string[] | null;
 	parts: {
 		id: string;
 		kind: InstancePartKind;
@@ -49,6 +52,8 @@ export type OverviewModule = {
 	id: string;
 	name: string;
 	projectBased: boolean;
+	/** The basket the module sorts under with the order „nach Korb“, or null for none. */
+	basket: string | null;
 	cohorts: OverviewCohort[];
 };
 
@@ -67,11 +72,15 @@ export type OverviewProgramme = {
  * "nicht besetzt", which is a statement about the plan that is not true. The page says it is not
  * published instead, and this function is not called.
  *
- * Sorted the way somebody reads it: programmes by code, modules by name, cohorts by label.
+ * Sorted the way somebody reads it: programmes by code, modules by name, cohorts by label. With
+ * the order `basket` the modules of each programme sort by their first basket before the name,
+ * modules without a basket last — the overview is cut by programme already, so the order always
+ * has one programme's regulations to go by.
  */
 export function assignmentOverview(
 	instances: readonly OverviewInstance[],
-	assignments: readonly OverviewAssignment[]
+	assignments: readonly OverviewAssignment[],
+	order: CohortOrder = 'name'
 ): OverviewProgramme[] {
 	const holder = new Map(assignments.map((a) => [a.part.id, a.assignee.name]));
 	const programmes = new Map<string, OverviewProgramme>();
@@ -89,6 +98,7 @@ export function assignmentOverview(
 				id: instance.module.id,
 				name: instance.module.name,
 				projectBased: instance.module.projectBased ?? false,
+				basket: firstOf(instance.baskets),
 				cohorts: []
 			};
 			programme.modules.push(module);
@@ -110,7 +120,11 @@ export function assignmentOverview(
 
 	const out = [...programmes.values()].sort((a, b) => a.code.localeCompare(b.code));
 	for (const programme of out) {
-		programme.modules.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+		programme.modules.sort(
+			(a, b) =>
+				(order === 'basket' ? compareFirstBaskets(a.basket, b.basket) : 0) ||
+				a.name.localeCompare(b.name, 'de')
+		);
 		for (const module of programme.modules) {
 			module.cohorts.sort((a, b) => a.label.localeCompare(b.label, 'de', { numeric: true }));
 		}

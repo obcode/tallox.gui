@@ -1,6 +1,7 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
+import { compareFirstBaskets, firstOf, type CohortOrder } from '$lib/basket';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
 import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
 import { desiredHoursLabel, trackLimitLabel } from '$lib/wishes';
@@ -57,6 +58,8 @@ export type InstanceLike = {
 	cie?: boolean;
 	/** Which seminar the cohort is, for an umbrella module; see `withTopic` in `$lib/demand`. */
 	topic?: string | null;
+	/** The baskets the module sits in within this cohort's programme; see `$lib/basket`. */
+	baskets?: readonly string[] | null;
 	/**
 	 * The other study programmes' demands this cohort meets, where any are agreed.
 	 *
@@ -268,6 +271,8 @@ export type ModuleBlock = {
 	name: string;
 	/** A PBLV, sorted after everything else and marked so. */
 	projectBased: boolean;
+	/** The basket the block sorts under with the order „nach Korb“, or null for none. */
+	basket: string | null;
 	cohorts: CohortGroup[];
 };
 
@@ -282,8 +287,16 @@ export type ModuleBlock = {
  * Sorted here rather than left in whatever order the demand answered in, because the grouping
  * only works if the cohorts of a module are next to each other — and by name rather than by id,
  * because that is the order somebody reads down the first column looking for a module.
+ *
+ * With the order `basket` the blocks sort by their first basket before the name, blocks without a
+ * basket after those with one, and the PBLVs still last. Only meaningful within one programme —
+ * a basket belongs to one programme's regulations — which is why the page offers it only together
+ * with the grouping by programme; the block's basket is read off its first cohort.
  */
-export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
+export function moduleBlocks(
+	groups: readonly CohortGroup[],
+	order: CohortOrder = 'name'
+): ModuleBlock[] {
 	const blocks = new Map<string, ModuleBlock>();
 
 	for (const group of groups) {
@@ -292,6 +305,7 @@ export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
 			id: module.id,
 			name: module.name,
 			projectBased: module.projectBased ?? false,
+			basket: firstOf(group.instance.baskets),
 			cohorts: []
 		};
 		block.cohorts.push(group);
@@ -307,7 +321,10 @@ export function moduleBlocks(groups: readonly CohortGroup[]): ModuleBlock[] {
 	// The PBLVs last: the process gives them out after everything else, so that they are not
 	// snapped up as gap fillers, and the screen is read top to bottom.
 	return [...blocks.values()].sort(
-		(a, b) => Number(a.projectBased) - Number(b.projectBased) || a.name.localeCompare(b.name, 'de')
+		(a, b) =>
+			Number(a.projectBased) - Number(b.projectBased) ||
+			(order === 'basket' ? compareFirstBaskets(a.basket, b.basket) : 0) ||
+			a.name.localeCompare(b.name, 'de')
 	);
 }
 
@@ -328,7 +345,10 @@ export type ProgrammeSection = {
  * The sections run bachelor's, master's, then the programmes nobody has recorded a degree for —
  * the order the faculty reads its programmes in — and by code within each.
  */
-export function programmeSections(groups: readonly CohortGroup[]): ProgrammeSection[] {
+export function programmeSections(
+	groups: readonly CohortGroup[],
+	order: CohortOrder = 'name'
+): ProgrammeSection[] {
 	const byCode = new Map<
 		string,
 		{ programme: ProgrammeSection['programme']; groups: CohortGroup[] }
@@ -349,7 +369,7 @@ export function programmeSections(groups: readonly CohortGroup[]): ProgrammeSect
 				rank(a.programme.degree) - rank(b.programme.degree) ||
 				a.programme.code.localeCompare(b.programme.code, 'de')
 		)
-		.map((entry) => ({ programme: entry.programme, blocks: moduleBlocks(entry.groups) }));
+		.map((entry) => ({ programme: entry.programme, blocks: moduleBlocks(entry.groups, order) }));
 }
 
 /** Somebody who can be put on a part. */

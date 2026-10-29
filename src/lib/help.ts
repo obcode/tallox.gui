@@ -178,7 +178,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie weit ist meine Fachgruppe mit dem Besetzen?',
 		answer:
-			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe und Abschluss. Teile, die eine andere Fakultät hält, zählen nicht mit.',
+			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe, Abschluss, „nur CiE“ und Korb. Teile, die eine andere Fakultät hält, zählen nicht mit.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
@@ -192,7 +192,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie sehe ich bei der Zuteilung nur die Bachelor- oder nur die Mastermodule?',
 		answer:
-			'Über der Tabelle unter „Abschluss“ Bachelor oder Master wählen. Unter „Gruppiert nach“ lässt sich die Tabelle außerdem nach Studiengang ordnen: ein Modul, das zwei Studiengänge anbieten, steht dann bei beiden, jeweils mit deren Zügen. Beides bleibt beim Wechsel der Fachgruppe erhalten. Den Abschluss-Filter gibt es auch im Modulkatalog.',
+			'Über der Tabelle unter „Abschluss“ Bachelor oder Master wählen. Unter „Gruppiert nach“ lässt sich die Tabelle außerdem nach Studiengang ordnen: ein Modul, das zwei Studiengänge anbieten, steht dann bei beiden, jeweils mit deren Zügen. Beides bleibt beim Wechsel der Fachgruppe erhalten. Wer nach Korb filtern oder sortieren will, findet das unter „Korb“ und „Sortierung“ daneben. Den Abschluss-Filter gibt es auch im Modulkatalog.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/zuteilung', label: 'Zuteilung' },
@@ -341,9 +341,13 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie sehe ich nur die Module eines Korbs?',
 		answer:
-			'Studiengang wählen, dann über der Tabelle unter „Korb“ den Korb der Prüfungsordnung auswählen — in der Übersicht wie beim Bearbeiten. Ein Modul in zwei Körben erscheint in beiden. Unter „Sortierung“ ordnet „nach Korb“ die Module innerhalb jedes Fachsemesters nach ihrem Korb statt nach dem Namen; ein Modul in zwei Körben steht dann einmal, beim ersten. Die Auswahl steht in der Adresse, ein Link darauf lässt sich weitergeben.',
+			'Auf der Bedarfsseite: Studiengang wählen, dann über der Tabelle unter „Korb“ den Korb der Prüfungsordnung auswählen — in der Übersicht wie beim Bearbeiten. Ein Modul in zwei Körben erscheint in beiden. Unter „Sortierung“ ordnet „nach Korb“ die Module innerhalb jedes Fachsemesters nach ihrem Korb statt nach dem Namen; ein Modul in zwei Körben steht dann einmal, beim ersten. In der Zuteilung und in ihrer Übersicht geht das genauso; dort stehen Züge mehrerer Studiengänge nebeneinander, deshalb nennt die Auswahl den Studiengang mit („IG · …“) und zeigt nur dessen Züge. Die Sortierung „nach Korb“ gibt es in der Zuteilung, sobald unter „Gruppiert nach“ „Studiengang“ gewählt ist; PBLVs bleiben dabei am Ende. Die Auswahl steht in der Adresse, ein Link darauf lässt sich weitergeben.',
 		who: [],
-		where: [{ href: '/bedarf', label: 'Bedarf' }]
+		where: [
+			{ href: '/bedarf', label: 'Bedarf' },
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/zuteilung/uebersicht', label: 'Zuteilung, Übersicht' }
+		]
 	},
 	{
 		question: 'Kann ich über die Schnittstelle planen, etwa mit einem KI-Assistenten?',

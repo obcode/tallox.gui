@@ -100,3 +100,74 @@ test.describe('the degree filter on the assignment screen', () => {
 		await expect(save).toHaveAttribute('action', new RegExp(`fachgruppe=${DEGREES.subjectGroup}`));
 	});
 });
+
+/**
+ * The basket filter and order on the assignment screen. A basket belongs to one programme's
+ * regulations, so the same basket name in two programmes is two entries, each keeping only its
+ * programme's cohort. Read-only as well.
+ */
+test.describe('the basket filter on the assignment screen', () => {
+	const korb = (page: Page) => page.getByRole('combobox', { name: 'Korb', exact: true });
+	const order = (page: Page) => page.getByRole('combobox', { name: 'Sortierung', exact: true });
+
+	test('a basket of one programme keeps that programme’s cohort only', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, BASE);
+
+		await expect(korb(page).getByRole('option')).toHaveText([
+			'alle',
+			`${DEGREES.bachelor} · ${DEGREES.basket}`,
+			`${DEGREES.unrecorded} · ${DEGREES.basket}`
+		]);
+		// The order only means something inside one programme, so it waits for the grouping.
+		await expect(order(page)).toHaveCount(0);
+
+		await korb(page).selectOption({ label: `${DEGREES.bachelor} · ${DEGREES.basket}` });
+		await expect(page).toHaveURL(new RegExp(`korb=${DEGREES.bachelor}%3A`));
+		await expect(cohort(page, DEGREES.bachelor)).toBeVisible();
+		await expect(cohort(page, DEGREES.unrecorded)).toHaveCount(0);
+		await expect(cohort(page, DEGREES.master)).toHaveCount(0);
+		await checkA11y(page);
+
+		// The other filters carry the basket along.
+		await page
+			.getByRole('combobox', { name: 'Gruppiert nach', exact: true })
+			.selectOption('studiengang');
+		await expect(page).toHaveURL(/nach=studiengang/);
+		await expect(page).toHaveURL(/korb=/);
+		await expect(cohort(page, DEGREES.bachelor)).toBeVisible();
+		await expect(cohort(page, DEGREES.unrecorded)).toHaveCount(0);
+
+		// Grouped by programme, the order is offered and goes into the address.
+		await order(page).selectOption('korb');
+		await expect(page).toHaveURL(/sortierung=korb/);
+
+		// „alle“ and „nach Name“ leave a clean address behind.
+		await korb(page).selectOption('');
+		await expect(page).not.toHaveURL(/korb=/);
+		await order(page).selectOption('');
+		await expect(page).not.toHaveURL(/sortierung=/);
+		for (const code of [DEGREES.bachelor, DEGREES.master, DEGREES.unrecorded]) {
+			await expect(cohort(page, code)).toBeVisible();
+		}
+
+		// Usable at the narrowest width.
+		await page.setViewportSize({ width: 320, height: 800 });
+		const box = await korb(page).boundingBox();
+		expect(box).not.toBeNull();
+		expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+	});
+
+	test('a basket with nothing on this tab says so', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, `${BASE}&korb=${encodeURIComponent('E2M:Nirgends')}`);
+
+		await expect(korb(page)).toHaveValue('E2M:Nirgends');
+		await expect(
+			page.getByText('Mit „alle“ bei „Korb“ stehen die übrigen wieder da.')
+		).toBeVisible();
+	});
+});
