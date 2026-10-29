@@ -1,6 +1,12 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
-import { formatChanges, previousComparableSemester, topicChanges } from '$lib/demand';
+import {
+	formatChanges,
+	previousComparableSemester,
+	topicChanges,
+	withoutEmptyParams,
+	type DemandOrder
+} from '$lib/demand';
 import { graphql } from '$lib/gql/__generated__';
 import type {
 	CourseType,
@@ -518,6 +524,14 @@ function wholeNumberOrZero(raw: FormDataEntryValue | null): number {
 }
 
 export const load: PageServerLoad = async ({ url, parent }) => {
+	// A basket of „alle“ and the order „nach Name“ are the absence of a choice, and the address
+	// says so by not naming them: the basket form sends its selects empty, and a link sent on
+	// should read the same as one typed. Before anything is loaded, so the redirect costs nothing.
+	const clean = withoutEmptyParams(url.searchParams, ['korb', 'sortierung']);
+	if (clean !== null) {
+		const query = clean.toString();
+		redirect(303, query === '' ? url.pathname : `${url.pathname}?${query}`);
+	}
 	const semester = url.searchParams.get('semester') ?? '';
 	const programme = url.searchParams.get('studiengang') ?? '';
 	const search = url.searchParams.get('q') ?? '';
@@ -532,6 +546,11 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 	const term = bothTerms ? '' : semesterTerm(semester);
 	const onlyEstimated = url.searchParams.get('offen') === '1';
 	const onlyPlanned = url.searchParams.get('geplant') === '1';
+	// The basket filter and order, in the address like the other filters so a link to one
+	// programme's basket can be sent on. Applied on the page to rows already loaded, as with
+	// `offen` and `geplant`: the baskets are catalogue data and come with every row.
+	const basket = (url.searchParams.get('korb') ?? '').trim();
+	const order: DemandOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
 	// The edit mode, as a parameter rather than as browser state: two views under one address
 	// cannot be sent to a colleague, and the back button would leave the wrong one showing.
 	const editing = url.searchParams.get('bearbeiten') === '1';
@@ -671,6 +690,8 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 			duty,
 			onlyEstimated,
 			onlyPlanned,
+			basket,
+			order,
 			bothTerms,
 			editing,
 			foreignSearch,

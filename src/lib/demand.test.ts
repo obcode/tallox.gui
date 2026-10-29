@@ -35,6 +35,12 @@ import {
 	topicChanges,
 	withTopic,
 	MAX_TRACKS,
+	arrangeByBasket,
+	basketOptions,
+	firstBasket,
+	inBasket,
+	sortByBasket,
+	withoutEmptyParams,
 	type DemandRow,
 	type InstanceLike,
 	type ModuleLike,
@@ -1157,5 +1163,80 @@ describe('formatBadges', () => {
 			'Block',
 			'Englisch'
 		]);
+	});
+});
+
+describe('baskets', () => {
+	const row = (
+		name: string,
+		baskets: string[] | null,
+		programmeSemester = 1,
+		teachingHours = 2
+	) => ({
+		name,
+		programmeSemester,
+		teachingHours,
+		module: { baskets }
+	});
+	const rows = [
+		row('Alpha', ['Korb B']),
+		row('Beta', null),
+		row('Gamma', ['Korb C', 'Korb A']),
+		row('Delta', ['Korb B']),
+		row('Epsilon', ['Pflichtmodule'], 2, 5)
+	];
+	const names = (list: readonly { name: string }[]) => list.map((r) => r.name);
+
+	it('offers every basket once, in reading order', () => {
+		expect(basketOptions(rows)).toEqual(['Korb A', 'Korb B', 'Korb C', 'Pflichtmodule']);
+		expect(basketOptions([row('x', null), row('y', [])])).toEqual([]);
+	});
+
+	it('matches a module in two baskets under both, and everything under no choice', () => {
+		expect(inBasket(rows[2], 'Korb A')).toBe(true);
+		expect(inBasket(rows[2], 'Korb C')).toBe(true);
+		expect(inBasket(rows[2], 'Korb B')).toBe(false);
+		expect(inBasket(rows[1], 'Korb A')).toBe(false);
+		expect(inBasket(rows[1], '')).toBe(true);
+	});
+
+	it('sorts a module under its first basket, rows without one last, and keeps the order inside', () => {
+		expect(firstBasket(rows[2])).toBe('Korb A');
+		expect(firstBasket(rows[1])).toBeNull();
+		expect(names(sortByBasket(rows))).toEqual(['Gamma', 'Alpha', 'Delta', 'Epsilon', 'Beta']);
+	});
+
+	it('filters, and sorts only when asked', () => {
+		expect(names(arrangeByBasket(rows, 'Korb B', 'name'))).toEqual(['Alpha', 'Delta']);
+		expect(names(arrangeByBasket(rows, '', 'name'))).toEqual(names(rows));
+		expect(names(arrangeByBasket(rows, 'Korb A', 'basket'))).toEqual(['Gamma']);
+	});
+
+	it('leaves the year groups and their totals as they are when sorting', () => {
+		const plain = byYear(rows as unknown as DemandRow[]);
+		const sorted = byYear(sortByBasket(rows) as unknown as DemandRow[]);
+		expect(sorted.map((g) => [g.programmeSemester, g.teachingHours, g.rows.length])).toEqual(
+			plain.map((g) => [g.programmeSemester, g.teachingHours, g.rows.length])
+		);
+	});
+});
+
+describe('withoutEmptyParams', () => {
+	it('drops the named parameters that are present but empty, and keeps the rest', () => {
+		const params = new URLSearchParams('semester=2029-WS&korb=&sortierung=&art=');
+		expect(withoutEmptyParams(params, ['korb', 'sortierung'])?.toString()).toBe(
+			'semester=2029-WS&art='
+		);
+	});
+
+	it('answers null when there is nothing to drop', () => {
+		expect(
+			withoutEmptyParams(new URLSearchParams('korb=Korb+A&sortierung=korb'), ['korb', 'sortierung'])
+		).toBeNull();
+		expect(withoutEmptyParams(new URLSearchParams('semester=2029-WS'), ['korb'])).toBeNull();
+	});
+
+	it('treats blanks as empty', () => {
+		expect(withoutEmptyParams(new URLSearchParams('korb=+'), ['korb'])?.toString()).toBe('');
 	});
 });

@@ -11,6 +11,7 @@
 	import {
 		borrowedFromLabel,
 		alsoPlannedLabel,
+		arrangeByBasket,
 		coverageLabel,
 		coversLabel,
 		formatBadges,
@@ -24,6 +25,7 @@
 		splitDrift,
 		splitSummary,
 		storedTrackHours,
+		type DemandOrder,
 		type ModuleRow,
 		type ReadInstanceLike
 	} from '$lib/demand';
@@ -50,21 +52,30 @@
 	 */
 	let {
 		instances,
-		programme = ''
+		programme = '',
+		basket = '',
+		order = 'name'
 	}: {
 		instances: readonly ReadInstanceLike<ModuleShape>[];
 		/** The chosen programme, or empty for the view across all of them. */
 		programme?: string;
+		/** The chosen basket, or empty for all; only meaningful with a programme. */
+		basket?: string;
+		order?: DemandOrder;
 	} = $props();
 
 	/** The module fields this table reads. Taken from the query, not written out twice. */
 	type ModuleShape = ReadInstanceLike['module'] & {
 		dutyStatus?: DutyStatus | null;
+		baskets?: readonly string[] | null;
 		source?: ModuleSource | null;
 		kind?: ModuleKind | null;
 	};
 
-	const rows = $derived(moduleRows(instances));
+	// The basket filter and order apply with a programme only, as the page offers them.
+	const rows = $derived(
+		programme === '' ? moduleRows(instances) : arrangeByBasket(moduleRows(instances), basket, order)
+	);
 
 	const byId = $derived(new Map(instances.map((i) => [i.id, i] as const)));
 

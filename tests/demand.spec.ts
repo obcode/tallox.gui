@@ -376,9 +376,13 @@ test.describe('the demand table', () => {
 
 			// Any save sends every row. This one only adds, so it must go through without asking.
 			await tick(/E2E Modul zum Bestätigen/).check();
-			await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+			// The report says „0 zurückgezogen“ for five seconds, exactly as long as a negative
+			// expectation waits, so the count is read from the report rather than raced against it.
+			await expect(page.getByText('1 angelegt, 0 geändert, 0 zurückgezogen')).toBeVisible({
+				timeout: 15_000
+			});
 			await expect(page.getByRole('heading', { name: /Bitte bestätigen/ })).toHaveCount(0);
-			await expect(page.getByText(/zurückgezogen/)).toHaveCount(0);
+			await expect(page.getByText(/[1-9]\d* zurückgezogen/)).toHaveCount(0);
 			await expect(tick(/E2E Modul zum Ändern/)).toBeChecked();
 		} finally {
 			// Back to where the test before left the table, for the ones that follow.
@@ -667,6 +671,50 @@ test.describe('the demand table', () => {
 		await gotoRendered(page, `${DEMAND_URL}&art=MIXED`);
 
 		await expect(page.getByLabel('Art', { exact: true })).toHaveValue('MIXED');
+	});
+
+	// A programme whose modules all sit in one Fachsemester is structured by its baskets alone, so
+	// the page filters and sorts by them — the choice in the address like every other filter.
+	test('filters and sorts by basket, and the choice survives the other filters', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		// Both terms, so the elective of the other term is in the list as well.
+		await gotoRendered(page, `${DEMAND_URL}&turnus=alle`);
+
+		const basket = page.getByLabel('Korb', { exact: true });
+		await basket.selectOption('E2E WPF-Korb');
+		await expect(page).toHaveURL(/korb=E2E\+WPF-Korb/);
+		await expect(page).toHaveURL(/turnus=alle/);
+		await expect(page).toHaveURL(/bearbeiten=1/);
+		await expect(page.getByRole('row', { name: /E2E Modul ohne Aufteilung/ })).toBeVisible();
+		await expect(page.getByRole('row', { name: /E2E Modul mit Aufteilung/ })).toHaveCount(0);
+		await checkA11y(page);
+
+		// The search row is a form of its own and carries the basket along.
+		await page.getByRole('button', { name: 'Anzeigen' }).click();
+		await expect(page).toHaveURL(/korb=E2E\+WPF-Korb/);
+		await expect(page.getByLabel('Korb', { exact: true })).toHaveValue('E2E WPF-Korb');
+
+		// Every basket again, ordered by basket: in the second Fachsemester the compulsory module
+		// („E2E Pflichtkorb“) now comes before the elective, where by name it came after.
+		await page.getByLabel('Korb', { exact: true }).selectOption('');
+		await expect(page).not.toHaveURL(/korb=/);
+		const pair = page
+			.getByRole('row')
+			.filter({ hasText: /E2E Modul (ohne Aufteilung|zum Ändern)/ });
+		await expect(pair.first()).toContainText('E2E Modul ohne Aufteilung');
+		await page.getByLabel('Sortierung', { exact: true }).selectOption('korb');
+		await expect(page).toHaveURL(/sortierung=korb/);
+		await expect(pair.first()).toContainText('E2E Modul zum Ändern');
+		await expect(pair.last()).toContainText('E2E Modul ohne Aufteilung');
+
+		// Usable at the narrowest width as well.
+		await page.setViewportSize({ width: 320, height: 800 });
+		const box = await page.getByLabel('Korb', { exact: true }).boundingBox();
+		expect(box).not.toBeNull();
+		expect(box!.x + box!.width).toBeLessThanOrEqual(320);
 	});
 
 	// The cohort year, said where the course is entered rather than looked for afterwards.

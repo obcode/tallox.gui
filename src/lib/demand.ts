@@ -1253,3 +1253,93 @@ export function formatChanges(form: FormData): FormatChange[] {
 	}
 	return out;
 }
+
+/** Anything that knows the baskets its module sits in for the chosen programme. */
+export type BasketLike = { module: { baskets?: readonly string[] | null } };
+
+/** The basket order the faculty reads, and the one `controlling.ts#basketGroups` uses as well. */
+function basketCompare(a: string, b: string): number {
+	return a.localeCompare(b, 'de');
+}
+
+/**
+ * The baskets to offer in the "Korb" selection: every basket a row sits in, once, in order.
+ *
+ * Read off the rows rather than asked of the backend, because the question is "which baskets does
+ * this list have", and a basket nothing on the screen sits in would filter to an empty table.
+ * Compulsory modules count too: their basket ("Pflichtmodule" and the like) is a real grouping of
+ * the regulations, even though the line under the module name leaves it out.
+ */
+export function basketOptions(rows: readonly BasketLike[]): string[] {
+	const seen = new Set<string>();
+	for (const row of rows) for (const basket of row.module.baskets ?? []) seen.add(basket);
+	return [...seen].sort(basketCompare);
+}
+
+/**
+ * Whether a row belongs under the chosen basket; the empty choice means every basket.
+ *
+ * A module in two baskets matches both: somebody looking at one basket has to find every module
+ * that can fill it.
+ */
+export function inBasket(row: BasketLike, basket: string): boolean {
+	return basket === '' || (row.module.baskets ?? []).includes(basket);
+}
+
+/** The basket a row is sorted under: the first of its baskets in reading order. */
+export function firstBasket(row: BasketLike): string | null {
+	const baskets = [...(row.module.baskets ?? [])].sort(basketCompare);
+	return baskets[0] ?? null;
+}
+
+/**
+ * The rows ordered by basket, rows without one last.
+ *
+ * Stable, and comparing nothing but the basket: within a basket the rows keep the order the page
+ * gave them (by name), and the year grouping that follows keeps its years and its totals, because
+ * it only regroups what it is given. A module in two baskets is sorted once, under its first —
+ * two copies of a row with input fields in it would be two places to change one thing.
+ */
+export function sortByBasket<T extends BasketLike>(rows: readonly T[]): T[] {
+	return [...rows].sort((a, b) => {
+		const x = firstBasket(a);
+		const y = firstBasket(b);
+		if (x === y) return 0;
+		if (x === null) return 1;
+		if (y === null) return -1;
+		return basketCompare(x, y);
+	});
+}
+
+/** The order the "Sortierung" switch offers. */
+export type DemandOrder = 'name' | 'basket';
+
+/** The basket filter and order, applied the same way in both views of the demand page. */
+export function arrangeByBasket<T extends BasketLike>(
+	rows: readonly T[],
+	basket: string,
+	order: DemandOrder
+): T[] {
+	const kept = rows.filter((row) => inBasket(row, basket));
+	return order === 'basket' ? sortByBasket(kept) : kept;
+}
+
+/**
+ * The address without the named parameters that are present but empty, or `null` when none is.
+ *
+ * A GET form sends every select it holds, so choosing „alle“ or „nach Name“ leaves `korb=` and
+ * `sortierung=` behind. They mean the same as no parameter, and a link sent on should not carry
+ * them: the load redirects to the clean address instead.
+ */
+export function withoutEmptyParams(
+	params: URLSearchParams,
+	names: readonly string[]
+): URLSearchParams | null {
+	const empty = names.filter(
+		(name) => params.has(name) && params.getAll(name).every((v) => v.trim() === '')
+	);
+	if (empty.length === 0) return null;
+	const clean = new URLSearchParams(params);
+	for (const name of empty) clean.delete(name);
+	return clean;
+}
