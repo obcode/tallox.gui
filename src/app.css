@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 
 /*
+ * The knowledge base is prose, not markup: it quotes class names like `[tbody:has(...)]:table-row`,
+ * and Tailwind would otherwise turn such a quote into an invalid rule in every build.
+ */
+@source not '../.claude';
+
+/*
  * The curated theme list. MUST match THEMES in src/lib/themes.ts. Not `all`: daisyUI would
  * otherwise put more than 30 themes into the bundle, none of which is ever selected.
  *
