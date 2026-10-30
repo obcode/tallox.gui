@@ -8,7 +8,9 @@ import type { Actions, PageServerLoad } from './$types';
 
 /**
  * The pool of one subject group: who can teach its modules, who would like to, which modules
- * nobody can teach, and which members are below the minimum.
+ * nobody can teach, and how many of its compulsory modules each member can teach. Not whether they
+ * meet the minimum: that is over all of a person's groups, and the backend counts it for nobody but
+ * themselves.
  *
  * For the lead of the group and the dean's office. The backend decides both halves: the rows come
  * through the competence filter, and the two counts are refused (`COMPETENCE_GROUP_REFUSED`) to
@@ -79,7 +81,6 @@ const GroupCountsDocument = graphql(`
 				name
 			}
 			canTeachCompulsory
-			minimum
 		}
 		modulesWithoutCompetence(subjectGroup: $group) {
 			id

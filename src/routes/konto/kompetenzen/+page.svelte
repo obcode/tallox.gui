@@ -11,6 +11,7 @@
 		COMPETENCE_LEVEL_LABELS,
 		belowMinimum,
 		competenceByModule,
+		groupCountHint,
 		minimumHint,
 		outsideStatements,
 		savedHint,
@@ -91,8 +92,9 @@
 		</dl>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Angeboten werden die Module Deiner Fachgruppen, die Pflichtfächer zuerst. Die Fakultät bittet
-			um mindestens drei Pflichtfächer je Fachgruppe — nicht nur die Rosinen. Wer sich ein neues
-			Gebiet erschließt, tritt unter
+			um mindestens drei Pflichtfächer — nicht nur die Rosinen —, über alle Deine Fachgruppen
+			zusammen: zwei in der einen und eins in der anderen reichen. Wer sich ein neues Gebiet
+			erschließt, tritt unter
 			<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a> der Fachgruppe bei.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
@@ -119,6 +121,15 @@
 			</p>
 		</div>
 	{:else}
+		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+			<p class="text-base-content/90 text-sm">
+				{#if belowMinimum(data.total)}
+					<span class="badge badge-warning badge-sm align-middle">Noch zu wenige</span>
+				{/if}
+				{minimumHint(data.total)}
+			</p>
+		</div>
+
 		<form
 			method="POST"
 			action="?/save"
@@ -154,12 +165,7 @@
 						{group.name}
 					</h2>
 					{#if status}
-						<p class="text-base-content/80 text-sm">
-							{#if belowMinimum(status)}
-								<span class="badge badge-warning badge-sm align-middle">Noch zu wenige</span>
-							{/if}
-							{minimumHint(status)}
-						</p>
+						<p class="text-base-content/80 text-sm">{groupCountHint(status.canTeachCompulsory)}</p>
 					{/if}
 
 					{#if group.modules.length === 0}

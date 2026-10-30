@@ -177,9 +177,12 @@ Frage: „Sollen wir für normale Dozierende einen Onboarding-Assistenten bauen?
   Fachgruppe) und **„Für <Semester>“** (Wunsch-SWS). Eine erledigte Gruppe verschwindet. Die
   Wunsch-SWS kommen also mit jedem neuen Planungssemester zurück, aber nur in
   `DEMAND_PLANNING`/`WISHES` und solange nicht eingefroren.
-- **Minimum gedeckelt:** das Backend meldet flach 3 (`policy.MinCompulsoryCompetences`). Eine
-  Fachgruppe mit weniger Pflichtfächern ließe den Punkt sonst nie zu; `reachableMinimum` nimmt
-  das Kleinere. Die Kompetenzseite selbst zeigt weiter „0 von mindestens 3“.
+- **Minimum insgesamt, nicht je Fachgruppe** (seit 2026-10-30, Meldung aus dem Kollegium): die
+  Karte liest `myCompetenceTotal` — Zahl über alle eigenen Fachgruppen, `minimum` schon im Backend
+  auf die vorhandenen Pflichtmodule gedeckelt (vorher `reachableMinimum` hier, je Gruppe). Die
+  Kompetenzseite zeigt die Gesamtzahl oben und je Gruppe nur „Davon in dieser Fachgruppe: n“; die
+  Leitungsseite nur die Zahl ihrer Gruppe, ohne Warnung — ob jemand die drei erreicht, zählt Zeilen
+  anderer Gruppen (Olivers Entscheidung, siehe `go/competences.md`).
 - Nur mit `LECTURER` in den effektiven Rollen. Eigene Query `OwnSetup` im `+page.server.ts`,
   schlägt sie fehl, fällt nur die Karte weg.
 - Tests: `setup.test.ts`; E2E `setup.spec.ts` mit der neuen Persona **Elf** (`newcomer`, eigene

@@ -124,7 +124,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Die eigenen Kompetenzen angeben',
 				who: [],
 				where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
-				text: 'Welche Module Deiner Fachgruppen Du halten kannst, auch wenn es kurzfristig brennt, und für welche Du Dich interessierst, Dich aber erst einarbeiten müsstest. Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe. Einmal angeben, nicht jedes Semester. Das sehen nur Du, die zuständigen Leitungen und das Dekanat; die Fachgruppenleitung findet den Pool bei der Zuteilung. Was davon bei Dir noch fehlt, zeigt die Startseite unter „Dein Stand“; hat eine Fachgruppe weniger als drei Pflichtfächer, zählen dort alle.'
+				text: 'Welche Module Deiner Fachgruppen Du halten kannst, auch wenn es kurzfristig brennt, und für welche Du Dich interessierst, Dich aber erst einarbeiten müsstest. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen, nicht je Fachgruppe. Einmal angeben, nicht jedes Semester. Das sehen nur Du, die zuständigen Leitungen und das Dekanat; die Fachgruppenleitung findet den Pool bei der Zuteilung. Was davon bei Dir noch fehlt, zeigt die Startseite unter „Dein Stand“; haben Deine Fachgruppen zusammen weniger als drei Pflichtfächer, zählen dort alle.'
 			}
 		]
 	},

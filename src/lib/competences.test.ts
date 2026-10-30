@@ -10,6 +10,8 @@ import {
 	holderLabel,
 	isCompetenceChoice,
 	isTeacherRow,
+	groupCountHint,
+	membersByGroupCount,
 	minimumHint,
 	outsideStatements,
 	poolsByModule,
@@ -67,10 +69,28 @@ describe('the minimum', () => {
 		expect(belowMinimum({ canTeachCompulsory: 2, minimum: 3 })).toBe(true);
 		expect(belowMinimum({ canTeachCompulsory: 3, minimum: 3 })).toBe(false);
 		expect(minimumHint({ canTeachCompulsory: 2, minimum: 3 })).toBe(
-			'2 von mindestens 3 Pflichtfächern als „kann ich halten“ angegeben.'
+			'Insgesamt 2 von mindestens 3 Pflichtfächern als „kann ich halten“ angegeben, über alle Deine Fachgruppen zusammen.'
 		);
 		expect(minimumHint({ canTeachCompulsory: 1, minimum: 3 })).toContain('1 von mindestens 3');
 		expect(minimumHint({ canTeachCompulsory: 4, minimum: 3 })).toContain('sind erreicht');
+	});
+
+	// The backend caps the minimum at the compulsory modules one's groups have.
+	it('reads right when the cap is one or none', () => {
+		expect(minimumHint({ canTeachCompulsory: 0, minimum: 1 })).toContain(
+			'0 von mindestens 1 Pflichtfach als'
+		);
+		expect(minimumHint({ canTeachCompulsory: 1, minimum: 1 })).toContain(
+			'das erbetene eine ist erreicht'
+		);
+		expect(minimumHint({ canTeachCompulsory: 0, minimum: 0 })).toContain('keine Pflichtfächer');
+	});
+
+	// Reported on 2026-10-30: per group, a member of two groups was asked for six.
+	it('is over all groups, so a group line names no minimum of its own', () => {
+		expect(groupCountHint(2)).toBe('Davon in dieser Fachgruppe: 2 Pflichtfächer.');
+		expect(groupCountHint(1)).toBe('Davon in dieser Fachgruppe: 1 Pflichtfach.');
+		expect(groupCountHint(0)).not.toMatch(/mindestens|von \d/);
 	});
 
 	it('never reads like a refusal', () => {
@@ -78,6 +98,18 @@ describe('the minimum', () => {
 			const hint = minimumHint({ canTeachCompulsory: have, minimum: 3 });
 			expect(hint).not.toMatch(/nicht (möglich|erlaubt|gespeichert)|muss|abgelehnt/i);
 		}
+	});
+});
+
+describe('membersByGroupCount', () => {
+	it('puts the fewest first, then by name', () => {
+		const m = (name: string, canTeachCompulsory: number) => ({
+			member: { name },
+			canTeachCompulsory
+		});
+		expect(
+			membersByGroupCount([m('Zwei', 2), m('Eins', 0), m('Drei', 0)]).map((x) => x.member.name)
+		).toEqual(['Drei', 'Eins', 'Zwei']);
 	});
 });
 
