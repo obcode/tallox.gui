@@ -271,7 +271,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, welche Module ich halten kann?',
 		answer:
-			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
+			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen: zwei in der einen und eins in der anderen reichen. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
 		who: [],
 		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
 		stage: 'ONCE'

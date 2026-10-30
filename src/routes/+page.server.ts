@@ -41,7 +41,7 @@ const StartOverviewDocument = graphql(`
 /**
  * What I have stated about myself, for "Dein Stand" (`$lib/setup.ts`).
  *
- * Only own rows: membership, the competence minimum per own group, and whether I have stated my
+ * Only own rows: membership, the own competence count over all groups, and whether I have stated my
  * hours. The hours of every semester rather than the planning semester's, so one round trip
  * answers both — there are a handful per person.
  */
@@ -55,14 +55,8 @@ const OwnSetupDocument = graphql(`
 		mySubjectGroups {
 			id
 			name
-			modules {
-				compulsory
-			}
 		}
-		myCompetenceStatus {
-			subjectGroup {
-				id
-			}
+		myCompetenceTotal {
 			canTeachCompulsory
 			minimum
 		}
@@ -91,7 +85,7 @@ async function loadSetup() {
 		const planning = data.planningSemester;
 		return {
 			subjectGroups: data.mySubjectGroups,
-			competenceStatus: data.myCompetenceStatus,
+			competenceTotal: data.myCompetenceTotal,
 			semester: planning
 				? {
 						code: planning.code,

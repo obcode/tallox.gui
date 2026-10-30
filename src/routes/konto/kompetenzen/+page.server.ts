@@ -46,6 +46,9 @@ const OwnCompetencesDocument = graphql(`
 				id
 			}
 			canTeachCompulsory
+		}
+		myCompetenceTotal {
+			canTeachCompulsory
 			minimum
 		}
 	}
@@ -85,7 +88,8 @@ export const load: PageServerLoad = async () => {
 		return {
 			groups: data.mySubjectGroups,
 			mine: data.myCompetences,
-			status: data.myCompetenceStatus
+			status: data.myCompetenceStatus,
+			total: data.myCompetenceTotal
 		};
 	} catch (err) {
 		// This page needs no role; a refusal here is "no account", which the root layout renders.

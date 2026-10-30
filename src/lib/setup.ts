@@ -1,6 +1,6 @@
 import type { Phase } from '$lib/gql/__generated__/graphql';
 import type { GuideLink } from '$lib/guide';
-import { belowMinimum } from '$lib/competences';
+import { belowMinimum, type CompetenceTotalLike } from '$lib/competences';
 import { semesterName } from '$lib/semester';
 
 /**
@@ -36,22 +36,18 @@ export type SetupCard =
 	/** Nothing open: one line instead of an empty list, so the card is still there to find. */
 	| { complete: true; summary: string; where: readonly GuideLink[] };
 
-/** A subject group I am in, with whether each of its modules is compulsory. */
-export type SetupSubjectGroup = {
-	id: string;
-	name: string;
-	modules: readonly { compulsory: boolean }[];
-};
+/** A subject group I am in. */
+export type SetupSubjectGroup = { id: string; name: string };
 
 export type SetupInput = {
 	/** The effective roles. The card is a lecturer's; a lead or the dean's office holds it too. */
 	roles: readonly string[];
 	subjectGroups: readonly SetupSubjectGroup[];
-	competenceStatus: readonly {
-		subjectGroup: { id: string };
-		canTeachCompulsory: number;
-		minimum: number;
-	}[];
+	/**
+	 * My count over all my subject groups and the minimum, which the backend already caps at the
+	 * compulsory modules my groups have — so a group of electives does not leave the item open.
+	 */
+	competenceTotal: CompetenceTotalLike;
 	/** The planning semester and whether I have stated my hours for it; null while none is named. */
 	semester: { code: string; phase: Phase; frozen: boolean; stated: boolean } | null;
 };
@@ -63,30 +59,10 @@ export type SetupInput = {
  */
 const DESIRED_HOURS_PHASES: readonly Phase[] = ['DEMAND_PLANNING', 'WISHES'];
 
-/**
- * How many compulsory modules a group can ask of me: the faculty's minimum, or fewer when the group
- * has fewer. The backend reports the flat minimum; a group of electives would otherwise leave the
- * item open for good.
- */
-export function reachableMinimum(group: SetupSubjectGroup, minimum: number): number {
-	return Math.min(minimum, group.modules.filter((m) => m.compulsory).length);
-}
-
-/** The groups below the minimum, as "Softwarefächer: 1 von 3". */
-function competenceGaps(input: SetupInput): string[] {
-	return input.subjectGroups.flatMap((group) => {
-		const status = input.competenceStatus.find((s) => s.subjectGroup.id === group.id);
-		const minimum = reachableMinimum(group, status?.minimum ?? 0);
-		const have = status?.canTeachCompulsory ?? 0;
-		return belowMinimum({ canTeachCompulsory: have, minimum })
-			? [`${group.name}: ${have} von ${minimum}`]
-			: [];
-	});
-}
-
 function onceItems(input: SetupInput): SetupItem[] {
 	const groups = input.subjectGroups.length;
-	const gaps = competenceGaps(input);
+	const total = input.competenceTotal;
+	const below = belowMinimum(total);
 
 	return [
 		{
@@ -102,13 +78,13 @@ function onceItems(input: SetupInput): SetupItem[] {
 		{
 			key: 'COMPETENCES',
 			title: 'Kompetenzen angeben',
-			done: groups > 0 && gaps.length === 0,
+			done: groups > 0 && !below,
 			text:
 				groups === 0
 					? 'Geht, sobald Du Deine Fachgruppen angegeben hast.'
-					: gaps.length > 0
-						? `Die Fakultät bittet um mindestens drei Pflichtfächer je Fachgruppe als „kann ich halten“. Noch offen: ${gaps.join(', ')}.`
-						: 'In jeder Deiner Fachgruppen sind genug Pflichtfächer angegeben.',
+					: below
+						? `Die Fakultät bittet um mindestens drei Pflichtfächer als „kann ich halten“, über alle Deine Fachgruppen zusammen. Bisher ${total.canTeachCompulsory} von ${total.minimum}.`
+						: 'Genug Pflichtfächer angegeben.',
 			where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }]
 		}
 	];

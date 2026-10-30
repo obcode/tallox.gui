@@ -5,8 +5,8 @@
 	import {
 		COMPETENCE_LEVELS,
 		COMPETENCE_LEVEL_OTHERS,
-		belowMinimum,
 		holderLabel,
+		membersByGroupCount,
 		isTeacherRow,
 		poolsByModule,
 		sortModules
@@ -26,7 +26,7 @@
 	const modules = $derived(
 		sortRows(sortModules(data.group?.modules ?? []), moduleSort, { module: (m) => m.name })
 	);
-	const below = $derived(data.members.filter(belowMinimum));
+	const members = $derived(membersByGroupCount(data.members));
 	const groups = $derived([...data.groups].sort((a, b) => a.name.localeCompare(b.name, 'de')));
 </script>
 
@@ -35,8 +35,8 @@
 		<h1 class="text-2xl font-semibold">Kompetenzen einer Fachgruppe</h1>
 		<p class="text-base-content/80 max-w-3xl text-sm">
 			Wer die Module der Fachgruppe halten kann, wer sich dafür interessiert und sich erst
-			einarbeiten müsste, welche Module niemand abdeckt — und wer noch unter den erbetenen drei
-			Pflichtfächern liegt. Die Angaben machen die Kolleginnen und Kollegen selbst unter <a
+			einarbeiten müsste, welche Module niemand abdeckt — und wie viele Pflichtfächer der Fachgruppe
+			jedes Mitglied angegeben hat. Die Angaben machen die Kolleginnen und Kollegen selbst unter <a
 				class="link"
 				href={resolve('/konto/kompetenzen')}>Meine Kompetenzen</a
 			>; für Lehrende ohne Konto trägst Du sie hier ein.
@@ -186,21 +186,23 @@
 
 				<section
 					class="border-base-300 bg-base-100 flex flex-col gap-2 rounded-lg border p-4"
-					aria-labelledby="below"
+					aria-labelledby="member-counts"
 				>
-					<h2 id="below" class="text-lg font-semibold">Unter den erbetenen Pflichtfächern</h2>
+					<h2 id="member-counts" class="text-lg font-semibold">Pflichtfächer je Mitglied</h2>
 					<p class="text-base-content/80 text-sm">
-						Mitglieder der Fachgruppe mit weniger als {data.members[0]?.minimum ?? 3} Pflichtfächern als
-						„kann halten“. Ein Hinweis zum Nachfragen, keine Sperre.
+						Wie viele Pflichtfächer dieser Fachgruppe jemand als „kann halten“ angegeben hat. Die
+						Fakultät bittet um drei insgesamt, über alle Fachgruppen einer Person zusammen. Ob
+						jemand sie erreicht, steht hier deshalb nicht: Die Angaben in anderen Fachgruppen sind
+						nicht Deine.
 					</p>
-					{#if below.length === 0}
-						<p class="text-base-content/80 text-sm">Niemand.</p>
+					{#if members.length === 0}
+						<p class="text-base-content/80 text-sm">Die Fachgruppe hat keine Mitglieder.</p>
 					{:else}
 						<ul class="flex flex-col gap-0.5 text-sm">
-							{#each below as m (m.member.personId)}
+							{#each members as m (m.member.personId)}
 								<li>
 									{m.member.name}
-									<span class="text-base-content/80">— {m.canTeachCompulsory} von {m.minimum}</span>
+									<span class="text-base-content/80">— {m.canTeachCompulsory}</span>
 								</li>
 							{/each}
 						</ul>

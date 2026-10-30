@@ -60,8 +60,8 @@ test.describe('dein Stand', () => {
 		await expect(
 			card.getByRole('listitem').filter({ hasText: 'Fachgruppen angeben' })
 		).toContainText('erledigt');
-		// One compulsory module in the group, so one is all it can ask for.
-		await expect(card.getByText(`${SETUP.subjectGroupName}: 0 von 1`)).toBeVisible();
+		// One compulsory module in all of the newcomer's groups, so one is all it can ask for.
+		await expect(card.getByText('Bisher 0 von 1')).toBeVisible();
 
 		await gotoRendered(page, '/konto/kompetenzen');
 		await page

@@ -33,13 +33,17 @@ test.describe('competences', () => {
 		const rows = group.getByRole('row');
 		await expect(rows.nth(1)).toContainText(COMPETENCES.compulsoryName);
 		await expect(rows.nth(1)).toContainText('Pflicht');
-		await expect(group.getByText('0 von mindestens 3 Pflichtfächern')).toBeVisible();
+		// The minimum is over all groups, above them; Neun's one group has one compulsory module,
+		// so that is all it asks for. The group says its share and no minimum of its own.
+		await expect(page.getByText('Insgesamt 0 von mindestens 1 Pflichtfach')).toBeVisible();
+		await expect(group.getByText('Davon in dieser Fachgruppe: 0 Pflichtfächer.')).toBeVisible();
 
-		// Choosing saves — no button. The count above the table follows.
+		// Choosing saves — no button. The counts follow.
 		await group
 			.getByRole('combobox', { name: `Stufe für ${COMPETENCES.compulsoryName}` })
 			.selectOption('CAN_TEACH');
-		await expect(group.getByText('1 von mindestens 3 Pflichtfächern')).toBeVisible();
+		await expect(page.getByText('das erbetene eine ist erreicht')).toBeVisible();
+		await expect(group.getByText('Davon in dieser Fachgruppe: 1 Pflichtfach.')).toBeVisible();
 
 		// A note is saved on leaving the field, and typing is not interrupted by the save before.
 		const note = group.getByRole('textbox', { name: `Notiz zu ${COMPETENCES.compulsoryName}` });
@@ -51,8 +55,8 @@ test.describe('competences', () => {
 			.getByRole('combobox', { name: `Stufe für ${COMPETENCES.electiveName}` })
 			.selectOption('WOULD_LIKE');
 		await expect(page.getByText('Eine Änderung gespeichert.')).toBeVisible();
-		// The elective counts for nothing: still one of three.
-		await expect(group.getByText('1 von mindestens 3 Pflichtfächern')).toBeVisible();
+		// The elective counts for nothing: still one.
+		await expect(group.getByText('Davon in dieser Fachgruppe: 1 Pflichtfach.')).toBeVisible();
 
 		// And it is stored, not just shown.
 		await gotoRendered(page, '/konto/kompetenzen');
@@ -73,7 +77,7 @@ test.describe('competences', () => {
 		await checkA11y(page);
 	});
 
-	test('the lead of the group sees the pool, the gaps and who is below', async ({
+	test('the lead of the group sees the pool, the gaps and the counts in it', async ({
 		asPersona,
 		checkA11y
 	}) => {
@@ -91,9 +95,12 @@ test.describe('competences', () => {
 		await expect(gaps).toContainText(COMPETENCES.electiveName);
 		await expect(gaps).not.toContainText(COMPETENCES.compulsoryName);
 
-		const below = page.getByRole('region', { name: 'Unter den erbetenen Pflichtfächern' });
-		await expect(below).toContainText('Neun');
-		await expect(below).toContainText('1 von 3');
+		// The count in this group, and no minimum: that is over all of Neun's groups, and the
+		// others are not the lead's to count.
+		const counts = page.getByRole('region', { name: 'Pflichtfächer je Mitglied' });
+		await expect(counts).toContainText('Neun');
+		await expect(counts).toContainText('— 1');
+		await expect(counts).not.toContainText(/von \d/);
 
 		await checkA11y(page);
 	});

@@ -53,25 +53,54 @@ export function isCompetenceChoice(value: string): value is CompetenceChoice {
 	return value === COMPETENCE_NONE || isCompetenceLevel(value);
 }
 
-/** The minimum of one group, as the backend reports it. */
-export type GroupStatusLike = { canTeachCompulsory: number; minimum: number };
+/**
+ * The own count over all subject groups together, as the backend reports it (`myCompetenceTotal`).
+ * The minimum is about this total, not about a group: two in one group and one in another meet it.
+ * The backend already caps it at the compulsory modules one's groups have.
+ */
+export type CompetenceTotalLike = { canTeachCompulsory: number; minimum: number };
 
-/** Whether somebody is below the faculty's minimum in a group. */
-export function belowMinimum(status: GroupStatusLike): boolean {
-	return status.canTeachCompulsory < status.minimum;
+/** Whether somebody is below the faculty's minimum, over all their groups. */
+export function belowMinimum(total: CompetenceTotalLike): boolean {
+	return total.canTeachCompulsory < total.minimum;
+}
+
+const subjects = (n: number) => (n === 1 ? 'Pflichtfach' : 'Pflichtfächer');
+
+/**
+ * The sentence above the groups. A hint, never a refusal — the backend refuses nothing for being
+ * below the minimum, and the page must not look as if it did.
+ */
+export function minimumHint(total: CompetenceTotalLike): string {
+	const { canTeachCompulsory: have, minimum } = total;
+	if (minimum === 0) {
+		return 'Deine Fachgruppen haben keine Pflichtfächer, also wird hier keine Mindestzahl erbeten.';
+	}
+	if (have >= minimum) {
+		const asked = minimum === 1 ? 'das erbetene eine ist' : `die erbetenen ${minimum} sind`;
+		return `Insgesamt ${have} ${subjects(have)} als „kann ich halten“ — ${asked} erreicht.`;
+	}
+	const of = minimum === 1 ? 'Pflichtfach' : 'Pflichtfächern';
+	return `Insgesamt ${have} von mindestens ${minimum} ${of} als „kann ich halten“ angegeben, über alle Deine Fachgruppen zusammen.`;
+}
+
+/** The sentence under a group heading: its share of the total, with no minimum of its own. */
+export function groupCountHint(canTeachCompulsory: number): string {
+	return `Davon in dieser Fachgruppe: ${canTeachCompulsory} ${subjects(canTeachCompulsory)}.`;
 }
 
 /**
- * The sentence under a group heading. A hint, never a refusal — the backend refuses nothing for
- * being below the minimum, and the page must not look as if it did.
+ * The lead's list: every member and their count in this group, fewest first, then by name. No
+ * minimum: that is over all of a person's groups, and the others are not the lead's to count.
  */
-export function minimumHint(status: GroupStatusLike): string {
-	const { canTeachCompulsory: have, minimum } = status;
-	const subjects = (n: number) => (n === 1 ? 'Pflichtfach' : 'Pflichtfächer');
-	if (have >= minimum) {
-		return `${have} ${subjects(have)} als „kann ich halten“ — die erbetenen ${minimum} sind erreicht.`;
-	}
-	return `${have} von mindestens ${minimum} Pflichtfächern als „kann ich halten“ angegeben.`;
+export function membersByGroupCount<
+	T extends { member: { name: string }; canTeachCompulsory: number }
+>(members: readonly T[]): T[] {
+	return [...members].sort(
+		(a, b) =>
+			a.canTeachCompulsory - b.canTeachCompulsory ||
+			a.member.name.localeCompare(b.member.name, 'de')
+	);
 }
 
 /** A module of one of my groups, as the page lists it. */

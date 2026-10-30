@@ -1,28 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { isNavigationRoute } from './guide';
-import { reachableMinimum, setupCard, type SetupCard, type SetupInput } from './setup';
+import { setupCard, type SetupCard, type SetupInput } from './setup';
 
-const compulsory = { compulsory: true };
-const elective = { compulsory: false };
-
-const software = {
-	id: 'g1',
-	name: 'Softwarefächer',
-	modules: [compulsory, compulsory, compulsory]
-};
+const software = { id: 'g1', name: 'Softwarefächer' };
+const maths = { id: 'g2', name: 'Mathematik' };
 
 function input(overrides: Partial<SetupInput> = {}): SetupInput {
 	return {
 		roles: ['LECTURER'],
 		subjectGroups: [],
-		competenceStatus: [],
+		competenceTotal: { canTeachCompulsory: 0, minimum: 3 },
 		semester: null,
 		...overrides
 	};
 }
 
-function status(id: string, canTeachCompulsory: number) {
-	return { subjectGroup: { id }, canTeachCompulsory, minimum: 3 };
+function total(canTeachCompulsory: number, minimum = 3) {
+	return { canTeachCompulsory, minimum };
 }
 
 /** The card with something open, or a failed expectation. */
@@ -32,7 +26,7 @@ function open(card: SetupCard | null) {
 }
 
 const wishes = { code: '2027-SS', phase: 'WISHES' as const, frozen: false, stated: false };
-const setUp = { subjectGroups: [software], competenceStatus: [status('g1', 3)] };
+const setUp = { subjectGroups: [software], competenceTotal: total(3) };
 
 describe('the setup card', () => {
 	it('starts with both one-time items open, competences waiting for the groups', () => {
@@ -45,25 +39,37 @@ describe('the setup card', () => {
 		expect(competences?.text).toContain('sobald Du Deine Fachgruppen');
 	});
 
-	it('names the groups below the minimum', () => {
-		const card = open(
-			setupCard(input({ subjectGroups: [software], competenceStatus: [status('g1', 1)] }))
-		);
+	it('says how far the total is from the minimum', () => {
+		const card = open(setupCard(input({ subjectGroups: [software], competenceTotal: total(1) })));
 		expect(card.done).toBe(1);
 		const competences = card.groups[0].items.find((i) => i.key === 'COMPETENCES');
-		expect(competences?.text).toContain('Softwarefächer: 1 von 3');
+		expect(competences?.text).toContain('über alle Deine Fachgruppen zusammen');
+		expect(competences?.text).toContain('Bisher 1 von 3');
 	});
 
-	// The backend's minimum is flat; a group with fewer compulsory modules must not stay open
-	// for good.
-	it('asks a group for no more compulsory modules than it has', () => {
-		const small = { id: 'g2', name: 'Klein', modules: [compulsory, elective] };
-		expect(reachableMinimum(small, 3)).toBe(1);
-		expect(
-			setupCard(input({ subjectGroups: [small], competenceStatus: [status('g2', 1)] }))?.complete
-		).toBe(true);
-		const none = { id: 'g3', name: 'Nur Wahlfächer', modules: [elective] };
-		expect(setupCard(input({ subjectGroups: [none] }))?.complete).toBe(true);
+	// Reported on 2026-10-30: per group, two in software and two in mathematics stayed open twice.
+	it('is done with three over two groups', () => {
+		const card = setupCard(
+			input({
+				subjectGroups: [software, maths],
+				competenceTotal: total(4),
+				semester: { ...wishes, stated: true }
+			})
+		);
+		expect(card?.complete).toBe(true);
+	});
+
+	// The backend caps the minimum at the compulsory modules one's groups have; a group of
+	// electives must not leave the item open for good.
+	it('takes the capped minimum as it comes', () => {
+		const card = setupCard(
+			input({
+				subjectGroups: [software],
+				competenceTotal: total(0, 0),
+				semester: { ...wishes, stated: true }
+			})
+		);
+		expect(card?.complete).toBe(true);
 	});
 
 	// Done must look different from "did not load", which is no card at all.
