@@ -154,6 +154,9 @@ const PASS_THROUGH = new Set([
 	// which is the repair, and a generic message would send somebody to the dean's office about a
 	// switch their own subject group lead holds.
 	'WISH_WINDOW_CLOSED',
+	// The programme has not released its demand for wishes: names the programme lead, who is the
+	// repair. About the process, never about anybody's interest.
+	'WISHES_NOT_RELEASED',
 	'WISH_NOT_FOUND',
 	'WISH_NOTE_TOO_LONG',
 	// The bound on one's own cohorts: the refusal reads only the caller's own wishes.

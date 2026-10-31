@@ -147,9 +147,9 @@
 	/**
 	 * Whether this programme has announced its demand as settled, and when.
 	 *
-	 * An announcement rather than a lock: declaring another instance afterwards stays possible and
-	 * is the ordinary case. What it does is tell the colleagues on the wish screen that registering
-	 * interest here is worth the effort.
+	 * The release for wishes (since 2026-10-31): until it is given, nobody registers interest in this
+	 * programme's instances. It locks nothing about the demand — declaring another instance
+	 * afterwards stays possible and is the ordinary case.
 	 */
 	const announced = $derived(
 		data.completions.find((c) => c.programme.code === data.selected.programme) ?? null
@@ -823,10 +823,10 @@
 				Den Bedarf legt die <strong>Studiengangsleitung</strong> für ihren Studiengang fest, das
 				Dekanat für alle. Voraussetzung je Modul ist die SWS-Aufteilung aus dem
 				<a class="link" href={resolve('/module')}>Modulkatalog</a>; fehlt sie, steht hier ein
-				Vorschlag, und das Modul lässt sich erst planen, wenn er bestätigt ist. Wer fertig ist,
-				meldet es oben rechts — das ist eine Ansage an die anderen, keine Sperre. Was der Bedarf je
-				Studiengang an SWS kostet und wie viel davon das Kontingent hergibt, zeigt das
-				SWS-Controlling unter
+				Vorschlag, und das Modul lässt sich erst planen, wenn er bestätigt ist. Wer fertig ist, gibt
+				den Bedarf oben rechts für Wünsche frei: erst danach können sich Dozierende auf die Module
+				des Studiengangs eintragen. Der Bedarf bleibt dabei änderbar. Was der Bedarf je Studiengang
+				an SWS kostet und wie viel davon das Kontingent hergibt, zeigt das SWS-Controlling unter
 				<a class="link" href={resolve('/statistik')}>Statistik</a>. Der ganze Ablauf steht auf der
 				<a class="link" href={resolve('/')}>Startseite</a>.
 			</p>
@@ -839,27 +839,52 @@
 		-->
 		{#if plansAtAll && data.selected.programme !== '' && data.current}
 			<!--
-				The completion notice. Its own form and its own action, because it is a statement about
+				The release for wishes. Its own form and its own action, because it is a statement about
 				the state of things and not a change to the planning — and because it holds even when
-				nobody is editing at the moment.
+				nobody is editing at the moment. Since 2026-10-31 it is also a door: until it is given,
+				nobody registers interest in this programme's instances.
 			-->
-			<form
-				method="POST"
-				action="?/complete&semester={data.current.code}&studiengang={data.selected.programme}"
-				class="shrink-0"
-			>
-				<input type="hidden" name="semester" value={data.current.code} />
-				<input type="hidden" name="programme" value={data.selected.programme} />
-				<input type="hidden" name="complete" value={announced ? 'false' : 'true'} />
-				<button
-					type="submit"
-					class="btn btn-sm {announced ? 'btn-ghost' : ''}"
-					disabled={!mayPlan}
-					title={mayPlan ? undefined : editingBlocked || undefined}
+			{#snippet completionForm(label: string, primary: boolean)}
+				<form
+					method="POST"
+					action="?/complete&semester={data.current?.code}&studiengang={data.selected.programme}"
 				>
-					{announced ? 'Meldung zurücknehmen' : 'Bedarf ist fertig'}
-				</button>
-			</form>
+					<input type="hidden" name="semester" value={data.current?.code} />
+					<input type="hidden" name="programme" value={data.selected.programme} />
+					<input type="hidden" name="complete" value={announced ? 'false' : 'true'} />
+					<button
+						type="submit"
+						class="btn btn-sm {primary ? '' : 'btn-ghost'}"
+						disabled={!mayPlan}
+						title={mayPlan ? undefined : editingBlocked || undefined}
+					>
+						{label}
+					</button>
+				</form>
+			{/snippet}
+			{#if announced && mayPlan}
+				<!--
+					Behind a disclosure, like publishing on the semester page: withdrawing shuts the
+					programme's wishes again, and the second click sits next to the sentence that says so.
+				-->
+				<details class="shrink-0">
+					<summary class="btn btn-sm btn-ghost">Freigabe zurücknehmen …</summary>
+					<div class="border-base-300 bg-base-100 mt-2 max-w-sm rounded-lg border p-3">
+						<p class="text-base-content/90 mb-3 text-sm">
+							Danach kann sich niemand mehr auf Module von {data.selected.programme} eintragen. Was schon
+							eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern.
+						</p>
+						{@render completionForm('Ja, Freigabe zurücknehmen', false)}
+					</div>
+				</details>
+			{:else}
+				<div class="shrink-0">
+					{@render completionForm(
+						announced ? 'Freigabe zurücknehmen' : 'Bedarf fertig, für Wünsche freigeben',
+						!announced
+					)}
+				</div>
+			{/if}
 			{#if reviewPhase}
 				<form
 					method="POST"

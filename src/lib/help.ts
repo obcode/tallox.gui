@@ -49,9 +49,9 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
 	},
 	{
-		question: 'Wie melde ich, dass der Bedarf meines Studiengangs steht?',
+		question: 'Wie gebe ich den Bedarf meines Studiengangs für Wünsche frei?',
 		answer:
-			'Auf der Bedarfsseite mit „Bedarf ist fertig“. Das ist eine Ansage an die Fachgruppen, keine Sperre: der Bedarf bleibt änderbar, und die Meldung lässt sich zurücknehmen. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“.',
+			'Auf der Bedarfsseite mit „Bedarf fertig, für Wünsche freigeben“. Erst danach können sich Dozierende auf die Module Deines Studiengangs eintragen; vorher erscheinen sie auf der Wunschseite nicht. Der Bedarf bleibt änderbar, und die Freigabe lässt sich zurücknehmen. Dann kann sich niemand mehr neu eintragen, und was schon eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“; die sperrt nichts.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},
@@ -132,7 +132,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie trage ich einen Wunsch ein, und wie ziehe ich ihn zurück?',
 		answer:
-			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist. Welche Wunschrunden geschlossen sind, steht einmal über der Tabelle; die betroffenen Züge tragen die Marke „Wunschrunde geschlossen“.',
+			'Auf der Wunschseite das Semester wählen und an der Instanz eine Stufe setzen: „unbedingt“, „gerne“ oder „notfalls“, bei Bedarf mit Notiz. Die Stufe auf „—“ zu stellen zieht die Eintragung zurück. Das geht, sobald die Studiengangsleitung den Bedarf ihres Studiengangs für Wünsche freigegeben hat, und solange die Fachgruppe des Moduls ihre Wunschrunde nicht geschlossen hat und das Semester nicht abgeschlossen ist. Module eines Studiengangs ohne Freigabe stehen nicht in der Tabelle; welche Studiengänge fehlen, steht darüber. Welche Wunschrunden geschlossen sind, steht einmal über der Tabelle; die betroffenen Züge tragen die Marke „Wunschrunde geschlossen“.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'

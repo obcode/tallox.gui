@@ -44,6 +44,18 @@ function quote(value: string): string {
 	return `'${value.replace(/'/g, "''")}'`;
 }
 
+/**
+ * Releases a programme's demand for wishes in a semester, which since 2026-10-31 is what lets
+ * anybody register interest in its instances. Idempotent, so every reset puts it back — a test
+ * that withdraws it leaves the next run starting from released.
+ */
+function releaseForWishes(semester: string, programme: string): string {
+	return `INSERT INTO demand_completion (semester_id, programme_id)
+	 SELECT s.id, pr.id FROM semester s, programme pr
+	  WHERE s.code = ${quote(semester)} AND pr.code = ${quote(programme)}
+	 ON CONFLICT (semester_id, programme_id) DO NOTHING;`;
+}
+
 export function seedStatementsFor(personas: readonly Persona[]): string[] {
 	const statements: string[] = [];
 
@@ -621,7 +633,9 @@ export function competenceStatements(): string[] {
 		`INSERT INTO teacher (id, full_name, short_name, is_lecturer_on_contract, active, faculty)
 		 VALUES ('${COMPETENCES.teacher}', ${quote(COMPETENCES.teacherName)},
 		         'Lehrbeauftragte, Kompetenz', true, true, 'EXT')
-		 ON CONFLICT (id) DO NOTHING;`
+		 ON CONFLICT (id) DO NOTHING;`,
+		// Released for wishes, so that registering interest gets to what the test is about.
+		releaseForWishes(ASSIGNMENTS.semester, COMPETENCES.programme)
 	];
 }
 
@@ -762,7 +776,9 @@ export function assignmentStatements(): string[] {
 		`INSERT INTO wish (course_instance_id, person_id, priority, note)
 		 SELECT '${ASSIGNMENTS.instance}', p.id, 1, 'gerne die Vorlesung' FROM person p
 		  WHERE p.mail = 'dekanat@example.org'
-		 ON CONFLICT DO NOTHING;`
+		 ON CONFLICT DO NOTHING;`,
+		// Released for wishes, so that registering interest gets to what the test is about.
+		releaseForWishes(ASSIGNMENTS.semester, ASSIGNMENTS.programme)
 	];
 }
 
@@ -923,7 +939,10 @@ export function wishStatements(): string[] {
 		`INSERT INTO person_subject_group (person_id, subject_group_id)
 		 SELECT p.id, '${WISHES.subjectGroup}' FROM person p
 		  WHERE p.mail = 'prof.eins@example.org'
-		 ON CONFLICT DO NOTHING;`
+		 ON CONFLICT DO NOTHING;`,
+		// Released for wishes, so that registering interest gets to what the test is about.
+		releaseForWishes(WISHES.semester, WISHES.programme),
+		releaseForWishes(WISHES.laterSemester, WISHES.programme)
 	];
 }
 
@@ -1087,7 +1106,9 @@ export function dividedStatements(): string[] {
 		`INSERT INTO wish (course_instance_id, person_id, priority, note)
 		 SELECT '${DIVIDED.instance}', p.id, 1, '' FROM person p
 		  WHERE p.mail = 'dekanat@example.org'
-		 ON CONFLICT DO NOTHING;`
+		 ON CONFLICT DO NOTHING;`,
+		// Released for wishes, so that registering interest gets to what the test is about.
+		releaseForWishes(DIVIDED.semester, DIVIDED.programme)
 	];
 }
 
@@ -1265,6 +1286,8 @@ export function sortingStatements(): string[] {
 		  WHERE s.code = ${quote(SORTING.semester)} AND pr.code = ${programme};`,
 		`INSERT INTO instance_part (id, course_instance_id, kind, position, teaching_hours)
 		 VALUES ('${SORTING.alphaPart}', '${SORTING.alphaInstance}', 'LECTURE', 0, 2),
-		        ('${SORTING.omegaPart}', '${SORTING.omegaInstance}', 'LECTURE', 0, 4);`
+		        ('${SORTING.omegaPart}', '${SORTING.omegaInstance}', 'LECTURE', 0, 4);`,
+		// Released for wishes, so that registering interest gets to what the test is about.
+		releaseForWishes(SORTING.semester, SORTING.programme)
 	];
 }
