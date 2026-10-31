@@ -7,7 +7,8 @@ import {
 	closedPhaseHint,
 	closedSubjectGroups,
 	cohortIn,
-	demandStateHint,
+	releaseReason,
+	unreleasedNotice,
 	isWishChoice,
 	isWishPriority,
 	myWishByInstance,
@@ -211,6 +212,17 @@ describe('a cohort another programme holds', () => {
 	it('keeps its line where the reader has an entry on it', () => {
 		const rows = wishRows([holder('holder'), held('guest', 'GS')], new Set(['guest']));
 		expect(rows.map((r) => r.programme.code).sort()).toEqual(['DC', 'GS']);
+	});
+
+	// Since 2026-10-31 a programme's cohorts are offered only once its demand is released.
+	it('leaves out a programme that has not released its demand', () => {
+		expect(wishRows([holder('holder')], new Set(), new Set())).toHaveLength(0);
+		expect(wishRows([holder('holder')], new Set(), new Set(['DC']))).toHaveLength(1);
+	});
+
+	// An entry made before the release was withdrawn stays the reader's to see.
+	it('keeps an unreleased cohort the reader has an entry on', () => {
+		expect(wishRows([holder('holder')], new Set(['holder']), new Set())).toHaveLength(1);
 	});
 
 	// A programme that planned the module for itself is a second event, and stays a second row.
@@ -699,20 +711,36 @@ describe('closedRoundNotice', () => {
 	});
 });
 
-describe('demandStateHint', () => {
-	it('marks a programme that has not announced its demand', () => {
-		expect(demandStateHint({ programme: { code: 'IF' } }, new Set())).toBe('Bedarf noch in Arbeit');
+describe('releaseReason', () => {
+	it('names the programme lead while the programme has not released its demand', () => {
+		const reason = releaseReason({ programme: { code: 'IF' } }, new Set());
+		expect(reason).toContain('Studiengangsleitung');
+		expect(reason).toContain('IF');
 	});
 
-	it('says nothing once it has, because the ordinary state needs no label', () => {
-		expect(demandStateHint({ programme: { code: 'IF' } }, new Set(['IF']))).toBeNull();
+	it('says nothing once it has', () => {
+		expect(releaseReason({ programme: { code: 'IF' } }, new Set(['IF']))).toBeNull();
+	});
+});
+
+describe('unreleasedNotice', () => {
+	const of = (...codes: string[]) => codes.map((code) => ({ programme: { code } }));
+
+	it('is null when every programme with demand has released it', () => {
+		expect(unreleasedNotice(of('IF', 'IB'), new Set(['IF', 'IB']))).toBeNull();
+		expect(unreleasedNotice([], new Set())).toBeNull();
 	});
 
-	it('is an orientation and not a warning', () => {
-		// Registering interest in a programme still working on its demand is allowed and often
-		// sensible. A sentence that told somebody to wait would be wrong about the process.
-		const hint = demandStateHint({ programme: { code: 'IF' } }, new Set()) ?? '';
-		expect(hint).not.toMatch(/warte|noch nicht möglich|gesperrt/i);
+	it('names each missing programme once, in order', () => {
+		expect(unreleasedNotice(of('IF', 'DC', 'IF', 'IB'), new Set(['IB']))).toBe(
+			'Noch nicht für Wünsche freigegeben: DC und IF. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt.'
+		);
+	});
+
+	it('reads a single programme without a list', () => {
+		expect(unreleasedNotice(of('IF'), new Set())).toMatch(
+			/^Noch nicht für Wünsche freigegeben: IF\./
+		);
 	});
 });
 

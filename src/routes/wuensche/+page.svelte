@@ -39,7 +39,8 @@
 		closedSubjectGroups,
 		settledProgrammes,
 		rowClosedReason,
-		demandStateHint,
+		releaseReason,
+		unreleasedNotice,
 		desiredHoursLabel,
 		wishRowLabel,
 		wishRows,
@@ -96,13 +97,14 @@
 	});
 
 	/**
-	 * Which subject groups have shut their round, and which programmes have settled their demand.
+	 * Which subject groups have shut their round, and which programmes have released their demand.
 	 *
 	 * Both are public facts about the process. What they do here is let a row say *why* it takes no
 	 * entries before somebody types into it — a field that accepts input and then refuses it is a
 	 * worse way to learn the same thing.
 	 *
-	 * The window list is the exceptions: a group that is not in it is open.
+	 * The window list is the exceptions: a group that is not in it is open. The release is the
+	 * other way round: a programme that is not in it is shut, and its cohorts are not offered.
 	 */
 	const closed = $derived(closedSubjectGroups(data.windows));
 	const settled = $derived(settledProgrammes(data.completions));
@@ -110,7 +112,10 @@
 
 	// The reader's own entries keep their line even where the cohort is held elsewhere — otherwise
 	// an entry made before the coupling would have nowhere to be withdrawn.
-	const rows = $derived(wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id))));
+	const rows = $derived(
+		wishRows(data.instances, new Set(data.myWishes.map((w) => w.instance.id)), settled)
+	);
+	const unreleased = $derived(unreleasedNotice(data.instances, settled));
 	const closedNotice = $derived(closedRoundNotice(rows, closed));
 	const myGroupCodes = $derived(data.mySubjectGroups.map((g) => g.code));
 	const mine = $derived(myWishByInstance(data.myWishes));
@@ -257,8 +262,8 @@
 					{@const rowTint = wishTint(
 						strongestPriority(row.cohorts.map((c) => mine.get(c.instanceId)?.priority))
 					)}
-					{@const closedReason = rowClosedReason(row, closed)}
-					{@const demandHint = demandStateHint(row, settled)}
+					{@const unreleasedReason = releaseReason(row, settled)}
+					{@const closedReason = unreleasedReason ?? rowClosedReason(row, closed)}
 					{@const ownCohorts = row.cohorts.filter((c) => mine.has(c.instanceId))}
 					<tr>
 						<td class="align-top font-mono text-xs {rowTint}">{studyGroupLabel(row)}</td>
@@ -280,15 +285,6 @@
 								<span class="badge badge-outline badge-xs ml-1 align-middle">
 									{heldForLabel(heldForOthers(row))}
 								</span>
-							{/if}
-							{#if demandHint}
-								<!--
-									A pointer, not a warning: registering for a programme that is still working on
-									its demand is allowed and often sensible. The hint disappears as soon as the
-									demand has been announced as settled — a mark on every row would be noise on
-									exactly the rows that count.
-								-->
-								<span class="badge badge-ghost badge-xs ml-1 align-middle">{demandHint}</span>
 							{/if}
 							{#if row.module.subjectGroup}
 								<!--
@@ -384,7 +380,9 @@
 									{#if closedReason}
 										<!-- The sentence with the repair stands once above the table. -->
 										<span class="badge badge-ghost badge-xs mt-1 align-middle" title={closedReason}
-											>Wunschrunde geschlossen</span
+											>{unreleasedReason
+												? 'Noch nicht freigegeben'
+												: 'Wunschrunde geschlossen'}</span
 										>
 									{/if}
 									{#if refusalsByInstance[cohort.instanceId]}
@@ -438,9 +436,11 @@
 			das Kollegium.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
-			Jede Fachgruppe führt ihre eigene Wunschrunde: die <strong>Fachgruppenleitung</strong> öffnet
-			und schließt sie, und veröffentlicht werden die Wünsche eines Semesters vom Dekanat, erst wenn
-			alle Fachgruppen ihre Runde geschlossen haben. Welche Module zuerst stehen, bestimmst Du unter
+			Eintragen lässt sich ein Modul erst, wenn die <strong>Studiengangsleitung</strong> den Bedarf
+			ihres Studiengangs für Wünsche freigegeben hat; bis dahin steht es hier nicht. Jede Fachgruppe
+			führt ihre eigene Wunschrunde: die <strong>Fachgruppenleitung</strong> öffnet und schließt
+			sie, und veröffentlicht werden die Wünsche eines Semesters vom Dekanat, erst wenn alle
+			Fachgruppen ihre Runde geschlossen haben. Welche Module zuerst stehen, bestimmst Du unter
 			<a class="link" href={resolve('/konto/fachgruppen')}>Meine Fachgruppen</a>.
 		</p>
 	</div>
@@ -719,6 +719,12 @@
 	{/if}
 
 	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published, data.leadsGroups)}</p>
+
+	{#if unreleased}
+		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
+			<p class="text-base-content/90 text-sm">{unreleased}</p>
+		</div>
+	{/if}
 
 	{#if data.instances.length === 0}
 		<p class="text-base-content/80 text-sm">

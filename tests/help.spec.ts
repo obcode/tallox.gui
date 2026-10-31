@@ -61,7 +61,7 @@ test.describe('the help panel', () => {
 
 		const here = dialog.getByRole('region', { name: 'Zu dieser Seite' });
 		await expect(
-			here.getByText(/Wie melde ich, dass der Bedarf meines Studiengangs steht/)
+			here.getByText(/Wie gebe ich den Bedarf meines Studiengangs für Wünsche frei/)
 		).toBeVisible();
 		await expect(dialog.getByRole('region', { name: 'Weitere Fragen' })).toBeVisible();
 	});

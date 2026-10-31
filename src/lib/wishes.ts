@@ -245,7 +245,12 @@ export type WishRow = ModuleRow<WishModule>;
 export function wishRows(
 	instances: readonly ReadInstanceLike<WishModule>[],
 	/** The instances the reader has an entry on, which keep their line whatever else is true. */
-	entered: ReadonlySet<string> = new Set()
+	entered: ReadonlySet<string> = new Set(),
+	/**
+	 * The programmes whose demand is released for wishes, by code. Undefined means "do not filter
+	 * by it", for callers that are not about the release.
+	 */
+	released?: ReadonlySet<string>
 ): WishRow[] {
 	// A cohort another programme holds is not a second thing to want.
 	//
@@ -270,11 +275,17 @@ export function wishRows(
 	// The same exception for a cohort another faculty teaches entirely: nothing in it is ours to
 	// want, and the backend refuses the wish (INSTANCE_TAUGHT_ELSEWHERE). Half of it elsewhere is an
 	// ordinary cohort — the wish is for the cohort, and the note says which half.
+	//
+	// And for a programme that has not released its demand for wishes (WISHES_NOT_RELEASED, since
+	// 2026-10-31): its cohorts are not offered until its lead says the demand stands. An entry made
+	// before a release was withdrawn keeps its line, for the reason above — frozen, but visible.
 	return moduleRows(
 		instances.filter(
 			(instance) =>
 				entered.has(instance.id) ||
-				(!instance.coveredBy?.acceptedAt && !taughtEntirelyElsewhere(instance.parts))
+				(!instance.coveredBy?.acceptedAt &&
+					!taughtEntirelyElsewhere(instance.parts) &&
+					(released === undefined || released.has(instance.programme.code)))
 		)
 	);
 }
@@ -758,7 +769,7 @@ export function closedSubjectGroups(
 	return closed;
 }
 
-/** Which study programmes have announced their demand as settled, by code. */
+/** Which study programmes have released their demand for wishes, by code. */
 export function settledProgrammes(completions: { programme: { code: string } }[]): Set<string> {
 	return new Set(completions.map((c) => c.programme.code));
 }
@@ -816,21 +827,40 @@ export function closedRoundNotice(
 }
 
 /**
- * What a row says about the state of its programme's demand.
+ * Why this row takes no entries because of its programme, or null when the programme is released.
  *
- * Null when the programme has announced it as settled, because at that point the ordinary state
- * needs no label — a mark on every row would be noise on the rows that matter most.
- *
- * The sentence deliberately does not say "warte noch": registering interest in a programme that is
- * still working on its demand is allowed and often sensible, and this is an orientation rather
- * than a warning.
+ * Only rows with an own entry are still on the page when this answers: the others are not offered
+ * (see `wishRows`). The sentence names the repair, which is the programme's lead and not the
+ * subject group's — the backend's WISHES_NOT_RELEASED says the same.
  */
-export function demandStateHint(
+export function releaseReason(
 	row: { programme: { code: string } },
-	settled: Set<string>
+	released: ReadonlySet<string>
 ): string | null {
-	if (settled.has(row.programme.code)) return null;
-	return 'Bedarf noch in Arbeit';
+	if (released.has(row.programme.code)) return null;
+	return `Die Studiengangsleitung von ${row.programme.code} hat den Bedarf noch nicht für Wünsche freigegeben. Bis dahin lässt sich die Eintragung nicht ändern.`;
+}
+
+/**
+ * The programmes with demand in the semester that have not released it for wishes, in one
+ * sentence for the head of the page, or null when all have.
+ *
+ * Read off the instances rather than the rows, because the rows of those programmes are exactly
+ * what the page leaves out. A fact about the process and public, like the release itself.
+ */
+export function unreleasedNotice(
+	instances: readonly { programme: { code: string } }[],
+	released: ReadonlySet<string>
+): string | null {
+	const missing = [
+		...new Set(instances.map((i) => i.programme.code).filter((code) => !released.has(code)))
+	].sort((a, b) => a.localeCompare(b, 'de'));
+	if (missing.length === 0) return null;
+	const list =
+		missing.length === 1
+			? missing[0]
+			: `${missing.slice(0, -1).join(', ')} und ${missing[missing.length - 1]}`;
+	return `Noch nicht für Wünsche freigegeben: ${list}. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt.`;
 }
 
 /**

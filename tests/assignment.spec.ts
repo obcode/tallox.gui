@@ -318,15 +318,39 @@ test.describe('the wish round switch', () => {
 		await expect(cell).toBeEnabled();
 	});
 
-	test('a programme still working on its demand is marked on the wish screen', async ({
+	test('a programme that has not released its demand is not offered until its lead releases it', async ({
 		asPersona
 	}) => {
-		// An orientation and not a warning: registering interest here stays possible, and the mark
-		// disappears once the lead announces the demand as settled.
+		// Since 2026-10-31 the release is a door: no release, no row on the wish screen, and a
+		// sentence above the table that names the programme.
+		await runSql(
+			`DELETE FROM demand_completion WHERE programme_id IN
+			   (SELECT id FROM programme WHERE code = '${ASSIGNMENTS.programme}');`,
+			'withdrawing the release of the assignment programme'
+		);
 		const page = await asPersona(PERSONAS.eins);
-		await gotoRendered(page, `/wuensche?semester=${ASSIGNMENTS.semester}`);
+		const URL = `/wuensche?semester=${ASSIGNMENTS.semester}`;
+		await gotoRendered(page, URL);
+		// Other fixtures leave programmes of their own unreleased in this semester, so the
+		// programme is looked for in the list rather than as the whole of it.
+		const notice = page.getByText(
+			new RegExp(`Noch nicht für Wünsche freigegeben: .*\\b${ASSIGNMENTS.programme}\\b`)
+		);
+		await expect(notice).toBeVisible();
+		await expect(page.getByRole('link', { name: ASSIGNMENTS.moduleName })).toHaveCount(0);
 
-		await expect(page.getByText('Bedarf noch in Arbeit').first()).toBeVisible();
+		// The dean's office releases it on the demand page, as the programme lead would.
+		const dean = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(
+			dean,
+			`/bedarf?semester=${ASSIGNMENTS.semester}&studiengang=${ASSIGNMENTS.programme}`
+		);
+		await dean.getByRole('button', { name: 'Bedarf fertig, für Wünsche freigeben' }).click();
+		await expect(dean.getByText('Freigabe zurücknehmen …')).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(notice).toHaveCount(0);
+		await expect(page.getByRole('link', { name: ASSIGNMENTS.moduleName }).first()).toBeVisible();
 	});
 });
 
