@@ -66,6 +66,27 @@ const OwnSetupDocument = graphql(`
 	}
 `);
 
+/**
+ * My own advance wishes, for the line "not offered after all" — the notification the faculty asked
+ * for when it introduced them. Own rows only, so nothing here is about anybody else.
+ */
+const OwnAdvanceWishesDocument = graphql(`
+	query OwnAdvanceWishStatus {
+		myAdvanceWishes {
+			id
+			semester
+			status
+			programme {
+				code
+			}
+			module {
+				id
+				name
+			}
+		}
+	}
+`);
+
 async function loadOverview() {
 	try {
 		const data = await backendRequest(StartOverviewDocument);
@@ -100,7 +121,19 @@ async function loadSetup() {
 	}
 }
 
+async function loadAdvance() {
+	try {
+		return (await backendRequest(OwnAdvanceWishesDocument)).myAdvanceWishes;
+	} catch {
+		return [];
+	}
+}
+
 export const load: PageServerLoad = async () => {
-	const [overview, setup] = await Promise.all([loadOverview(), loadSetup()]);
-	return { overview, setup };
+	const [overview, setup, advance] = await Promise.all([
+		loadOverview(),
+		loadSetup(),
+		loadAdvance()
+	]);
+	return { overview, setup, advance };
 };

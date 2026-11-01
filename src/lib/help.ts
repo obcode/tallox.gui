@@ -51,7 +51,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie gebe ich den Bedarf meines Studiengangs für Wünsche frei?',
 		answer:
-			'Auf der Bedarfsseite mit „Bedarf fertig, für Wünsche freigeben“. Erst danach können sich Dozierende auf die Module Deines Studiengangs eintragen; vorher erscheinen sie auf der Wunschseite nicht. Der Bedarf bleibt änderbar, und die Freigabe lässt sich zurücknehmen. Dann kann sich niemand mehr neu eintragen, und was schon eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“; die sperrt nichts.',
+			'Auf der Bedarfsseite mit „Bedarf fertig, für Wünsche freigeben“. Erst danach können sich Dozierende auf die Module Deines Studiengangs eintragen; vorher erscheinen sie auf der Wunschseite nicht. Mit der Freigabe werden die Vormerkungen für Deinen Studiengang zu Wünschen auf jedem Zug des Moduls; wer ein Modul vorgemerkt hat, das Du nicht anbietest, sieht „nicht angeboten“. Der Bedarf bleibt änderbar, und die Freigabe lässt sich zurücknehmen. Dann kann sich niemand mehr neu eintragen, und was schon eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“; die sperrt nichts.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},
@@ -136,6 +136,25 @@ export const HELP: readonly HelpEntry[] = [
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
+	},
+	{
+		question:
+			'Ich weiß schon, was ich in einem späteren Semester halten möchte. Wie halte ich das fest?',
+		answer:
+			'Unter „Meine Lehre → Vormerkungen“: Studiengang, Semester (bis vier Jahre im Voraus) und Modul wählen, Stufe und gegebenenfalls Notiz und „höchstens so viele Züge“ angeben. Das geht, solange der Studiengang den Bedarf dieses Semesters noch nicht freigegeben hat, auch wenn noch offen ist, ob das Modul überhaupt angeboten wird. Mit der Freigabe wird die Vormerkung von selbst zum Wunsch auf jedem Zug des Moduls, mit Stufe und Notiz; ändern oder zurückziehen geht danach auf der Wunschseite. Bietet der Studiengang das Modul bei der Freigabe nicht an, steht an der Vormerkung „nicht angeboten“, und die Startseite sagt es Dir. Eine Vormerkung ist kein Anspruch. Sehen können sie dieselben wie Deine Wünsche: bis zur Veröffentlichung nur Du, die Leitung des Studiengangs, die Leitung der Fachgruppe des Moduls und das Dekanat.',
+		who: ['LECTURER'],
+		where: [
+			{ href: '/wuensche/vormerkungen', label: 'Vormerkungen' },
+			{ href: '/wuensche', label: 'Wünsche' }
+		],
+		stage: 'EACH_SEMESTER'
+	},
+	{
+		question: 'Wo sehe ich, wer sich Module meines Bereichs vorgemerkt hat?',
+		answer:
+			'Unter „Zuteilung → Vormerkungen“, je Semester: wer sich welches Modul für ein Semester vorgemerkt hat, dessen Bedarf noch nicht freigegeben ist, mit Stufe, Notiz und Stand. Du siehst die Vormerkungen für die Studiengänge und Fachgruppen, die Du leitest, das Dekanat alle; eine Anzahl zeigt Tallox nicht. Mit der Freigabe des Bedarfs werden die Vormerkungen zu Wünschen, die Du dann bei der Zuteilung siehst. Ein Anspruch entsteht aus einer Vormerkung nicht.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung/vormerkungen', label: 'Vormerkungen' }]
 	},
 	{
 		question: 'Wer sieht meine Wünsche?',

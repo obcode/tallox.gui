@@ -163,6 +163,12 @@ const PASS_THROUGH = new Set([
 	'WISH_TRACK_LIMIT_INVALID',
 	'WISH_TRACK_LIMIT_WITHOUT_WISHES',
 	'WISH_PRIORITY_INVALID',
+	// Advance wishes („Vormerkungen“): only the caller's own rows are ever read on this path. The
+	// release is public; "already converted" and "not there or not yours" are about the caller's
+	// own entry, the second deliberately the same sentence for both, like WISH_NOT_FOUND.
+	'ADVANCE_WISH_RELEASED',
+	'ADVANCE_WISH_CONVERTED',
+	'ADVANCE_WISH_NOT_FOUND',
 	// The desired teaching hours: the range, a finished semester, the freeze. All are about the
 	// caller's own figure or about the semester's state, which every colleague reads, so none says
 	// anything about a colleague. The correction by the dean's office can answer PERSON_NOT_FOUND,

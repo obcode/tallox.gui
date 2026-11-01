@@ -4,12 +4,14 @@
 	import SetupChecklist from '$lib/components/SetupChecklist.svelte';
 	import WhoLeadsWhat from '$lib/components/WhoLeadsWhat.svelte';
 	import { setupCard } from '$lib/setup';
+	import { notOfferedNotice } from '$lib/advanceWishes';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const roles = $derived(data.session?.effectiveRoles ?? []);
 	const setup = $derived(data.setup ? setupCard({ ...data.setup, roles }) : null);
+	const notOffered = $derived(notOfferedNotice(data.advance));
 </script>
 
 <svelte:head><title>Einsatzplanung · Tallox</title></svelte:head>
@@ -25,6 +27,23 @@
 	</div>
 
 	<DueNow planning={data.planning} {roles} />
+
+	{#if notOffered}
+		<section
+			class="border-base-300 bg-base-100 rounded-lg border p-4"
+			aria-labelledby="not-offered"
+		>
+			<h2 id="not-offered" class="text-lg font-semibold">📌 Vormerkungen</h2>
+			<p class="text-base-content/90 text-sm">
+				<span class="badge badge-warning badge-sm align-middle">nicht angeboten</span>
+				{notOffered}
+			</p>
+			<p class="text-base-content/80 mt-1 text-sm">
+				Wird das Modul doch noch angeboten, wird die Vormerkung zum Wunsch. Erledigtes ziehst Du
+				unter <a class="link" href={resolve('/wuensche/vormerkungen')}>Vormerkungen</a> zurück.
+			</p>
+		</section>
+	{/if}
 
 	{#if setup}
 		<SetupChecklist card={setup} {roles} />

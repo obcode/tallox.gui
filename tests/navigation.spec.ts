@@ -20,6 +20,7 @@ test.describe('areas and their tabs', () => {
 		const tabs = page.getByRole('navigation', { name: 'Meine Lehre' });
 		await expect(tabs.getByRole('link')).toHaveText([
 			'Wünsche',
+			'Vormerkungen',
 			'SWS im Kollegium',
 			'Zuteilungen',
 			'Kompetenzen',
