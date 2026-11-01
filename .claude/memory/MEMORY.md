@@ -15,6 +15,7 @@ Kolleginnen und Kollegen.
 - [Aufteilung übertragen (Modulseite)](module-split-ui.md) — Vorschau gleich nach dem Speichern, Übertragen als zweiter Submit; E2E-IDs und Kürzel vor dem Anlegen greppen
 - [Nichts geht beim Seitenwechsel verloren](leave-guard.md) — Register + `autosave`/`askBeforeLeave`/`trackSaves` statt `use:enhance`, Guard im Layout, wann der Dialog nicht speichern darf
 - [Speichern beim Umschalten](save-on-toggle.md) — der Zulassungsbildschirm: Schalter als Formulare, Filtern im Browser, und die Falle mit `replaceState`
+- [Vormerkungen](advance-wishes-ui.md) — eigener Reiter, Lesesicht für Leitungen unter Zuteilung, „nicht angeboten“ auf der Startseite, zwei Fallen
 - [Die Wunschseite](wish-page.md) — was nie dort stehen darf, und drei Fehler, die erst E2E zeigte
 - [Thema je Zug](seminar-topics.md) — Seminare als eigene Zeilen in Wunschtabelle und Übersicht, `moduleRowKey`, bis 26 Züge
 - [Planungsmarken in der GUI](planning-marks-ui.md) — wo Fertigmeldung und Wunschphase geschaltet werden, und die Action-URL-Falle

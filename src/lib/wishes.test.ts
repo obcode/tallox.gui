@@ -733,7 +733,7 @@ describe('unreleasedNotice', () => {
 
 	it('names each missing programme once, in order', () => {
 		expect(unreleasedNotice(of('IF', 'DC', 'IF', 'IB'), new Set(['IB']))).toBe(
-			'Noch nicht für Wünsche freigegeben: DC und IF. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt.'
+			'Noch nicht für Wünsche freigegeben: DC und IF. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt. Bis dahin lässt sich vormerken, was Du halten möchtest.'
 		);
 	});
 

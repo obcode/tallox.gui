@@ -28,6 +28,11 @@ type StaticRoute = Exclude<
 	| `/api-doku/${string}`
 	| '/bedarf/sws'
 	| '/konto'
+	// Reached it again with the two advance wish pages: `/verwaltung` is a layout like `/konto`,
+	// and the introduction is linked by name from the help panel and the start page, never from
+	// the menu or a guide step.
+	| '/verwaltung'
+	| '/einfuehrung'
 >;
 
 /**
@@ -114,6 +119,15 @@ const TEACHING: NavItem = {
 			exact: true
 		},
 		{
+			// No roles: everybody who wishes may note down ahead of the release. Own rows only;
+			// the leads read theirs under the assignment.
+			emoji: '📌',
+			label: 'Vormerkungen',
+			href: '/wuensche/vormerkungen',
+			hint: 'Module für kommende Semester vormerken, bevor der Bedarf feststeht — sie werden mit der Freigabe zu Wünschen',
+			colleaguesOnly: true
+		},
+		{
 			// No roles: every colleague reads the published figures, and before publication the page
 			// says so instead of showing a table of empty cells. colleaguesOnly, because the roster
 			// is the faculty's own — the backend gives a partner faculty an empty list.
@@ -186,6 +200,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				label: 'Kompetenzen der Fachgruppe',
 				href: '/zuteilung/kompetenzen',
 				hint: 'Wer was halten kann, welche Module niemand abdeckt',
+				roles: ASSIGNING
+			},
+			{
+				emoji: '📌',
+				label: 'Vormerkungen',
+				href: '/zuteilung/vormerkungen',
+				hint: 'Wer sich welche Module für kommende Semester vorgemerkt hat',
 				roles: ASSIGNING
 			},
 			{

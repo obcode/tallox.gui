@@ -50,6 +50,7 @@ describe('NAV_ITEMS', () => {
 		)!;
 		expect(teaching.children!.map((c) => c.href)).toEqual([
 			'/wuensche',
+			'/wuensche/vormerkungen',
 			'/wuensche/kollegium',
 			'/konto/zuteilungen',
 			'/konto/kompetenzen',
@@ -71,6 +72,13 @@ describe('areas with tabs', () => {
 		const active = area.children!.filter((c) => isActive(c, '/zuteilung/kompetenzen'));
 		expect(active.map((c) => c.label)).toEqual(['Kompetenzen der Fachgruppe']);
 		expect(areaFor('/zuteilung', ['SUBJECT_GROUP_LEAD'])!.label).toBe('Zuteilung');
+	});
+
+	it('shows the advance wishes of colleagues to the planning roles only', () => {
+		const tabs = (roles: string[]) =>
+			areaFor('/zuteilung/uebersicht', roles)?.children?.map((c) => c.href) ?? [];
+		expect(tabs(['SUBJECT_GROUP_LEAD'])).toContain('/zuteilung/vormerkungen');
+		expect(tabs(['LECTURER'])).not.toContain('/zuteilung/vormerkungen');
 	});
 
 	it('show the administration by role, and land on the first tab one may see', () => {
@@ -100,7 +108,7 @@ describe('areas with tabs', () => {
 	it('give a tab bar inside an area, and none outside', () => {
 		expect(areaFor('/module', ['LECTURER'])).toBeNull();
 		expect(areaFor('/konto/tokens', ['LECTURER'])).toBeNull();
-		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(5);
+		expect(areaFor('/wuensche', ['LECTURER'])!.children).toHaveLength(6);
 	});
 
 	// Below /wuensche, so the wish tab is exact: on the overview only the overview is marked.

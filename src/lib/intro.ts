@@ -66,7 +66,7 @@ export const PHASES: readonly IntroPhase[] = [
 	{
 		phase: 'WISHES',
 		happens:
-			'Das Kollegium bekundet Interesse an den Instanzen, sobald die Studiengangsleitung den Bedarf ihres Studiengangs für Wünsche freigegeben hat. Jede Fachgruppe sammelt in ihrer eigenen Wunschrunde; die ist offen, bis die Fachgruppenleitung sie schließt.',
+			'Das Kollegium bekundet Interesse an den Instanzen, sobald die Studiengangsleitung den Bedarf ihres Studiengangs für Wünsche freigegeben hat. Was man schon früher halten möchte, lässt sich vormerken; die Freigabe macht daraus Wünsche. Jede Fachgruppe sammelt in ihrer eigenen Wunschrunde; die ist offen, bis die Fachgruppenleitung sie schließt.',
 		forYou:
 			'Jetzt bist Du dran: an jeder Instanz, die Du halten würdest, „unbedingt“, „gerne“ oder „notfalls“ setzen, und wenn Du nur die Vorlesung oder nur ein Praktikum möchtest, das in die Notiz schreiben. Würdest Du von einem Modul nur einen der Züge übernehmen, egal welchen, trag Dich für alle ein und wähle unter dem Modulnamen „Davon übernehme ich: nur einen“. Würdest Du einen Zug als Course in English halten, kreuze „als CiE anbieten“ an; das geht, wo das Modulhandbuch Englisch nennt. Über der Tabelle gibst Du an, wie viele SWS modulbehaftete Lehre Du in dem Semester übernehmen möchtest, als Bereich von–bis, bis zum Stichtag des Dekanats. Bis zur Veröffentlichung sieht das niemand außer den Zuständigen; danach sieht das ganze Kollegium die Bereiche unter „SWS im Kollegium“.',
 		where: [{ href: '/wuensche', label: 'Wünsche' }]

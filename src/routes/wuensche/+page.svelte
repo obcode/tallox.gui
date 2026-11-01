@@ -722,7 +722,10 @@
 
 	{#if unreleased}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">
-			<p class="text-base-content/90 text-sm">{unreleased}</p>
+			<p class="text-base-content/90 text-sm">
+				{unreleased}
+				<a class="link" href={resolve('/wuensche/vormerkungen')}>Zu den Vormerkungen</a>
+			</p>
 		</div>
 	{/if}
 

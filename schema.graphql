@@ -375,6 +375,87 @@ type AccessSummary {
   mutations: [AccessMutationCount!]!
 }
 """
+An advance wish („Vormerkung“): your interest in a module, in one study programme, for a semester
+whose demand is not settled yet — noted down years ahead if you like, whether or not the module
+will be offered.
+
+A statement and not a reservation: it gives nobody a claim. It names what an instance is made of
+except the cohort, because the cohorts are what the demand planning decides. When the programme
+releases its demand (`setDemandComplete`), it becomes a wish (`Wish`) on every cohort of the module
+there is, with its priority and note, and `maxTracks` as `trackLimit`. A cohort declared after the
+release takes it then. It converts once: a wish withdrawn afterwards does not come back.
+
+Visible exactly like the wish it is going to be — to you; with full reach to the leads of the
+programme it names and of the module's subject group, and to the dean's office; to everybody once
+the semester's wishes are published. Never counted.
+"""
+type AdvanceWish {
+  id: ID!
+  """
+  Whose it is. Always the person who noted it down.
+  """
+  person: Person!
+  """
+  The semester, as its code: `2028-SS`.
+  """
+  semester: String!
+  """
+  The module.
+  """
+  module: ModuleRef!
+  """
+  The study programme it is for — whose release it waits for.
+  """
+  programme: Programme!
+  """
+  How much, as on a wish.
+  """
+  priority: WishPriority!
+  """
+  Your own words. Empty for whoever could not read a wish's note.
+  """
+  note: String!
+  """
+  Of the cohorts there will be, at most this many; `null` for no bound.
+  """
+  maxTracks: Int
+  """
+  Where it stands.
+  """
+  status: AdvanceWishStatus!
+  """
+  When it became wishes, `null` until then.
+  """
+  convertedAt: Time
+  """
+  When it was noted down. `null` where the note is empty for you, as on a wish.
+  """
+  createdAt: Time
+  """
+  When it was last changed. `null` like `createdAt`.
+  """
+  updatedAt: Time
+}
+"""
+Where an advance wish stands. Derived when it is read: a cohort declared after the release changes
+it without anybody touching the advance wish.
+"""
+enum AdvanceWishStatus {
+  """
+  Waiting for the study programme to release its demand for the semester.
+  """
+  PENDING
+  """
+  Has become a wish on each cohort of the module in that programme — change those from now on.
+  """
+  CONVERTED
+  """
+  The study programme released its demand without a cohort of the module: you are not needed for
+  this one, as things stand. Becomes `CONVERTED` should a cohort still be declared.
+  """
+  NOT_OFFERED
+}
+"""
 How many hours a week one person already holds in a semester: in total, and by the subject group of
 the modules they hold them in.
 
@@ -1102,7 +1183,9 @@ type DemandChange {
   programme: Programme
 }
 """
-One study programme announcing that its demand for a semester is settled.
+One study programme announcing that its demand for a semester is settled and releasing it for wishes.
+
+Without one, nobody registers interest in that programme's instances in that semester.
 """
 type DemandCompletion {
   """
@@ -2949,10 +3032,13 @@ type Mutation {
     programme: String!
   ): CopyDemandReport! @fullReach @scope(area: PLANNING, verb: WRITE)
   """
-  Announce this study programme's demand as settled for a semester, or withdraw the announcement.
+  Announce this study programme's demand as settled for a semester and release it for wishes, or
+  withdraw the announcement.
 
-  Blocks nothing either way. Declaring another instance afterwards stays possible and is the
-  ordinary case; re-announcing then refreshes the timestamp.
+  Announcing opens the programme's instances for wishes; withdrawing shuts them again, and the
+  wishes already entered stay but can no longer be changed or withdrawn until it is released again
+  (`WISHES_NOT_RELEASED`). The demand itself stays writable either way: declaring another instance
+  afterwards is the ordinary case, and re-announcing then refreshes the timestamp.
 
   `complete: false` withdraws and answers `null` — there is no "withdrawn" state to return, because
   it is the same state as never having announced.
@@ -3291,6 +3377,42 @@ type Mutation {
     """
     maxTracks: Int
   ): Int @scope(area: WISHES, verb: WRITE)
+  """
+  Note down your interest in a module for a coming semester, or change it while it is pending.
+
+  Yours only. Open in every phase but a finished semester (`WISH_PHASE_CLOSED`) and regardless of
+  any wish round: being early is the point. `ADVANCE_WISH_RELEASED` once the programme has released
+  its demand for that semester — enter the wish itself then. `ADVANCE_WISH_CONVERTED` for one that
+  has already become wishes. `WISH_PRIORITY_INVALID`, `WISH_NOTE_TOO_LONG` and
+  `WISH_TRACK_LIMIT_INVALID` as on a wish; `PROGRAMME_NOT_FOUND`, `MODULE_NOT_FOUND`.
+  """
+  setAdvanceWish(
+    """
+    Four digits, a hyphen and SS or WS, within ten years.
+    """
+    semester: String!
+  module: ID!,
+    """
+    The study programme's short code.
+    """
+    programme: String!
+  priority: WishPriority! = HAPPY_TO,
+    """
+    Up to 500 characters, or nothing at all.
+    """
+    note: String
+
+    """
+    Of the cohorts there will be, at most this many, 1 to 9; `null` for no bound.
+    """
+    maxTracks: Int
+  ): AdvanceWish! @scope(area: WISHES, verb: WRITE)
+  """
+  Withdraw one of your own advance wishes, pending or converted. The wishes a converted one became
+  stay — withdraw them as wishes. `ADVANCE_WISH_NOT_FOUND` for one that is not there or not yours,
+  deliberately the same. Returns the id.
+  """
+  withdrawAdvanceWish(id: ID!): ID! @scope(area: WISHES, verb: WRITE)
   """
   State how many hours a week you would like to teach in a semester, or change it. Both ends
   `null` takes it back; one end alone is a single figure.
@@ -4104,10 +4226,12 @@ type Query {
   """
   me: Person @scope(area: PROFILE, verb: READ)
   """
-  Which study programmes have announced their demand as settled, for one semester.
+  Which study programmes have announced their demand as settled and released it for wishes, for one
+  semester.
 
-  Programmes that have not are simply absent. There is no "in Arbeit" row, because not announcing
-  and withdrawing an announcement are the same state: the demand is not settled.
+  Programmes that have not are simply absent, and their instances take no wishes. There is no
+  "in Arbeit" row, because not announcing and withdrawing an announcement are the same state: the
+  demand is not settled.
   """
   demandCompletions(
     """
@@ -4302,6 +4426,36 @@ type Query {
     person: ID
   ): [Wish!]! @scope(area: WISHES, verb: READ)
   """
+  Your own advance wishes, in every semester. Through either door: they are your entries.
+  """
+  myAdvanceWishes: [AdvanceWish!]! @scope(area: WISHES, verb: READ)
+  """
+  The advance wishes of a semester — as many of them as you may see, by the rule of `wishes`. Not
+  an error when that is none, for the reason `wishes` gives; through a plain Personal Access Token
+  your own.
+  """
+  advanceWishes(
+    """
+    Four digits, a hyphen and SS or WS.
+    """
+    semester: String!
+
+    """
+    One study programme, by its short code.
+    """
+    programme: String
+
+    """
+    One module.
+    """
+    module: ID
+
+    """
+    The modules of one subject group.
+    """
+    subjectGroupId: ID
+  ): [AdvanceWish!]! @scope(area: WISHES, verb: READ)
+  """
   Your own desired teaching hours — in one semester, or in every semester you stated one for.
   """
   myDesiredTeachingHours(
@@ -4411,7 +4565,8 @@ type RefusedSignIn {
 """
 One study programme announcing that its review of a semester is done: after the assignment its
 lead has gone over the demand, its cut and who teaches what, and the figures stand against the
-quota as far as anybody knows today. An announcement like `DemandCompletion`; it blocks nothing.
+quota as far as anybody knows today. An announcement only: unlike `DemandCompletion`, it blocks
+nothing.
 """
 type ReviewCompletion {
   """
@@ -4590,6 +4745,7 @@ enum ScopeArea {
   they are stated on the wish screen, beside the wishes they belong to.
 
   Fields: `myWishes`, `wishes`, `setWish`, `withdrawWish`, `setWishTrackLimit`,
+  `myAdvanceWishes`, `advanceWishes`, `setAdvanceWish`, `withdrawAdvanceWish`,
   `myCompetences`, `myCompetenceStatus`, `myCompetenceTotal`,
   `competences`, `competenceMemberStatus`, `modulesWithoutCompetence`, `setMyCompetence`,
   `withdrawMyCompetence`, `setTeacherCompetence`, `withdrawTeacherCompetence`,

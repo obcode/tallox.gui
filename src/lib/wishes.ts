@@ -860,7 +860,7 @@ export function unreleasedNotice(
 		missing.length === 1
 			? missing[0]
 			: `${missing.slice(0, -1).join(', ')} und ${missing[missing.length - 1]}`;
-	return `Noch nicht für Wünsche freigegeben: ${list}. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt.`;
+	return `Noch nicht für Wünsche freigegeben: ${list}. Ihre Module erscheinen hier, sobald die Studiengangsleitung den Bedarf freigibt. Bis dahin lässt sich vormerken, was Du halten möchtest.`;
 }
 
 /**
