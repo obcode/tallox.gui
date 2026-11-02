@@ -353,7 +353,14 @@ export type ModuleFilter = {
   programme?: string | null | undefined;
   /** Only the modules this person is responsible for, by teacher id. */
   responsible?: string | number | null | undefined;
-  /** A substring of the name or of one of the module codes. Case-insensitive. */
+  /**
+   * The words of the name, in any order and any inflection, or a substring of the name or of
+   * one of the module codes. Case-insensitive.
+   *
+   * Words are compared by their German stem, so "Digitale Transformation" also finds
+   * "Grundlagen der Digitalen Transformation". A word cut short ("Datenb") still matches as a
+   * substring of the whole search, but not as one word among several.
+   */
   search?: string | null | undefined;
   /**
    * Narrow to one version of the regulations.
