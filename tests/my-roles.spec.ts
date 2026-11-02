@@ -34,7 +34,9 @@ test.describe('my roles', () => {
 		await gotoRendered(page, '/konto/rollen');
 
 		await expect(page.getByRole('heading', { name: 'Meine Rollen' })).toBeVisible();
-		await expect(page.getByText('Fachgruppenleitung', { exact: true })).toBeVisible();
+		await expect(
+			page.getByRole('main').getByText('Fachgruppenleitung', { exact: true })
+		).toBeVisible();
 
 		// One heading, not two: the card that explains an empty answer and the card that lists a
 		// full one carry the same title, and rendering both put an empty card above the list.
