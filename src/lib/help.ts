@@ -376,6 +376,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wie finde ich ein Modul im Modulkatalog?',
+		answer:
+			'Im Feld „Suchen“ über der Tabelle, nach Name oder Modulcode, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wörter dürfen in beliebiger Reihenfolge und Form stehen: „Digitale Transformation“ findet auch „Grundlagen der Digitalen Transformation“. Ein Wortanfang findet alles, was ihn enthält, etwa „Datenb“ die Datenbanken — das gilt aber nur für die ganze Eingabe, nicht für ein Wort unter mehreren. Module, die das ZPA zurückgezogen hat, zeigt der Haken „zurückgezogene anzeigen“.',
+		who: [],
+		where: [{ href: '/module', label: 'Modulkatalog' }]
+	},
+	{
 		question: 'Wie sehe ich nur die Module eines Korbs?',
 		answer:
 			'Studiengang wählen, dann über der Tabelle unter „Korb“ den Korb der Prüfungsordnung auswählen — in der Übersicht wie beim Bearbeiten. Ein Modul in zwei Körben erscheint in beiden. Unter „Sortierung“ ordnet „nach Korb“ die Module innerhalb jedes Fachsemesters nach ihrem Korb statt nach dem Namen; ein Modul in zwei Körben steht dann einmal, beim ersten. Die Auswahl steht in der Adresse, ein Link darauf lässt sich weitergeben.',
