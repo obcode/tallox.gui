@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { PERSONAS, gotoRendered, test } from './fixtures';
+import { PERSONAS, gotoRendered, openDropdown, test } from './fixtures';
 import { admissionResetSql } from './seed';
 import { runSql } from './psql';
 
@@ -365,17 +365,41 @@ test.describe('role preview', () => {
 		await expect(page.getByRole('status')).toHaveCount(0);
 	});
 
-	test('is offered to administrators only', async ({ asPersona }) => {
-		// Vier holds two roles (LECTURER + PROGRAMME_LEAD) and still does not get the button: she
-		// does not have the question it answers, and what it does — make her demand area
-		// disappear — looks like a defect without that question.
+	test('is offered to everybody holding more than one role', async ({ asPersona }) => {
+		// Vier holds LECTURER + PROGRAMME_LEAD and asked to see Tallox the way lecturers see it.
+		// Eins holds one role and has nothing to narrow it to.
 		const planner = await asPersona(PERSONAS.vier);
 		await planner.goto('/');
-		await expect(planner.getByRole('button', { name: 'Rolle', exact: true })).toHaveCount(0);
+		await expect(planner.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
+
+		const lecturer = await asPersona(PERSONAS.eins);
+		await lecturer.goto('/');
+		await expect(lecturer.getByRole('button', { name: 'Rolle', exact: true })).toHaveCount(0);
 
 		const admin = await asPersona(PERSONAS.sechs);
 		await admin.goto('/');
 		await expect(admin.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
+	});
+
+	test('lets a programme lead look as a lecturer and come back', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, '/');
+		// Statistik is a programme lead's area, not a lecturer's.
+		const statistics = page.locator('header').getByRole('link', { name: 'Statistik', exact: true });
+		await expect(statistics.first()).toBeAttached();
+
+		await openDropdown(page, /^Rolle$/);
+		// "No role at all" answers an administrator's question, not hers.
+		await expect(page.getByRole('button', { name: 'Ohne jede Rolle' })).toHaveCount(0);
+		await page.getByRole('button', { name: 'Dozierende', exact: true }).click();
+
+		await expect(page.getByRole('status')).toContainText('Vorschau');
+		await expect(page.getByRole('status')).toContainText('Dozierende');
+		await expect(statistics).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'Zurück zu meinen Rollen' }).first().click();
+		await expect(page.getByRole('status')).toHaveCount(0);
+		await expect(statistics.first()).toBeAttached();
 	});
 
 	test('stays visible while narrowed', async ({ asPersona }) => {

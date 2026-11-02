@@ -2,7 +2,7 @@
 	import { secureCookieAttribute } from '$lib/cookies';
 	import { invalidateAll } from '$app/navigation';
 	import { ASSUME_COOKIE, ASSUME_COOKIE_MAX_AGE, serializeAssumedRoles } from '$lib/assumedRoles';
-	import { mayPreviewRoles, ROLE_LABELS, sortRoles } from '$lib/roles';
+	import { mayPreviewRoles, mayPreviewWithoutRoles, ROLE_LABELS, sortRoles } from '$lib/roles';
 
 	let {
 		grantedRoles,
@@ -65,11 +65,13 @@
 				</li>
 			{/each}
 
-			<li>
-				<button class:menu-active={narrowed && active.size === 0} onclick={() => assume([])}>
-					<span class="text-base-content/90">Ohne jede Rolle</span>
-				</button>
-			</li>
+			{#if mayPreviewWithoutRoles(grantedRoles)}
+				<li>
+					<button class:menu-active={narrowed && active.size === 0} onclick={() => assume([])}>
+						<span class="text-base-content/90">Ohne jede Rolle</span>
+					</button>
+				</li>
+			{/if}
 
 			<li></li>
 			<li>

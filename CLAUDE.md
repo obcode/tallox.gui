@@ -214,11 +214,13 @@ These follow from the domain, not from taste. Full reasoning in the backend's
   on it. It is worth doing anyway: somebody who sees "Statistik" in the menu and gets a
   refusal on every click learns to ignore refusals.
 - **"It is harmless" is not a reason to show a control.** The role preview can only ever
-  remove permissions, so offering it to everybody with more than one role was safe — and still
-  wrong: a study-programme lead has two roles and no question that button answers, and what it
-  does to her screen looks like a defect without the question. `mayPreviewRoles` gates it on
-  ADMIN, and on the _granted_ roles rather than the effective ones, or the way out would
-  vanish exactly while narrowed.
+  remove permissions, which makes it safe to offer — but it is offered because somebody has
+  the question it answers, not because it is safe. Until 2026-11-02 it was ADMIN-only on the
+  assumption that a study-programme lead had no such question; one asked to see Tallox as a
+  lecturer, so `mayPreviewRoles` now offers it to everybody holding more than one role. "Ohne
+  jede Rolle" stays ADMIN-only (`mayPreviewWithoutRoles`): that view is a question about
+  running the installation. Both go by the _granted_ roles rather than the effective ones, or
+  the way out would vanish exactly while narrowed.
 - **A field marked `@interactiveOnly` needs a page here, or it does not exist.** The API
   console under `/api-doku` deliberately talks to the token door, so it answers `null` for
   every such field — and the playground is off in production. `diagnoseAccess` was shipped

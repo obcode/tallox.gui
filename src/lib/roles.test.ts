@@ -6,6 +6,7 @@ import {
 	displayName,
 	isPartnerOnly,
 	mayPreviewRoles,
+	mayPreviewWithoutRoles,
 	roleLabel,
 	sortRoles
 } from './roles';
@@ -63,22 +64,28 @@ describe('displayName', () => {
 });
 
 describe('mayPreviewRoles', () => {
-	it('offers the preview to administrators only', () => {
+	it('offers the preview to everybody holding more than one role', () => {
 		// Not for security reasons — narrowing cannot add anything by construction. A study
-		// programme lead holds two roles and still has no reason to see a button that makes her
-		// demand area disappear.
+		// programme lead who also teaches wants to see what lecturers see; somebody with one role
+		// has nothing to narrow it to.
 		expect(mayPreviewRoles(['LECTURER'])).toBe(false);
-		expect(mayPreviewRoles(['LECTURER', 'PROGRAMME_LEAD'])).toBe(false);
-		expect(mayPreviewRoles(['DEANS_OFFICE', 'LECTURER'])).toBe(false);
+		expect(mayPreviewRoles(['LECTURER', 'LECTURER'])).toBe(false);
+		expect(mayPreviewRoles(['LECTURER', 'PROGRAMME_LEAD'])).toBe(true);
+		expect(mayPreviewRoles(['DEANS_OFFICE', 'LECTURER'])).toBe(true);
 		expect(mayPreviewRoles(['ADMIN'])).toBe(true);
 		expect(mayPreviewRoles(['LECTURER', 'ADMIN'])).toBe(true);
 	});
 
+	it('offers "no role at all" to administrators only', () => {
+		expect(mayPreviewWithoutRoles(['LECTURER', 'PROGRAMME_LEAD'])).toBe(false);
+		expect(mayPreviewWithoutRoles(['ADMIN'])).toBe(true);
+	});
+
 	it('asks the held roles, not the effective ones', () => {
-		// The point of the signature: an administrator currently narrowed to LECTURER no longer
-		// acts as ADMIN — going by the effective roles, the menu would be gone exactly when it is
+		// The point of the signature: a programme lead currently narrowed to LECTURER no longer
+		// acts as one — going by the effective roles, the menu would be gone exactly when it is
 		// needed to get back.
-		const granted = ['LECTURER', 'ADMIN'];
+		const granted = ['LECTURER', 'PROGRAMME_LEAD'];
 		const effectiveWhileNarrowed = ['LECTURER'];
 
 		expect(mayPreviewRoles(granted)).toBe(true);

@@ -67,17 +67,28 @@ export function sortRoles(roles: readonly string[]): string[] {
 /**
  * Who is offered the role preview.
  *
- * Administrators only. Not for security reasons — narrowing cannot add anything by
- * construction, and somebody setting the cookie by hand takes privileges away from themselves.
- * It is a question of interface: a study-programme lead holds two roles and therefore has no
- * reason to see a button that makes her demand area disappear. She does not have the question
- * it answers.
+ * Everybody who holds more than one role, and administrators. Not for security reasons —
+ * narrowing cannot add anything by construction, and somebody setting the cookie by hand takes
+ * privileges away from themselves. It is a question of interface. A study-programme lead who
+ * also teaches does have the question the button answers — "what does Tallox look like to
+ * lecturers?" — and asked for it. Somebody with a single role has nothing to narrow it to
+ * except "no role at all", and that view is an administrator's question (what a freshly
+ * imported account sees), not theirs.
  *
- * Takes the **granted** roles rather than the effective ones. That is the point: an
- * administrator currently narrowed to LECTURER still holds ADMIN but no longer acts as one —
+ * Takes the **granted** roles rather than the effective ones. That is the point: somebody
+ * currently narrowed to LECTURER still holds their other roles but no longer acts with them —
  * with the effective roles the menu would be gone exactly when it is needed to get back.
  */
 export function mayPreviewRoles(grantedRoles: readonly string[]): boolean {
+	return grantedRoles.includes('ADMIN') || new Set(grantedRoles).size > 1;
+}
+
+/**
+ * Whether the preview offers "no role at all". Administrators only: it shows what a freshly
+ * imported account sees, which is a question about running the installation. For a programme
+ * lead it would be an entry that empties her screen and answers nothing she asked.
+ */
+export function mayPreviewWithoutRoles(grantedRoles: readonly string[]): boolean {
 	return grantedRoles.includes('ADMIN');
 }
 

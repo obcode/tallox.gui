@@ -267,6 +267,13 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question: 'Wie sehe ich Tallox so, wie es Dozierende sehen?',
+		answer:
+			'Wer mehr als eine Rolle hat, findet unten im Fuß der Seite den Knopf „🎭 Rolle“. Dort eine der eigenen Rollen wählen, etwa „Dozierende“: Tallox zeigt dann Menü, Seiten und Daten so, als hättest Du nur diese Rolle, und oben steht eine gelbe Leiste „Vorschau“. Das geht nur in eine Richtung: Die Vorschau kann Rechte wegnehmen, nie welche dazugeben, und angeboten werden nur Rollen, die Du hast. Mit „Zurück zu meinen Rollen“ in der Leiste oder im Menü ist alles wieder wie vorher.',
+		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE', 'ADMIN'],
+		where: [{ href: '/konto/rollen', label: 'Meine Rollen' }]
+	},
+	{
 		question: 'Ich habe eine Leitungsrolle, sehe aber keine Studiengänge oder Fachgruppen.',
 		answer:
 			'Studiengangs- und Fachgruppenleitung gelten immer für bestimmte Studiengänge bzw. Fachgruppen. Ohne Zuordnung darf die Rolle nichts, nicht alles. Welche Zuordnung Du hast, steht unter „Meine Rollen“; ergänzen kann sie die Administration.',
