@@ -35,8 +35,19 @@ const ROLES: Record<string, readonly string[]> = {
 	'prof.neun@example.org': ['LECTURER', 'SUBJECT_GROUP_LEAD'],
 	// Zehn is a partner faculty and nothing else — the one account that reads less than an
 	// ordinary one. Which programme it follows is the controlling spec's to seed.
-	'partner.zehn@example.org': ['PARTNER_READER']
+	'partner.zehn@example.org': ['PARTNER_READER'],
+	// Zwoelf is an observer and nothing else. The grant always has an end date, which the seed
+	// below gives it.
+	'gast.zwoelf@example.org': ['OBSERVER']
 };
+
+/**
+ * The end date a seeded grant needs. OBSERVER exists only with one (the backend's CHECK
+ * person_role_observer_expires); a month is longer than any run.
+ */
+function expiryOf(role: string): string {
+	return role === 'OBSERVER' ? "now() + interval '30 days'" : 'NULL';
+}
 
 /** Doubles single quotes. The values are constants from this repository, but a string that
  *  travels into SQL unchecked is a habit and not an exception. */
@@ -69,7 +80,7 @@ export function seedStatementsFor(personas: readonly Persona[]): string[] {
 
 		for (const role of ROLES[persona.mail] ?? ['LECTURER']) {
 			statements.push(
-				`INSERT INTO person_role (person_id, role) SELECT id, ${quote(role)} FROM person WHERE mail = ${quote(persona.mail)} ON CONFLICT DO NOTHING;`
+				`INSERT INTO person_role (person_id, role, expires_at) SELECT id, ${quote(role)}, ${expiryOf(role)} FROM person WHERE mail = ${quote(persona.mail)} ON CONFLICT DO NOTHING;`
 			);
 		}
 	}

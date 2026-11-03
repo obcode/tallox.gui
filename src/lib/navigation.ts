@@ -1,6 +1,6 @@
 import type { RouteId } from '$app/types';
 import type { Role } from '$lib/gql/__generated__/graphql';
-import { hasAnyRole, isPartnerOnly } from '$lib/roles';
+import { hasAnyRole, isOnlooker } from '$lib/roles';
 
 /**
  * A route that can be linked to without arguments.
@@ -79,9 +79,10 @@ export type NavItem = {
 	 */
 	roles?: readonly Role[];
 	/**
-	 * Only for members of the faculty: hidden from an account that is a partner faculty and
-	 * nothing else. For the pages where somebody states something about themselves — a partner
-	 * reads the planning and states nothing, and the backend refuses it (PARTNER_READS_ONLY).
+	 * Only for members of the faculty: hidden from an account that is a partner faculty or an
+	 * observer and nothing else. For the pages where somebody states something about themselves —
+	 * both read the planning and state nothing, and the backend refuses it (PARTNER_READS_ONLY,
+	 * OBSERVER_READS_ONLY).
 	 */
 	colleaguesOnly?: boolean;
 	/**
@@ -226,8 +227,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		label: 'Statistik',
 		href: '/statistik',
 		hint: 'SWS-Controlling: Lehre je Studiengang gegen das Kontingent',
-		// And the partner faculties: the controlling of their programmes is what they follow.
-		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'PARTNER_READER']
+		// And the partner faculties: the controlling of their programmes is what they follow. And an
+		// observer, who follows all of it.
+		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'PARTNER_READER', 'OBSERVER']
 	},
 	{
 		// Running the faculty's side of the installation: not a step of the planning, so it comes
@@ -236,7 +238,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		emoji: '🛠️',
 		label: 'Verwaltung',
 		hint: 'Semester und Phasen, Personen, Studiengänge, Fachgruppen und Stammdaten',
-		roles: ['ADMIN', 'DEANS_OFFICE'],
+		// An observer finds the two tabs it reads: the subject groups and the import.
+		roles: ['ADMIN', 'DEANS_OFFICE', 'OBSERVER'],
 		children: [
 			{
 				// The dean's office's tool: the planning semester, the phase, the two publications.
@@ -280,7 +283,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				label: 'ZPA-Import',
 				href: '/verwaltung/zpa',
 				hint: 'Wann kamen die Modul-Stammdaten zuletzt, und was hat sich geändert',
-				roles: ['ADMIN', 'DEANS_OFFICE']
+				roles: ['ADMIN', 'DEANS_OFFICE', 'OBSERVER']
 			},
 			{
 				emoji: '📋',
@@ -352,10 +355,10 @@ export function visibleNavItems(
 	roles: readonly string[]
 ): readonly NavItem[] {
 	const out: NavItem[] = [];
-	const partner = isPartnerOnly(roles);
+	const onlooker = isOnlooker(roles);
 	for (const item of items) {
 		if (item.roles && !hasAnyRole(roles, item.roles)) continue;
-		if (item.colleaguesOnly && partner) continue;
+		if (item.colleaguesOnly && onlooker) continue;
 		if (!item.children) {
 			out.push(item);
 			continue;

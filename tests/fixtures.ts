@@ -53,7 +53,13 @@ export const PERSONAS = {
 	 * the setup spec walks her from nothing to everything and any other spec asserting about her
 	 * rows would race it.
 	 */
-	newcomer: { mail: 'prof.elf@example.org', name: 'Prof. Elf' }
+	newcomer: { mail: 'prof.elf@example.org', name: 'Prof. Elf' },
+	/**
+	 * An observer and nothing else: reads the whole planning without its confidential half, and
+	 * states nothing. GUI-only like Zehn — the backend asserts the rule with its own cast
+	 * (`bootstrap/observer_test.go`); what this one exercises is the bar and the import page.
+	 */
+	observer: { mail: 'gast.zwoelf@example.org', name: 'Gast Zwölf' }
 } as const;
 
 export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];

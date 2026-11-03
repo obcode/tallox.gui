@@ -459,7 +459,7 @@ export type ProgrammeStatus =
  * A role somebody holds. Everybody holds `LECTURER`; the others come on top of it.
  *
  * The values are English. The interface shows the German terms the faculty uses: Dozierende,
- * Fachgruppenleitung, Studiengangsleitung, Dekanat.
+ * Fachgruppenleitung, Studiengangsleitung, Dekanat, Partnerfakultät, Einsicht.
  */
 export type Role =
   /** Administers people, roles and tokens. Not a reader of unpublished wishes. */
@@ -471,6 +471,14 @@ export type Role =
   | 'DEANS_OFFICE'
   /** Teaches, keeps a profile and a competence profile, registers interest in instances. */
   | 'LECTURER'
+  /**
+   * Follows the whole planning without taking part in it, for a limited time — somebody building a
+   * neighbouring system. Held alone it reads what any account reads, all programmes, plus the module
+   * import; no other people's wishes, desired or assigned teaching hours, not even published ones;
+   * and writes nothing (`OBSERVER_READS_ONLY`). Always granted with an expiry of at most 180 days
+   * (`OBSERVER_GRANT_MUST_EXPIRE`). On no exception list of the confidentiality rule.
+   */
+  | 'OBSERVER'
   /**
    * A partner faculty following the study programmes it shares with this one. Held alone it reads
    * less than an ordinary account — the demand, the controlling and the published assignments of its

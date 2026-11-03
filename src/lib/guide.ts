@@ -6,7 +6,7 @@ import {
 	visibleNavItems,
 	type NavItem
 } from '$lib/navigation';
-import { isPartnerOnly } from '$lib/roles';
+import { isOnlooker } from '$lib/roles';
 import type { PlanningState } from '$lib/planning';
 import { PHASE_LABELS, semesterName } from '$lib/semester';
 
@@ -82,7 +82,7 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Personen zulassen und Rollen vergeben',
 				who: ['ADMIN'],
 				where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }],
-				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und haben damit die Rolle Dozierende. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles. Kolleginnen und Kollegen der Partnerfakultäten (FK10, MUC.DAI, MUC.HEALTH, DPH) bekommen nur die Rolle Partnerfakultät und die Studiengänge, denen sie folgen: sie lesen Bedarf, Statistik und veröffentlichte Zuteilung dieser Studiengänge, nicht die Liste des Kollegiums und nicht, wer Fachgruppen und Studiengänge leitet, und tragen nichts ein. Sich selbst gibt die Administration die Rolle Dekanat oder eine Leitung nur befristet, höchstens 30 Tage; der tägliche Zugriffsbericht nennt solche Rollen, solange sie gelten.'
+				text: 'Ohne Eintrag kommt niemand hinein, auch nicht mit gültiger HM-Kennung. Lehrende aus der ZPA-Liste werden per Schalter zugelassen und haben damit die Rolle Dozierende. Studiengangsleitung gilt immer für bestimmte Studiengänge, Fachgruppenleitung für bestimmte Fachgruppen: eine Rolle ohne Zuordnung darf nichts, nicht alles. Kolleginnen und Kollegen der Partnerfakultäten (FK10, MUC.DAI, MUC.HEALTH, DPH) bekommen nur die Rolle Partnerfakultät und die Studiengänge, denen sie folgen: sie lesen Bedarf, Statistik und veröffentlichte Zuteilung dieser Studiengänge, nicht die Liste des Kollegiums und nicht, wer Fachgruppen und Studiengänge leitet, und tragen nichts ein. Wer die ganze Planung nur lesen soll, etwa für ein Nachbarsystem, bekommt allein die Rolle Einsicht, immer befristet, höchstens 180 Tage: Sie liest alles außer Wünschen und SWS-Angaben aus dem Kollegium und trägt nichts ein. Sich selbst gibt die Administration die Rolle Dekanat oder eine Leitung nur befristet, höchstens 30 Tage; der tägliche Zugriffsbericht nennt solche Rollen, solange sie gelten.'
 			},
 			{
 				title: 'Festlegen, welche Studiengänge die Fakultät plant',
@@ -264,9 +264,9 @@ export function dueNow(phase: Phase | null, roles: readonly string[]): GuideStep
 	return GUIDE.flatMap((section) => section.steps).filter(
 		(step) =>
 			step.due?.includes(now) &&
-			// A step nobody in particular does is every colleague's — not a partner faculty's,
-			// which states nothing here.
-			((step.who.length === 0 && !isPartnerOnly(roles)) ||
+			// A step nobody in particular does is every colleague's — not a partner faculty's or
+			// an observer's, which state nothing here.
+			((step.who.length === 0 && !isOnlooker(roles)) ||
 				step.who.some((role) => roles.includes(role)))
 	);
 }

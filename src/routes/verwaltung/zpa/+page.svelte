@@ -19,6 +19,7 @@
 		statusBadge
 	} from '$lib/zpa';
 	import { FINDING_LABELS, findingIsAlarming } from '$lib/catalogue';
+	import { mayRunImport } from '$lib/roles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -26,6 +27,8 @@
 	const fresh = $derived(freshness(newest?.finishedAt));
 	const current = $derived(runningRun(data.runs));
 	const running = $derived(current !== undefined);
+	// An observer reads this page and starts nothing; the two buttons would only meet a refusal.
+	const mayRun = $derived(mayRunImport(data.session?.effectiveRoles ?? []));
 
 	// The clock the elapsed seconds are measured against. Ticks with the polling, so the number
 	// moves while the run does even when no endpoint has finished in between.
@@ -94,22 +97,24 @@
 			</p>
 		{/if}
 
-		<form method="POST" action="?/sync" use:enhance class="flex items-center gap-3">
-			<!--
-				Cosmetic, not a lock: the same rule lives in internal/policy and also applies through
-				the token door. The button is only disabled while something is actually running —
-				enforcing the ten-minute limit is the backend's business, otherwise there would be two
-				opinions about the same number.
-			-->
-			<button class="btn btn-sm btn-primary" disabled={running}>Jetzt abgleichen</button>
-			{#if progress}
-				<span class="text-base-content/80 text-sm">
-					Ein Abgleich läuft seit {progress.seconds} s.
-				</span>
-			{:else}
-				<span class="text-base-content/80 text-sm">Dauert etwa eine Viertelminute.</span>
-			{/if}
-		</form>
+		{#if mayRun}
+			<form method="POST" action="?/sync" use:enhance class="flex items-center gap-3">
+				<!--
+					Cosmetic, not a lock: the same rule lives in internal/policy and also applies through
+					the token door. The button is only disabled while something is actually running —
+					enforcing the ten-minute limit is the backend's business, otherwise there would be two
+					opinions about the same number.
+				-->
+				<button class="btn btn-sm btn-primary" disabled={running}>Jetzt abgleichen</button>
+				{#if progress}
+					<span class="text-base-content/80 text-sm">
+						Ein Abgleich läuft seit {progress.seconds} s.
+					</span>
+				{:else}
+					<span class="text-base-content/80 text-sm">Dauert etwa eine Viertelminute.</span>
+				{/if}
+			</form>
+		{/if}
 
 		{#if progress}
 			<!--
@@ -236,17 +241,19 @@
 			</p>
 		{/if}
 
-		<form
-			method="POST"
-			action="?/project"
-			use:enhance
-			class="mt-3 flex flex-wrap items-center gap-3"
-		>
-			<button class="btn btn-sm">Katalog neu aufbauen</button>
-			<span class="text-base-content/80 text-sm">
-				Nur aus dem, was schon zwischengespeichert ist — holt nichts vom ZPA.
-			</span>
-		</form>
+		{#if mayRun}
+			<form
+				method="POST"
+				action="?/project"
+				use:enhance
+				class="mt-3 flex flex-wrap items-center gap-3"
+			>
+				<button class="btn btn-sm">Katalog neu aufbauen</button>
+				<span class="text-base-content/80 text-sm">
+					Nur aus dem, was schon zwischengespeichert ist — holt nichts vom ZPA.
+				</span>
+			</form>
+		{/if}
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">

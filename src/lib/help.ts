@@ -409,6 +409,20 @@ export const HELP: readonly HelpEntry[] = [
 			'Unter Personen und Rollen: Konto anlegen, nur die Rolle Partnerfakultät ankreuzen, danach erscheinen die Studiengänge zum Ankreuzen, denen die Person folgen soll. Ohne Studiengang liest sie nichts. Die Liste „SWS im Kollegium“ bleibt für sie leer, ebenso die Lehrendenliste und die Namen hinter Fachgruppen- und Studiengangsleitung: sie liest die Struktur, nicht das Kollegium. Bekommt sie zusätzlich eine andere Rolle, gehört sie zum Kollegium und sieht, was das Kollegium sieht.',
 		who: ['ADMIN'],
 		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
+	},
+	{
+		question: 'Wie gebe ich jemandem Einblick in die ganze Planung, ohne dass die Person mitplant?',
+		answer:
+			'Mit der Rolle Einsicht, etwa für jemanden, der ein Nachbarsystem baut. Unter Personen und Rollen zuerst „Befristet bis“ setzen (höchstens 180 Tage), dann nur die Rolle Einsicht ankreuzen; ohne Datum lehnt Tallox ab. Die Person liest Bedarf, Module, Statistik, Fachgruppen, den ZPA-Import und die veröffentlichte Zuteilung aller Studiengänge. Wünsche, Vormerkungen und die SWS-Angaben aus dem Kollegium sieht sie nie, auch nicht nach der Veröffentlichung, und eintragen kann sie nichts, auch keinen Abgleich anstoßen. Der tägliche Zugriffsbericht nennt die Rolle, solange sie gilt. Zum Verlängern die Rolle abnehmen und mit neuem Datum wieder vergeben. Bekommt die Person zusätzlich eine andere Rolle, gilt, was diese erlaubt.',
+		who: ['ADMIN'],
+		where: [{ href: '/verwaltung/personen', label: 'Personen und Rollen' }]
+	},
+	{
+		question: 'Was sehe ich mit der Rolle Einsicht?',
+		answer:
+			'Die Planung so, wie sie ist: Bedarf, Module, Statistik und Fachgruppen aller Studiengänge, die veröffentlichte Zuteilung und den ZPA-Import. Nicht dabei sind Wünsche und Vormerkungen, gewünschte und eingeplante SWS aus dem Kollegium, auch nach der Veröffentlichung nicht: das sind Absprachen im Kollegium. Eintragen lässt sich nichts. Für eigene Auswertungen reicht ein normales Token unter „Tokens“; den ZPA-Import liest nur der Browser oder ein Planungs-Token. Die Rolle ist befristet und endet von selbst.',
+		who: ['OBSERVER'],
+		where: [{ href: '/konto/tokens', label: 'Tokens' }]
 	}
 ];
 
