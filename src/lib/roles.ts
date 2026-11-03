@@ -13,6 +13,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 	PROGRAMME_LEAD: 'Studiengangsleitung',
 	DEANS_OFFICE: 'Dekanat',
 	PARTNER_READER: 'Partnerfakultät',
+	OBSERVER: 'Einsicht',
 	ADMIN: 'Administration'
 };
 
@@ -28,6 +29,8 @@ export const ROLE_HINTS: Record<Role, string> = {
 		'Liest studiengangsübergreifend, schaltet die Phasen und veröffentlicht Wünsche und Zuteilung.',
 	PARTNER_READER:
 		'Liest Bedarf, Statistik und veröffentlichte Zuteilung der zugeordneten Studiengänge — allein vergeben weniger als ein normales Konto, keine Wünsche, keine Eintragungen.',
+	OBSERVER:
+		'Liest die ganze Planung ohne Vertrauliches, auch den ZPA-Import — keine Wünsche und keine SWS-Angaben anderer, auch nicht veröffentlicht, keine Eintragungen. Nur befristet, höchstens 180 Tage.',
 	ADMIN:
 		'Verwaltet Personen, Rollen und Tokens. Liest bewusst keine Wünsche; die Rolle Dekanat oder eine Leitung gibt sie sich selbst nur befristet.'
 };
@@ -42,6 +45,7 @@ export const ALL_ROLES: readonly Role[] = [
 	'PROGRAMME_LEAD',
 	'DEANS_OFFICE',
 	'PARTNER_READER',
+	'OBSERVER',
 	'ADMIN'
 ] as const;
 
@@ -104,6 +108,24 @@ export function hasAnyRole(held: readonly string[], wanted: readonly Role[]): bo
  */
 export function isPartnerOnly(roles: readonly string[]): boolean {
 	return roles.length === 1 && roles[0] === 'PARTNER_READER';
+}
+
+/**
+ * Whether these roles follow the planning from outside the faculty's colleagues: a partner
+ * faculty or an observer, held alone. The backend's policy.Onlooker — such an account states
+ * nothing about itself, so the pages for one's own teaching are not offered.
+ */
+export function isOnlooker(roles: readonly string[]): boolean {
+	return roles.length === 1 && (roles[0] === 'PARTNER_READER' || roles[0] === 'OBSERVER');
+}
+
+/**
+ * Whether these roles start a module import or rebuild the catalogue. The backend's
+ * policy.MayTriggerZPASync: the administration and the dean's office. An observer reads the
+ * import and runs nothing.
+ */
+export function mayRunImport(roles: readonly string[]): boolean {
+	return hasAnyRole(roles, ['ADMIN', 'DEANS_OFFICE']);
 }
 
 /**

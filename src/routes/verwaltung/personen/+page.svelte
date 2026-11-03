@@ -740,7 +740,8 @@
 											<span class="text-base-content/80 mt-1 text-xs">
 												Erst das Datum setzen, dann die Rolle ankreuzen: es gilt nur für Rollen, die
 												danach dazukommen. Gedacht für „einmal hineinsehen“ — die Rolle läuft dann
-												von selbst aus, statt bis Februar stehen zu bleiben.
+												von selbst aus, statt bis Februar stehen zu bleiben. Die Rolle Einsicht geht
+												nur mit Datum, dann bis zu 180 Tage.
 											</span>
 										</label>
 

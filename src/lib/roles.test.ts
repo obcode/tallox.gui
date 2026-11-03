@@ -4,9 +4,11 @@ import {
 	ROLE_HINTS,
 	ROLE_LABELS,
 	displayName,
+	isOnlooker,
 	isPartnerOnly,
 	mayPreviewRoles,
 	mayPreviewWithoutRoles,
+	mayRunImport,
 	roleLabel,
 	sortRoles
 } from './roles';
@@ -100,5 +102,27 @@ describe('a partner faculty', () => {
 		expect(isPartnerOnly(['PARTNER_READER', 'LECTURER'])).toBe(false);
 		expect(isPartnerOnly([])).toBe(false);
 		expect(isPartnerOnly(['LECTURER'])).toBe(false);
+	});
+});
+
+describe('an onlooker', () => {
+	// A partner faculty or an observer, held alone: neither states anything about itself.
+	it('is a partner or an observer holding nothing else', () => {
+		expect(isOnlooker(['PARTNER_READER'])).toBe(true);
+		expect(isOnlooker(['OBSERVER'])).toBe(true);
+		expect(isOnlooker(['OBSERVER', 'LECTURER'])).toBe(false);
+		expect(isOnlooker(['PARTNER_READER', 'OBSERVER'])).toBe(false);
+		expect(isOnlooker(['LECTURER'])).toBe(false);
+		expect(isOnlooker([])).toBe(false);
+	});
+});
+
+describe('who runs the import', () => {
+	// The administration and the dean's office; an observer reads the page and runs nothing.
+	it('is the administration and the dean’s office', () => {
+		expect(mayRunImport(['ADMIN'])).toBe(true);
+		expect(mayRunImport(['DEANS_OFFICE', 'LECTURER'])).toBe(true);
+		expect(mayRunImport(['OBSERVER'])).toBe(false);
+		expect(mayRunImport(['LECTURER'])).toBe(false);
 	});
 });

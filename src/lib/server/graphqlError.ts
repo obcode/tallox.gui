@@ -92,6 +92,10 @@ const PASS_THROUGH = new Set([
 	'NOT_A_PARTNER_READER',
 	'ROLE_NOT_PROGRAMME_SCOPED',
 	'PARTNER_READS_ONLY',
+	// The observer: the refusal on every write path, and the administration's when the grant has
+	// no end date. Both about the caller's own account or the person being edited.
+	'OBSERVER_READS_ONLY',
+	'OBSERVER_GRANT_MUST_EXPIRE',
 	// The admission screen. TEACHER_HAS_NO_MAIL is the one refusal there that nobody can act on,
 	// and its sentence says why — a generic "that did not work" would send an administrator
 	// looking for a mistake they did not make.

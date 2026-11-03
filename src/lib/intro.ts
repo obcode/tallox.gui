@@ -36,7 +36,7 @@ export const PROMISES: readonly IntroPromise[] = [
 	},
 	{
 		title: 'Die Regeln stehen im Server, nicht in der Oberfläche',
-		text: 'Was Du sehen und ändern darfst, entscheidet der Server, und zwar für die Oberfläche und die Schnittstelle gleich. Ein Knopf, der fehlt, ist nur die Folge davon. Es gibt keine Rolle, die alles sieht, auch die Administration liest vor der Veröffentlichung keine Wünsche. Muss sie doch hineinsehen, kann sie sich die Rolle Dekanat oder eine Leitung nur befristet geben, höchstens 30 Tage, und das steht jeden Tag im Zugriffsbericht.'
+		text: 'Was Du sehen und ändern darfst, entscheidet der Server, und zwar für die Oberfläche und die Schnittstelle gleich. Ein Knopf, der fehlt, ist nur die Folge davon. Es gibt keine Rolle, die alles sieht, auch die Administration liest vor der Veröffentlichung keine Wünsche. Selbst die Rolle Einsicht, die die ganze Planung liest, sieht keine Wünsche und keine SWS-Angaben aus dem Kollegium. Muss sie doch hineinsehen, kann sie sich die Rolle Dekanat oder eine Leitung nur befristet geben, höchstens 30 Tage, und das steht jeden Tag im Zugriffsbericht.'
 	}
 ];
 

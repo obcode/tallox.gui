@@ -205,6 +205,29 @@ describe('the bar of a partner faculty', () => {
 	});
 });
 
+describe('the bar of an observer', () => {
+	const labels = (roles: string[]) => visibleNavItems(NAV_ITEMS, roles).map((i) => i.label);
+	const tabs = (roles: string[], area: string) =>
+		visibleNavItems(NAV_ITEMS, roles)
+			.find((i) => i.label === area)
+			?.children?.map((c) => c.label);
+
+	// An observer reads the whole planning and states nothing about itself.
+	it('offers what it reads, and none of the pages one fills in oneself', () => {
+		const bar = labels(['OBSERVER']);
+		expect(bar).toContain('Bedarf');
+		expect(bar).toContain('Statistik');
+		expect(bar).toContain('Zuteilung');
+		expect(bar).not.toContain('Meine Lehre');
+		expect(tabs(['OBSERVER'], 'Verwaltung')).toEqual(['Fachgruppen', 'ZPA-Import']);
+		expect(tabs(['OBSERVER'], 'Zuteilung')).toEqual(['Übersicht']);
+	});
+
+	it('gives an observer who also teaches here everything a colleague has', () => {
+		expect(labels(['OBSERVER', 'LECTURER'])).toContain('Meine Lehre');
+	});
+});
+
 describe('the assignment area', () => {
 	const area = (roles: string[]) =>
 		visibleNavItems(NAV_ITEMS, roles).find((i) => i.label === 'Zuteilung');

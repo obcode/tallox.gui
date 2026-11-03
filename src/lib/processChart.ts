@@ -26,7 +26,8 @@ import { PHASE_HINTS, PHASE_LABELS, PHASE_ORDER } from '$lib/semester';
 export type ChartColumn = Phase | 'KICKOFF';
 
 /** A lane: a role, or everybody with an account. */
-export type ChartLane = Exclude<Role, 'LECTURER' | 'ADMIN' | 'PARTNER_READER'> | 'EVERYBODY';
+export type ChartLane =
+	Exclude<Role, 'LECTURER' | 'ADMIN' | 'PARTNER_READER' | 'OBSERVER'> | 'EVERYBODY';
 
 export type ChartStep = {
 	/** The number the step has in the walk-through below, which the chart links to. */
@@ -80,8 +81,8 @@ export function columnOf(step: GuideStep): ChartColumn {
 export function laneOf(step: GuideStep): ChartLane {
 	const first = step.who[0];
 	if (!first || first === 'LECTURER') return 'EVERYBODY';
-	if (first === 'ADMIN' || first === 'PARTNER_READER') {
-		// Neither takes part in the semester; a step that names one first belongs to the setup.
+	if (first === 'ADMIN' || first === 'PARTNER_READER' || first === 'OBSERVER') {
+		// None of them takes part in the semester; a step that names one first belongs to the setup.
 		throw new Error(`${step.title}: ${first} has no lane in the semester`);
 	}
 	return first;
