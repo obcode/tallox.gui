@@ -1,10 +1,10 @@
 import { error, fail, isHttpError } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { CourseType, InstancePartKind, ModuleKind } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { applyModuleSplit, previewModuleSplit } from '$lib/server/splitApplication';
 import { toRefusal } from '$lib/server/graphqlError';
-import { ALL_PART_KINDS } from '$lib/catalogue';
+import { ALL_PART_KINDS, COURSE_TYPE_LABELS, localModuleInput } from '$lib/catalogue';
 import type { Actions, PageServerLoad } from './$types';
 
 const ModuleDocument = graphql(`
@@ -30,6 +30,8 @@ const ModuleDocument = graphql(`
 		module(id: $id) {
 			id
 			name
+			source
+			kind
 			projectBased
 			zpaId
 			handbookUrl
@@ -142,6 +144,48 @@ const SetComponentsDocument = graphql(`
 	}
 `);
 
+// What `changeLocalModule` replaces, read fresh right before the write: the mutation takes the
+// whole description, and sending back what the page showed when it was loaded would undo a split
+// somebody saved in between.
+const StoredLocalModuleDocument = graphql(`
+	query StoredLocalModule($id: ID!) {
+		module(id: $id) {
+			id
+			source
+			name
+			kind
+			courseType
+			frequency
+			contactHoursPerWeek
+			credits
+			active
+			homeProgramme {
+				code
+			}
+			components {
+				kind
+				teachingHours
+			}
+		}
+	}
+`);
+
+const ChangeLocalModuleDocument = graphql(`
+	mutation ChangeLocalModule($id: ID!, $input: LocalModuleInput!) {
+		changeLocalModule(id: $id, input: $input) {
+			id
+			name
+			active
+		}
+	}
+`);
+
+/** The stored local course, or `null` for an imported one or none — the form is not theirs. */
+async function storedLocalModule(id: string) {
+	const data = await backendRequest(StoredLocalModuleDocument, { id });
+	return data.module?.source === 'LOCAL' ? data.module : null;
+}
+
 export const load: PageServerLoad = async ({ params }) => {
 	try {
 		const data = await backendRequest(ModuleDocument, { id: params.id });
@@ -165,6 +209,69 @@ export const load: PageServerLoad = async ({ params }) => {
  * positions from it.
  */
 export const actions: Actions = {
+	/**
+	 * Correct a course of the faculty's own: its name, whether it is a placeholder, its course
+	 * type and its hours. The split has its own form below and is sent back unchanged.
+	 */
+	localModule: async ({ request, params }) => {
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim();
+		const kind: ModuleKind =
+			String(form.get('kind') ?? '') === 'FWP_PLACEHOLDER' ? 'FWP_PLACEHOLDER' : 'MODULE';
+		const courseType = String(form.get('courseType') ?? '');
+		const rawHours = String(form.get('contactHoursPerWeek') ?? '').trim();
+		const hours = rawHours === '' ? null : Number(rawHours);
+
+		if (name === '') {
+			return fail(400, { localError: 'Der Name darf nicht leer sein.' });
+		}
+		if (!(courseType in COURSE_TYPE_LABELS)) {
+			return fail(400, { localError: 'Unbekannte Lehrform.' });
+		}
+		if (hours !== null && (!Number.isInteger(hours) || hours < 0 || hours > 30)) {
+			return fail(400, {
+				localError: 'Die SWS müssen eine ganze Zahl zwischen 0 und 30 sein — oder leer bleiben.'
+			});
+		}
+
+		try {
+			const stored = await storedLocalModule(params.id);
+			if (!stored) return fail(404, { localError: 'Diese Lehrveranstaltung gibt es nicht.' });
+			await backendRequest(ChangeLocalModuleDocument, {
+				id: params.id,
+				input: localModuleInput(stored, {
+					name,
+					kind,
+					courseType: courseType as CourseType,
+					contactHoursPerWeek: hours
+				})
+			});
+		} catch (err) {
+			return fail(400, { localError: toRefusal(err).message });
+		}
+		return { localSaved: true };
+	},
+
+	/**
+	 * Take a course of the faculty's own out of the lists, or back in. Nothing is deleted; the
+	 * backend refuses while a running semester still has it in its demand, and says so.
+	 */
+	localActive: async ({ request, params }) => {
+		const form = await request.formData();
+		const active = form.get('active') === '1';
+		try {
+			const stored = await storedLocalModule(params.id);
+			if (!stored) return fail(404, { localError: 'Diese Lehrveranstaltung gibt es nicht.' });
+			await backendRequest(ChangeLocalModuleDocument, {
+				id: params.id,
+				input: localModuleInput(stored, { active })
+			});
+		} catch (err) {
+			return fail(400, { localError: toRefusal(err).message });
+		}
+		return { localActiveSaved: active ? 'reactivated' : 'deactivated' };
+	},
+
 	/** Mark the module as a PBLV, or take the mark back. The same people as the split. */
 	projectBased: async ({ request, params }) => {
 		const form = await request.formData();

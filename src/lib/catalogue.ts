@@ -489,6 +489,69 @@ export function mayRefileModule(
 }
 
 /**
+ * Whether somebody may correct a course of the faculty's own, or take it out of the lists.
+ *
+ * The mirror of what `changeLocalModule` checks: the row is `LOCAL`, and the caller is the lead of
+ * its home programme or the dean's office. Narrower than the split on purpose — the subject group
+ * lead files the course and may state its split, but what the course is called and whether it
+ * exists at all is the programme's decision. Cosmetic like the rest; the backend refuses on both
+ * doors.
+ */
+export function mayEditLocalModule(
+	roles: readonly string[],
+	programmes: readonly { code: string }[],
+	module: { source: string; homeProgramme: { code: string } }
+): boolean {
+	if (module.source !== 'LOCAL') return false;
+	if (roles.includes('DEANS_OFFICE')) return true;
+	return (
+		roles.includes('PROGRAMME_LEAD') && programmes.some((p) => p.code === module.homeProgramme.code)
+	);
+}
+
+/** A local course as it is stored, in the fields `changeLocalModule` replaces. */
+export type StoredLocalModule = {
+	homeProgramme: { code: string };
+	name: string;
+	kind: ModuleKind;
+	courseType: CourseType;
+	frequency: Frequency;
+	contactHoursPerWeek?: number | null;
+	credits?: number | null;
+	active: boolean;
+	components: readonly { kind: InstancePartKind; teachingHours: number }[];
+};
+
+/**
+ * The whole input for `changeLocalModule`, from what is stored and the fields that change.
+ *
+ * The mutation replaces the entire description, the split included, so everything a form does not
+ * edit has to be sent back as it is — a field left out would be reset to its default, and an
+ * omitted split would be a cleared one.
+ */
+export function localModuleInput(
+	stored: StoredLocalModule,
+	change: Partial<
+		Pick<StoredLocalModule, 'name' | 'kind' | 'courseType' | 'contactHoursPerWeek' | 'active'>
+	>
+) {
+	return {
+		programme: stored.homeProgramme.code,
+		name: change.name ?? stored.name,
+		kind: change.kind ?? stored.kind,
+		courseType: change.courseType ?? stored.courseType,
+		frequency: stored.frequency,
+		contactHoursPerWeek:
+			change.contactHoursPerWeek !== undefined
+				? change.contactHoursPerWeek
+				: (stored.contactHoursPerWeek ?? null),
+		credits: stored.credits ?? null,
+		active: change.active ?? stored.active,
+		components: stored.components.map((c) => ({ kind: c.kind, teachingHours: c.teachingHours }))
+	};
+}
+
+/**
  * Whether somebody may state this module's split — whether the editor, and the "eintragen" link
  * to it, belong on the page.
  *
