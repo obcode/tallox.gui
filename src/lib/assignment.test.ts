@@ -3,6 +3,9 @@ import {
 	assignmentChanges,
 	candidateSections,
 	candidatesFor,
+	cohortsWithContractLecturers,
+	contractLecturersFrom,
+	isContractLecturer,
 	commonNote,
 	commonValue,
 	moduleBlocks,
@@ -990,5 +993,61 @@ describe('instancesListedAsCie', () => {
 	});
 	it('keeps only the listed cohorts with it', () => {
 		expect(instancesListedAsCie([listed, unlisted, unknown], true)).toEqual([listed]);
+	});
+});
+
+describe('lecturers on contract', () => {
+	const contract = contractLecturersFrom([
+		{ id: 't-lb', mail: 'Lehrbeauftragt@example.org', isLecturerOnContract: true },
+		{ id: 't-prof', mail: 'prof.eins@example.org', isLecturerOnContract: false },
+		{ id: 't-lb2', mail: null, isLecturerOnContract: true }
+	]);
+
+	it('knows them by teacher id and, case-insensitively, by address', () => {
+		expect(isContractLecturer({ teacherId: 't-lb' }, contract)).toBe(true);
+		expect(isContractLecturer({ teacherId: 't-lb2' }, contract)).toBe(true);
+		// An account names no teacher record; the address makes it the same human being.
+		expect(isContractLecturer({ mail: 'lehrbeauftragt@example.org' }, contract)).toBe(true);
+		expect(
+			isContractLecturer({ teacherId: 't-prof', mail: 'prof.eins@example.org' }, contract)
+		).toBe(false);
+		expect(isContractLecturer({}, contract)).toBe(false);
+	});
+
+	it('marks them in the dropdown, before the reason they are offered', () => {
+		const out = candidatesFor(
+			['i1'],
+			[],
+			[{ id: 'p-lb', name: 'Lehrbeauftragt', mail: 'lehrbeauftragt@example.org' }],
+			[{ id: 't-prof', name: 'Prof. Eins', mail: 'prof.eins@example.org' }],
+			[],
+			new Map(),
+			[],
+			[{ id: 't-lb2', name: 'Ohne Adresse', mail: null }],
+			contract
+		);
+		expect(out.map((c) => c.hint)).toEqual(['LB · Fachgruppe', 'Suche', 'LB']);
+	});
+
+	it('leaves the dropdown as it was without the list', () => {
+		const out = candidatesFor(['i1'], [], [], [{ id: 't-lb', name: 'X', mail: null }], []);
+		expect(out[0].hint).toBe('Suche');
+	});
+
+	it('keeps only the cohorts with a part they hold, and only when asked', () => {
+		const instances = [
+			{ id: 'a', parts: [{ id: 'a1' }, { id: 'a2' }] },
+			{ id: 'b', parts: [{ id: 'b1' }] },
+			{ id: 'c', parts: [{ id: 'c1' }] }
+		];
+		const assignments = [
+			{ part: { id: 'a2' }, assignee: { teacherId: 't-lb' } },
+			{ part: { id: 'b1' }, assignee: { personId: 'p1', mail: 'prof.eins@example.org' } },
+			{ part: { id: 'c1' }, assignee: { personId: 'p2', mail: 'LEHRBEAUFTRAGT@example.org' } }
+		];
+		expect(
+			cohortsWithContractLecturers(instances, assignments, contract, true).map((i) => i.id)
+		).toEqual(['a', 'c']);
+		expect(cohortsWithContractLecturers(instances, assignments, contract, false)).toHaveLength(3);
 	});
 });

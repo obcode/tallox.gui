@@ -29,6 +29,12 @@ export type LoadInput = {
 	 * from a server that predates it, which reads as none.
 	 */
 	externalHours?: number;
+	/**
+	 * Of `teachingHours`, what lecturers on contract hold. `null` while the caller may not read every
+	 * assignment of the programme — "not yours to know yet", not zero — and absent from a server
+	 * that predates it, which reads the same.
+	 */
+	contractLecturerHours?: number | null;
 	/** Split by the home programme of the modules. */
 	shares: readonly {
 		homeProgramme: { code: string; title: string };
@@ -62,6 +68,8 @@ export type ControllingRow = {
 	partsWithoutHours: number;
 	/** Taught by other faculties in the programme's instances, and not in `teachingHours`. */
 	externalHours: number;
+	/** Of `teachingHours`, held by lecturers on contract; null where it is not the reader's to know. */
+	contractLecturerHours: number | null;
 	/** The same semester a year earlier, or null where there is nothing to compare with. */
 	previousHours: number | null;
 	/** This semester minus that one, or null. */
@@ -111,6 +119,7 @@ export function controllingTable(
 			fwpHours: l.fwpHours,
 			partsWithoutHours: l.partsWithoutHours,
 			externalHours: l.externalHours ?? 0,
+			contractLecturerHours: l.contractLecturerHours ?? null,
 			previousHours,
 			delta: previousHours === null ? null : l.teachingHours - previousHours
 		};
@@ -138,6 +147,11 @@ export function controllingTable(
 			fwpHours: sum((r) => r.fwpHours),
 			partsWithoutHours: sum((r) => r.partsWithoutHours),
 			externalHours: sum((r) => r.externalHours),
+			// Only where every row has its figure: a sum over the rows one may read would pass for
+			// the faculty's total and be too low.
+			contractLecturerHours: rows.every((r) => r.contractLecturerHours !== null)
+				? sum((r) => r.contractLecturerHours ?? 0)
+				: null,
 			previousHours: previousTotal,
 			delta: previousTotal === null ? null : teachingHours - previousTotal
 		}

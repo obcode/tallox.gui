@@ -218,6 +218,7 @@ const AssignmentDocument = graphql(`
 			id
 			name
 			mail
+			isLecturerOnContract
 		}
 		# Everybody who teaches here, for the last group of every dropdown. Not a confidential list:
 		# any account may read it.
@@ -225,6 +226,8 @@ const AssignmentDocument = graphql(`
 			id
 			name
 			mail
+			# The examination office's mark for a lecturer on contract: „LB“ in the dropdowns.
+			isLecturerOnContract
 		}
 		me {
 			mail
@@ -373,6 +376,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
 	const byProgramme = url.searchParams.get('nach') === 'studiengang';
 	const onlyCie = url.searchParams.get('cie') === '1';
+	const onlyContract = url.searchParams.get('lb') === '1';
 	// A basket of one programme, and the order inside each programme. Cuts of what is loaded, like
 	// the degree; the order only applies with the grouping by programme, see `moduleBlocks`.
 	const basket = parseBasketChoice(url.searchParams.get('korb'));
@@ -445,6 +449,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			degree,
 			byProgramme,
 			onlyCie,
+			onlyContract,
 			basket,
 			order
 		},

@@ -268,3 +268,14 @@ ein zweiter Zug hätte jeden davon mehrdeutig gemacht. Vorsicht bei `getByRole('
 name: 'Abschluss' })`: ohne `exact` trifft das auch „…E2E Abschlussmodul…“.
 
 Siehe auch [[wish-page]], [[demand-page]], [[no-wish-aggregates]].
+
+## Lehrbeauftragte: „LB“ und „nur Lehrbeauftragte“ (seit 2026-11-05, Issue 38)
+
+`Assignee` trägt kein Lehrauftrags-Flag. Die Seite liest `isLecturerOnContract` aus den
+`teachers`-Listen (`everyone`, `found`) und erkennt Lehrbeauftragte über Teacher-ID oder Adresse
+(`contractLecturersFrom`/`isContractLecturer` in `$lib/assignment`) — derselbe Mail-Abgleich, der
+Dubletten verhindert. `candidatesFor` setzt „LB“ vor den Hinweis, also auch an die gewählte Option.
+Der Filter `?lb=1` (`cohortsWithContractLecturers`) schneidet nur die Zeilen zu, die das Backend
+dieser Person ohnehin zeigt, und zählt nichts. Die Zahl „davon … Lehrbeauftragte“ in der Statistik
+kommt fertig vom Backend (`contractLecturerHours`, `null` = nicht Deine Zahl) und wird in der
+Gesamtzeile nur summiert, wenn keine Zeile `null` ist.
