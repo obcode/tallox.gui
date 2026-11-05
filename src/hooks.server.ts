@@ -1,10 +1,11 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { env } from '$env/dynamic/private';
 import { authContext } from '$lib/server/backend';
 import { stripIdentityHeaders } from '$lib/server/reporting';
 import { isRefusedPath } from '$lib/requestPath';
+import { reportUnexpectedError } from '$lib/errorReport';
 import { ASSUME_COOKIE, parseAssumedRoles } from '$lib/assumedRoles';
 import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
 
@@ -35,8 +36,29 @@ if (reporting) {
 	});
 }
 
-/** Reports failures from SSR loads and /gui-api handlers. A pass-through without a DSN. */
-export const handleError = Sentry.handleErrorWithSentry();
+/**
+ * Failures from SSR loads, form actions and /gui-api handlers: a number on the error page, the
+ * stack under that number in the container log, and the event tagged with it in the collector
+ * when a DSN is set. See $lib/errorReport.
+ */
+export const handleError: HandleServerError = ({ error, event, status, message }) =>
+	reportUnexpectedError(
+		{
+			error,
+			status,
+			message,
+			method: event.request.method,
+			path: event.url.pathname,
+			routeId: event.route.id
+		},
+		{
+			capture: (err, errorId) => {
+				if (reporting) Sentry.captureException(err, { tags: { errorId } });
+			},
+			log: (line) => console.error(line),
+			version: __APP_VERSION__
+		}
+	);
 
 export const guiHandle: Handle = async ({ event, resolve }) => {
 	if (isRefusedPath(event.url.pathname)) {

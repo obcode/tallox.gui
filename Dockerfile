@@ -32,4 +32,6 @@ COPY --chown=node:node package.json .
 USER node
 EXPOSE 3000
 
-CMD ["node", "./build"]
+# The build carries source maps; with them a stack trace in the log names src/routes/… and
+# a line, not a hashed chunk.
+CMD ["node", "--enable-source-maps", "./build"]

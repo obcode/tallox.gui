@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/sveltekit';
+import type { HandleClientError } from '@sveltejs/kit';
 import { env } from '$env/dynamic/public';
+import { reportUnexpectedError } from '$lib/errorReport';
 
 /**
  * Report browser errors to GlitchTip.
@@ -32,6 +34,19 @@ if (env.PUBLIC_SENTRY_DSN) {
 	});
 }
 
-/** Reports unhandled browser errors, then hands them back to SvelteKit. A pass-through
- * when no DSN is set. */
-export const handleError = Sentry.handleErrorWithSentry();
+/**
+ * Unexpected errors in the browser — a client-side load or navigation. Same number scheme as
+ * on the server; the line goes to the browser console, the event to the collector when a DSN
+ * is set. See $lib/errorReport.
+ */
+export const handleError: HandleClientError = ({ error, event, status, message }) =>
+	reportUnexpectedError(
+		{ error, status, message, path: event.url.pathname, routeId: event.route.id },
+		{
+			capture: (err, errorId) => {
+				if (env.PUBLIC_SENTRY_DSN) Sentry.captureException(err, { tags: { errorId } });
+			},
+			log: (line) => console.error(line),
+			version: __APP_VERSION__
+		}
+	);

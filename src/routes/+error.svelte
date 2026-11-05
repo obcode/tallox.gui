@@ -23,6 +23,14 @@
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
 		<p class="text-base-content/90">{page.error?.message}</p>
 
+		{#if page.error?.errorId}
+			<p class="text-base-content/80 mt-3 text-sm">
+				Fehlernummer <code class="font-mono" data-testid="error-id">{page.error.errorId}</code> — bitte
+				bei einer Meldung mitschicken, zusammen mit dem, was Du gerade getan hast. Damit lässt sich der
+				Fehler wiederfinden.
+			</p>
+		{/if}
+
 		{#if forbidden}
 			<p class="text-base-content/80 mt-3 text-sm">
 				Falls Du gerade eine Rolle zur Ansicht ausprobierst: der Streifen oben bringt Dich zu Deinen
