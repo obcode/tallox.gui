@@ -25,6 +25,8 @@ import {
 	mayFileModules,
 	mayRefileModule,
 	mayWriteModuleSplit,
+	mayEditLocalModule,
+	localModuleInput,
 	moduleName,
 	plannedModules,
 	spoLabel,
@@ -462,5 +464,86 @@ describe('plannedModules', () => {
 			'thesis',
 			'b'
 		]);
+	});
+});
+
+describe('mayEditLocalModule', () => {
+	const local = { source: 'LOCAL', homeProgramme: { code: 'IF' } };
+	const imported = { source: 'ZPA', homeProgramme: { code: 'IF' } };
+
+	it('lets the lead of the home programme and the dean’s office edit a local course', () => {
+		expect(mayEditLocalModule(['PROGRAMME_LEAD'], [{ code: 'IF' }], local)).toBe(true);
+		expect(mayEditLocalModule(['DEANS_OFFICE'], [], local)).toBe(true);
+	});
+
+	it('lets nobody edit an imported module', () => {
+		expect(mayEditLocalModule(['DEANS_OFFICE'], [], imported)).toBe(false);
+		expect(mayEditLocalModule(['PROGRAMME_LEAD'], [{ code: 'IF' }], imported)).toBe(false);
+	});
+
+	it('does not let the lead of another programme, a subject group lead or an administrator', () => {
+		expect(mayEditLocalModule(['PROGRAMME_LEAD'], [{ code: 'DC' }], local)).toBe(false);
+		expect(mayEditLocalModule(['SUBJECT_GROUP_LEAD'], [], local)).toBe(false);
+		expect(mayEditLocalModule(['ADMIN'], [], local)).toBe(false);
+	});
+
+	it('reads a scope without its role as nothing', () => {
+		expect(mayEditLocalModule(['LECTURER'], [{ code: 'IF' }], local)).toBe(false);
+	});
+});
+
+describe('localModuleInput', () => {
+	const stored = {
+		homeProgramme: { code: 'IF' },
+		name: 'FWP technisch',
+		kind: 'FWP_PLACEHOLDER' as const,
+		courseType: 'SU_WITH_LAB' as const,
+		frequency: 'ON_ANNOUNCEMENT' as const,
+		contactHoursPerWeek: 4,
+		credits: 5,
+		active: true,
+		components: [
+			{ kind: 'LECTURE' as const, teachingHours: 2 },
+			{ kind: 'LAB' as const, teachingHours: 2 }
+		]
+	};
+
+	it('sends back everything a change does not touch, the split included', () => {
+		expect(localModuleInput(stored, { active: false })).toEqual({
+			programme: 'IF',
+			name: 'FWP technisch',
+			kind: 'FWP_PLACEHOLDER',
+			courseType: 'SU_WITH_LAB',
+			frequency: 'ON_ANNOUNCEMENT',
+			contactHoursPerWeek: 4,
+			credits: 5,
+			active: false,
+			components: [
+				{ kind: 'LECTURE', teachingHours: 2 },
+				{ kind: 'LAB', teachingHours: 2 }
+			]
+		});
+	});
+
+	it('takes the changed fields, and an explicit null for the hours', () => {
+		const input = localModuleInput(stored, {
+			name: 'Robotik',
+			kind: 'MODULE',
+			contactHoursPerWeek: null
+		});
+		expect(input.name).toBe('Robotik');
+		expect(input.kind).toBe('MODULE');
+		expect(input.contactHoursPerWeek).toBeNull();
+		expect(input.active).toBe(true);
+	});
+
+	it('sends no hours and no credits where none are stored', () => {
+		const input = localModuleInput(
+			{ ...stored, contactHoursPerWeek: undefined, credits: null, components: [] },
+			{}
+		);
+		expect(input.contactHoursPerWeek).toBeNull();
+		expect(input.credits).toBeNull();
+		expect(input.components).toEqual([]);
 	});
 });

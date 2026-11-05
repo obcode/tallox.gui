@@ -150,6 +150,16 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wie benenne ich einen Platzhalter um oder werde ihn wieder los?',
+		answer:
+			'Auf der Seite des Eintrags im Modulkatalog, unter „Eigene Lehrveranstaltung“; in der Bedarfsplanung führt der Stift ✏️ neben dem Namen dorthin. Das geht für alles, was die Fakultät selbst angelegt hat, also eigene Lehrveranstaltungen und FWP-Platzhalter, nicht für Module aus dem ZPA. Dort lassen sich Name, Art, Lehrform und SWS ändern. „Aus den Listen nehmen“ legt den Eintrag still: Er verschwindet aus Bedarfsplanung, Modulkatalog und Auswahllisten, gelöscht wird aber nichts, und frühere Semester behalten ihn. Steht er in einem laufenden Semester noch im Bedarf, nimm ihn dort zuerst mit „−“ heraus. Im Modulkatalog findet ihn der Haken „zurückgezogene und stillgelegte anzeigen“ wieder, und „Wieder aufnehmen“ holt ihn zurück. Das dürfen die Studiengangsleitung des Heimatstudiengangs und das Dekanat.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/bedarf', label: 'Bedarf' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
 		question: 'Muss ich irgendwo auf „Speichern“ drücken?',
 		answer:
 			'Fast nie. Häkchen und Auswahlfelder werden gespeichert, sobald Du sie setzt, Textfelder, sobald Du das Feld verlässt. Wer gleich danach die Seite wechselt, verliert nichts: der Wechsel wartet, bis alles angekommen ist. Einen Knopf gibt es nur, wo etwas neu angelegt wird, etwa ein Token, ein Konto oder eine SWS-Aufteilung. Hast Du dort etwas eingetragen und verlässt die Seite, fragt Tallox, ob es gespeichert oder verworfen werden soll.',
@@ -459,7 +469,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie finde ich ein Modul im Modulkatalog?',
 		answer:
-			'Im Feld „Suchen“ über der Tabelle, nach Name oder Modulcode, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wörter dürfen in beliebiger Reihenfolge und Form stehen: „Digitale Transformation“ findet auch „Grundlagen der Digitalen Transformation“. Ein Wortanfang findet alles, was ihn enthält, etwa „Datenb“ die Datenbanken — das gilt aber nur für die ganze Eingabe, nicht für ein Wort unter mehreren. Module, die das ZPA zurückgezogen hat, zeigt der Haken „zurückgezogene anzeigen“.',
+			'Im Feld „Suchen“ über der Tabelle, nach Name oder Modulcode, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wörter dürfen in beliebiger Reihenfolge und Form stehen: „Digitale Transformation“ findet auch „Grundlagen der Digitalen Transformation“. Ein Wortanfang findet alles, was ihn enthält, etwa „Datenb“ die Datenbanken — das gilt aber nur für die ganze Eingabe, nicht für ein Wort unter mehreren. Module, die das ZPA zurückgezogen hat, und stillgelegte eigene Lehrveranstaltungen zeigt der Haken „zurückgezogene und stillgelegte anzeigen“.',
 		who: [],
 		where: [{ href: '/module', label: 'Modulkatalog' }]
 	},

@@ -28,6 +28,7 @@ const CatalogueDocument = graphql(`
 			id
 			name
 			zpaId
+			source
 			handbookUrl
 			active
 			courseType
