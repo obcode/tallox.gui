@@ -614,3 +614,68 @@ test.describe('English where the module description names it, and CiE by who tea
 		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name} (als CiE)`)).toBeVisible();
 	});
 });
+
+// Confirming one's assignments: the dean's office sets the due date, the holder confirms with
+// „Passt so“, the lead reads the state beside the name, and a change makes it out of date.
+test.describe('confirming one’s assignments by the dean’s office’s date', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	const confirmation = (page: Page) => page.getByTestId(`confirmation-${ASSIGNMENTS.semester}`);
+
+	test('set the date, confirm, see it as the lead, and see it go stale', async ({ asPersona }) => {
+		const deans = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(deans, '/semester');
+		const due = deans.getByLabel(/^Prüftermin für die Zuteilungen in Sommersemester 2033/);
+		await due.fill('2033-06-30');
+		await due.blur();
+		await expect(deans.getByTestId(`confirmation-due-${ASSIGNMENTS.semester}`)).toContainText(
+			'bis 30.06.2033'
+		);
+
+		await runSql(
+			`INSERT INTO assignment (instance_part_id, person_id)
+			 SELECT '${ASSIGNMENTS.labOne}', id FROM person WHERE mail = '${PERSONAS.zwei.mail}';`,
+			'assigning a laboratory group to Zwei'
+		);
+
+		const holder = await asPersona(PERSONAS.zwei);
+		await gotoRendered(holder, '/konto/zuteilungen');
+		await expect(confirmation(holder)).toContainText('offen');
+		await expect(confirmation(holder)).toContainText('bis 30.06.2033');
+		await holder.getByRole('button', { name: 'Passt so' }).click();
+		await expect(confirmation(holder)).toContainText('bestätigt');
+		await expect(holder.getByRole('button', { name: 'Passt so' })).toHaveCount(0);
+
+		// The lead reads the state beside the holder, through the same filter as the assignment.
+		const lead = await asPersona(PERSONAS.drei);
+		await gotoRendered(lead, URL);
+		await expect(
+			lead.locator(`tbody[data-cohort="${ASSIGNMENTS.instance}"] .badge`, { hasText: 'bestätigt' })
+		).toBeVisible();
+
+		// Somebody changes the hours of the confirmed part: the confirmation is out of date.
+		await runSql(
+			`UPDATE instance_part SET teaching_hours = teaching_hours + 1
+			  WHERE id = '${ASSIGNMENTS.labOne}';`,
+			'changing the hours of the confirmed part'
+		);
+		await gotoRendered(holder, '/konto/zuteilungen');
+		await expect(confirmation(holder)).toContainText('veraltet');
+		await expect(holder.getByRole('button', { name: 'Passt so' })).toBeVisible();
+
+		// Withdrawing the date keeps the confirmations; the line says there is none.
+		await gotoRendered(deans, '/semester');
+		await due.fill('');
+		await due.blur();
+		await expect(deans.getByTestId(`confirmation-due-${ASSIGNMENTS.semester}`)).toContainText(
+			'Kein Prüftermin'
+		);
+	});
+
+	test('nobody uninvolved learns about it before publication', async ({ asPersona }) => {
+		const other = await asPersona(PERSONAS.eins);
+		await gotoRendered(other, '/konto/zuteilungen');
+		await expect(confirmation(other)).toHaveCount(0);
+	});
+});

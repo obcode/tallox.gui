@@ -2,6 +2,7 @@ import type { Phase } from '$lib/gql/__generated__/graphql';
 import type { GuideLink } from '$lib/guide';
 import { belowMinimum, type CompetenceTotalLike } from '$lib/competences';
 import { semesterName } from '$lib/semester';
+import { dueIsAhead, formatDueDate, type ConfirmationState } from '$lib/confirmation';
 
 /**
  * "Dein Stand": what a lecturer has not stated yet, on the start page.
@@ -18,7 +19,8 @@ import { semesterName } from '$lib/semester';
  * permission: the backend refuses nothing for an unticked item.
  */
 
-export type SetupItemKey = 'SUBJECT_GROUPS' | 'COMPETENCES' | 'DESIRED_HOURS';
+export type SetupItemKey =
+	'SUBJECT_GROUPS' | 'COMPETENCES' | 'DESIRED_HOURS' | 'CONFIRM_ASSIGNMENTS';
 
 export type SetupItem = {
 	key: SetupItemKey;
@@ -50,6 +52,18 @@ export type SetupInput = {
 	competenceTotal: CompetenceTotalLike;
 	/** The planning semester and whether I have stated my hours for it; null while none is named. */
 	semester: { code: string; phase: Phase; frozen: boolean; stated: boolean } | null;
+	/**
+	 * Whether the dean's office has asked me to confirm my assignments of the planning semester, and
+	 * where my own confirmation stands; null while nothing could be read.
+	 */
+	confirmation?: {
+		code: string;
+		due: string | null;
+		state: ConfirmationState;
+		holds: boolean;
+		finished: boolean;
+		today: string;
+	} | null;
 };
 
 /**
@@ -111,6 +125,33 @@ function semesterItems(input: SetupInput): SetupGroup | null {
 }
 
 /**
+ * „Zuteilungen bestätigen“, while the dean's office's date is ahead and I hold something. Shown
+ * temporarily, as asked for on 2026-10-29: it leaves the card once I have confirmed (the group is
+ * then all done) or the date has passed. Its own group, so that the summary of a complete card
+ * keeps talking about what one states once.
+ */
+function confirmationItems(input: SetupInput): SetupGroup | null {
+	const c = input.confirmation;
+	if (!c || !c.holds || c.finished || !dueIsAhead(c.due, c.today)) return null;
+	const stale = c.state === 'STALE';
+	return {
+		title: `Zuteilung ${semesterName(c.code)}`,
+		items: [
+			{
+				key: 'CONFIRM_ASSIGNMENTS',
+				title: 'Zuteilungen bestätigen',
+				done: c.state === 'CONFIRMED',
+				text:
+					c.state === 'CONFIRMED'
+						? 'Bestätigt.'
+						: `${stale ? 'Seit Deiner Bestätigung hat sich etwas geändert. ' : ''}Das Dekanat bittet bis ${formatDueDate(c.due!)}, die eigenen Zuteilungen zu prüfen und mit „Passt so“ zu bestätigen.`,
+				where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }]
+			}
+		]
+	};
+}
+
+/**
  * The card, or null for somebody who is not a lecturer.
  *
  * A group whose items are all done disappears, so that somebody who set up long ago sees one item
@@ -123,9 +164,11 @@ export function setupCard(input: SetupInput): SetupCard | null {
 	if (!input.roles.includes('LECTURER')) return null;
 
 	const semester = semesterItems(input);
-	const groups = [{ title: 'Einmal angeben', items: onceItems(input) }, semester].filter(
-		(group): group is SetupGroup => !!group && group.items.some((item) => !item.done)
-	);
+	const groups = [
+		{ title: 'Einmal angeben', items: onceItems(input) },
+		semester,
+		confirmationItems(input)
+	].filter((group): group is SetupGroup => !!group && group.items.some((item) => !item.done));
 
 	if (groups.length === 0) {
 		const where = [...onceItems(input), ...(semester?.items ?? [])].flatMap((item) => item.where);

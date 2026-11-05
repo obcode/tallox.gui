@@ -48,6 +48,14 @@
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
 	import { wisherLabel } from '$lib/wishes';
+	import {
+		CONFIRMATION_BADGES,
+		CONFIRMATION_HINTS,
+		CONFIRMATION_LABELS,
+		confirmationsByPerson,
+		holderStates,
+		type ConfirmationState
+	} from '$lib/confirmation';
 	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
 	import {
 		DELIVERY_LABELS,
@@ -67,6 +75,15 @@
 	 * which is the one people are looking for.
 	 */
 	const semesterTabs = $derived([...data.semesters].reverse());
+	// Where each holder's confirmation stands, for the people whose assignments this page shows.
+	// Shown beside the holder, never counted: a tally of who has confirmed is a sum over people's
+	// assignments, and this page shows none.
+	const confirmationStates = $derived(
+		confirmationsByPerson(
+			data.confirmations.map((c) => ({ personId: c.personId, state: c.state as ConfirmationState }))
+		)
+	);
+	const askedToConfirm = $derived(!!data.semester?.assignmentConfirmationDue);
 
 	/** Own subjects first — a preselection and not a rule, so the rest stays on the page. */
 	const groupTabs = $derived(
@@ -824,6 +841,7 @@
 									{@const held = group.rows
 										.map((row) => row.assignment)
 										.filter((a): a is AssignmentLike => a !== null)}
+									{@const holders = holderStates(held, confirmationStates)}
 									<!-- One candidate list for the whole cohort, so that a name offered for the
 								     lecture is offered for its laboratories too. The cohort is filled by one
 								     dropdown; a list that differed between the rows could not be written down
@@ -941,6 +959,20 @@
 												{#if wishesHere.length > 0}
 													<p class="text-base-content/80 mt-1 text-xs">
 														Eingetragen: {wishesHere.map(wisherLabel).join(', ')}
+													</p>
+												{/if}
+												<!-- Once the dean's office has asked, or once somebody confirmed anyway. -->
+												{#if holders.length > 0 && (askedToConfirm || holders.some((h) => h.state !== 'OPEN'))}
+													<p class="mt-1 flex flex-wrap items-center gap-1 text-xs">
+														{#each holders as h (h.personId)}
+															<span
+																class="badge {CONFIRMATION_BADGES[h.state]} badge-sm"
+																title={CONFIRMATION_HINTS[h.state]}
+																>{holders.length > 1 ? `${h.name}: ` : ''}{CONFIRMATION_LABELS[
+																	h.state
+																]}</span
+															>
+														{/each}
 													</p>
 												{/if}
 												<!-- A refusal belongs to a part, and the parts may be folded away. Where

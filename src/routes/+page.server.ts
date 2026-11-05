@@ -1,5 +1,6 @@
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
+import { berlinToday } from '$lib/confirmation';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -51,6 +52,7 @@ const OwnSetupDocument = graphql(`
 			code
 			phase
 			desiredHoursFrozenAt
+			assignmentConfirmationDue
 		}
 		mySubjectGroups {
 			id
@@ -65,6 +67,51 @@ const OwnSetupDocument = graphql(`
 		}
 	}
 `);
+
+/**
+ * Whether I am asked to confirm my assignments of the planning semester: my own confirmation, and
+ * whether I hold anything there. Own rows only, through every door.
+ */
+const OwnConfirmationDocument = graphql(`
+	query OwnConfirmationStatus($semester: String!) {
+		myAssignmentConfirmation(semester: $semester) {
+			state
+		}
+		myAssignments {
+			id
+			instance {
+				id
+				semester
+			}
+		}
+	}
+`);
+
+/**
+ * Only asked when the dean's office has set a date: without one there is no reminder to show, and
+ * the start page saves the round trip. A failure drops the item, never the card.
+ */
+async function loadConfirmation(planning: {
+	code: string;
+	phase: string;
+	assignmentConfirmationDue?: string | null;
+}) {
+	const due = planning.assignmentConfirmationDue ?? null;
+	if (!due) return null;
+	try {
+		const data = await backendRequest(OwnConfirmationDocument, { semester: planning.code });
+		return {
+			code: planning.code,
+			due,
+			state: data.myAssignmentConfirmation.state,
+			holds: data.myAssignments.some((a) => a.instance.semester === planning.code),
+			finished: planning.phase === 'FINAL',
+			today: berlinToday()
+		};
+	} catch {
+		return null;
+	}
+}
 
 /**
  * My own advance wishes, for the line "not offered after all" — the notification the faculty asked
@@ -104,7 +151,9 @@ async function loadSetup() {
 	try {
 		const data = await backendRequest(OwnSetupDocument);
 		const planning = data.planningSemester;
+		const confirmation = planning ? await loadConfirmation(planning) : null;
 		return {
+			confirmation,
 			subjectGroups: data.mySubjectGroups,
 			competenceTotal: data.myCompetenceTotal,
 			semester: planning

@@ -207,7 +207,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['ASSIGNMENT', 'REVIEW'],
 				when: 'wenn die Besetzung steht, nach Semesterwoche 9',
-				text: 'Ab dann liest das ganze Kollegium unter „Zuteilung → Übersicht“, wer was hält, und unter „Meine Zuteilungen“ steht kein Entwurf mehr. Die Veröffentlichung lässt sich nicht zurücknehmen. Die Zuteilung selbst bleibt änderbar, bis das Semester abgeschlossen ist, etwa wenn jemand ausfällt.'
+				text: 'Ab dann liest das ganze Kollegium unter „Zuteilung → Übersicht“, wer was hält, und unter „Meine Zuteilungen“ steht kein Entwurf mehr. Die Veröffentlichung lässt sich nicht zurücknehmen. Die Zuteilung selbst bleibt änderbar, bis das Semester abgeschlossen ist, etwa wenn jemand ausfällt. Unabhängig davon setzt das Dekanat hier einen Prüftermin, bis zu dem alle unter „Meine Zuteilungen“ mit „Passt so“ bestätigen, dass ihre Zuteilungen stimmen; die Leitungen sehen in der Zuteilung, wer bestätigt hat.'
 			},
 			{
 				title: 'Studiengangs-Review',

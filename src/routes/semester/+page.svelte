@@ -11,6 +11,8 @@
 		wishesAreVisible
 	} from '$lib/semester';
 	import { formatMoment } from '$lib/tokens';
+	import { formatDueDate } from '$lib/confirmation';
+	import { autosave } from '$lib/saveOnLeave';
 	import { desiredHoursStage, STAGE_LABELS } from '$lib/desiredHours';
 	import PhaseSteps from '$lib/components/PhaseSteps.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -103,6 +105,44 @@
 					— alle können ihre Angabe noch ändern
 				{/if}
 			</div>
+
+			<div class="text-base-content/90 text-sm" data-testid="confirmation-due-{semester.code}">
+				{#if semester.assignmentConfirmationDue}
+					<span class="badge badge-ghost badge-sm align-middle">Prüftermin</span>
+					Alle bestätigen ihre Zuteilungen bis {formatDueDate(semester.assignmentConfirmationDue)}
+					unter „Meine Zuteilungen“.
+				{:else}
+					<span class="badge badge-ghost badge-sm align-middle">Kein Prüftermin</span>
+					— das Dekanat hat noch nicht um Bestätigung der Zuteilungen gebeten
+				{/if}
+			</div>
+
+			{#if mayAdminister && semester.phase !== 'FINAL'}
+				<!--
+					Reversible and blocking nothing, so a field that saves itself rather than a
+					disclosure. Empty withdraws the request; the confirmations already given stay.
+				-->
+				<form
+					method="POST"
+					action="?/confirmationDue"
+					use:autosave={{ label: 'Prüftermin' }}
+					class="flex flex-wrap items-center gap-2"
+				>
+					<input type="hidden" name="code" value={semester.code} />
+					<label class="flex flex-wrap items-center gap-2 text-sm">
+						Zuteilungen bestätigen bis
+						<input
+							type="date"
+							name="due"
+							class="input input-bordered input-sm"
+							value={semester.assignmentConfirmationDue ?? ''}
+							aria-label="Prüftermin für die Zuteilungen in {semesterName(semester.code)}"
+						/>
+					</label>
+					<span class="text-base-content/80 text-xs">Leer lassen nimmt die Bitte zurück.</span>
+					<noscript><button type="submit" class="btn btn-sm">Speichern</button></noscript>
+				</form>
+			{/if}
 
 			{#if mayAdminister}
 				<div class="border-base-300 flex flex-wrap items-center gap-2 border-t pt-3">

@@ -142,7 +142,7 @@ const TEACHING: NavItem = {
 			emoji: '📅',
 			label: 'Zuteilungen',
 			href: '/konto/zuteilungen',
-			hint: 'Wo Du tatsächlich eingeplant bist, je Semester',
+			hint: 'Wo Du tatsächlich eingeplant bist, je Semester, und „Passt so“ zum Prüftermin',
 			colleaguesOnly: true
 		},
 		{

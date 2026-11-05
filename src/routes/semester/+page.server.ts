@@ -15,6 +15,16 @@ const SemestersDocument = graphql(`
 			wishesPublishedAt
 			desiredHoursFrozenAt
 			desiredHoursPublishedAt
+			assignmentConfirmationDue
+		}
+	}
+`);
+
+const SetConfirmationDueDocument = graphql(`
+	mutation SetAssignmentConfirmationDue($code: String!, $due: Date) {
+		setAssignmentConfirmationDue(code: $code, due: $due) {
+			code
+			assignmentConfirmationDue
 		}
 	}
 `);
@@ -93,6 +103,23 @@ export const load: PageServerLoad = async () => {
  * property: switching a phase during a meeting should not depend on a bundle having loaded.
  */
 export const actions: Actions = {
+	/**
+	 * The day by which everybody is asked to confirm their assignments: set, move, or withdraw with
+	 * an empty field. Reversible and blocking nothing, so no disclosure — a field that saves itself.
+	 */
+	confirmationDue: async ({ request }) => {
+		const form = await request.formData();
+		const code = String(form.get('code') ?? '');
+		const raw = String(form.get('due') ?? '').trim();
+		const due = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+		try {
+			await backendRequest(SetConfirmationDueDocument, { code, due });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { confirmationDue: code };
+	},
+
 	advance: async ({ request }) => {
 		const form = await request.formData();
 		const code = String(form.get('code') ?? '');

@@ -206,6 +206,9 @@ const PASS_THROUGH = new Set([
 	'PART_ASSIGNED',
 	'ASSIGNEE_INVALID',
 	'ASSIGNEE_NOT_FOUND',
+	// Confirming one's own assignments with nothing to confirm: a fact about the caller's own
+	// timetable, which they read anyway.
+	'NOTHING_TO_CONFIRM',
 	// A part cut in two, or one another faculty teaches. Facts about the demand, which is not
 	// confidential; PART_TAUGHT_ELSEWHERE says who holds a part — nobody here — and the instance
 	// shows that to everybody anyway. INSTANCE_TAUGHT_ELSEWHERE answers a wish with a statement about
