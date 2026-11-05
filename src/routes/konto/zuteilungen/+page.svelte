@@ -12,6 +12,16 @@
 	} from '$lib/demand';
 	import { cieRows, teachingBySemester } from '$lib/myAssignments';
 	import { autosave } from '$lib/saveOnLeave';
+	import { enhance } from '$app/forms';
+	import {
+		CONFIRMATION_BADGES,
+		CONFIRMATION_LABELS,
+		dueIsAhead,
+		formatDueDate,
+		mayOfferConfirm,
+		type ConfirmationState
+	} from '$lib/confirmation';
+	import { formatMoment } from '$lib/tokens';
 	import { semesterName } from '$lib/semester';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
 	import type { ActionData, PageData } from './$types';
@@ -20,6 +30,8 @@
 
 	const semesters = $derived(teachingBySemester(data.assignments, new Set(data.published)));
 	const finished = $derived(new Set(data.finished));
+	const confirmations = $derived(new Map(data.confirmations.map((c) => [c.semester, c])));
+	const due = $derived(data.due as Record<string, string>);
 
 	type AssignmentSortKey = 'module' | 'cohort' | 'part';
 	type Assignment = (typeof semesters)[number]['assignments'][number];
@@ -61,6 +73,10 @@
 
 	{#each semesters as semester (semester.code)}
 		{@const withCie = cieRows(semester.assignments)}
+		{@const mine = confirmations.get(semester.code)}
+		{@const state = (mine?.state ?? 'OPEN') as ConfirmationState}
+		{@const dueDate = due[semester.code]}
+		{@const closed = finished.has(semester.code)}
 		<section
 			class="border-base-300 bg-base-100 rounded-lg border p-4"
 			aria-labelledby="semester-{semester.code}"
@@ -82,6 +98,41 @@
 				<p class="text-base-content/80 mt-1 text-sm">
 					Noch nicht veröffentlicht. Was hier steht, kann sich noch ändern.
 				</p>
+			{/if}
+			<!-- Shown once the dean's office has asked, or once I have confirmed anyway. -->
+			{#if mine && (dueDate || state !== 'OPEN')}
+				<div
+					class="border-base-300 mt-3 flex flex-wrap items-center gap-2 rounded-lg border p-3"
+					data-testid="confirmation-{semester.code}"
+				>
+					<span class="badge {CONFIRMATION_BADGES[state]} badge-sm">
+						{CONFIRMATION_LABELS[state]}
+					</span>
+					<p class="text-base-content/90 min-w-0 flex-1 text-sm">
+						{#if state === 'CONFIRMED'}
+							Du hast Deine Zuteilungen am {formatMoment(mine.confirmedAt)} bestätigt. Ändert sich etwas
+							daran, wirst Du noch einmal gefragt.
+						{:else if state === 'STALE'}
+							Seit Deiner Bestätigung am {formatMoment(mine.confirmedAt)} hat sich an Deinen Zuteilungen
+							etwas geändert. Bitte prüfe sie noch einmal.
+						{:else if dueDate && dueIsAhead(dueDate, data.today)}
+							Das Dekanat bittet bis {formatDueDate(dueDate)}, Deine Zuteilungen zu prüfen. Passt
+							alles, bestätige mit „Passt so“. Passt etwas nicht, sprich die Leitung der Fachgruppe
+							an.
+						{:else if dueDate}
+							Der Prüftermin war der {formatDueDate(dueDate)}. Bestätigen geht weiterhin.
+						{/if}
+					</p>
+					{#if mayOfferConfirm(true, closed, state)}
+						<form method="POST" action="?/confirm" use:enhance>
+							<input type="hidden" name="semester" value={semester.code} />
+							<button type="submit" class="btn btn-sm btn-primary">Passt so</button>
+						</form>
+					{/if}
+					{#if form?.confirmRefusal?.semester === semester.code}
+						<span class="badge badge-error whitespace-normal">{form.confirmRefusal.message}</span>
+					{/if}
+				</div>
 			{/if}
 			<div class="mt-3 overflow-x-auto">
 				<table class="table-sm table table-stack" use:stackedTable>

@@ -25,6 +25,12 @@ import {
 } from '$lib/demand';
 import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { semesterName } from '$lib/semester';
+import {
+	CONFIRMATION_LABELS,
+	confirmationsByPerson,
+	type ConfirmationLike,
+	type ConfirmationState
+} from '$lib/confirmation';
 
 /** A cell as the writer takes it: a number stays a number, so a spreadsheet can sum it. */
 export type ExportCell = string | number | null;
@@ -73,7 +79,7 @@ export type ExportInstance = {
 
 export type ExportAssignment = {
 	note: string;
-	assignee: { name: string };
+	assignee: { name: string; personId?: string | null };
 	part: { id: string };
 };
 
@@ -92,6 +98,7 @@ export const PLANNING_HEADER = [
 	'SWS (Lehrperson)',
 	'Für alle Züge',
 	'Besetzt durch',
+	'Bestätigt',
 	'Notiz Zuteilung',
 	'Notiz Instanz',
 	'Hinweis'
@@ -110,7 +117,8 @@ export const PLANNING_HEADER = [
  */
 export function planningRows(
 	instances: readonly ExportInstance[],
-	assignments: readonly ExportAssignment[]
+	assignments: readonly ExportAssignment[],
+	confirmations: ReadonlyMap<string, ConfirmationState> = new Map()
 ): ExportCell[][] {
 	const byPart = new Map(assignments.map((a) => [a.part.id, a]));
 
@@ -131,7 +139,7 @@ export function planningRows(
 		const hint = instanceHint(instance);
 
 		if (instance.parts.length === 0) {
-			rows.push([...lead, '', null, '', '', '', instance.note, hint || 'keine Teile angelegt']);
+			rows.push([...lead, '', null, '', '', '', '', instance.note, hint || 'keine Teile angelegt']);
 			continue;
 		}
 
@@ -173,6 +181,10 @@ export function planningRows(
 				// Another faculty's part has nobody of ours on it; who gives it is what this column
 				// is for.
 				part.taughtBy ?? held?.assignee.name ?? '',
+				// Whether the holder has confirmed all of their assignments of the semester, as the
+				// backend answered for the people this caller may read; empty for nobody, for another
+				// faculty's part and for a teacher without an account, who cannot confirm.
+				confirmationCell(part.taughtBy ? null : held, confirmations),
 				held?.note ?? '',
 				instance.note,
 				hint
@@ -180,6 +192,15 @@ export function planningRows(
 		}
 	}
 	return rows;
+}
+
+function confirmationCell(
+	held: ExportAssignment | null | undefined,
+	confirmations: ReadonlyMap<string, ConfirmationState>
+): string {
+	const id = held?.assignee.personId;
+	const state = id ? confirmations.get(id) : undefined;
+	return state ? CONFIRMATION_LABELS[state] : '';
 }
 
 /** Who holds this cohort's teaching, or for whom it holds it — the coverage badges, as text. */
@@ -298,6 +319,9 @@ export function noticeLines(
 		'„… – Anteil“: ein Teil, der zwischen zwei Lehrenden oder mit einer anderen Fakultät ' +
 			'aufgeteilt ist. Hält ihn eine andere Fakultät, steht sie unter „Besetzt durch“, und seine SWS ' +
 			'zählen nicht zum Studiengang.',
+		'„Bestätigt“: ob die Person unter „Meine Zuteilungen“ alle ihre Zuteilungen des Semesters ' +
+			'bestätigt hat („veraltet“: seitdem hat sich daran etwas geändert). Leer bei Lehrenden ohne ' +
+			'Konto, die nicht bestätigen können.',
 		'Blatt „SWS je Studiengang“: das SWS-Controlling wie unter „Statistik“ in Tallox.',
 		'',
 		'Der Export ist eine Momentaufnahme. Änderungen in der Datei fließen nicht nach Tallox zurück.'
@@ -310,6 +334,8 @@ export type ExportInput = {
 	assignmentsPublishedAt: string | null | undefined;
 	instances: readonly ExportInstance[];
 	assignments: readonly ExportAssignment[];
+	/** As the backend answered `assignmentConfirmations`: only people this caller may read. */
+	confirmations?: readonly ConfirmationLike[];
 	load: readonly LoadInput[];
 	exportedAt: Date;
 };
@@ -320,8 +346,12 @@ export function exportSheets(input: ExportInput): ExportSheet[] {
 		{
 			name: 'Planung',
 			header: PLANNING_HEADER,
-			rows: planningRows(input.instances, input.assignments),
-			widths: [11, 12, 8, 40, 28, 10, 11, 18, 9, 6, 14, 10, 10, 28, 28, 28, 30]
+			rows: planningRows(
+				input.instances,
+				input.assignments,
+				confirmationsByPerson(input.confirmations ?? [])
+			),
+			widths: [11, 12, 8, 40, 28, 10, 11, 18, 9, 6, 14, 10, 10, 28, 11, 28, 28, 30]
 		},
 		{
 			name: 'SWS je Studiengang',

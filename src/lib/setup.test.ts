@@ -132,3 +132,44 @@ describe('the setup card', () => {
 		}
 	});
 });
+
+describe('the confirmation item', () => {
+	const asked = {
+		code: '2026-WS',
+		due: '2026-11-20',
+		state: 'OPEN' as const,
+		holds: true,
+		finished: false,
+		today: '2026-11-10'
+	};
+
+	it('asks to confirm while the date is ahead, beside the things one states once', () => {
+		const card = open(setupCard(input({ ...setUp, confirmation: asked })));
+		expect(card.groups.map((g) => g.title)).toEqual(['Zuteilung Wintersemester 2026/27']);
+		const item = card.groups[0].items[0];
+		expect(item.key).toBe('CONFIRM_ASSIGNMENTS');
+		expect(item.text).toContain('bis 20.11.2026');
+		expect(item.where.map((w) => w.href)).toEqual(['/konto/zuteilungen']);
+	});
+
+	it('says why it is back when the confirmation went out of date', () => {
+		const card = open(setupCard(input({ ...setUp, confirmation: { ...asked, state: 'STALE' } })));
+		expect(card.groups[0].items[0].text).toContain('hat sich etwas geändert');
+	});
+
+	it('leaves the card once confirmed, and the card says what it said before', () => {
+		const card = setupCard(input({ ...setUp, confirmation: { ...asked, state: 'CONFIRMED' } }));
+		expect(card).toEqual(setupCard(input(setUp)));
+	});
+
+	it('is not there after the date, without assignments, or before the dean’s office asks', () => {
+		for (const confirmation of [
+			{ ...asked, today: '2026-11-21' },
+			{ ...asked, holds: false },
+			{ ...asked, due: null },
+			{ ...asked, finished: true }
+		]) {
+			expect(setupCard(input({ ...setUp, confirmation }))).toEqual(setupCard(input(setUp)));
+		}
+	});
+});

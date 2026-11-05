@@ -62,6 +62,7 @@ const AssignmentDocument = graphql(`
 			phase
 			wishesPublishedAt
 			assignmentsPublishedAt
+			assignmentConfirmationDue
 		}
 		subjectGroups {
 			id
@@ -135,6 +136,12 @@ const AssignmentDocument = graphql(`
 			instance {
 				id
 			}
+		}
+		# Whether the people holding something here have confirmed it — only for people whose
+		# assignments this caller reads, the same filter as above.
+		assignmentConfirmations(semester: $semester) @include(if: $withSemester) {
+			personId
+			state
 		}
 		# How many hours a week people would like to teach — the members of the subject groups this
 		# person leads, or everybody for the dean's office, or everybody once published. Already
@@ -417,6 +424,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		group: data.subjectGroup ?? null,
 		instances: data.courseInstances ?? [],
 		assignments: data.assignments ?? [],
+		confirmations: data.assignmentConfirmations ?? [],
 		wishes: data.wishes ?? [],
 		desired: data.desiredTeachingHours ?? [],
 		load: data.assignedTeachingHours ?? [],

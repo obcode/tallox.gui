@@ -74,10 +74,17 @@ const ExportDocument = graphql(`
 			note
 			assignee {
 				name
+				personId
 			}
 			part {
 				id
 			}
+		}
+		# Whether each holder has confirmed, for the people whose assignments this caller reads — the
+		# same filter as above, applied by the backend.
+		assignmentConfirmations(semester: $semester) {
+			personId
+			state
 		}
 		teachingLoad(semester: $semester) {
 			programme {
@@ -136,6 +143,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			assignmentsPublishedAt: data.semester.assignmentsPublishedAt,
 			instances: data.courseInstances,
 			assignments: data.assignments,
+			confirmations: data.assignmentConfirmations,
 			load: data.teachingLoad,
 			exportedAt: new Date()
 		})

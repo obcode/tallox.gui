@@ -737,7 +737,11 @@ export function assignmentStatements(): string[] {
 
 		`INSERT INTO semester (code, phase) VALUES (${quote(ASSIGNMENTS.semester)}, 'ASSIGNMENT')
 		 ON CONFLICT (code) DO UPDATE
-		    SET phase = 'ASSIGNMENT', assignments_published_at = NULL, wishes_published_at = NULL;`,
+		    SET phase = 'ASSIGNMENT', assignments_published_at = NULL, wishes_published_at = NULL,
+		        assignment_confirmation_due = NULL;`,
+		// Confirmations hang off the semester, so nothing above takes them away.
+		`DELETE FROM assignment_confirmation WHERE semester_id IN
+		   (SELECT id FROM semester WHERE code = ${quote(ASSIGNMENTS.semester)});`,
 
 		`INSERT INTO programme (code, title) VALUES (${programme}, 'Zuteilungs-Teststudiengang')
 		 ON CONFLICT (code) DO NOTHING;`,

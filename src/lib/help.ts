@@ -312,10 +312,32 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo sehe ich, was ich tatsächlich halte?',
 		answer:
-			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“. Ändern kann sich die Zuteilung bis zum Ende des Semesters, auch nach der Veröffentlichung, etwa wenn jemand ausfällt. Je Zug kannst Du dort auch „CiE“ ankreuzen, wenn Du ihn als Course in English anbietest.',
+			'Unter „Meine Lehre → Zuteilungen“: jeder Teil, der Dir zugeteilt ist, je Semester mit der Summe der SWS. Solange die Zuteilung eines Semesters nicht veröffentlicht ist, steht dort „Entwurf“. Ändern kann sich die Zuteilung bis zum Ende des Semesters, auch nach der Veröffentlichung, etwa wenn jemand ausfällt. Je Zug kannst Du dort auch „CiE“ ankreuzen, wenn Du ihn als Course in English anbietest. Bittet das Dekanat darum, bestätigst Du dort Deine Zuteilungen mit „Passt so“.',
 		who: ['LECTURER'],
 		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }],
 		stage: 'AFTERWARDS'
+	},
+	{
+		question: 'Wie bestätige ich meine Zuteilungen?',
+		answer:
+			'Unter „Meine Lehre → Zuteilungen“, je Semester mit „Passt so“: damit bestätigst Du alle Deine Zuteilungen des Semesters auf einmal. Das Dekanat bittet darum mit einem Prüftermin; bis dahin steht ein Hinweis auch auf der Startseite unter „Dein Stand“. Bestätigen geht auch vorher und nach dem Termin, unabhängig davon, ob die Zuteilung schon veröffentlicht ist. Ändert sich danach etwas an Deinen Zuteilungen, gilt Deine Bestätigung als „veraltet“, und Du wirst noch einmal gefragt. Passt etwas nicht, sprich die Leitung der Fachgruppe an; eine Begründung lässt sich in Tallox nicht eintragen.',
+		who: ['LECTURER'],
+		where: [{ href: '/konto/zuteilungen', label: 'Meine Zuteilungen' }],
+		stage: 'AFTERWARDS'
+	},
+	{
+		question: 'Wo sehe ich, wer die Zuteilung bestätigt hat?',
+		answer:
+			'In der Zuteilung, neben der Person, die einen Zug hält: „bestätigt“, „offen“ oder „veraltet“ (seit der Bestätigung hat sich an ihren Zuteilungen etwas geändert). Das steht dort, sobald das Dekanat einen Prüftermin gesetzt hat, und nur für Personen, deren Zuteilungen Du ohnehin siehst. Die Bestätigung gilt immer für alle Zuteilungen einer Person im Semester, auch die in anderen Fachgruppen. Im Semester-Export steht dasselbe in der Spalte „Bestätigt“. Lehrende ohne Tallox-Konto können nicht bestätigen; mit ihnen bleibt es bei der Absprache.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
+		question: 'Wie bitte ich alle, ihre Zuteilungen zu bestätigen?',
+		answer:
+			'Unter „Semester und Phasen“ beim Semester das Datum unter „Zuteilungen bestätigen bis“ eintragen; es speichert sich selbst. Ab dann sehen alle mit Zuteilungen in dem Semester einen Hinweis auf der Startseite und unter „Meine Zuteilungen“, bis sie bestätigt haben oder der Termin vorbei ist. Der Termin sperrt nichts: bestätigen geht auch danach, und die Zuteilung bleibt bis zum Semesterende änderbar. Verschieben geht jederzeit; ein leeres Feld nimmt die Bitte zurück, die gegebenen Bestätigungen bleiben.',
+		who: ['DEANS_OFFICE'],
+		where: [{ href: '/semester', label: 'Semester und Phasen' }]
 	},
 	{
 		question: 'Wer hält welche Veranstaltung?',

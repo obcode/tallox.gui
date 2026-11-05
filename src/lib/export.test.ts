@@ -46,6 +46,31 @@ function held(partId: string, name: string, note = ''): ExportAssignment {
 const col = (name: string) => PLANNING_HEADER.indexOf(name);
 
 describe('planningRows', () => {
+	it('says whether the holder has confirmed, and nothing for a holder without an answer', () => {
+		const rows = planningRows(
+			[
+				instance('i', {
+					parts: [
+						part('p1'),
+						part('p2', { kind: 'LAB', position: 1 }),
+						part('p3', { kind: 'LAB', position: 2 }),
+						part('p4', { kind: 'LAB', position: 3, taughtBy: 'FK 06' })
+					]
+				})
+			],
+			[
+				{ note: '', assignee: { name: 'Eins', personId: 'e' }, part: { id: 'p1' } },
+				{ note: '', assignee: { name: 'Zwei', personId: 'z' }, part: { id: 'p2' } },
+				{ note: '', assignee: { name: 'Ohne Konto', personId: null }, part: { id: 'p3' } }
+			],
+			new Map([
+				['e', 'CONFIRMED'],
+				['z', 'STALE']
+			])
+		);
+		expect(rows.map((r) => r[col('Bestätigt')])).toEqual(['bestätigt', 'veraltet', '', '']);
+	});
+
 	// A seminar of an umbrella module: the spreadsheet says which one, beside the module.
 	it('writes the topic of a cohort beside its module', () => {
 		const rows = planningRows(

@@ -26,6 +26,7 @@ Kolleginnen und Kollegen.
 - [SWS-Controlling-Seite](sws-controlling-page.md) — `/statistik` (Menü „Statistik“ für Studiengangsleitung und Dekanat, früher `/bedarf/sws`), Vorjahr als eigene Anfrage, Kontingent/Saldo und Fremdmodule, Pflege unter /verwaltung/studiengaenge, eigener E2E-Datensatz
 - [Ablauf, „Jetzt dran“ und Hilfe-Leiste](start-page-guide.md) — der Ablauf als Daten in `$lib/guide.ts` unter `/ablauf`, Startseite und Hilfe zeigen nur, was jetzt dran ist; verlinkt nur, was das Menü zeigt; Einführung für Dozierende unter `/einfuehrung` (`$lib/intro.ts`)
 - [daisyUI-Kontrast-Overrides](daisyui-contrast-overrides.md) — der markierte Zustand muss ausgespart bleiben, und wo axe blind ist
+- [Bestätigung der Zuteilung](assignment-confirmation-ui.md) — „Passt so“, Hinweis bis zum Prüftermin, Badges neben den Namen, nie gezählt
 - [Semester-Export](semester-export.md) — Excel aus einer GraphQL-Operation in der GUI, keine Wünsche, Hinweissatz für alle
 - [Navigation: Bereiche mit Reitern](navigation-areas.md) — „Meine Lehre“, Verwaltung als Bereich, persönliches Menü nur Konto; URLs bleiben
 
