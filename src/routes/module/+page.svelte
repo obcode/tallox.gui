@@ -254,7 +254,7 @@
 				checked={data.filter.includeInactive}
 				class="checkbox checkbox-sm"
 			/>
-			zurückgezogene anzeigen
+			zurückgezogene und stillgelegte anzeigen
 		</label>
 
 		<button type="submit" class="btn btn-sm">Anwenden</button>
@@ -430,8 +430,12 @@
 									{moduleName(module)}
 								</a>
 								<HandbookLink {module} compact />
+								<!-- "zurückgezogen" is the ZPA's statement; a course of the faculty's own was
+								     taken out of the lists by the faculty itself. -->
 								{#if !module.active}
-									<span class="badge badge-ghost badge-sm ml-1">zurückgezogen</span>
+									<span class="badge badge-ghost badge-sm ml-1">
+										{module.source === 'LOCAL' ? 'stillgelegt' : 'zurückgezogen'}
+									</span>
 								{/if}
 							</td>
 							<td>

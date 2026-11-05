@@ -17,6 +17,8 @@
 		mayFileModules,
 		mayRefileModule,
 		mayWriteModuleSplit,
+		mayEditLocalModule,
+		MODULE_KIND_LABELS,
 		moduleName,
 		spoLabel
 	} from '$lib/catalogue';
@@ -65,6 +67,15 @@
 	// who enters it, rather than filling in a form that is refused on saving.
 	const maySplit = $derived(
 		mayWriteModuleSplit(roles, data.me?.programmes ?? [], led, data.module)
+	);
+
+	// A course of the faculty's own: renamed and taken out of the lists by the lead of its home
+	// programme and the dean's office — what `changeLocalModule` allows.
+	const isLocal = $derived(data.module.source === 'LOCAL');
+	const mayEditLocal = $derived(mayEditLocalModule(roles, data.me?.programmes ?? [], data.module));
+	const localError = $derived(form && 'localError' in form ? form.localError : null);
+	const localActiveSaved = $derived(
+		form && 'localActiveSaved' in form ? form.localActiveSaved : null
 	);
 
 	type Row = { kind: InstancePartKind; hours: string };
@@ -139,7 +150,12 @@
 <div class="flex flex-col gap-4">
 	<div>
 		<a class="link text-base-content/80 text-sm" href={resolve('/module')}>← Modulkatalog</a>
-		<h1 class="text-2xl font-semibold">{moduleName(data.module)}</h1>
+		<h1 class="text-2xl font-semibold">
+			{moduleName(data.module)}
+			{#if isLocal && !data.module.active}
+				<span class="badge badge-ghost align-middle">stillgelegt</span>
+			{/if}
+		</h1>
 		<p class="text-base-content/80 text-sm">
 			Heimatstudiengang {data.module.homeProgramme.code}
 			· {COURSE_TYPE_LABELS[data.module.courseType]}
@@ -166,6 +182,125 @@
 				{form.message}
 			</p>
 		</div>
+	{/if}
+
+	{#if isLocal}
+		<section
+			class="border-base-300 bg-base-100 rounded-lg border p-4"
+			aria-labelledby="local-module"
+		>
+			<h2 id="local-module" class="mb-2 flex items-center gap-2 font-medium">
+				<span aria-hidden="true">✏️</span> Eigene Lehrveranstaltung
+			</h2>
+			<p class="text-base-content/80 mb-3 max-w-3xl text-sm">
+				Diesen Eintrag hat die Fakultät selbst angelegt, er steht nicht im ZPA. Umbenennen und aus
+				den Listen nehmen können ihn die Studiengangsleitung von {data.module.homeProgramme.code} und
+				das Dekanat. Gelöscht wird nichts: Ein stillgelegter Eintrag verschwindet aus Bedarfsplanung,
+				Modulkatalog und Auswahllisten, und frühere Semester behalten ihn.
+			</p>
+
+			{#if localError}
+				<p class="text-base-content/90 mb-3 text-sm" role="alert">
+					<span class="badge badge-error badge-sm align-middle">Nicht gespeichert</span>
+					{localError}
+				</p>
+			{:else if form && 'localSaved' in form}
+				<p class="text-base-content/90 mb-3 text-sm">
+					<span class="badge badge-ghost badge-sm align-middle">Gespeichert</span>
+				</p>
+			{:else if localActiveSaved === 'deactivated'}
+				<p class="text-base-content/90 mb-3 text-sm">
+					<span class="badge badge-ghost badge-sm align-middle">Stillgelegt</span>
+					Der Eintrag steht in keiner Liste mehr. Im Modulkatalog findest Du ihn mit dem Haken „zurückgezogene
+					und stillgelegte anzeigen“.
+				</p>
+			{:else if localActiveSaved === 'reactivated'}
+				<p class="text-base-content/90 mb-3 text-sm">
+					<span class="badge badge-ghost badge-sm align-middle">Wieder aufgenommen</span>
+				</p>
+			{/if}
+
+			{#if mayEditLocal}
+				<form
+					method="POST"
+					action="?/localModule"
+					use:askBeforeLeave={{ label: 'Eigene Lehrveranstaltung' }}
+					class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+				>
+					<label class="form-control sm:col-span-2">
+						<span class="label-text text-sm">Name</span>
+						<input
+							name="name"
+							type="text"
+							required
+							maxlength="200"
+							value={data.module.name}
+							class="input input-bordered input-sm w-full"
+						/>
+					</label>
+					<label class="form-control">
+						<span class="label-text text-sm">Art</span>
+						<select name="kind" class="select select-bordered select-sm w-full">
+							{#each ['MODULE', 'FWP_PLACEHOLDER'] as const as kind (kind)}
+								<option value={kind} selected={data.module.kind === kind}>
+									{MODULE_KIND_LABELS[kind]}
+								</option>
+							{/each}
+						</select>
+					</label>
+					<label class="form-control">
+						<span class="label-text text-sm">Lehrform</span>
+						<select name="courseType" class="select select-bordered select-sm w-full">
+							{#each Object.entries(COURSE_TYPE_LABELS) as [value, label] (value)}
+								<option {value} selected={data.module.courseType === value}>{label}</option>
+							{/each}
+						</select>
+					</label>
+					<label class="form-control">
+						<span class="label-text text-sm">SWS laut Modulkatalog</span>
+						<input
+							name="contactHoursPerWeek"
+							type="number"
+							min="0"
+							max="30"
+							step="1"
+							value={data.module.contactHoursPerWeek ?? ''}
+							class="input input-bordered input-sm w-32"
+						/>
+					</label>
+					<div class="flex items-end">
+						<button type="submit" class="btn btn-sm btn-primary">Änderungen speichern</button>
+					</div>
+				</form>
+				<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+					Die Aufteilung auf Vorlesung, Praktikum und Übung steht weiter unten unter
+					„SWS-Aufteilung“.
+				</p>
+
+				<form
+					method="POST"
+					action="?/localActive"
+					use:enhance
+					class="border-base-300 mt-4 flex flex-wrap items-center gap-3 border-t pt-4"
+				>
+					<input type="hidden" name="active" value={data.module.active ? '0' : '1'} />
+					{#if data.module.active}
+						<p class="text-base-content/80 max-w-3xl text-sm">
+							Wird der Eintrag nicht mehr gebraucht, nimm ihn aus den Listen. Steht er in einem
+							laufenden Semester noch im Bedarf, nimm ihn dort zuerst mit „−“ heraus.
+						</p>
+						<button type="submit" class="btn btn-sm">Aus den Listen nehmen</button>
+					{:else}
+						<p class="text-base-content/80 max-w-3xl text-sm">
+							Dieser Eintrag ist stillgelegt und steht in keiner Liste.
+						</p>
+						<button type="submit" class="btn btn-sm">Wieder aufnehmen</button>
+					{/if}
+				</form>
+			{:else if !data.module.active}
+				<p class="text-base-content/90 text-sm">Dieser Eintrag ist stillgelegt.</p>
+			{/if}
+		</section>
 	{/if}
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">

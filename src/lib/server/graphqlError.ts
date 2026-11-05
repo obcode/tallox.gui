@@ -85,6 +85,11 @@ const PASS_THROUGH = new Set([
 	// the sentence names both.
 	'NOT_YOUR_MODULE',
 	'COMPONENTS_INVALID',
+	// The faculty's own courses. The name is unique only within one programme and the catalogue
+	// lists every name anyway; MODULE_IN_DEMAND names its repair, which is on the demand page.
+	'LOCAL_MODULE_INVALID',
+	'MODULE_NAME_TAKEN',
+	'MODULE_IN_DEMAND',
 	'UNKNOWN_PROGRAMME',
 	'NOT_A_PROGRAMME_LEAD',
 	// The partner faculty: two administration refusals with a repair, and the one a partner meets

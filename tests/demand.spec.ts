@@ -785,6 +785,58 @@ test.describe('the demand table', () => {
 		await expect(page.getByRole('heading', { name: /Ohne Fachsemester/ })).toBeVisible();
 	});
 
+	// A course of the faculty's own is renamed on its module page, the pencil in the table leads
+	// there, and it can only be taken out of the lists once no running semester has it in demand.
+	test('renames an own course and retires it once it is out of the demand', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill('E2E Platzhalter zum Umbenennen');
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+		const row = page.getByRole('row', { name: /E2E Platzhalter zum Umbenennen/ });
+		await expect(row).toBeVisible();
+
+		await row
+			.getByRole('link', {
+				name: 'E2E Platzhalter zum Umbenennen umbenennen oder aus den Listen nehmen'
+			})
+			.click();
+		await expect(
+			page.getByRole('heading', { name: 'E2E Platzhalter zum Umbenennen', level: 1 })
+		).toBeVisible();
+		const section = page.getByRole('region', { name: /Eigene Lehrveranstaltung/ });
+		await checkA11y(page);
+
+		await section.getByRole('textbox', { name: 'Name' }).fill('E2E Platzhalter umbenannt');
+		await section.getByRole('button', { name: 'Änderungen speichern' }).click();
+		await expect(
+			page.getByRole('heading', { name: 'E2E Platzhalter umbenannt', level: 1 })
+		).toBeVisible();
+
+		// Still in the demand: refused, with the repair in the sentence.
+		await section.getByRole('button', { name: 'Aus den Listen nehmen' }).click();
+		await expect(section.getByRole('alert')).toContainText('Bedarf');
+
+		// Out of the demand first, then out of the lists.
+		await gotoRendered(page, DEMAND_URL);
+		const renamed = page.getByRole('row', { name: /E2E Platzhalter umbenannt/ }).first();
+		await renamed.locator('input[name="offer"]').uncheck();
+		await page.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
+		await expect(page.getByText('1 zurückgezogen')).toBeVisible();
+
+		await renamed.getByRole('link', { name: /umbenennen oder aus den Listen nehmen/ }).click();
+		await section.getByRole('button', { name: 'Aus den Listen nehmen' }).click();
+		await expect(section.getByRole('button', { name: 'Wieder aufnehmen' })).toBeVisible();
+		await expect(page.getByText('stillgelegt', { exact: true }).first()).toBeVisible();
+
+		await gotoRendered(page, DEMAND_URL);
+		await expect(page.getByRole('row', { name: /E2E Platzhalter umbenannt/ })).toHaveCount(0);
+	});
+
 	// Four blocks under each other, and the module name took half the width in one and a third
 	// in the next: every block measured its own columns. Fixed shares now, as in the planning
 	// table — the "Teile" column starts at the same x in every block.
