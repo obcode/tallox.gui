@@ -551,7 +551,9 @@ export function candidatesFor(
 	 * The page passes it only for a cohort somebody is working on: a few hundred names in every
 	 * dropdown of a subject group is a page of megabytes.
 	 */
-	everyone: readonly { id: string; name: string; mail?: string | null }[] = []
+	everyone: readonly { id: string; name: string; mail?: string | null }[] = [],
+	/** Who teaches on contract, to mark them „LB“ in the dropdown. See `contractLecturersFrom`. */
+	contract: ContractLecturers = NO_CONTRACT_LECTURERS
 ): Candidate[] {
 	const out: Candidate[] = [];
 	const seen = new Set<string>();
@@ -562,7 +564,11 @@ export function candidatesFor(
 		if (seen.has(key) || (address && seen.has(address))) return;
 		seen.add(key);
 		if (address) seen.add(address);
-		out.push(c);
+		out.push(
+			isContractLecturer({ teacherId: c.teacherId, mail }, contract)
+				? { ...c, hint: c.hint ? `${CONTRACT_LECTURER_MARK} · ${c.hint}` : CONTRACT_LECTURER_MARK }
+				: c
+		);
 	};
 
 	for (const wish of wishes) {
@@ -638,6 +644,64 @@ export function candidatesFor(
 		add({ teacherId: teacher.id, name: teacher.name, kind: 'other' }, teacher.mail);
 	}
 	return out;
+}
+
+/**
+ * Who teaches on contract (Lehrbeauftragte), by teacher id and by address.
+ *
+ * The examination office says it about a teacher record; an assignment or a wish names either that
+ * record or the account, and the account is the same human being through the address — the rule
+ * `candidatesFor` already uses to keep one colleague from standing in the list twice.
+ */
+export type ContractLecturers = {
+	teacherIds: ReadonlySet<string>;
+	mails: ReadonlySet<string>;
+};
+
+export const NO_CONTRACT_LECTURERS: ContractLecturers = { teacherIds: new Set(), mails: new Set() };
+
+/** The mark a lecturer on contract carries in the dropdown and beside an assigned name. */
+export const CONTRACT_LECTURER_MARK = 'LB';
+
+export function contractLecturersFrom(
+	teachers: readonly { id: string; mail?: string | null; isLecturerOnContract: boolean }[]
+): ContractLecturers {
+	const lecturers = teachers.filter((t) => t.isLecturerOnContract);
+	return {
+		teacherIds: new Set(lecturers.map((t) => t.id)),
+		mails: new Set(lecturers.flatMap((t) => (t.mail ? [t.mail.toLowerCase()] : [])))
+	};
+}
+
+export function isContractLecturer(
+	who: { teacherId?: string | null; mail?: string | null },
+	contract: ContractLecturers
+): boolean {
+	if (who.teacherId && contract.teacherIds.has(who.teacherId)) return true;
+	return !!who.mail && contract.mails.has(who.mail.toLowerCase());
+}
+
+/**
+ * The cohorts with a part held by a lecturer on contract, where somebody asked for only those —
+ * the filter „nur Lehrbeauftragte“.
+ *
+ * A cut of the rows the page already shows, read from the assignments the backend let this person
+ * read; nothing is counted, so it says no more than the table it shortens.
+ */
+export function cohortsWithContractLecturers<T extends { parts: readonly { id: string }[] }>(
+	instances: readonly T[],
+	assignments: readonly {
+		part: { id: string };
+		assignee: { teacherId?: string | null; mail?: string | null };
+	}[],
+	contract: ContractLecturers,
+	only: boolean
+): T[] {
+	if (!only) return [...instances];
+	const held = new Set(
+		assignments.filter((a) => isContractLecturer(a.assignee, contract)).map((a) => a.part.id)
+	);
+	return instances.filter((i) => i.parts.some((p) => held.has(p.id)));
 }
 
 /** The value a dropdown option carries: which kind of id, and which one. */

@@ -105,6 +105,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wie viele SWS deckt mein Studiengang über Lehraufträge?',
+		answer:
+			'Im SWS-Controlling unter Statistik steht unter „SWS gesamt“ je Studiengang „davon … Lehrbeauftragte“: die SWS der Teile, die Lehrbeauftragten zugeteilt sind. Eine Vorlesung für mehrere Züge zählt einmal, Teile, die eine andere Fakultät hält, zählen nicht. Die Zahl gibt es nur je Studiengang, nie je Person. Bis das Dekanat die Zuteilung veröffentlicht hat, sehen sie nur die Studiengangsleitung des Studiengangs und das Dekanat, danach alle, die die Statistik sehen.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/statistik', label: 'Statistik' }]
+	},
+	{
 		question: 'Muss ich irgendwo auf „Speichern“ drücken?',
 		answer:
 			'Fast nie. Häkchen und Auswahlfelder werden gespeichert, sobald Du sie setzt, Textfelder, sobald Du das Feld verlässt. Wer gleich danach die Seite wechselt, verliert nichts: der Wechsel wartet, bis alles angekommen ist. Einen Knopf gibt es nur, wo etwas neu angelegt wird, etwa ein Token, ein Konto oder eine SWS-Aufteilung. Hast Du dort etwas eingetragen und verlässt die Seite, fragt Tallox, ob es gespeichert oder verworfen werden soll.',
@@ -222,7 +229,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie teile ich Lehrbeauftragte zu, die kein Tallox-Konto haben?',
 		answer:
-			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht.',
+			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht. Wen das ZPA als lehrbeauftragt führt, trägt in der Auswahl ein „LB“ vor dem Hinweis, auch wenn die Person schon zugeteilt ist. Der Haken „nur Lehrbeauftragte“ über der Tabelle zeigt nur die Züge, in denen Lehrbeauftragte einen Teil halten. Lehrbeauftragte, die noch nicht im ZPA stehen, lassen sich noch nicht auswählen.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},

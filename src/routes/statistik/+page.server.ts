@@ -39,6 +39,9 @@ const LoadDocument = graphql(`
 			fwpHours
 			partsWithoutHours
 			externalHours
+			# Null before the assignment is published, for everybody but the programme's lead and
+			# the dean's office: a sum over assignments follows the rule for reading them.
+			contractLecturerHours
 			shares {
 				homeProgramme {
 					code

@@ -96,6 +96,36 @@ test.describe('the assignment screen', () => {
 		await reset();
 	});
 
+	// A lecturer on contract carries „LB“ in the dropdown, and „nur Lehrbeauftragte“ cuts the
+	// table to the cohorts one of them holds a part of.
+	test('marks lecturers on contract and filters to what they hold', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		const lb = `t:${TEACHERS.onContract}`;
+		await cohortChooser(page).focus();
+		await expect(cohortChooser(page).locator(`option[value="${lb}"]`)).toContainText('LB');
+		await expect(
+			cohortChooser(page).locator(`option[value="t:${TEACHERS.spare}"]`)
+		).not.toContainText('LB');
+
+		// Nobody on contract holds anything yet: the filter leaves no cohort of the module.
+		await page.getByRole('checkbox', { name: 'nur Lehrbeauftragte' }).check();
+		await expect(page).toHaveURL(/lb=1/);
+		await expect(cohortChooser(page)).toHaveCount(0);
+
+		await gotoRendered(page, URL);
+		await cohortChooser(page).focus();
+		await cohortChooser(page).selectOption(lb);
+		await expect(page.getByText(/Änderungen? gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, `${URL}&lb=1`);
+		await expect(cohortChooser(page)).toHaveValue(lb);
+		await expect(cohortChooser(page).locator('option:checked')).toContainText('LB');
+
+		await reset();
+	});
+
 	test('the lead of the subject group fills a part, and it stays filled', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);

@@ -101,6 +101,25 @@ describe('the SWS controlling table', () => {
 		expect(total.teachingHours).toBe(12);
 	});
 
+	it('carries the hours of lecturers on contract, and no total while one row is withheld', () => {
+		const shown = controllingTable(
+			[
+				load('IF', 6, 6, { contractLecturerHours: 2 }),
+				load('IG', 6, 6, { contractLecturerHours: 0 })
+			],
+			null
+		);
+		expect(shown.planned.map((r) => r.contractLecturerHours)).toEqual([2, 0]);
+		expect(shown.total.contractLecturerHours).toBe(2);
+
+		const withheld = controllingTable(
+			[load('IF', 6, 6, { contractLecturerHours: 2 }), load('IG', 6, 6)],
+			null
+		);
+		expect(withheld.planned.map((r) => r.contractLecturerHours)).toEqual([2, null]);
+		expect(withheld.total.contractLecturerHours).toBeNull();
+	});
+
 	it('writes a difference with its sign', () => {
 		const f = (n: number) => String(n);
 		expect(deltaLabel(null, f)).toBe('–');

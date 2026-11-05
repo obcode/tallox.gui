@@ -58,7 +58,16 @@
 </svelte:head>
 
 {#snippet rowCells(row: Omit<ControllingRow, 'programme' | 'foreign'>, foreign: string)}
-	<td class="text-right tabular-nums">{formatHours(row.teachingHours)}</td>
+	<td class="text-right tabular-nums">
+		{formatHours(row.teachingHours)}
+		<!-- Nothing where the figure is null: before the assignment is published it is the
+		     programme lead's and the dean's office's to read, and a dash would look like zero. -->
+		{#if row.contractLecturerHours !== null && row.contractLecturerHours > 0}
+			<span class="text-base-content/80 block text-xs">
+				davon {formatHours(row.contractLecturerHours)} Lehrbeauftragte
+			</span>
+		{/if}
+	</td>
 	<td class="text-right tabular-nums">{formatHours(row.ownHours)}</td>
 	<td class="tabular-nums">
 		{formatHours(row.foreignHours)}

@@ -6,6 +6,8 @@
 	import {
 		candidateValue,
 		candidateLabel,
+		cohortsWithContractLecturers,
+		contractLecturersFrom,
 		candidateSections,
 		candidatesFor,
 		commonNote,
@@ -113,13 +115,21 @@
 	const tabInstances = $derived(instancesOfTab(data.instances, tab));
 
 	/** What the table shows: the tab, cut to one degree, to CiE and to a basket where chosen. */
+	/** Who teaches on contract, from the teacher list the page loaded: „LB“ and its filter. */
+	const contract = $derived(contractLecturersFrom([...data.everyone, ...data.found]));
+
 	const shown = $derived(
-		cohortsInBasket(
-			instancesListedAsCie(
-				instancesOfDegree(tabInstances, data.selected.degree),
-				data.selected.onlyCie
+		cohortsWithContractLecturers(
+			cohortsInBasket(
+				instancesListedAsCie(
+					instancesOfDegree(tabInstances, data.selected.degree),
+					data.selected.onlyCie
+				),
+				data.selected.basket
 			),
-			data.selected.basket
+			data.assignments,
+			contract,
+			data.selected.onlyContract
 		)
 	);
 
@@ -307,6 +317,7 @@
 		{ name: 'abschluss', value: degreeParam(data.selected.degree) },
 		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' },
 		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' },
+		{ name: 'lb', value: data.selected.onlyContract ? '1' : '' },
 		{ name: 'korb', value: basketParam },
 		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' }
 	]);
@@ -509,6 +520,7 @@
 				'abschluss',
 				'nach',
 				'cie',
+				'lb',
 				...(baskets.length > 0 ? ['korb'] : []),
 				...(baskets.length > 0 && data.selected.byProgramme ? ['sortierung'] : [])
 			])}
@@ -550,6 +562,19 @@
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 				/>
 				nur CiE
+			</label>
+			<!-- Cuts the rows to the cohorts with a part a lecturer on contract holds, out of the
+			     assignments this page already shows. Nothing is counted. -->
+			<label class="flex items-center gap-2 pb-1 text-sm">
+				<input
+					name="lb"
+					type="checkbox"
+					value="1"
+					checked={data.selected.onlyContract}
+					class="checkbox checkbox-sm"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				nur Lehrbeauftragte
 			</label>
 			{#if baskets.length > 0}
 				<label class="form-control">
@@ -854,7 +879,8 @@
 										held,
 										pooled.programmes,
 										data.competences.filter((c) => c.module.id === group.instance.module.id),
-										widened.has(group.instance.id) ? data.everyone : []
+										widened.has(group.instance.id) ? data.everyone : [],
+										contract
 									)}
 									{@const sections = candidateSections(candidates)}
 									<!-- What the cohort's own dropdown stands for: our share of it. A part
