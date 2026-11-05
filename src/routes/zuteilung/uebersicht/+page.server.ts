@@ -2,6 +2,8 @@ import { error, redirect } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
+import { parseBasketChoice, type CohortOrder } from '$lib/basket';
+import { withoutEmptyParams } from '$lib/demand';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -39,6 +41,7 @@ const OverviewDocument = graphql(`
 			id
 			track
 			programmeSemester
+			baskets
 			programme {
 				code
 				title
@@ -77,8 +80,17 @@ const OverviewDocument = graphql(`
 `);
 
 export const load: PageServerLoad = async ({ url }) => {
+	// The same clean-up of „alle“ and „nach Name“ as on `/zuteilung` and `/bedarf`.
+	const clean = withoutEmptyParams(url.searchParams, ['korb', 'sortierung']);
+	if (clean !== null) {
+		const query = clean.toString();
+		redirect(303, query === '' ? url.pathname : `${url.pathname}?${query}`);
+	}
 	const semester = url.searchParams.get('semester') ?? '';
 	const programme = (url.searchParams.get('studiengang') ?? '').toUpperCase();
+	// Cuts of what is loaded: a basket of one programme, and the order inside each programme.
+	const basket = parseBasketChoice(url.searchParams.get('korb'));
+	const order: CohortOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
 
 	const ask = (withAssignments: boolean) =>
 		backendRequest(OverviewDocument, {
@@ -107,7 +119,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	}
 
 	return {
-		selected: { semester, programme },
+		selected: { semester, programme, basket, order },
 		semesters: data.semesters,
 		programmes: data.programmes,
 		published: Boolean(data.semester?.assignmentsPublishedAt),

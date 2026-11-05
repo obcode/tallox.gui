@@ -646,6 +646,52 @@ describe('moduleBlocks', () => {
 	});
 });
 
+describe('the basket order', () => {
+	const cohort = (module: string, name: string, baskets: string[], projectBased = false) =>
+		cohortGroups(
+			[instance({ id: module, baskets, module: { id: module, name, projectBased } })],
+			[]
+		)[0];
+
+	const groups = [
+		cohort('m1', 'Analysis', ['Wahlpflicht B']),
+		cohort('m2', 'Betriebssysteme', []),
+		cohort('m3', 'Compilerbau', ['Wahlpflicht A', 'Wahlpflicht C']),
+		cohort('m4', 'Agiles Projekt', ['Wahlpflicht A'], true)
+	];
+
+	it('changes nothing with the order by name', () => {
+		expect(moduleBlocks(groups).map((b) => b.name)).toEqual([
+			'Analysis',
+			'Betriebssysteme',
+			'Compilerbau',
+			'Agiles Projekt'
+		]);
+	});
+
+	// First basket, then name; no basket after the baskets; the PBLVs still last, because the
+	// process gives them out after everything else whatever basket they sit in.
+	it('sorts by first basket, modules without one after, PBLVs last', () => {
+		const blocks = moduleBlocks(groups, 'basket');
+		expect(blocks.map((b) => [b.name, b.basket])).toEqual([
+			['Compilerbau', 'Wahlpflicht A'],
+			['Analysis', 'Wahlpflicht B'],
+			['Betriebssysteme', null],
+			['Agiles Projekt', 'Wahlpflicht A']
+		]);
+	});
+
+	it('passes the order into every programme section', () => {
+		const [section] = programmeSections(groups, 'basket');
+		expect(section.blocks.map((b) => b.name)).toEqual([
+			'Compilerbau',
+			'Analysis',
+			'Betriebssysteme',
+			'Agiles Projekt'
+		]);
+	});
+});
+
 describe('the degree filter', () => {
 	const bachelor = { programme: { code: 'IF', degree: 'BACHELOR' as const } };
 	const master = { programme: { code: 'IN', degree: 'MASTER' as const } };
