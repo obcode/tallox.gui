@@ -43,6 +43,7 @@ import {
 	firstBasket,
 	inBasket,
 	sortByBasket,
+	tickedEstimates,
 	withoutEmptyParams,
 	type DemandRow,
 	type InstanceLike,
@@ -1303,5 +1304,29 @@ describe('englishClosed', () => {
 		expect(englishClosed(true, false)).toBe(false);
 		expect(englishClosed(undefined, false)).toBe(false);
 		expect(englishClosed(null, false)).toBe(false);
+	});
+});
+
+describe('tickedEstimates', () => {
+	const row = (id: string, splitIsEstimated: boolean) =>
+		({
+			module: module(id, { splitIsEstimated }),
+			programmeSemester: 1,
+			planned: false,
+			teachingHours: 0,
+			note: '',
+			tracks: []
+		}) as DemandRow;
+
+	// The badge used to count the whole catalogue, so a module that was only filtered for and
+	// never ticked showed up as an estimate somebody had to deal with.
+	it('counts only ticked modules whose split is an estimate', () => {
+		const rows = [row('a', true), row('b', true), row('c', false)];
+		const ticked = new Set(['a', 'c']);
+		expect(tickedEstimates(rows, (r) => ticked.has(r.module.id))).toBe(1);
+	});
+
+	it('is zero while nothing is ticked', () => {
+		expect(tickedEstimates([row('a', true), row('b', true)], () => false)).toBe(0);
 	});
 });

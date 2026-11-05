@@ -506,6 +506,22 @@ function groupByModule<M extends { id: string }>(
 }
 
 /**
+ * How many ticked modules still plan with an estimated split — the figure of the badge above
+ * the table.
+ *
+ * Only ticked rows count. The catalogue lists every module of the programme, and a badge that
+ * counted the unticked ones too read as if they had been declared already: a programme lead
+ * took a module they had only filtered for as planned, because the badge reported its estimate.
+ * `ticked` is the tick as the screen shows it, unsaved edits included.
+ */
+export function tickedEstimates<M extends ModuleLike>(
+	rows: readonly DemandRow<M>[],
+	ticked: (row: DemandRow<M>) => boolean
+): number {
+	return rows.filter((row) => row.module.splitIsEstimated && ticked(row)).length;
+}
+
+/**
  * The most cohorts one module may have in a semester: one letter each, A to Z.
  *
  * Follows `MaxTracksPerModule` in the backend, which refuses more. Most modules run one or two;

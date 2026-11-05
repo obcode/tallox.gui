@@ -23,6 +23,7 @@
 		cohortLabel,
 		compareWithPrevious,
 		demandRows,
+		tickedEstimates,
 		effectiveComponents,
 		hoursLabel,
 		plannedHours,
@@ -135,7 +136,8 @@
 	}
 
 	const totalHours = $derived(data.instances.reduce((sum, i) => sum + i.teachingHours, 0));
-	const openEstimates = $derived(data.modules.filter((m) => m.splitIsEstimated).length);
+	// Counted over the ticks, not the catalogue: see `tickedEstimates`.
+	const openEstimates = $derived(tickedEstimates(rows, (row) => draft(row).offered));
 	const comparison = $derived(compareWithPrevious(data.instances, data.previousInstances));
 
 	/**

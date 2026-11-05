@@ -73,6 +73,13 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question: 'Welche Module stehen im Bedarf, und was zählt „Aufteilung(en) geschätzt“?',
+		answer:
+			'Im Bedarf steht, was einen Haken hat. „Anzeigen“ filtert nur, welche Module die Tabelle zeigt, und legt nichts an. Ein versehentlich gesetzter Haken lässt sich wieder entfernen. Der Hinweis „… Aufteilung(en) geschätzt“ über der Tabelle zählt nur Module mit Haken, deren SWS-Aufteilung noch ein Vorschlag von Tallox ist; ein Klick darauf zeigt alle Module mit geschätzter Aufteilung.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/bedarf', label: 'Bedarf' }]
+	},
+	{
 		question:
 			'Ich habe die SWS-Aufteilung geändert, aber der Bedarf zeigt noch die alten SWS. Warum?',
 		answer:
