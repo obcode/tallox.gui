@@ -190,6 +190,7 @@ const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
 	{ who: PERSONAS.fuenf, path: `/wuensche/kollegium?semester=${WISHES.semester}` },
 	{ who: PERSONAS.fuenf, path: '/zuteilung/uebersicht' },
 	{ who: PERSONAS.fuenf, path: '/zuteilung/vormerkungen' },
+	{ who: PERSONAS.fuenf, path: '/zuteilung/lehrpersonen' },
 	{ who: PERSONAS.eins, path: `/wuensche/vormerkungen?programme=${WISHES.programme}` },
 	{ who: PERSONAS.fuenf, path: '/verwaltung/studiengaenge' },
 	{ who: PERSONAS.sechs, path: '/verwaltung/personen' },

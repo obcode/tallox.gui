@@ -101,6 +101,12 @@ const PASS_THROUGH = new Set([
 	// looking for a mistake they did not make.
 	'TEACHER_NOT_FOUND',
 	'TEACHER_HAS_NO_MAIL',
+	// Teachers entered by hand. TEACHER_MAIL_TAKEN is one sentence for "somebody who teaches has
+	// it" and "somebody with an account has it", by the backend's design, and it reaches only the
+	// full-reach doors this page is on; its repair is picking that person in the list instead.
+	'TEACHER_ENTRY_REFUSED',
+	'TEACHER_MAIL_TAKEN',
+	'LOCAL_TEACHER_INVALID',
 	'SPO_ID_INVALID',
 	// The demand. Not confidential either — it is what the wish phase is about — and every
 	// sentence here is the useful answer rather than a fact about the database.

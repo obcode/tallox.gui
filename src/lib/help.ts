@@ -229,9 +229,16 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie teile ich Lehrbeauftragte zu, die kein Tallox-Konto haben?',
 		answer:
-			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht. Wen das ZPA als lehrbeauftragt führt, trägt in der Auswahl ein „LB“ vor dem Hinweis, auch wenn die Person schon zugeteilt ist. Der Haken „nur Lehrbeauftragte“ über der Tabelle zeigt nur die Züge, in denen Lehrbeauftragte einen Teil halten. Lehrbeauftragte, die noch nicht im ZPA stehen, lassen sich noch nicht auswählen.',
+			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht. Wen das ZPA als lehrbeauftragt führt, trägt in der Auswahl ein „LB“ vor dem Hinweis, auch wenn die Person schon zugeteilt ist. Der Haken „nur Lehrbeauftragte“ über der Tabelle zeigt nur die Züge, in denen Lehrbeauftragte einen Teil halten. Wer noch nicht im ZPA steht, legst Du zuerst unter Zuteilung → Lehrpersonen an.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
+		question: 'Wie lege ich Lehrbeauftragte an, die noch nicht im ZPA stehen?',
+		answer:
+			'Unter Zuteilung → Lehrpersonen mit Nachname, Vorname und Mailadresse; der Haken „Lehrbeauftragte“ ist vorausgewählt. Danach steht die Person in der Zuteilung unter „Weitere Lehrende“ zur Auswahl, und bei den Kompetenzen der Fachgruppe lassen sich Kompetenzen für sie eintragen. Ein Tallox-Konto bekommt sie dadurch nicht. Gibt es die Mailadresse schon, lehnt Tallox ab: dann wähle die Person in der Liste aus. Löschen lässt sich ein Eintrag nicht, nur aus den Listen nehmen und wieder aufnehmen. Sobald das ZPA jemanden mit derselben Mailadresse führt, übernimmt der nächtliche Abgleich den Eintrag; Zuteilungen und Kompetenzen bleiben, Name und Angaben kommen dann aus dem ZPA. Anlegen dürfen Fachgruppenleitungen, Studiengangsleitungen und das Dekanat.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung/lehrpersonen', label: 'Lehrpersonen' }]
 	},
 	{
 		question: 'Wie sehe ich bei der Zuteilung nur die Bachelor- oder nur die Mastermodule?',

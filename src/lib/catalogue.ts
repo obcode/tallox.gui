@@ -228,7 +228,9 @@ export const FINDING_LABELS: Record<ZpaProjectionFinding, string> = {
 	DUTY_CONFLICT: 'Widersprüchliche Angaben zu Pflicht und Wahlpflicht',
 	MODULE_RESPONSIBLE_UNKNOWN:
 		'Module, deren Verantwortliche das ZPA nicht in der Lehrendenliste führt',
-	TEACHER_WITHOUT_MAIL: 'Lehrende ohne Mailadresse — übernommen, aber nie verknüpfbar'
+	TEACHER_WITHOUT_MAIL: 'Lehrende ohne Mailadresse — übernommen, aber nie verknüpfbar',
+	LOCAL_TEACHER_ADOPTED:
+		'Von Hand angelegte Lehrpersonen, die das ZPA jetzt führt — übernommen, Zuteilungen bleiben'
 };
 
 /**

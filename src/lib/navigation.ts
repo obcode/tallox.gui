@@ -33,6 +33,9 @@ type StaticRoute = Exclude<
 	// the menu or a guide step.
 	| '/verwaltung'
 	| '/einfuehrung'
+	// And again with the hand-entered teachers: the process description is linked by name from the
+	// help panel and „Jetzt dran“, like the introduction, and never from the menu or a guide step.
+	| '/ablauf'
 >;
 
 /**
@@ -201,6 +204,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				label: 'Kompetenzen der Fachgruppe',
 				href: '/zuteilung/kompetenzen',
 				hint: 'Wer was halten kann, welche Module niemand abdeckt',
+				roles: ASSIGNING
+			},
+			{
+				emoji: '🪪',
+				label: 'Lehrpersonen',
+				href: '/zuteilung/lehrpersonen',
+				hint: 'Lehrbeauftragte anlegen, die noch nicht im ZPA stehen',
 				roles: ASSIGNING
 			},
 			{

@@ -40,3 +40,4 @@ Kolleginnen und Kollegen.
 - [Tabellen werden Karten](responsive-tables.md) — `table-stack` + `use:stackedTable` statt `overflow-x-auto`, Reiter brechen um, und der Test, der versteckte Spalten auf jeder Seite findet
 - [Grafische Übersichten](visual-overview.md) — Phasen-Leiste, Kontingent- und SWS-Balken, Besetzungsstand, geschlossene Wunschrunden in einem Satz
 - [Planungs-Token in der Token-Seite](planning-token-ui.md) — Häkchen statt Scope, Hinweis und Badge, und warum `value={…}` neben einem reaktiven Geschwister das Feld leert
+- [Lehrpersonen von Hand](local-teachers-ui.md) — Reiter unter Zuteilung, Korrigieren/Stilllegen, `/ablauf` aus StaticRoute

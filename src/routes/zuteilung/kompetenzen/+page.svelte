@@ -39,7 +39,8 @@
 			jedes Mitglied angegeben hat. Die Angaben machen die Kolleginnen und Kollegen selbst unter <a
 				class="link"
 				href={resolve('/konto/kompetenzen')}>Meine Kompetenzen</a
-			>; für Lehrende ohne Konto trägst Du sie hier ein.
+			>; für Lehrende ohne Konto trägst Du sie hier ein. Wer noch nicht im ZPA steht, legst Du
+			zuerst unter <a class="link" href={resolve('/zuteilung/lehrpersonen')}>Lehrpersonen</a> an.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Vertraulich: Sichtbar für die Leitung der Fachgruppe, die Leitung des Studiengangs eines

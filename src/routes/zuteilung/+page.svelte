@@ -390,8 +390,9 @@
 	Besetzt wird nach <strong>Fachgruppe</strong>: zuständig ist deren Leitung, daneben die
 	Studiengangsleitung des Studiengangs und das Dekanat. Welcher Fachgruppe ein Modul gehört, steht
 	im <a class="link" href={resolve('/module')}>Modulkatalog</a>. Auch Lehrende ohne Tallox-Konto
-	sind zuteilbar. Der Zwischenstand bleibt vertraulich, bis das Dekanat die Zuteilung
-	veröffentlicht.
+	sind zuteilbar; wer noch nicht im ZPA steht, legst Du unter
+	<a class="link" href={resolve('/zuteilung/lehrpersonen')}>Lehrpersonen</a> an. Der Zwischenstand bleibt
+	vertraulich, bis das Dekanat die Zuteilung veröffentlicht.
 </p>
 <p class="text-base-content/80 mt-2 max-w-prose">
 	Nach den Wünschen bietet jede Auswahl an, wer das Modul laut
