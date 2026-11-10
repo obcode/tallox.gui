@@ -60,6 +60,31 @@ test.describe('semesters and phases', () => {
 		await expect(row).toContainText(/Bedarf für Wünsche freigegeben: \d+ von \d+ Studiengängen\./);
 	});
 
+	test('splits the phase bar while only some programmes have released', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/semester');
+
+		// Read-only, on the semester the walk-through test may move between the two phases: both
+		// show the split the same way. Which branch applies depends on the seed's releases, so the
+		// count is read first and the bar is checked against it.
+		const row = cards(page).filter({ hasText: SEMESTERS.phase });
+		const line = await row.getByText(/Bedarf für Wünsche freigegeben:/).innerText();
+		const [released, planned] = (line.match(/(\d+) von (\d+)/) ?? []).slice(1).map(Number);
+		const bar = row.getByRole('list', { name: /Phasen von/ });
+		if (released > 0 && released < planned) {
+			await expect(bar.locator('[data-share]')).toHaveCount(2);
+			const open = planned - released;
+			await expect(row).toContainText(
+				`Bedarfsplanung: ${open} ${open === 1 ? 'Studiengang' : 'Studiengänge'} · Wunschphase: ${released}`
+			);
+		} else {
+			await expect(bar.locator('[data-share]')).toHaveCount(0);
+			await expect(row).not.toContainText(/Bedarfsplanung: \d+ Studieng/);
+		}
+		// Exactly one phase is the stored one, split or not.
+		await expect(bar.locator('[aria-current="step"]')).toHaveCount(1);
+	});
+
 	test('the dean’s office walks a semester through the process', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');

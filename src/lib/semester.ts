@@ -1,4 +1,5 @@
 import type { Phase } from '$lib/gql/__generated__/graphql';
+import type { DemandRelease } from '$lib/planning';
 
 /**
  * Semesters and phases, in the language the faculty speaks them.
@@ -43,22 +44,83 @@ export const PHASE_HINTS: Record<Phase, string> = {
 /** Where a phase stands relative to the semester's current one. */
 export type PhaseState = 'DONE' | 'CURRENT' | 'UPCOMING';
 
+export type PhaseStep = {
+	phase: Phase;
+	label: string;
+	state: PhaseState;
+	/**
+	 * The part of the programmes standing in this phase (0..1), only while demand planning and wish
+	 * phase run side by side; absent when the step is simply current, done or upcoming.
+	 */
+	share?: number;
+	/** The same share in words for screen readers: "10 von 12 Studiengängen". */
+	shareText?: string;
+};
+
+/**
+ * Whether demand planning and wish phase run side by side: the semester is in one of the two, and
+ * some but not all of its programmes have released their demand. Wishes open per programme with
+ * its release, so the stored phase alone tells only half of it.
+ */
+function isSplit(current: Phase, release?: DemandRelease | null): release is DemandRelease {
+	return (
+		!!release &&
+		(current === 'DEMAND_PLANNING' || current === 'WISHES') &&
+		release.released > 0 &&
+		release.released < release.planned
+	);
+}
+
 /**
  * The five phases with their state, for the bar that shows where a semester stands.
  *
  * Done means "passed", not "closed": everything up to the review stays changeable, and the phase
  * is switched back as easily as forward. The bar reads as the faculty's beat, the same way the
  * phase does everywhere else.
+ *
+ * While only some programmes have released their demand, both demand planning and wish phase are
+ * current, each with its share of the programmes — so the bar no longer says "Bedarfsplanung" to
+ * somebody who can already enter wishes. It counts programmes only, never anything about wishes.
  */
-export function phaseProgress(
-	current: Phase
-): { phase: Phase; label: string; state: PhaseState }[] {
+export function phaseProgress(current: Phase, release?: DemandRelease | null): PhaseStep[] {
+	if (isSplit(current, release)) {
+		const { released, planned } = release;
+		const shares: Partial<Record<Phase, number>> = {
+			DEMAND_PLANNING: planned - released,
+			WISHES: released
+		};
+		return PHASE_ORDER.map((phase) => {
+			const count = shares[phase];
+			if (count === undefined) return { phase, label: PHASE_LABELS[phase], state: 'UPCOMING' };
+			return {
+				phase,
+				label: PHASE_LABELS[phase],
+				state: 'CURRENT',
+				share: count / planned,
+				shareText: `${count} von ${planned} Studiengängen`
+			};
+		});
+	}
 	const at = PHASE_ORDER.indexOf(current);
 	return PHASE_ORDER.map((phase, i) => ({
 		phase,
 		label: PHASE_LABELS[phase],
 		state: i < at ? 'DONE' : i === at ? 'CURRENT' : 'UPCOMING'
 	}));
+}
+
+/**
+ * The split of the programmes in words, under the bar, or null when the bar is not split:
+ * "Bedarfsplanung: 2 Studiengänge · Wunschphase: 10 Studiengänge". The shares are widths, and a
+ * width alone says nothing to somebody who cannot see it.
+ */
+export function phaseSplitLine(current: Phase, release?: DemandRelease | null): string | null {
+	if (!isSplit(current, release)) return null;
+	const programmes = (n: number) => `${n} ${n === 1 ? 'Studiengang' : 'Studiengänge'}`;
+	return (
+		`${PHASE_LABELS.DEMAND_PLANNING}: ${programmes(release.planned - release.released)} · ` +
+		`${PHASE_LABELS.WISHES}: ${programmes(release.released)}`
+	);
 }
 
 /**
@@ -166,10 +228,7 @@ export function mayStillPublish(semester: SemesterLike): boolean {
  * semester on, and in the wish phase the wish page offers only the released programmes. It counts
  * programmes, never anything about wishes.
  */
-export function demandReleaseLine(
-	phase: Phase,
-	release: { released: number; planned: number }
-): string | null {
+export function demandReleaseLine(phase: Phase, release: DemandRelease): string | null {
 	if (release.planned === 0) return null;
 	if (phase !== 'DEMAND_PLANNING' && phase !== 'WISHES') return null;
 	return `Bedarf für Wünsche freigegeben: ${release.released} von ${release.planned} Studiengängen.`;

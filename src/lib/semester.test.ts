@@ -6,6 +6,7 @@ import {
 	PHASE_LABELS,
 	PHASE_ORDER,
 	phaseProgress,
+	phaseSplitLine,
 	mayStillPublish,
 	phaseButtonLabel,
 	phaseDirection,
@@ -190,6 +191,63 @@ describe('phaseProgress', () => {
 		const progress = phaseProgress('WISHES');
 		expect(progress.map((p) => p.phase)).toEqual([...PHASE_ORDER]);
 		expect(progress.map((p) => p.label)).toEqual(PHASE_ORDER.map((p) => PHASE_LABELS[p]));
+	});
+	it('splits demand planning and wish phase by their share of the programmes', () => {
+		for (const phase of ['DEMAND_PLANNING', 'WISHES'] as const) {
+			const progress = phaseProgress(phase, { released: 10, planned: 12 });
+			expect(progress.map((p) => p.state)).toEqual([
+				'CURRENT',
+				'CURRENT',
+				'UPCOMING',
+				'UPCOMING',
+				'UPCOMING'
+			]);
+			expect(progress[0].share).toBeCloseTo(2 / 12);
+			expect(progress[1].share).toBeCloseTo(10 / 12);
+			expect(progress[0].shareText).toBe('2 von 12 Studiengängen');
+			expect(progress[1].shareText).toBe('10 von 12 Studiengängen');
+			expect(progress.slice(2).every((p) => p.share === undefined)).toBe(true);
+		}
+	});
+
+	it('does not split without releases, with all of them, or without planned programmes', () => {
+		for (const release of [
+			{ released: 0, planned: 12 },
+			{ released: 12, planned: 12 },
+			{ released: 0, planned: 0 },
+			null,
+			undefined
+		]) {
+			for (const phase of ['DEMAND_PLANNING', 'WISHES'] as const) {
+				const progress = phaseProgress(phase, release);
+				expect(progress).toEqual(phaseProgress(phase));
+				expect(progress.every((p) => p.share === undefined)).toBe(true);
+			}
+		}
+	});
+
+	it('does not split after the wish phase, whatever the releases say', () => {
+		for (const phase of ['ASSIGNMENT', 'REVIEW', 'FINAL'] as const) {
+			expect(phaseProgress(phase, { released: 3, planned: 12 })).toEqual(phaseProgress(phase));
+		}
+	});
+});
+
+describe('phaseSplitLine', () => {
+	it('names both shares in words while the bar is split', () => {
+		expect(phaseSplitLine('WISHES', { released: 10, planned: 12 })).toBe(
+			'Bedarfsplanung: 2 Studiengänge · Wunschphase: 10 Studiengänge'
+		);
+		expect(phaseSplitLine('DEMAND_PLANNING', { released: 1, planned: 2 })).toBe(
+			'Bedarfsplanung: 1 Studiengang · Wunschphase: 1 Studiengang'
+		);
+	});
+
+	it('says nothing while the bar is not split', () => {
+		expect(phaseSplitLine('WISHES', { released: 12, planned: 12 })).toBeNull();
+		expect(phaseSplitLine('DEMAND_PLANNING', { released: 0, planned: 12 })).toBeNull();
+		expect(phaseSplitLine('ASSIGNMENT', { released: 3, planned: 12 })).toBeNull();
+		expect(phaseSplitLine('WISHES', null)).toBeNull();
 	});
 });
 

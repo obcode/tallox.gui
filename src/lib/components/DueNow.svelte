@@ -44,7 +44,11 @@
 	{/if}
 	{#if planning.kind === 'set'}
 		<div class="mt-3 max-w-xl">
-			<PhaseSteps phase={planning.phase} label="Phasen des Planungssemesters" />
+			<PhaseSteps
+				phase={planning.phase}
+				release={planning.release}
+				label="Phasen des Planungssemesters"
+			/>
 		</div>
 	{/if}
 
