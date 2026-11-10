@@ -3,6 +3,7 @@ import { graphql } from '$lib/gql/__generated__';
 import type { CompetenceLevel } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
+import { plannedModules } from '$lib/catalogue';
 import { competenceChanges, isCompetenceChoice, type CompetenceEntry } from '$lib/competences';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -25,6 +26,7 @@ const OwnCompetencesDocument = graphql(`
 				name
 				homeProgrammeCode
 				compulsory
+				independentWork
 			}
 		}
 		myCompetences {
@@ -85,8 +87,14 @@ const WithdrawMyCompetenceDocument = graphql(`
 export const load: PageServerLoad = async () => {
 	try {
 		const data = await backendRequest(OwnCompetencesDocument);
+		// Independent work is not offered, but a statement made before it was taken out of planning
+		// stays in its row, so it can be withdrawn.
+		const stated = new Set(data.myCompetences.map((c) => c.module.id));
 		return {
-			groups: data.mySubjectGroups,
+			groups: data.mySubjectGroups.map((g) => ({
+				...g,
+				modules: plannedModules(g.modules, stated)
+			})),
 			mine: data.myCompetences,
 			status: data.myCompetenceStatus,
 			total: data.myCompetenceTotal

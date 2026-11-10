@@ -344,10 +344,15 @@ export function catalogueStatements(): string[] {
 		// second module deliberately names nobody — about one real module in thirty does, either
 		// because the source writes a placeholder or because it writes an address that is not in
 		// the list.
-		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor, active, faculty,
-		                      last_semester)
-		 VALUES ('${CATALOGUE.teacher}', 'prof.zwei@example.org', 'Prof. Dr. Zwei', 'Zwei, Prof.',
-		         true, true, 'FK07', '2026-WS')
+		//
+		// Every imported teacher carries the source's reference: since backend migration
+		// `local_teachers` a row without one is a teacher entered by hand, and the database refuses
+		// an imported row without it (`teacher_source_matches_ref`). The references are made up and
+		// far above anything the source hands out.
+		`INSERT INTO teacher (id, zpa_teacher_ref, mail, full_name, short_name, is_professor, active,
+		                      faculty, last_semester)
+		 VALUES ('${CATALOGUE.teacher}', 990000001, 'prof.zwei@example.org', 'Prof. Dr. Zwei',
+		         'Zwei, Prof.', true, true, 'FK07', '2026-WS')
 		 ON CONFLICT (id) DO NOTHING;`,
 
 		`UPDATE module SET responsible_teacher_id = '${CATALOGUE.teacher}'
@@ -356,19 +361,19 @@ export function catalogueStatements(): string[] {
 		// The admission screen's own rows: one per state its filter can be in. Every one of them
 		// grants nothing — a teacher is imported master data, and who may sign in is a decision
 		// somebody makes on that screen.
-		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor,
+		`INSERT INTO teacher (id, zpa_teacher_ref, mail, full_name, short_name, is_professor,
 		                      is_lecturer_on_contract, is_staff, active, faculty, last_semester)
-		 VALUES ('${TEACHERS.admittable}', 'prof.sieben@example.org', 'Prof. Dr. Sieben',
+		 VALUES ('${TEACHERS.admittable}', 990000002, 'prof.sieben@example.org', 'Prof. Dr. Sieben',
 		         'Sieben, Prof.', true, false, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.spare}', 'prof.acht@example.org', 'Prof. Dr. Acht',
+		        ('${TEACHERS.spare}', 990000003, 'prof.acht@example.org', 'Prof. Dr. Acht',
 		         'Acht, Prof.', true, false, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.elsewhere}', 'prof.neun@example.org', 'Prof. Dr. Neun',
+		        ('${TEACHERS.elsewhere}', 990000004, 'prof.neun@example.org', 'Prof. Dr. Neun',
 		         'Neun, Prof.', true, false, false, true, 'FK99', '2026-WS'),
-		        ('${TEACHERS.onContract}', 'lba.zehn@example.org', 'Zehn, M.Sc.',
+		        ('${TEACHERS.onContract}', 990000005, 'lba.zehn@example.org', 'Zehn, M.Sc.',
 		         'Zehn, M.Sc.', false, true, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.former}', 'prof.elf@example.org', 'Prof. Dr. Elf',
+		        ('${TEACHERS.former}', 990000006, 'prof.elf@example.org', 'Prof. Dr. Elf',
 		         'Elf, Prof.', true, false, false, false, 'FK07', '2025-SS'),
-		        ('${TEACHERS.withoutMail}', NULL, 'Zwoelf, ohne Adresse',
+		        ('${TEACHERS.withoutMail}', 990000007, NULL, 'Zwoelf, ohne Adresse',
 		         'Zwoelf, ohne Adresse', true, false, true, true, 'FK07', '2026-WS')
 		 ON CONFLICT (id) DO NOTHING;`,
 
@@ -578,7 +583,13 @@ export const COMPETENCES = {
 	 * assignment spec — which looks at its own group — never renders it.
 	 */
 	instance: '0e2e0000-0000-4000-8000-000000000066',
-	lecture: '0e2e0000-0000-4000-8000-000000000067'
+	lecture: '0e2e0000-0000-4000-8000-000000000067',
+	/**
+	 * Independent work: compulsory in the catalogue, but never planned, so the competence pages
+	 * leave it out — except where a statement made before the rule still hangs off it.
+	 */
+	thesis: '0e2e0000-0000-4000-8000-000000000068',
+	thesisName: 'E2E Abschlussarbeit'
 } as const;
 
 export function competenceStatements(): string[] {
@@ -586,7 +597,7 @@ export function competenceStatements(): string[] {
 	return [
 		// Whatever a run left: every statement on the two modules, and the member's memberships.
 		`DELETE FROM competence WHERE module_id IN
-		   ('${COMPETENCES.compulsory}', '${COMPETENCES.elective}');`,
+		   ('${COMPETENCES.compulsory}', '${COMPETENCES.elective}', '${COMPETENCES.thesis}');`,
 		`DELETE FROM assignment WHERE instance_part_id = '${COMPETENCES.lecture}';`,
 		`DELETE FROM course_instance WHERE id = '${COMPETENCES.instance}';`,
 
@@ -604,11 +615,20 @@ export function competenceStatements(): string[] {
 		                ('${COMPETENCES.elective}'::uuid, ${quote(COMPETENCES.electiveName)})) AS m(id, name)
 		  WHERE p.code = ${programme}
 		 ON CONFLICT (id) DO NOTHING;`,
+		// The teaching form is what makes a module independent work.
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${COMPETENCES.thesis}', p.id, ${quote(COMPETENCES.thesisName)}, 'SELF_STUDY',
+		        'EVERY_SEMESTER', 0, 12
+		   FROM programme p
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
 		// Compulsory is "is_duty under some regulations" — the only thing that makes the first
 		// module count towards the minimum and the second not.
 		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
 		                              min_programme_semester)
-		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-01'], 1, 1)
+		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-01'], 1, 1),
+		        ('${COMPETENCES.thesis}', '${COMPETENCES.spo}', true, ARRAY['E2K-99'], 1, 7)
 		 ON CONFLICT DO NOTHING;`,
 
 		`INSERT INTO subject_group (id, code, name)
@@ -617,7 +637,8 @@ export function competenceStatements(): string[] {
 		 ON CONFLICT (code) DO NOTHING;`,
 		`INSERT INTO module_subject_group (module_id, subject_group_id)
 		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.subjectGroup}'),
-		        ('${COMPETENCES.elective}', '${COMPETENCES.subjectGroup}')
+		        ('${COMPETENCES.elective}', '${COMPETENCES.subjectGroup}'),
+		        ('${COMPETENCES.thesis}', '${COMPETENCES.subjectGroup}')
 		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
 
 		// Neun is a member; Drei leads the group.
@@ -641,8 +662,9 @@ export function competenceStatements(): string[] {
 		// A lecturer on contract without an address — nobody can sign in as her, so the lead
 		// enters for her. Outside FK07, so the admission screen's pre-filter keeps her out of the
 		// lists another spec counts.
-		`INSERT INTO teacher (id, full_name, short_name, is_lecturer_on_contract, active, faculty)
-		 VALUES ('${COMPETENCES.teacher}', ${quote(COMPETENCES.teacherName)},
+		`INSERT INTO teacher (id, zpa_teacher_ref, full_name, short_name, is_lecturer_on_contract,
+		                      active, faculty)
+		 VALUES ('${COMPETENCES.teacher}', 990000008, ${quote(COMPETENCES.teacherName)},
 		         'Lehrbeauftragte, Kompetenz', true, true, 'EXT')
 		 ON CONFLICT (id) DO NOTHING;`,
 		// Released for wishes, so that registering interest gets to what the test is about.

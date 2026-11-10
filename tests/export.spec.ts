@@ -51,7 +51,8 @@ function seedSql(): string {
 		 VALUES ('${e.module}', '${e.programme.id}', '${e.moduleName}', 'SU_WITH_LAB',
 		         'EVERY_WINTER_SEMESTER', 4, 5)
 		 ON CONFLICT (id) DO NOTHING;`,
-		`INSERT INTO teacher (id, full_name, short_name) VALUES ('${e.teacher}', '${e.teacherName}', '')
+		`INSERT INTO teacher (id, zpa_teacher_ref, full_name, short_name)
+		 VALUES ('${e.teacher}', 990000009, '${e.teacherName}', '')
 		 ON CONFLICT (id) DO NOTHING;`,
 		`INSERT INTO semester (code) VALUES ('${e.semester}') ON CONFLICT (code) DO NOTHING;`,
 		`UPDATE semester SET phase = 'ASSIGNMENT', assignments_published_at = NULL

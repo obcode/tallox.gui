@@ -118,6 +118,8 @@ const PASS_THROUGH = new Set([
 	// that sentence through is safe precisely because it says no more.
 	'DEMAND_PHASE_CLOSED',
 	'MODULE_NOT_DECOMPOSED',
+	// Independent work — a thesis — is not planned: the sentence says so, which is the whole answer.
+	'MODULE_NOT_PLANNED',
 	'TRACK_TAKEN',
 	'TRACK_INVALID',
 	'PROGRAMME_SEMESTER_INVALID',

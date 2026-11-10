@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
+	import { NOT_PLANNED_BADGE } from '$lib/catalogue';
 	import {
-		COMPETENCE_LEVELS,
 		COMPETENCE_LEVEL_HINTS,
 		COMPETENCE_LEVEL_LABELS,
 		COMPETENCE_NONE,
+		offeredLevels,
 		type CompetenceChoice,
 		type GroupModuleLike,
 		type OwnCompetenceLike
@@ -33,6 +34,7 @@
 	} = $props();
 
 	const name = $derived(module.name || 'Modul ohne Namen');
+	const levels = $derived(offeredLevels(module, mine?.level));
 	let level = $state<CompetenceChoice>(untrack(() => mine?.level) ?? COMPETENCE_NONE);
 	let note = $state(untrack(() => mine?.note) ?? '');
 </script>
@@ -41,7 +43,9 @@
 	<td>
 		<a class="link" href={resolve(`/module/${module.id}`)}>{name}</a>
 		<span class="text-base-content/80">({module.homeProgrammeCode})</span>
-		{#if module.compulsory}
+		{#if module.independentWork}
+			<span class="badge badge-ghost badge-sm">{NOT_PLANNED_BADGE}</span>
+		{:else if module.compulsory}
 			<span class="badge badge-neutral badge-sm">Pflicht</span>
 		{/if}
 		{#if refusal}
@@ -59,7 +63,7 @@
 			aria-label="Stufe für {name}"
 		>
 			<option value={COMPETENCE_NONE}>—</option>
-			{#each COMPETENCE_LEVELS as l (l)}
+			{#each levels as l (l)}
 				<option value={l} title={COMPETENCE_LEVEL_HINTS[l]}>{COMPETENCE_LEVEL_LABELS[l]}</option>
 			{/each}
 		</select>

@@ -104,16 +104,45 @@ export function membersByGroupCount<
 }
 
 /** A module of one of my groups, as the page lists it. */
-export type GroupModuleLike = { id: string; name: string; compulsory: boolean };
+export type GroupModuleLike = {
+	id: string;
+	name: string;
+	compulsory: boolean;
+	independentWork?: boolean;
+};
+
+/**
+ * Where a module goes in the table: compulsory first, because that is what the minimum counts,
+ * then the electives, and independent work last. The catalogue marks a thesis compulsory, but it
+ * is not planned and the minimum leaves it out, so it must not stand among the ones that count.
+ */
+function moduleRank(module: GroupModuleLike): number {
+	if (module.independentWork) return 2;
+	return module.compulsory ? 0 : 1;
+}
 
 /** Compulsory modules first — they are what the minimum asks for — then by name. */
 export function sortModules<T extends GroupModuleLike>(modules: readonly T[]): T[] {
 	return [...modules].sort((a, b) => {
-		if (a.compulsory !== b.compulsory) return a.compulsory ? -1 : 1;
+		const rank = moduleRank(a) - moduleRank(b);
+		if (rank !== 0) return rank;
 		// A module without a name goes last rather than first, where '' would sort it.
 		if ((a.name === '') !== (b.name === '')) return a.name === '' ? 1 : -1;
 		return a.name.localeCompare(b.name, 'de') || a.id.localeCompare(b.id);
 	});
+}
+
+/**
+ * The levels the row offers besides "none". Independent work is not planned and the backend
+ * refuses a new statement on it, so such a row only keeps the level already stated — enough to
+ * read it, and to withdraw it by choosing "none".
+ */
+export function offeredLevels(
+	module: Pick<GroupModuleLike, 'independentWork'>,
+	stated: CompetenceLevelValue | undefined
+): readonly CompetenceLevelValue[] {
+	if (!module.independentWork) return COMPETENCE_LEVELS;
+	return COMPETENCE_LEVELS.filter((l) => l === stated);
 }
 
 /** One of my own statements, as the pages need it. */

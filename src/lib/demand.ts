@@ -230,6 +230,8 @@ export type ModuleLike = RowModule & {
 	practicalKind?: InstancePartKind | null;
 	splitIsEstimated: boolean;
 	plannable: boolean;
+	/** A thesis and the like: not planned, so it gets no row of its own (see `demandRows`). */
+	independentWork?: boolean;
 	components: readonly { kind: InstancePartKind; teachingHours: number }[];
 	proposedComponents: readonly { kind: InstancePartKind; teachingHours: number }[];
 };
@@ -416,8 +418,13 @@ export function demandRows<M extends ModuleLike>(
 	// a rarity to tidy up later: a module of another programme is a legitimate declaration —
 	// borrowing across programmes is what the dean's office's import/export figures are about —
 	// and the term filter alone is enough to hide a module somebody planned on purpose.
-	const listed = new Set(modules.map((m) => m.id));
-	const rows = modules.map((module) => rowFor(module, byModule, previousByModule, previousCode));
+	//
+	// Independent work — a thesis, the practical semester — is not planned at all, so the catalogue
+	// half leaves it out. A cohort declared before that rule keeps its row: it is real demand
+	// until somebody takes it out, and a hidden row could never be taken out.
+	const offered = modules.filter((m) => !m.independentWork || byModule.has(m.id));
+	const listed = new Set(offered.map((m) => m.id));
+	const rows = offered.map((module) => rowFor(module, byModule, previousByModule, previousCode));
 
 	for (const [id, own] of byModule) {
 		if (listed.has(id)) continue;

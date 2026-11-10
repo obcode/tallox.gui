@@ -283,6 +283,26 @@ describe('groupsOf', () => {
 });
 
 describe('demandRows', () => {
+	// A thesis is not planned: no row to tick, and no proposal from last year either.
+	it('leaves independent work out of the catalogue rows', () => {
+		const rows = demandRows(
+			[module('m'), module('thesis', { independentWork: true, plannable: false })],
+			[],
+			[instance('thesis', '', 1)],
+			'2026-WS'
+		);
+		expect(rows.map((r) => r.module.id)).toEqual(['m']);
+	});
+
+	// Declared before the rule: still real demand, and only a visible row can be taken out.
+	it('keeps independent work that is already planned', () => {
+		const thesis = module('thesis', { independentWork: true, plannable: false });
+		const rows = demandRows([thesis], [{ ...instance('thesis', '', 1), module: thesis }], []);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].planned).toBe(true);
+		expect(rows[0].foreign).toBeFalsy();
+	});
+
 	it('shows the cohorts a module is planned in', () => {
 		const rows = demandRows(
 			[module('m')],

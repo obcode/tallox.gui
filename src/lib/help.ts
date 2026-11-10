@@ -65,7 +65,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Warum lässt sich für ein Modul keine Instanz anlegen?',
 		answer:
-			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird.',
+			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird. Abschlussarbeiten, die praktischen Studiensemester und das Bachelorseminar werden gar nicht geplant, weil Studierende sie direkt mit einer Lehrperson vereinbaren: Sie stehen nicht in der Bedarfstabelle, und in der Suche nach Modulen anderer Studiengänge steht an ihnen „wird nicht geplant“. Was davon schon früher im Bedarf stand, bleibt sichtbar und lässt sich herausnehmen.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/bedarf', label: 'Bedarf' },
@@ -155,7 +155,7 @@ export const HELP: readonly HelpEntry[] = [
 		question:
 			'Ich weiß schon, was ich in einem späteren Semester halten möchte. Wie halte ich das fest?',
 		answer:
-			'Unter „Meine Lehre → Vormerkungen“: Studiengang, Semester (bis vier Jahre im Voraus) und Modul wählen, Stufe und gegebenenfalls Notiz und „höchstens so viele Züge“ angeben. Das geht, solange der Studiengang den Bedarf dieses Semesters noch nicht freigegeben hat, auch wenn noch offen ist, ob das Modul überhaupt angeboten wird. Mit der Freigabe wird die Vormerkung von selbst zum Wunsch auf jedem Zug des Moduls, mit Stufe und Notiz; ändern oder zurückziehen geht danach auf der Wunschseite. Bietet der Studiengang das Modul bei der Freigabe nicht an, steht an der Vormerkung „nicht angeboten“, und die Startseite sagt es Dir. Eine Vormerkung ist kein Anspruch. Sehen können sie dieselben wie Deine Wünsche: bis zur Veröffentlichung nur Du, die Leitung des Studiengangs, die Leitung der Fachgruppe des Moduls und das Dekanat.',
+			'Unter „Meine Lehre → Vormerkungen“: Studiengang, Semester (bis vier Jahre im Voraus) und Modul wählen, Stufe und gegebenenfalls Notiz und „höchstens so viele Züge“ angeben. Das geht, solange der Studiengang den Bedarf dieses Semesters noch nicht freigegeben hat, auch wenn noch offen ist, ob das Modul überhaupt angeboten wird. Mit der Freigabe wird die Vormerkung von selbst zum Wunsch auf jedem Zug des Moduls, mit Stufe und Notiz; ändern oder zurückziehen geht danach auf der Wunschseite. Bietet der Studiengang das Modul bei der Freigabe nicht an, steht an der Vormerkung „nicht angeboten“, und die Startseite sagt es Dir. Abschlussarbeiten, Praxissemester und das Bachelorseminar stehen nicht zur Wahl, weil sie nicht geplant werden. Eine Vormerkung ist kein Anspruch. Sehen können sie dieselben wie Deine Wünsche: bis zur Veröffentlichung nur Du, die Leitung des Studiengangs, die Leitung der Fachgruppe des Moduls und das Dekanat.',
 		who: ['LECTURER'],
 		where: [
 			{ href: '/wuensche/vormerkungen', label: 'Vormerkungen' },
@@ -318,7 +318,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, welche Module ich halten kann?',
 		answer:
-			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen: zwei in der einen und eins in der anderen reichen. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
+			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen: zwei in der einen und eins in der anderen reichen. Abschlussarbeiten, Praxissemester und das Bachelorseminar stehen nicht in der Liste und zählen nicht mit, weil sie nicht geplant werden. Hast Du für eines davon schon früher etwas angegeben, steht es mit „wird nicht geplant“ am Ende der Tabelle; zurücknehmen kannst Du es mit „—“. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
 		who: [],
 		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
 		stage: 'ONCE'

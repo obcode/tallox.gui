@@ -112,6 +112,25 @@ function dutyBadgeColour(status: DutyStatus | null | undefined): string {
 }
 
 /**
+ * The modules a picker offers for planning: without independent work.
+ *
+ * A thesis, the practical semester and the bachelor seminar are arranged directly between students
+ * and a teacher and are not planned at all — the backend refuses a demand, a competence or an
+ * advance wish for them with MODULE_NOT_PLANNED. Offering them anyway made them look like
+ * ordinary compulsory modules. `keep` names the ones somebody already has an entry for: that
+ * entry stays visible, so it can be read and withdrawn.
+ */
+export function plannedModules<T extends { id: string; independentWork?: boolean }>(
+	modules: readonly T[],
+	keep: ReadonlySet<string> = new Set()
+): T[] {
+	return modules.filter((m) => !m.independentWork || keep.has(m.id));
+}
+
+/** The badge of a module that is not planned, where one is still shown. */
+export const NOT_PLANNED_BADGE = 'wird nicht geplant';
+
+/**
  * What a module is called when the examination office gives it no name.
  *
  * Seventeen modules of the real catalogue are in this state, six of them active. Rendering an

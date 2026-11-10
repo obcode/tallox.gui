@@ -215,7 +215,9 @@ test.describe('the assignment screen', () => {
 		// out, and it is exactly what a planning screen invites.
 		expect(body).not.toContain(PERSONAS.fuenf.name);
 		expect(body).not.toMatch(/\d+\s*(von|\/)\s*\d+\s*besetzt/i);
-		expect(body).not.toMatch(/noch (nicht|niemand)/i);
+		// About a part, not any "noch nicht": the page's own help says that whoever is not yet in
+		// the ZPA is entered under Lehrpersonen, which tells nothing about anybody's part.
+		expect(body).not.toMatch(/noch (nicht (besetzt|zugeteilt|vergeben)|niemand)/i);
 		expect(body).not.toMatch(/\d+ (Zuteilungen?|besetzte)/i);
 	});
 

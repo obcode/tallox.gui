@@ -1,5 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { advanceSemesters, parseAdvanceForm } from '$lib/advanceWishes';
+import { plannedModules } from '$lib/catalogue';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
@@ -28,6 +29,7 @@ const AdvanceWishScreenDocument = graphql(`
 		modules(filter: { programme: $programme }) @include(if: $withProgramme) {
 			id
 			name
+			independentWork
 			subjectGroup {
 				id
 				name
@@ -92,7 +94,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			programme,
 			programmes: data.programmes,
 			mySubjectGroupIds: data.mySubjectGroups.map((g) => g.id),
-			modules: data.modules ?? [],
+			// Independent work cannot be noted down; the backend refuses it.
+			modules: plannedModules(data.modules ?? []),
 			mine: data.myAdvanceWishes,
 			semesters: advanceSemesters(new Date())
 		};
