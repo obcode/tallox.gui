@@ -1,7 +1,7 @@
 import { expect, type Locator } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
-import { CATALOGUE, DEMAND, SEMESTERS, demandResetSql } from './seed';
+import { ASSIGNMENTS, CATALOGUE, DEMAND, SEMESTERS, demandResetSql } from './seed';
 import { semesterShortName } from '../src/lib/semester';
 
 /**
@@ -663,7 +663,7 @@ test.describe('the demand table', () => {
 
 		// The sentence that says where it went, because "it is in no subject group" is invisible
 		// on this page and is exactly what somebody has to know next.
-		await expect(page.getByText(/gehört zunächst/)).toBeVisible();
+		await expect(page.getByText(/Ohne Fachgruppe steht sie dort/)).toBeVisible();
 
 		await gotoRendered(page, `/zuteilung?semester=${DEMAND.semester}`);
 		await page.getByRole('tab', { name: 'ohne Fachgruppe' }).click();
@@ -674,6 +674,43 @@ test.describe('the demand table', () => {
 		// No wish round here: the door belongs to a subject group, and a module in none has no
 		// door — absent means open, and there is nobody whose switch it would be.
 		await expect(page.getByRole('button', { name: /Wunschphase/ })).toHaveCount(0);
+	});
+
+	// The other way: filed in the same step that creates it. The programme lead leads no subject
+	// group and may still choose any active one — the course comes from nowhere, so there is no
+	// colleague's group it is taken from. The group's lead then finds it where she staffs.
+	test('a programme lead files an own course into another subject group', async ({ asPersona }) => {
+		const name = 'E2E Kurzfristiges FWP mit Fachgruppe';
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill(name);
+		await page
+			.getByRole('combobox', { name: 'Fachgruppe', exact: true })
+			.selectOption({ label: 'Zuteilungs-Testfachgruppe' });
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+		await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible();
+
+		try {
+			const lead = await asPersona(PERSONAS.drei);
+			await gotoRendered(
+				lead,
+				`/zuteilung?semester=${DEMAND.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`
+			);
+			await expect(lead.getByRole('cell', { name, exact: true })).toBeVisible();
+		} finally {
+			// The group belongs to the assignment fixture; its catalogue must not keep a course
+			// this spec made. The demand reset would remove it too, but only on the next run.
+			runSql(
+				`DELETE FROM course_instance WHERE module_id IN
+				   (SELECT id FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)});
+				 DELETE FROM module_component WHERE module_id IN
+				   (SELECT id FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)});
+				 DELETE FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)};`,
+				'removing the filed own course'
+			);
+		}
 	});
 
 	// The tab is a convenience and not a boundary, but offering somebody a screen on which every
@@ -1178,26 +1215,32 @@ test.describe('the role preview on the demand table', () => {
 		runSql(revokeLead, 'take the programme lead back');
 	});
 
-	test('offers the filing field by the effective roles, not the held ones', async ({
+	// The filing field no longer depends on the role: whoever may plan the programme may file a
+	// new course into any active group, so narrowing to the programme lead keeps every option.
+	test('offers every subject group to the dean and to the programme lead alike', async ({
 		asPersona
 	}) => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await page.goto(DEMAND_URL);
 		const form = page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen');
+		const field = page.getByRole('combobox', { name: 'Fachgruppe', exact: true });
+		const option = field.locator('option', { hasText: 'Zuteilungs-Testfachgruppe' });
 
-		// Held: DEANS_OFFICE files into every group, so the field is there.
+		// Held: DEANS_OFFICE.
 		await form.click();
-		await expect(page.getByText('Fachgruppe', { exact: true })).toBeVisible();
+		await expect(field).toBeVisible();
+		await expect(option).toHaveCount(1);
 
-		// Narrowed to the programme lead, who leads no subject group: the field goes, and the
-		// sentence that says where the new course lands takes its place. The page still renders
-		// as a planner's, because the lead is scoped to this programme.
+		// Narrowed to the programme lead, who leads no subject group: the same field, the same
+		// groups. The page still renders as a planner's, because the lead is scoped to this
+		// programme.
 		await page
 			.context()
 			.addCookies([{ name: 'tallox_assume', value: 'PROGRAMME_LEAD', url: page.url() }]);
 		await page.reload();
 		await form.click();
-		await expect(page.getByText('Fachgruppe', { exact: true })).toHaveCount(0);
-		await expect(page.getByText('keiner Fachgruppe')).toBeVisible();
+		await expect(field).toBeVisible();
+		await expect(option).toHaveCount(1);
+		await expect(field.locator('option', { hasText: 'noch keine' })).toHaveCount(1);
 	});
 });

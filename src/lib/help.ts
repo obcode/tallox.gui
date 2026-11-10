@@ -100,6 +100,17 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question:
+			'Wie lege ich eine eigene Lehrveranstaltung oder einen FWP-Platzhalter an, und wer besetzt sie?',
+		answer:
+			'Auf der Bedarfsseite unter „Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen“: für ein Fach, das nicht im ZPA steht, oder als Platzhalter, solange das konkrete FWP noch nicht feststeht. Drei FWP sind drei Züge eines Platzhalters. Angelegt und für das Semester angemeldet wird in einem Schritt. Unter „Fachgruppe“ lässt sich jede Fachgruppe wählen, nicht nur eine eigene: deren Leitung besetzt die Lehrveranstaltung dann auf der Zuteilungsseite und liest vor der Veröffentlichung die Wünsche darauf. Mit „noch keine“ steht sie bei der Zuteilung unter „ohne Fachgruppe“, und die Studiengangsleitung kann sie dort selbst besetzen. Ist die Fachgruppe falsch, korrigieren das die Fachgruppenleitungen oder das Dekanat im Modulkatalog; die Studiengangsleitung kann eine angelegte Lehrveranstaltung nicht mehr umhängen.',
+		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/bedarf', label: 'Bedarf' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
 		question: 'Welche Module stehen im Bedarf, und was zählt „Aufteilung(en) geschätzt“?',
 		answer:
 			'Im Bedarf steht, was einen Haken hat. „Anzeigen“ filtert nur, welche Module die Tabelle zeigt, und legt nichts an. Ein versehentlich gesetzter Haken lässt sich wieder entfernen. Der Hinweis „… Aufteilung(en) geschätzt“ über der Tabelle zählt nur Module mit Haken, deren SWS-Aufteilung noch ein Vorschlag von Tallox ist; ein Klick darauf zeigt alle Module mit geschätzter Aufteilung.',

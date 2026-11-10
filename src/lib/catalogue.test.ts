@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	programmeLabel,
+	localCourseGroupOptions,
 	ALL_PART_KINDS,
 	COURSE_TYPE_LABELS,
 	DUTY_LABELS,
@@ -265,6 +266,25 @@ describe('frequenciesForTerm', () => {
 	// Without a term there is no filter at all — not an empty list, which would match nothing.
 	it('is no filter without a term', () => {
 		expect(frequenciesForTerm('')).toBeNull();
+	});
+});
+
+describe('subject groups for a new local course', () => {
+	const mathe = { id: 'g-mathe', code: 'MATHE', name: 'Mathematik', active: true };
+	const swe = { id: 'g-swe', code: 'SWE', name: 'Softwareentwicklung', active: true };
+	const old = { id: 'g-old', code: 'OLD', name: 'Altbestand', active: false };
+
+	// Not the filing rule: a programme lead leads no group and is still offered every one.
+	it('offers every active group, whoever leads it', () => {
+		expect(localCourseGroupOptions([swe, mathe]).map((g) => g.id)).toEqual(['g-mathe', 'g-swe']);
+	});
+
+	it('leaves a retired group out, since the backend refuses it', () => {
+		expect(localCourseGroupOptions([old, swe])).toEqual([swe]);
+	});
+
+	it('offers nothing when there are no active groups', () => {
+		expect(localCourseGroupOptions([old])).toEqual([]);
 	});
 });
 

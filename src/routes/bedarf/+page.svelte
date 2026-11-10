@@ -1306,23 +1306,22 @@
 					/>
 				</label>
 
-				{#if data.filingGroups.length > 0}
-					<label class="form-control">
-						<!--
-							Filed right here, not later. A locally created module comes into the world without a
-							subject group, and an instance whose module is in none reaches no subject group lead —
-							which is why it appeared under no tab at all on the assignment page. That is exactly
-							what happened with the short-notice FWP.
-						-->
-						<span class="label-text text-sm">Fachgruppe</span>
-						<select name="fachgruppe" class="select select-bordered select-sm w-56">
-							<option value="">noch keine</option>
-							{#each data.filingGroups as group (group.id)}
-								<option value={group.id}>{group.name}</option>
-							{/each}
-						</select>
-					</label>
-				{/if}
+				<label class="form-control w-full sm:w-auto">
+					<!--
+						Filed right here, in the same step. A locally created module in no subject group
+						reaches no subject group lead on the assignment page — that is what happened with the
+						short-notice FWP. Every active group is offered to whoever may plan, the programme lead
+						included: the backend files it in the same transaction as it creates the course.
+						Always shown, even with no groups at all, so the form reads the same for everybody.
+					-->
+					<span class="label-text text-sm">Fachgruppe</span>
+					<select name="fachgruppe" class="select select-bordered select-sm w-full sm:w-56">
+						<option value="">noch keine</option>
+						{#each data.filingGroups as group (group.id)}
+							<option value={group.id}>{group.name}</option>
+						{/each}
+					</select>
+				</label>
 
 				<label class="form-control">
 					<!-- Not just „Art“: the filter bar already has one, and that one means compulsory
@@ -1398,24 +1397,18 @@
 				darf. Ein Platzhalter wird wie jedes andere Modul geplant —
 				<strong>drei davon sind drei Züge</strong>.
 			</p>
-			{#if data.filingGroups.length === 0}
-				<!--
-					The sentence describing the rest of the way. Only somebody who leads a subject group or
-					is the dean's office may file it here — the programme lead creates the course but does
-					not assign it to a group. Without this hint the module would silently be left without a
-					subject group.
-				-->
-				<p class="text-base-content/80 mt-2 text-sm">
-					Die neue Lehrveranstaltung gehört zunächst <strong>keiner Fachgruppe</strong> an. Besetzen
-					lässt sie sich trotzdem — auf der
-					<a class="link" href="{resolve('/zuteilung')}?semester={data.selected.semester}"
-						>Zuteilungsseite</a
-					>
-					unter „ohne Fachgruppe“. Einsortiert wird sie von der Leitung der Fachgruppe, dem Dekanat oder
-					der Administration im <a class="link" href={resolve('/module')}>Modulkatalog</a>; danach
-					erscheint sie dort, wo die Fachgruppe besetzt.
-				</p>
-			{/if}
+			<!--
+				What the choice of group means, and what happens without one. Re-filing later is no longer
+				the programme lead's: once the course exists its group decides who reads the wishes on it.
+			-->
+			<p class="text-base-content/80 mt-2 text-sm">
+				Die gewählte Fachgruppe besetzt die Lehrveranstaltung auf der
+				<a class="link" href="{resolve('/zuteilung')}?semester={data.selected.semester}"
+					>Zuteilungsseite</a
+				>. Ohne Fachgruppe steht sie dort unter „ohne Fachgruppe“. Später umsortieren können die
+				Fachgruppenleitungen und das Dekanat im
+				<a class="link" href={resolve('/module')}>Modulkatalog</a>.
+			</p>
 		</details>
 	{/if}
 

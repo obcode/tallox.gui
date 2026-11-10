@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { ALL_PART_KINDS, frequenciesForTerm, filingGroupsFor } from '$lib/catalogue';
+import { ALL_PART_KINDS, frequenciesForTerm, localCourseGroupOptions } from '$lib/catalogue';
 import {
 	cieChanges,
 	formatChanges,
@@ -64,23 +64,23 @@ const DemandDocument = graphql(`
 				code
 				title
 			}
-			# Which subject groups this person leads — what the "eigene Lehrveranstaltung"
-			# form may offer as a filing target. A locally created module arrives in no
-			# subject group, and an instance whose module is in none reaches no subject
-			# group lead at all, so filing it straight away is the difference between a
-			# short-notice FWP that can be assigned and one that cannot.
+			# Which subject groups this person leads.
 			subjectGroupsLed {
 				id
 				code
 				name
 			}
 		}
-		# The whole list, for an administrator and the dean's office — both may file into any
-		# of them. Readable by anybody with an account, so this costs nothing extra.
+		# What the "eigene Lehrveranstaltung" form offers as the new course's subject group:
+		# every active one, to whoever may plan. A course created in no group reaches no subject
+		# group lead on the assignment page, so choosing one here is the difference between a
+		# short-notice FWP that its group staffs and one that waits under "ohne Fachgruppe".
+		# Readable by anybody with an account, so this costs nothing extra.
 		subjectGroups {
 			id
 			code
 			name
+			active
 		}
 		programmes {
 			code
@@ -488,8 +488,8 @@ const SplitPartDocument = graphql(`
 `);
 
 const CreateLocalDocument = graphql(`
-	mutation CreateLocalCourse($in: LocalModuleInput!) {
-		createLocalModule(input: $in) {
+	mutation CreateLocalCourse($in: LocalModuleInput!, $subjectGroup: ID) {
+		createLocalModule(input: $in, subjectGroup: $subjectGroup) {
 			id
 			name
 			kind
@@ -517,14 +517,6 @@ const ConfirmSplitDocument = graphql(`
 	}
 `);
 
-const FileLocalDocument = graphql(`
-	mutation FileLocalModule($moduleIds: [ID!]!, $subjectGroup: ID) {
-		setModulesSubjectGroup(moduleIds: $moduleIds, subjectGroup: $subjectGroup) {
-			modulesAssigned
-		}
-	}
-`);
-
 const DUTY_VALUES: DutyStatus[] = ['COMPULSORY', 'ELECTIVE', 'MIXED'];
 
 /**
@@ -539,7 +531,7 @@ function wholeNumberOrZero(raw: FormDataEntryValue | null): number {
 	return Number.isInteger(n) && n >= 0 ? n : 0;
 }
 
-export const load: PageServerLoad = async ({ url, parent }) => {
+export const load: PageServerLoad = async ({ url }) => {
 	// A basket of „alle“ and the order „nach Name“ are the absence of a choice, and the address
 	// says so by not naming them: the basket form sends its selects empty, and a link sent on
 	// should read the same as one typed. Before anything is loaded, so the redirect costs nothing.
@@ -678,17 +670,10 @@ export const load: PageServerLoad = async ({ url, parent }) => {
 		planningSemester: data.planningSemester?.code ?? '',
 		myProgrammes: data.me?.programmes ?? [],
 		led: data.me?.subjectGroupsLed ?? [],
-		// Which subject groups this person may file a new module into. An administrator and the
-		// dean's office reach all of them; a subject group lead reaches the ones she leads; and
-		// for everybody else the list is empty and the field does not appear.
-		// The *effective* roles, not the held ones: under the role preview an administrator
-		// narrowed to a lecturer must not be offered a field the server will refuse. Same source
-		// as module/+page.svelte, which has always read it from the session.
-		filingGroups: filingGroupsFor(
-			(await parent()).session?.effectiveRoles ?? [],
-			data.subjectGroups,
-			data.me?.subjectGroupsLed ?? []
-		),
+		// The subject groups a new local course may be filed under: every active one. The form
+		// only appears for somebody who may plan the programme, and for them the backend accepts
+		// any active group — see `localCourseGroupOptions`.
+		filingGroups: localCourseGroupOptions(data.subjectGroups),
 		coverageFor,
 		coverageCandidates,
 		programmes: data.programmes,
@@ -1002,8 +987,14 @@ export const actions: Actions = {
 						{ kind: practical as InstancePartKind, teachingHours: 2 }
 					];
 
+		// The subject group, if somebody chose one. Passed with the creation rather than filed in a
+		// call of its own: the backend files it in the same transaction, so an unknown or retired
+		// group leaves nothing behind instead of a course that silently stayed in no group.
+		const chosenGroup = String(form.get('fachgruppe') ?? '');
+
 		try {
 			const created = await backendRequest(CreateLocalDocument, {
+				subjectGroup: chosenGroup === '' ? null : chosenGroup,
 				in: {
 					programme,
 					name: String(form.get('name') ?? ''),
@@ -1017,26 +1008,20 @@ export const actions: Actions = {
 			await backendRequest(DeclareDocument, {
 				in: { semester, programme, moduleId: created.createLocalModule.id, programmeSemester }
 			});
-
-			// Filing it, if somebody chose a group. A third call rather than a field on
-			// LocalModuleInput: the subject group is not a property of the course — it is the
-			// faculty's own filing of it, in its own table, and the ZPA projection must never be
-			// able to reach it.
-			//
-			// After the instance and not before: the course exists either way, and a refusal here
-			// must not leave somebody with a module they cannot see on the demand page. It is
-			// reported rather than swallowed, because "it silently stayed unfiled" is the state
-			// this whole change exists to stop happening.
-			const subjectGroup = String(form.get('fachgruppe') ?? '');
-			if (subjectGroup !== '') {
-				await backendRequest(FileLocalDocument, {
-					moduleIds: [created.createLocalModule.id],
-					subjectGroup
-				});
-			}
 			return { adopted: created.createLocalModule.name };
 		} catch (err) {
-			return fail(400, refusalFor(err));
+			const refusal = refusalFor(err);
+			if (refusal.code === 'SUBJECT_GROUP_NOT_FOUND') {
+				// The group was retired between loading the page and sending the form. The
+				// backend's sentence is right but says nothing about the course; this one says
+				// that nothing was created, which is what the reader needs to know to try again.
+				return fail(400, {
+					...refusal,
+					error:
+						'Diese Fachgruppe gibt es nicht mehr oder sie ist stillgelegt. Angelegt wurde nichts — bitte die Seite neu laden und eine andere Fachgruppe oder „noch keine“ wählen.'
+				});
+			}
+			return fail(400, refusal);
 		}
 	},
 
