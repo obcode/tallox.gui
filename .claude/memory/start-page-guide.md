@@ -232,3 +232,20 @@ wie ein Fehler. Jetzt schrumpft die Karte bei vollständigem Stand auf eine Zeil
 „Alles angegeben“, dem Stand und den Links zum Ändern (`SetupCard` mit `complete: true`). `null`
 gibt es nur noch für Konten ohne `LECTURER`. So unterscheidet sich „fertig“ von „Abfrage
 fehlgeschlagen“, denn dann fehlt die Karte weiterhin.
+
+## Wunschphase durch die erste Freigabe (2026-11-10)
+
+Seit Backend v5.48.0 schaltet die erste Freigabe „Bedarf fertig, für Wünsche freigeben“ ein Semester
+in `DEMAND_PLANNING` von selbst nach `WISHES` (siehe `go/semester-and-phase`). Die Karte zeigte
+vorher weiter „Bedarfsplanung“, obwohl schon gewünscht werden konnte.
+
+- `loadPlanningState` lädt `demandRelease { released planned }`; `PlanningState.release` ist
+  optional, weil Seiten mit eigener Query (`wishes.ts`, `assignment.ts`, `competences.ts`) den
+  Zustand ohne Zahlen bauen.
+- **`releaseStatus`** (`guide.ts`) ist die Zeile unter der Überschrift der Karte: „Wünsche gehen
+  bisher für x von y Studiengängen …“ in `WISHES`, „Noch kein Studiengang …“ in `DEMAND_PLANNING`.
+  Zählt Studiengänge, nie Wünsche; der Test verbietet Wörter wie „eingetragen“.
+- **`dueUntilReleased`** am Schritt „Den Bedarf festlegen“: in `WISHES` fällig, solange nicht alle
+  geplanten Studiengänge freigegeben haben. Ohne Zahlen gilt er als fällig.
+- „Semester und Phasen“ zeigt je Semester `demandReleaseLine` (`semester.ts`), nur in
+  `DEMAND_PLANNING`/`WISHES`.

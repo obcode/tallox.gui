@@ -51,7 +51,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie gebe ich den Bedarf meines Studiengangs für Wünsche frei?',
 		answer:
-			'Auf der Bedarfsseite mit „Bedarf fertig, für Wünsche freigeben“. Erst danach können sich Dozierende auf die Module Deines Studiengangs eintragen; vorher erscheinen sie auf der Wunschseite nicht. Mit der Freigabe werden die Vormerkungen für Deinen Studiengang zu Wünschen auf jedem Zug des Moduls; wer ein Modul vorgemerkt hat, das Du nicht anbietest, sieht „nicht angeboten“. Der Bedarf bleibt änderbar, und die Freigabe lässt sich zurücknehmen. Dann kann sich niemand mehr neu eintragen, und was schon eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“; die sperrt nichts.',
+			'Auf der Bedarfsseite mit „Bedarf fertig, für Wünsche freigeben“. Erst danach können sich Dozierende auf die Module Deines Studiengangs eintragen; vorher erscheinen sie auf der Wunschseite nicht. Mit der Freigabe werden die Vormerkungen für Deinen Studiengang zu Wünschen auf jedem Zug des Moduls; wer ein Modul vorgemerkt hat, das Du nicht anbietest, sieht „nicht angeboten“. Die erste Freigabe eines Studiengangs schaltet das Semester von selbst in die Wunschphase; das Dekanat muss dafür nichts umschalten. Der Bedarf bleibt änderbar, und die Freigabe lässt sich zurücknehmen; das Semester bleibt dann in der Wunschphase. Dann kann sich niemand mehr neu eintragen, und was schon eingetragen ist, bleibt stehen, lässt sich aber erst nach erneuter Freigabe ändern. Im Studiengangs-Review heißt die entsprechende Ansage „Review fertig“; die sperrt nichts.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},
@@ -208,7 +208,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
-			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten.',
+			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten; in die Wunschphase wechselt das Semester schon von selbst, sobald der erste Studiengang seinen Bedarf für Wünsche freigibt.',
 		who: ['DEANS_OFFICE'],
 		where: [{ href: '/semester', label: 'Semester und Phasen' }]
 	},

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { hasAnyRole } from '$lib/roles';
 	import {
+		demandReleaseLine,
 		PHASE_HINTS,
 		PHASE_LABELS,
 		mayStillPublish,
@@ -32,10 +33,11 @@
 		<h1 class="text-2xl font-semibold">Semester und Phasen</h1>
 		<p class="text-base-content/80 text-sm">
 			Woran jedes Semester gerade ist. Die Phase wird umgeschaltet, nicht ausgerechnet — sie hängt
-			an einer Entscheidung und nicht am Kalender. Die Semester selbst sind einfach da: angelegt
-			werden muss keines, und für jedes hier gelistete lässt sich planen — auch für die in ein paar
-			Jahren. Die Liste beginnt beim <strong>Planungssemester</strong>: dem einen, das die Fakultät
-			gerade plant und das überall vorausgewählt ist.
+			an einer Entscheidung und nicht am Kalender. In die Wunschphase wechselt ein Semester von
+			selbst, sobald der erste Studiengang seinen Bedarf für Wünsche freigibt. Die Semester selbst
+			sind einfach da: angelegt werden muss keines, und für jedes hier gelistete lässt sich planen —
+			auch für die in ein paar Jahren. Die Liste beginnt beim <strong>Planungssemester</strong>: dem
+			einen, das die Fakultät gerade plant und das überall vorausgewählt ist.
 		</p>
 		<p class="text-base-content/80 mt-2 text-sm">
 			Geschaltet wird hier vom <strong>Dekanat</strong>: das Planungssemester, die Phase, und die
@@ -72,6 +74,11 @@
 			</div>
 
 			<p class="text-base-content/80 text-sm">{PHASE_HINTS[semester.phase]}</p>
+			{#if demandReleaseLine(semester.phase, semester.demandRelease)}
+				<p class="text-base-content/90 text-sm">
+					{demandReleaseLine(semester.phase, semester.demandRelease)}
+				</p>
+			{/if}
 
 			<div class="text-base-content/90 text-sm">
 				{#if wishesAreVisible(semester)}

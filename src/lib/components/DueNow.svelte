@@ -39,6 +39,9 @@
 	{#if card.heading}
 		<p class="text-base-content/80 mt-1 text-sm">{card.heading}</p>
 	{/if}
+	{#if card.status}
+		<p class="text-base-content/90 mt-1 max-w-3xl text-sm">{card.status}</p>
+	{/if}
 	{#if planning.kind === 'set'}
 		<div class="mt-3 max-w-xl">
 			<PhaseSteps phase={planning.phase} label="Phasen des Planungssemesters" />

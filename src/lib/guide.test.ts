@@ -7,7 +7,8 @@ import {
 	guideRoutes,
 	isDue,
 	isNavigationRoute,
-	mayOpen
+	mayOpen,
+	releaseStatus
 } from './guide';
 import { PHASE_ORDER } from './semester';
 
@@ -161,6 +162,33 @@ describe('what is due now', () => {
 		}
 	});
 
+	// The first release starts the wish phase, so the leads who have not released yet still have
+	// the demand to finish — until the last planned programme has released.
+	it('keeps the demand due for programme leads in the wish phase until every programme released', () => {
+		const lead = ['LECTURER', 'PROGRAMME_LEAD'];
+		expect(titles(dueNow('WISHES', lead, { released: 3, planned: 8 }))).toEqual([
+			'Den Bedarf festlegen',
+			'Interesse bekunden'
+		]);
+		expect(titles(dueNow('WISHES', lead, { released: 8, planned: 8 }))).toEqual([
+			'Interesse bekunden'
+		]);
+		expect(titles(dueNow('WISHES', ['LECTURER'], { released: 3, planned: 8 }))).toEqual([
+			'Interesse bekunden'
+		]);
+		expect(titles(dueNow('ASSIGNMENT', lead, { released: 3, planned: 8 }))).not.toContain(
+			'Den Bedarf festlegen'
+		);
+	});
+
+	it('says in the walk-through that the first release starts the wish phase', () => {
+		const demand = GUIDE[1].steps.find((s) => s.title === 'Den Bedarf festlegen');
+		expect(demand?.text).toMatch(/erste Freigabe eines Studiengangs schaltet das Semester/);
+		expect(demand?.text).toMatch(/zurückgenommene Freigabe schaltet nicht zurück/);
+		const semester = GUIDE[1].steps.find((s) => s.title === 'Das Planungssemester setzen');
+		expect(semester?.text).toMatch(/Wunschphase wechselt es von selbst/);
+	});
+
 	it('never marks a one-time setup step as due', () => {
 		for (const step of GUIDE[0].steps) expect(step.due, step.title).toBeUndefined();
 	});
@@ -197,6 +225,19 @@ describe('the "Jetzt dran" card', () => {
 		expect(card.heading).toBeNull();
 		expect(card.steps).toEqual([]);
 		expect(card.note).toMatch(/nicht abrufen/);
+		expect(card.status).toBeNull();
+	});
+
+	it('tells a lecturer in the wish phase how many programmes have released so far', () => {
+		const card = dueCard(
+			{ kind: 'set', code: '2027-SS', phase: 'WISHES', release: { released: 3, planned: 8 } },
+			['LECTURER']
+		);
+		expect(card.heading).toBe('Sommersemester 2027 · Wunschphase');
+		expect(card.status).toBe(
+			'Wünsche gehen bisher für 3 von 8 Studiengängen; die übrigen geben ihren Bedarf noch frei.'
+		);
+		expect(titles(card.steps)).toEqual(['Interesse bekunden']);
 	});
 
 	it('lists at most the limit and counts the rest', () => {
@@ -209,15 +250,78 @@ describe('the "Jetzt dran" card', () => {
 	});
 });
 
+describe('the line about the demand releases', () => {
+	const at = (phase: 'DEMAND_PLANNING' | 'WISHES' | 'ASSIGNMENT', released: number) =>
+		({ kind: 'set', code: '2027-SS', phase, release: { released, planned: 8 } }) as const;
+
+	it('says that the first release starts the wish phase while none has come', () => {
+		expect(releaseStatus(at('DEMAND_PLANNING', 0))).toMatch(
+			/Noch kein Studiengang .* Mit der ersten Freigabe beginnt die Wunschphase/
+		);
+	});
+
+	// The dean's office may switch back to the demand planning after releases.
+	it('counts releases in the demand planning once there are some', () => {
+		expect(releaseStatus(at('DEMAND_PLANNING', 2))).toBe(
+			'Bedarf für Wünsche freigegeben: 2 von 8 Studiengängen.'
+		);
+	});
+
+	it('says when every programme has released', () => {
+		expect(releaseStatus(at('WISHES', 8))).toBe(
+			'Alle Studiengänge haben ihren Bedarf für Wünsche freigegeben.'
+		);
+	});
+
+	it('says nothing after the wish phase, without counts, or without a planning semester', () => {
+		expect(releaseStatus(at('ASSIGNMENT', 3))).toBeNull();
+		expect(releaseStatus({ kind: 'set', code: '2027-SS', phase: 'WISHES' })).toBeNull();
+		expect(
+			releaseStatus({
+				kind: 'set',
+				code: '2027-SS',
+				phase: 'WISHES',
+				release: { released: 0, planned: 0 }
+			})
+		).toBeNull();
+		expect(releaseStatus({ kind: 'unset' })).toBeNull();
+		expect(releaseStatus({ kind: 'unknown' })).toBeNull();
+	});
+
+	// It counts programmes; a sentence about wishes would be the aggregate rule 1 forbids.
+	it('never speaks about how many wishes or people there are', () => {
+		for (const phase of ['DEMAND_PLANNING', 'WISHES'] as const) {
+			for (const released of [0, 3, 8]) {
+				expect(releaseStatus(at(phase, released))).not.toMatch(/eingetragen|Interesse|Person/);
+			}
+		}
+	});
+});
+
 describe('the mark on the walk-through', () => {
 	const steps = GUIDE.flatMap((s) => s.steps);
 	const step = (title: string) => steps.find((s) => s.title === title)!;
 
 	it('marks the steps of the current phase, whoever does them', () => {
-		const wishes = { kind: 'set', code: '2027-SS', phase: 'WISHES' } as const;
+		const wishes = {
+			kind: 'set',
+			code: '2027-SS',
+			phase: 'WISHES',
+			release: { released: 8, planned: 8 }
+		} as const;
 		expect(isDue(step('Interesse bekunden'), wishes)).toBe(true);
 		expect(isDue(step('Die Wünsche veröffentlichen'), wishes)).toBe(true);
 		expect(isDue(step('Den Bedarf festlegen'), wishes)).toBe(false);
+	});
+
+	it('keeps the demand marked in the wish phase while releases are missing', () => {
+		const partly = {
+			kind: 'set',
+			code: '2027-SS',
+			phase: 'WISHES',
+			release: { released: 3, planned: 8 }
+		} as const;
+		expect(isDue(step('Den Bedarf festlegen'), partly)).toBe(true);
 	});
 
 	it('marks the planning semester step while none is set, and nothing when unknown', () => {

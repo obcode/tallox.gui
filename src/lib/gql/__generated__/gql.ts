@@ -15,7 +15,7 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": typeof types.BuildInfoDocument,
-    "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n": typeof types.PlanningSemesterPhaseDocument,
+    "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t}\n\t}\n": typeof types.PlanningSemesterPhaseDocument,
     "\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": typeof types.SessionDocument,
     "\n\tmutation ApplyModuleSplitToInstances($moduleId: ID!, $dryRun: Boolean!) {\n\t\tapplyModuleSplitToInstances(moduleId: $moduleId, dryRun: $dryRun) {\n\t\t\tdryRun\n\t\t\tunchanged\n\t\t\tchanged {\n\t\t\t\tinstance {\n\t\t\t\t\tid\n\t\t\t\t\tsemester\n\t\t\t\t\ttrack\n\t\t\t\t\tprogrammeSemester\n\t\t\t\t\tprogramme {\n\t\t\t\t\t\tcode\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tteachingHoursBefore\n\t\t\t\tteachingHoursAfter\n\t\t\t}\n\t\t\trefused {\n\t\t\t\tinstance {\n\t\t\t\t\tid\n\t\t\t\t\tsemester\n\t\t\t\t\ttrack\n\t\t\t\t\tprogrammeSemester\n\t\t\t\t\tprogramme {\n\t\t\t\t\t\tcode\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tkind\n\t\t\t\tcode\n\t\t\t\tmessage\n\t\t\t}\n\t\t}\n\t}\n": typeof types.ApplyModuleSplitToInstancesDocument,
     "\n\tquery StartOverview {\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tmail\n\t\t\t}\n\t\t}\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tmail\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t}\n": typeof types.StartOverviewDocument,
@@ -61,7 +61,7 @@ type Documents = {
     "\n\tmutation SetModuleProjectBased($moduleId: ID!, $projectBased: Boolean!) {\n\t\tsetModuleProjectBased(moduleId: $moduleId, projectBased: $projectBased) {\n\t\t\tid\n\t\t\tprojectBased\n\t\t}\n\t}\n": typeof types.SetModuleProjectBasedDocument,
     "\n\tmutation SetModuleSemesterSpan($moduleId: ID!, $semesters: Int!) {\n\t\tsetModuleSemesterSpan(moduleId: $moduleId, semesters: $semesters) {\n\t\t\tid\n\t\t\tsemesterSpan\n\t\t}\n\t}\n": typeof types.SetModuleSemesterSpanDocument,
     "\n\tmutation SetModuleComponents($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tcomponentHours\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t}\n\t\t}\n\t}\n": typeof types.SetModuleComponentsDocument,
-    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": typeof types.SemestersDocument,
+    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": typeof types.SemestersDocument,
     "\n\tmutation SetAssignmentConfirmationDue($code: String!, $due: Date) {\n\t\tsetAssignmentConfirmationDue(code: $code, due: $due) {\n\t\t\tcode\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": typeof types.SetAssignmentConfirmationDueDocument,
     "\n\tmutation AdvanceSemesterPhase($code: String!, $to: Phase!) {\n\t\tadvanceSemesterPhase(code: $code, to: $to) {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n": typeof types.AdvanceSemesterPhaseDocument,
     "\n\tmutation SetPlanningSemester($code: String!) {\n\t\tsetPlanningSemester(code: $code) {\n\t\t\tcode\n\t\t\tisPlanningSemester\n\t\t}\n\t}\n": typeof types.SetPlanningSemesterDocument,
@@ -136,7 +136,7 @@ type Documents = {
 };
 const documents: Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": types.BuildInfoDocument,
-    "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n": types.PlanningSemesterPhaseDocument,
+    "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t}\n\t}\n": types.PlanningSemesterPhaseDocument,
     "\n\tquery Session {\n\t\tsession {\n\t\t\tnarrowed\n\t\t\tinteractive\n\t\t\teffectiveRoles\n\t\t\tgrantedRoles\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n": types.SessionDocument,
     "\n\tmutation ApplyModuleSplitToInstances($moduleId: ID!, $dryRun: Boolean!) {\n\t\tapplyModuleSplitToInstances(moduleId: $moduleId, dryRun: $dryRun) {\n\t\t\tdryRun\n\t\t\tunchanged\n\t\t\tchanged {\n\t\t\t\tinstance {\n\t\t\t\t\tid\n\t\t\t\t\tsemester\n\t\t\t\t\ttrack\n\t\t\t\t\tprogrammeSemester\n\t\t\t\t\tprogramme {\n\t\t\t\t\t\tcode\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tteachingHoursBefore\n\t\t\t\tteachingHoursAfter\n\t\t\t}\n\t\t\trefused {\n\t\t\t\tinstance {\n\t\t\t\t\tid\n\t\t\t\t\tsemester\n\t\t\t\t\ttrack\n\t\t\t\t\tprogrammeSemester\n\t\t\t\t\tprogramme {\n\t\t\t\t\t\tcode\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tkind\n\t\t\t\tcode\n\t\t\t\tmessage\n\t\t\t}\n\t\t}\n\t}\n": types.ApplyModuleSplitToInstancesDocument,
     "\n\tquery StartOverview {\n\t\tprogrammes {\n\t\t\tcode\n\t\t\ttitle\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tmail\n\t\t\t}\n\t\t}\n\t\tsubjectGroups {\n\t\t\tid\n\t\t\tcode\n\t\t\tname\n\t\t\tmoduleCount\n\t\t\tleads {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\tmail\n\t\t\t}\n\t\t\tmodules {\n\t\t\t\tid\n\t\t\t\tname\n\t\t\t\thomeProgrammeCode\n\t\t\t}\n\t\t}\n\t}\n": types.StartOverviewDocument,
@@ -182,7 +182,7 @@ const documents: Documents = {
     "\n\tmutation SetModuleProjectBased($moduleId: ID!, $projectBased: Boolean!) {\n\t\tsetModuleProjectBased(moduleId: $moduleId, projectBased: $projectBased) {\n\t\t\tid\n\t\t\tprojectBased\n\t\t}\n\t}\n": types.SetModuleProjectBasedDocument,
     "\n\tmutation SetModuleSemesterSpan($moduleId: ID!, $semesters: Int!) {\n\t\tsetModuleSemesterSpan(moduleId: $moduleId, semesters: $semesters) {\n\t\t\tid\n\t\t\tsemesterSpan\n\t\t}\n\t}\n": types.SetModuleSemesterSpanDocument,
     "\n\tmutation SetModuleComponents($moduleId: ID!, $components: [ModuleComponentInput!]!) {\n\t\tsetModuleComponents(moduleId: $moduleId, components: $components) {\n\t\t\tid\n\t\t\tcomponentHours\n\t\t\tcomponents {\n\t\t\t\tid\n\t\t\t\tkind\n\t\t\t\tteachingHours\n\t\t\t}\n\t\t}\n\t}\n": types.SetModuleComponentsDocument,
-    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": types.SemestersDocument,
+    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": types.SemestersDocument,
     "\n\tmutation SetAssignmentConfirmationDue($code: String!, $due: Date) {\n\t\tsetAssignmentConfirmationDue(code: $code, due: $due) {\n\t\t\tcode\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n": types.SetAssignmentConfirmationDueDocument,
     "\n\tmutation AdvanceSemesterPhase($code: String!, $to: Phase!) {\n\t\tadvanceSemesterPhase(code: $code, to: $to) {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n": types.AdvanceSemesterPhaseDocument,
     "\n\tmutation SetPlanningSemester($code: String!) {\n\t\tsetPlanningSemester(code: $code) {\n\t\t\tcode\n\t\t\tisPlanningSemester\n\t\t}\n\t}\n": types.SetPlanningSemesterDocument,
@@ -277,7 +277,7 @@ export function graphql(source: "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tv
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t}\n\t}\n"];
+export function graphql(source: "\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery PlanningSemesterPhase {\n\t\tplanningSemester {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t}\n\t}\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -461,7 +461,7 @@ export function graphql(source: "\n\tmutation SetModuleComponents($moduleId: ID!
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n"];
+export function graphql(source: "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tcode\n\t\t\tphase\n\t\t\tdemandRelease {\n\t\t\t\treleased\n\t\t\t\tplanned\n\t\t\t}\n\t\t\tisPlanningSemester\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t\tdesiredHoursFrozenAt\n\t\t\tdesiredHoursPublishedAt\n\t\t\tassignmentConfirmationDue\n\t\t}\n\t}\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
