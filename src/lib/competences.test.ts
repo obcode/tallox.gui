@@ -16,6 +16,7 @@ import {
 	outsideStatements,
 	poolsByModule,
 	savedHint,
+	offeredLevels,
 	sortModules,
 	type CompetenceLike,
 	type OwnCompetenceLike
@@ -122,6 +123,30 @@ describe('sortModules', () => {
 			{ id: '4', name: 'Algebra', compulsory: false }
 		]);
 		expect(sorted.map((m) => m.id)).toEqual(['3', '2', '4', '1']);
+	});
+
+	it('puts independent work last, although the catalogue marks it compulsory', () => {
+		const sorted = sortModules([
+			{ id: 't', name: 'Abschlussarbeit', compulsory: true, independentWork: true },
+			{ id: 'e', name: 'Zahlentheorie', compulsory: false, independentWork: false },
+			{ id: 'c', name: 'Analysis', compulsory: true, independentWork: false }
+		]);
+		expect(sorted.map((m) => m.id)).toEqual(['c', 'e', 't']);
+	});
+});
+
+describe('offeredLevels', () => {
+	it('offers both levels on a planned module', () => {
+		expect(offeredLevels({ independentWork: false }, undefined)).toEqual([
+			'CAN_TEACH',
+			'WOULD_LIKE'
+		]);
+		expect(offeredLevels({}, 'WOULD_LIKE')).toEqual(['CAN_TEACH', 'WOULD_LIKE']);
+	});
+
+	it('keeps only the stated level on independent work, so it can be read and withdrawn', () => {
+		expect(offeredLevels({ independentWork: true }, 'WOULD_LIKE')).toEqual(['WOULD_LIKE']);
+		expect(offeredLevels({ independentWork: true }, undefined)).toEqual([]);
 	});
 });
 

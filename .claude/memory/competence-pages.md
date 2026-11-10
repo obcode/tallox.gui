@@ -69,6 +69,18 @@ Der Pool ist optionaler letzter Parameter von `candidatesFor`, damit bestehende 
 lesen. Geladen mit `competences(subjectGroup:)` — verweigert nie, antwortet mit weniger, also
 gefahrlos in der großen Anfrage.
 
+## Selbständiges Arbeiten
+
+Seit 2026-11-10 (Backend v5.47.0, `ModuleRef.independentWork`): Abschlussarbeiten,
+Praxissemester und Bachelorseminar werden nicht geplant, das Backend lehnt neue Angaben mit
+`MODULE_NOT_PLANNED` ab und zählt sie weder ins Minimum noch in die Lücken. Beide Seiten filtern sie
+im Load mit `plannedModules(…, keep)` heraus; `keep` sind die Module, an denen schon eine Angabe
+hängt — die bleibt mit „wird nicht geplant“ statt „Pflicht“ sichtbar, sortiert ans Ende
+(`sortModules`), und die Stufenauswahl bietet nur noch die gespeicherte Stufe und „—“
+(`offeredLevels`), also Lesen und Zurücknehmen. Das Formular „Für Lehrende ohne Konto“ bietet sie
+nie an. E2E-Fixture: `COMPETENCES.thesis` (`SELF_STUDY`), deshalb zählt die Startseite drei
+Module in der Kompetenz-Testfachgruppe.
+
 ## Vertraulichkeit
 
 `WOULD_LIKE` ist ein Wunsch ohne Semester — keine Zahl über fremde Einträge außer den beiden

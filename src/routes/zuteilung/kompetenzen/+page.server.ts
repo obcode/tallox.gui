@@ -1,4 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
+import { plannedModules } from '$lib/catalogue';
 import { graphql } from '$lib/gql/__generated__';
 import type { CompetenceLevel } from '$lib/gql/__generated__/graphql';
 import { backendRequest } from '$lib/server/backend';
@@ -44,6 +45,7 @@ const PoolDocument = graphql(`
 				name
 				homeProgrammeCode
 				compulsory
+				independentWork
 			}
 		}
 		competences(subjectGroup: $group) @include(if: $withGroup) {
@@ -147,7 +149,16 @@ export const load: PageServerLoad = async ({ url }) => {
 		// Which groups to offer. Cosmetic, as every such list here: the backend answers for a group
 		// the caller does not reach with no rows and a refusal on the counts.
 		groups: data.subjectGroups.filter((g) => deansOffice || led.has(g.id)),
-		group: data.subjectGroup ?? null,
+		// Independent work is not planned; a row stays only while somebody's statement hangs off it.
+		group: data.subjectGroup
+			? {
+					...data.subjectGroup,
+					modules: plannedModules(
+						data.subjectGroup.modules,
+						new Set((data.competences ?? []).map((c) => c.module.id))
+					)
+				}
+			: null,
 		competences: data.competences ?? [],
 		members: counts?.competenceMemberStatus ?? [],
 		gaps: counts?.modulesWithoutCompetence ?? [],

@@ -318,7 +318,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wo gebe ich an, welche Module ich halten kann?',
 		answer:
-			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen: zwei in der einen und eins in der anderen reichen. Abschlussarbeiten, Praxissemester und das Bachelorseminar zählen dabei nicht mit, weil sie nicht geplant werden. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
+			'Unter „Meine Kompetenzen“, einmal und nicht jedes Semester. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen: zwei in der einen und eins in der anderen reichen. Abschlussarbeiten, Praxissemester und das Bachelorseminar stehen nicht in der Liste und zählen nicht mit, weil sie nicht geplant werden. Hast Du für eines davon schon früher etwas angegeben, steht es mit „wird nicht geplant“ am Ende der Tabelle; zurücknehmen kannst Du es mit „—“. Das sehen nur Du, die zuständigen Leitungen und das Dekanat.',
 		who: [],
 		where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
 		stage: 'ONCE'

@@ -276,7 +276,8 @@ test.describe('the start page as a starting point', () => {
 
 		const module = group.getByRole('link', { name: COMPETENCES.compulsoryName });
 		await expect(module).toBeHidden();
-		await group.getByText('2 Module').click();
+		// Three: the compulsory, the elective and the thesis — a group holds independent work too.
+		await group.getByText('3 Module').click();
 		await expect(module).toBeVisible();
 
 		await checkA11y(page);

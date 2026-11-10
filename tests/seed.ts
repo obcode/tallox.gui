@@ -583,7 +583,13 @@ export const COMPETENCES = {
 	 * assignment spec — which looks at its own group — never renders it.
 	 */
 	instance: '0e2e0000-0000-4000-8000-000000000066',
-	lecture: '0e2e0000-0000-4000-8000-000000000067'
+	lecture: '0e2e0000-0000-4000-8000-000000000067',
+	/**
+	 * Independent work: compulsory in the catalogue, but never planned, so the competence pages
+	 * leave it out — except where a statement made before the rule still hangs off it.
+	 */
+	thesis: '0e2e0000-0000-4000-8000-000000000068',
+	thesisName: 'E2E Abschlussarbeit'
 } as const;
 
 export function competenceStatements(): string[] {
@@ -591,7 +597,7 @@ export function competenceStatements(): string[] {
 	return [
 		// Whatever a run left: every statement on the two modules, and the member's memberships.
 		`DELETE FROM competence WHERE module_id IN
-		   ('${COMPETENCES.compulsory}', '${COMPETENCES.elective}');`,
+		   ('${COMPETENCES.compulsory}', '${COMPETENCES.elective}', '${COMPETENCES.thesis}');`,
 		`DELETE FROM assignment WHERE instance_part_id = '${COMPETENCES.lecture}';`,
 		`DELETE FROM course_instance WHERE id = '${COMPETENCES.instance}';`,
 
@@ -609,11 +615,20 @@ export function competenceStatements(): string[] {
 		                ('${COMPETENCES.elective}'::uuid, ${quote(COMPETENCES.electiveName)})) AS m(id, name)
 		  WHERE p.code = ${programme}
 		 ON CONFLICT (id) DO NOTHING;`,
+		// The teaching form is what makes a module independent work.
+		`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+		                     contact_hours_per_week, credits)
+		 SELECT '${COMPETENCES.thesis}', p.id, ${quote(COMPETENCES.thesisName)}, 'SELF_STUDY',
+		        'EVERY_SEMESTER', 0, 12
+		   FROM programme p
+		  WHERE p.code = ${programme}
+		 ON CONFLICT (id) DO NOTHING;`,
 		// Compulsory is "is_duty under some regulations" — the only thing that makes the first
 		// module count towards the minimum and the second not.
 		`INSERT INTO module_offering (module_id, spo_id, is_duty, module_codes, source_rows,
 		                              min_programme_semester)
-		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-01'], 1, 1)
+		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.spo}', true, ARRAY['E2K-01'], 1, 1),
+		        ('${COMPETENCES.thesis}', '${COMPETENCES.spo}', true, ARRAY['E2K-99'], 1, 7)
 		 ON CONFLICT DO NOTHING;`,
 
 		`INSERT INTO subject_group (id, code, name)
@@ -622,7 +637,8 @@ export function competenceStatements(): string[] {
 		 ON CONFLICT (code) DO NOTHING;`,
 		`INSERT INTO module_subject_group (module_id, subject_group_id)
 		 VALUES ('${COMPETENCES.compulsory}', '${COMPETENCES.subjectGroup}'),
-		        ('${COMPETENCES.elective}', '${COMPETENCES.subjectGroup}')
+		        ('${COMPETENCES.elective}', '${COMPETENCES.subjectGroup}'),
+		        ('${COMPETENCES.thesis}', '${COMPETENCES.subjectGroup}')
 		 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`,
 
 		// Neun is a member; Drei leads the group.

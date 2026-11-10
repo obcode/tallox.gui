@@ -70,6 +70,10 @@ test.describe('competences', () => {
 			page.getByRole('combobox', { name: `Stufe für ${COMPETENCES.electiveName}` })
 		).toHaveValue('WOULD_LIKE');
 
+		// Independent work is compulsory in the catalogue but not planned: no row, and it does not
+		// raise the minimum above.
+		await expect(group.getByText(COMPETENCES.thesisName)).toHaveCount(0);
+
 		// The button without JavaScript's job: pressing it with nothing changed changes nothing.
 		await page.getByRole('button', { name: 'Alles speichern' }).click();
 		await expect(page.getByText('Es gab nichts zu speichern.')).toBeVisible();
@@ -94,6 +98,15 @@ test.describe('competences', () => {
 		const gaps = page.getByRole('region', { name: 'Wenn es brennt, kann es niemand' });
 		await expect(gaps).toContainText(COMPETENCES.electiveName);
 		await expect(gaps).not.toContainText(COMPETENCES.compulsoryName);
+		// Independent work is neither a row of the pool nor a gap, and not on offer for a lecturer
+		// without an account.
+		await expect(pool).not.toContainText(COMPETENCES.thesisName);
+		await expect(gaps).not.toContainText(COMPETENCES.thesisName);
+		await expect(
+			page
+				.getByRole('region', { name: 'Für Lehrende ohne Konto eintragen' })
+				.getByRole('option', { name: COMPETENCES.thesisName })
+		).toHaveCount(0);
 
 		// The count in this group, and no minimum: that is over all of Neun's groups, and the
 		// others are not the lead's to count.
@@ -151,6 +164,38 @@ test.describe('competences', () => {
 			})
 			.click();
 		await expect(elective).not.toContainText(COMPETENCES.teacherName);
+	});
+
+	test('a statement on independent work made before stays, marked, and can be withdrawn', async ({
+		asPersona
+	}) => {
+		// Stated before the rule; the API refuses a new one, so the fixture writes it directly.
+		runSql(
+			`INSERT INTO competence (module_id, person_id, level, entered_by)
+			 SELECT '${COMPETENCES.thesis}', id, 'CAN_TEACH', id FROM person
+			  WHERE mail = '${PERSONAS.unassigned.mail}';`,
+			'stating a competence on independent work'
+		);
+		const page = await asPersona(PERSONAS.unassigned);
+		await gotoRendered(page, '/konto/kompetenzen');
+
+		const group = page.getByRole('region', { name: 'Kompetenz-Testfachgruppe' });
+		const row = group.getByRole('row', { name: new RegExp(COMPETENCES.thesisName) });
+		await expect(row).toContainText('wird nicht geplant');
+		await expect(row).not.toContainText('Pflicht');
+		// Last, below what counts.
+		await expect(group.getByRole('row').last()).toContainText(COMPETENCES.thesisName);
+		// The only levels are the one stated and none.
+		const level = row.getByRole('combobox', { name: `Stufe für ${COMPETENCES.thesisName}` });
+		await expect(level).toHaveValue('CAN_TEACH');
+		await expect(level.getByRole('option')).toHaveCount(2);
+		// It does not count towards the minimum.
+		await expect(group.getByText('Davon in dieser Fachgruppe: 1 Pflichtfach.')).toBeVisible();
+
+		await level.selectOption('');
+		await expect(page.getByText('Eine Änderung gespeichert.')).toBeVisible();
+		await gotoRendered(page, '/konto/kompetenzen');
+		await expect(group.getByText(COMPETENCES.thesisName)).toHaveCount(0);
 	});
 
 	test('the pool is offered where the assignment is made', async ({ asPersona }) => {

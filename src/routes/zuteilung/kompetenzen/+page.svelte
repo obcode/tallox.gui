@@ -11,6 +11,7 @@
 		poolsByModule,
 		sortModules
 	} from '$lib/competences';
+	import { NOT_PLANNED_BADGE, plannedModules } from '$lib/catalogue';
 	import SortHeader from '$lib/components/SortHeader.svelte';
 	import { askBeforeLeave } from '$lib/saveOnLeave';
 	import { nextSort, sortRows, type SortState } from '$lib/sorting';
@@ -116,7 +117,9 @@
 									<td>
 										{module.name || 'Modul ohne Namen'}
 										<span class="text-base-content/80">({module.homeProgrammeCode})</span>
-										{#if module.compulsory}
+										{#if module.independentWork}
+											<span class="badge badge-ghost badge-sm">{NOT_PLANNED_BADGE}</span>
+										{:else if module.compulsory}
 											<span class="badge badge-neutral badge-sm">Pflicht</span>
 										{/if}
 									</td>
@@ -257,7 +260,7 @@
 					<label class="flex flex-col gap-1 text-sm">
 						<span>Modul</span>
 						<select name="module" class="select select-sm" required>
-							{#each modules as module (module.id)}
+							{#each plannedModules(modules) as module (module.id)}
 								<option value={module.id}>{module.name || 'Modul ohne Namen'}</option>
 							{/each}
 						</select>
