@@ -63,7 +63,12 @@ test.describe('areas and their tabs', () => {
 
 		await openDropdown(page, /Admin/);
 		const menu = page.getByRole('banner').locator('.dropdown-content').first();
-		await expect(menu.getByRole('link')).toHaveText([/Meine Rollen$/, /Tokens$/, /Mail$/]);
+		await expect(menu.getByRole('link')).toHaveText([
+			/Meine Rollen$/,
+			/Tokens$/,
+			/Benachrichtigungen$/,
+			/Rundmails$/
+		]);
 	});
 
 	test('the administration shows each role its own tabs', async ({ asPersona }) => {

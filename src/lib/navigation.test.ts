@@ -136,7 +136,8 @@ describe('ACCOUNT_ITEMS', () => {
 		expect(ACCOUNT_ITEMS.map((i) => i.href)).toEqual([
 			'/konto/rollen',
 			'/konto/tokens',
-			'/konto/benachrichtigungen'
+			'/konto/benachrichtigungen',
+			'/mitteilungen'
 		]);
 	});
 });

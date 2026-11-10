@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { areaFor, isActive } from '$lib/navigation';
+	import { areaFor, isActive, asRoute } from '$lib/navigation';
 
 	/**
 	 * The pages of the area the reader is in, as tabs above the page — "Meine Lehre" is wishes,
@@ -27,7 +27,7 @@
 		<div class="tabs tabs-box w-fit max-w-full flex-wrap">
 			{#each area.children ?? [] as tab (tab.href)}
 				<a
-					href={resolve(tab.href!)}
+					href={resolve(asRoute(tab.href!))}
 					title={tab.hint}
 					class="tab whitespace-nowrap"
 					class:tab-active={isActive(tab, pathname)}

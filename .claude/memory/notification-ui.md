@@ -1,6 +1,6 @@
 ---
 name: notification-ui
-description: Mail-Seiten (2026-11-10) — Menüeintrag „Mail“, /konto/benachrichtigungen, /mitteilungen außerhalb der Routen-Union, 🔔 auf der Modulseite, Vorschau im sandbox-iframe
+description: Mail-Seiten (2026-11-10) — Menüeinträge „Benachrichtigungen“ und „Rundmails“, asRoute() statt Routen-Ausschlüssen, 🔔 auf der Modulseite, Vorschau im sandbox-iframe
 metadata:
   type: project
 ---
@@ -8,11 +8,12 @@ metadata:
 Gebaut am 2026-11-10 gegen `tallox.go` v5.50.0. Was das Backend entscheidet, steht in
 `go/notifications.md`; hier steht nur die Oberfläche.
 
-- **Ein Menüeintrag „Mail“** in `ACCOUNT_ITEMS` → `/konto/benachrichtigungen`. Der zweite für
-  `/mitteilungen` passte nicht: `resolve()` vergleicht eine Union nur bis 25 Mitglieder, und mit
-  beiden neuen Routen waren es 26. `/api-doku` und `/mitteilungen` sind jetzt aus `StaticRoute`
-  genommen, wie `/ablauf`. `/mitteilungen` wird von der Benachrichtigungsseite (oben), aus der
-  Hilfe und aus jeder Rundmail verlinkt.
+- **Zwei Menüeinträge** im Namensmenü: „Benachrichtigungen“ (`/konto/benachrichtigungen`) und
+  „Rundmails“ (`/mitteilungen`). Zuerst war es ein Eintrag „Mail“, weil die 25er-Grenze von
+  `resolve()` erreicht war; noch am selben Tag (Olli: „wo finde ich die Rundmails?“) an der Wurzel
+  behoben: `asRoute()` in `$lib/navigation` verengt `StaticRoute` an den Aufrufstellen auf einen
+  Typ. Die Ausschlüsse nur wegen der Grenze (`/ablauf`, `/einfuehrung`, `/api-doku`,
+  `/mitteilungen`) sind wieder raus — neue Seiten passen ohne Tricks ins Menü.
 - **Nichts ist vorausgewählt.** „Empfohlene Abos übernehmen“ ist ein Knopf, kein Default; die
   Liste beginnt leer (E2E prüft das).
 - **🔔 auf der Modulseite** ist genau ein Abo `MODULE_OFFERED` + Modul, ohne Semester

@@ -8,40 +8,42 @@ import { hasAnyRole, isOnlooker } from '$lib/roles';
  * `RouteId` grew a parameterised member with the module detail page, and `resolve()` refuses one
  * of those without its parameters — rightly, since a menu entry has none to give. Excluding them
  * here means a future `/bedarf/[semester]` cannot be put in the menu by accident instead of
- * being discovered as a type error in this file's four call sites.
+ * being discovered as a type error in this file's call sites.
  *
  * Endpoints are excluded as well: `/gui-api/…` and `/healthz/…` answer with data, not pages, so
- * they are never a menu entry. It is also what keeps the union small enough for `resolve()` —
- * TypeScript matches a union argument against overloads only up to 25 members, and past that
- * every call site fails with an error that names none of this.
+ * they are never a menu entry. So are the layouts with no page and the old address that
+ * redirects. Pass a value of this type to `resolve()` through `asRoute()` — see there.
  */
-type StaticRoute = Exclude<
+export type StaticRoute = Exclude<
 	RouteId,
 	| `${string}[${string}`
 	| '/gui-api'
 	| `/gui-api/${string}`
 	| '/healthz'
 	| `/healthz/${string}`
-	// Never a menu entry either, and out for the 25-member limit above: the schema is a sub-page
-	// of the API documentation, `/bedarf/sws` an old address that redirects, and `/konto` is a
-	// layout with no page of its own. Reached the limit with `/zuteilung/uebersicht`.
+	// Never a menu entry: the schema is a sub-page of the API documentation, `/bedarf/sws` an old
+	// address that redirects, `/konto` and `/verwaltung` are layouts with no page of their own.
 	| `/api-doku/${string}`
 	| '/bedarf/sws'
 	| '/konto'
-	// Reached it again with the two advance wish pages: `/verwaltung` is a layout like `/konto`,
-	// and the introduction is linked by name from the help panel and the start page, never from
-	// the menu or a guide step.
 	| '/verwaltung'
-	| '/einfuehrung'
-	// And again with the hand-entered teachers: the process description is linked by name from the
-	// help panel and „Jetzt dran“, like the introduction, and never from the menu or a guide step.
-	| '/ablauf'
-	// And with the two mail pages (2026-11-10): the API documentation is linked by name from the
-	// help panel, like the process description, and never from the menu — and the announcements
-	// are reached from the notifications page, the help panel and every announcement mail.
-	| '/api-doku'
-	| '/mitteilungen'
 >;
+
+/**
+ * A static route, as one member `resolve()` accepts.
+ *
+ * `resolve()` has a signature per route. Handed a union, TypeScript matches it against those
+ * signatures only up to 25 members — past that every call site fails with an error that names
+ * none of this, and four times the answer was to take a page out of this type (`/ablauf`,
+ * `/einfuehrung`, `/api-doku`, `/mitteilungen`) so that it could not be in the menu. Narrowing the
+ * type here, once, ends that: every member of `StaticRoute` has no parameters, so at runtime
+ * `resolve(r)` is the same call whichever member `r` is, and the cast tells TypeScript no lie
+ * about what happens. Call sites stay `resolve(asRoute(item.href))`, which is what
+ * `svelte/no-navigation-without-resolve` wants to see.
+ */
+export function asRoute(route: StaticRoute): '/' {
+	return route as '/';
+}
 
 /**
  * The areas of the application, in the order of the planning process.
@@ -354,13 +356,19 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		hint: 'Personal Access Tokens für Auswertungen und zum Planen über die API'
 	},
 	{
-		// One entry for both mail pages: the announcements are linked from the top of this one
-		// (and out of the route union, see StaticRoute). No roles: an onlooker reads the
-		// announcements that reach them like everybody else; subscribing the backend refuses them.
+		// No roles: subscribing is refused to an onlooker by the backend, and the page says so.
 		emoji: '🔔',
-		label: 'Mail',
+		label: 'Benachrichtigungen',
 		href: '/konto/benachrichtigungen',
-		hint: 'Benachrichtigungen abonnieren, Rundmails lesen und als Leitung schreiben'
+		hint: 'Mails, wenn etwas offiziell wird — nur was Du selbst abonnierst'
+	},
+	{
+		// No roles either: an onlooker reads the announcements that reach them like everybody
+		// else. Who may write which one, the page asks the backend.
+		emoji: '📣',
+		label: 'Rundmails',
+		href: '/mitteilungen',
+		hint: 'Rundmails der Leitungen nachlesen — und als Leitung selbst eine schreiben'
 	}
 ];
 

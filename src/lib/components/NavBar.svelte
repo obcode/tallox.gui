@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from '$lib/navigation';
+	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems, asRoute } from '$lib/navigation';
 	import type { PlanningState } from '$lib/planning';
 	import HelpPanel from './HelpPanel.svelte';
 
@@ -68,7 +68,7 @@
 				<li>
 					{#if item.href}
 						<a
-							href={resolve(item.href)}
+							href={resolve(asRoute(item.href))}
 							title={item.hint}
 							class="hover:bg-base-200 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors"
 							class:bg-base-200={isActive(item, pathname)}
@@ -144,7 +144,7 @@
 						{#each account as item (item.label)}
 							<li>
 								<a
-									href={resolve(item.href!)}
+									href={resolve(asRoute(item.href!))}
 									title={item.hint}
 									class:menu-active={isActive(item, pathname)}
 								>
@@ -204,14 +204,17 @@
 								<ul>
 									{#each item.children as child (child.href)}
 										<li>
-											<a href={resolve(child.href!)} class:menu-active={isActive(child, pathname)}>
+											<a
+												href={resolve(asRoute(child.href!))}
+												class:menu-active={isActive(child, pathname)}
+											>
 												{child.label}
 											</a>
 										</li>
 									{/each}
 								</ul>
 							{:else if item.href}
-								<a href={resolve(item.href)} class:menu-active={isActive(item, pathname)}>
+								<a href={resolve(asRoute(item.href))} class:menu-active={isActive(item, pathname)}>
 									<span aria-hidden="true">{item.emoji}</span>{item.label}
 								</a>
 							{:else}
@@ -229,7 +232,7 @@
 					<li class="menu-title">Konto</li>
 					{#each account as item (item.label)}
 						<li>
-							<a href={resolve(item.href!)} class:menu-active={isActive(item, pathname)}>
+							<a href={resolve(asRoute(item.href!))} class:menu-active={isActive(item, pathname)}>
 								<span aria-hidden="true">{item.emoji}</span>{item.label}
 							</a>
 						</li>

@@ -136,8 +136,9 @@ export const GUIDE: readonly GuideSection[] = [
 				title: 'Benachrichtigungen abonnieren',
 				who: [],
 				where: [
-					{ href: '/konto/benachrichtigungen', label: 'Mail' },
-					{ href: '/module', label: 'Modulkatalog' }
+					{ href: '/konto/benachrichtigungen', label: 'Benachrichtigungen' },
+					{ href: '/module', label: 'Modulkatalog' },
+					{ href: '/mitteilungen', label: 'Rundmails' }
 				],
 				text: 'Tallox schreibt Dir eine Mail, wenn etwas offiziell wird, das Du abonniert hast: ein Studiengang gibt seinen Bedarf frei, eine Fachgruppe öffnet oder schließt ihre Wunschrunde, Wünsche oder Zuteilungen werden veröffentlicht, eine Frist rückt näher. Ohne Abo kommt nichts. Mit einem Klick übernimmst Du die empfohlenen Abos für Deine eigenen Vormerkungen, Wünsche, Zuteilungen und Fachgruppen; ein einzelnes Modul abonnierst Du mit 🔔 auf seiner Modulseite. Wer sich wofür interessiert, steht in keiner Mail. Rundmails der Leitungen kommen ohne Abo.'
 			}
