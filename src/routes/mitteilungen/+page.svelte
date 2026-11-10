@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { safeFragment } from '$lib/announcementBody';
 	import { audienceKey, audienceLabel } from '$lib/notifications';
 	import { askBeforeLeave } from '$lib/saveOnLeave';
 	import type { ActionData, PageData } from './$types';
@@ -141,7 +142,20 @@
 							{/if}
 						</p>
 					</header>
-					<p class="text-base-content/90 text-sm whitespace-pre-line">{a.body}</p>
+					{#if safeFragment(a.bodyHtml)}
+						<!--
+							Rendered by the backend's Markdown and checked tag by tag in safeFragment; see
+							there for why this page is the one place with {@html}.
+						-->
+						<div
+							class="text-base-content/90 flex flex-col gap-3 text-sm [&_a]:link [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html safeFragment(a.bodyHtml)}
+						</div>
+					{:else}
+						<p class="text-base-content/90 text-sm whitespace-pre-line">{a.body}</p>
+					{/if}
 				</article>
 			{/each}
 		{/if}

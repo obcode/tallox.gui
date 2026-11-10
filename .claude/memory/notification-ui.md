@@ -25,3 +25,7 @@ Gebaut am 2026-11-10 gegen `tallox.go` v5.50.0. Was das Backend entscheidet, ste
 - Die Zustellung je Abo ist ein `autosave`-Select; Pause und Neues Abo sind `askBeforeLeave`.
 - Neue Fehlercodes in der Pass-through-Liste: `SUBSCRIPTION_*`, `TOO_MANY_SUBSCRIPTIONS`,
   `ONLOOKER_SUBSCRIBES`, `AUDIENCE_*`, `ANNOUNCEMENT_INVALID`, `RATE_LIMITED`.
+- **Archiv gerendert** (2026-11-10, v5.51.0): `Announcement.bodyHtml` kommt aus demselben Markdown
+  wie die Mail, ohne Inline-Stile. Die Seite zeigt es mit `{@html}` — der einzige Ort damit —,
+  aber erst nach `safeFragment` (`$lib/announcementBody`), das nur die Tags des Renderers mit
+  genau ihren Attributen durchlässt; sonst fällt sie auf den Rohtext zurück.

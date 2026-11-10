@@ -18,6 +18,7 @@ const AnnouncementsDocument = graphql(`
 			id
 			subject
 			body
+			bodyHtml
 			sentAt
 			recipientCount
 			sender {

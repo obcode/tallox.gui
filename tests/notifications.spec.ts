@@ -119,5 +119,9 @@ test.describe('announcements', () => {
 		const article = page.getByRole('article').filter({ hasText: 'Test-Rundmail' });
 		await expect(article).toBeVisible();
 		await expect(article.getByText(/an \d+ Person/)).toHaveCount(0);
+		// The body is rendered like the mail: a list and bold, no asterisks.
+		await expect(article.locator('li strong', { hasText: 'eins' })).toBeVisible();
+		await expect(article.getByRole('listitem')).toHaveCount(2);
+		await expect(article.getByText('**')).toHaveCount(0);
 	});
 });
