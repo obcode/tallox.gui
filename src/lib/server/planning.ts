@@ -7,6 +7,10 @@ const PlanningSemesterQuery = graphql(`
 		planningSemester {
 			code
 			phase
+			demandRelease {
+				released
+				planned
+			}
 		}
 	}
 `);
@@ -26,7 +30,15 @@ export async function loadPlanningState(): Promise<PlanningState> {
 		const data = await backendRequest(PlanningSemesterQuery);
 		const semester = data.planningSemester;
 		return semester
-			? { kind: 'set', code: semester.code, phase: semester.phase }
+			? {
+					kind: 'set',
+					code: semester.code,
+					phase: semester.phase,
+					release: {
+						released: semester.demandRelease.released,
+						planned: semester.demandRelease.planned
+					}
+				}
 			: { kind: 'unset' };
 	} catch {
 		return { kind: 'unknown' };

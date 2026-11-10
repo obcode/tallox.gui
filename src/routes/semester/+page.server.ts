@@ -10,6 +10,10 @@ const SemestersDocument = graphql(`
 		semesters {
 			code
 			phase
+			demandRelease {
+				released
+				planned
+			}
 			isPlanningSemester
 			reachablePhases
 			wishesPublishedAt

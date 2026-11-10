@@ -7,7 +7,7 @@ import {
 	type NavItem
 } from '$lib/navigation';
 import { isOnlooker } from '$lib/roles';
-import type { PlanningState } from '$lib/planning';
+import type { DemandRelease, PlanningState } from '$lib/planning';
 import { PHASE_LABELS, semesterName } from '$lib/semester';
 
 /**
@@ -56,6 +56,12 @@ export type GuideStep = {
 	 * read like a prompt to do it early.
 	 */
 	due?: readonly DuePhase[];
+	/**
+	 * Also due in the wish phase while not every planned study programme has released its demand.
+	 * The wish phase begins with the first release, so the step that leads to a release is still
+	 * somebody's for as long as others are missing.
+	 */
+	dueUntilReleased?: true;
 	/**
 	 * The step cannot be undone, which its text says and the picture on /ablauf marks. Only the
 	 * dean's office's publications: everything else can be switched back.
@@ -139,7 +145,7 @@ export const GUIDE: readonly GuideSection[] = [
 				where: [{ href: '/semester', label: 'Semester und Phasen' }],
 				due: ['UNSET', 'FINAL'],
 				when: 'Semesterwoche 1–2',
-				text: 'Angelegt wird kein Semester, es ist da wie der nächste März. Das Dekanat sagt, welches gerade geplant wird; das ist dann überall vorausgewählt. Die Phase eines Semesters wird von Hand weitergeschaltet, nie aus dem Kalender abgeleitet.'
+				text: 'Angelegt wird kein Semester, es ist da wie der nächste März. Das Dekanat sagt, welches gerade geplant wird; das ist dann überall vorausgewählt. Die Phase eines Semesters schaltet das Dekanat von Hand weiter, nie der Kalender. Nur in die Wunschphase wechselt es von selbst: sobald der erste Studiengang seinen Bedarf für Wünsche freigibt.'
 			},
 			{
 				title: 'Den Bedarf festlegen',
@@ -149,8 +155,9 @@ export const GUIDE: readonly GuideSection[] = [
 					{ href: '/statistik', label: 'Statistik' }
 				],
 				due: ['DEMAND_PLANNING'],
+				dueUntilReleased: true,
 				when: 'Semesterwoche 3–5',
-				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Abschlussarbeiten, die praktischen Studiensemester und das Bachelorseminar stehen nicht in der Liste: Studierende vereinbaren sie direkt mit einer Lehrperson, geplant werden sie nicht. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten; dann zahlt der Studiengang, der die Veranstaltung hält. Wer eine eigene Variante will (etwa eine eigene Analysis), plant sie separat und zahlt sie selbst. Wie viele FWP sich ein Studiengang leisten kann, zeigt das SWS-Controlling unter Statistik: die Lehre je Studiengang gegen das Kontingent des Studienjahres. Welche Wahlpflichtmodule eines Korbs der Prüfungsordnung laufen, eigene wie fremde, steht dort unter „Wahlpflicht nach Korb“; auf der Bedarfsseite steht der Korb unter dem Modulnamen, und die Seite lässt sich nach Korb filtern und sortieren. Am Ende gibt sie den Bedarf mit „Bedarf fertig, für Wünsche freigeben“ frei: erst dann kann sich das Kollegium auf die Module des Studiengangs eintragen. Der Bedarf selbst bleibt änderbar. Auch nach der Wunschrunde lassen sich Züge ergänzen und zusammenlegen; die Wünsche für einen wegfallenden Zug gehen dabei auf einen verbleibenden über.'
+				text: 'Geplant werden Instanzen, nicht Module: ein Modul in einem Semester für einen Studiengang und einen Zug (IF2A, IF2B). Die Studiengangsleitung hakt je Modul an, was angeboten wird, setzt Züge, Praktikumsgruppen und Fachsemester und schreibt bei Bedarf eine Notiz dazu. Das Vorjahr ist vorbelegt. Abschlussarbeiten, die praktischen Studiensemester und das Bachelorseminar stehen nicht in der Liste: Studierende vereinbaren sie direkt mit einer Lehrperson, geplant werden sie nicht. Bietet ein anderer Studiengang dasselbe Modul an, wird es automatisch gemeinsam gehalten; dann zahlt der Studiengang, der die Veranstaltung hält. Wer eine eigene Variante will (etwa eine eigene Analysis), plant sie separat und zahlt sie selbst. Wie viele FWP sich ein Studiengang leisten kann, zeigt das SWS-Controlling unter Statistik: die Lehre je Studiengang gegen das Kontingent des Studienjahres. Welche Wahlpflichtmodule eines Korbs der Prüfungsordnung laufen, eigene wie fremde, steht dort unter „Wahlpflicht nach Korb“; auf der Bedarfsseite steht der Korb unter dem Modulnamen, und die Seite lässt sich nach Korb filtern und sortieren. Am Ende gibt sie den Bedarf mit „Bedarf fertig, für Wünsche freigeben“ frei: erst dann kann sich das Kollegium auf die Module des Studiengangs eintragen. Die erste Freigabe eines Studiengangs schaltet das Semester von selbst in die Wunschphase; „Jetzt dran“ zeigt dann, wie viele Studiengänge schon freigegeben haben. Eine zurückgenommene Freigabe schaltet nicht zurück. Der Bedarf selbst bleibt änderbar. Auch nach der Wunschrunde lassen sich Züge ergänzen und zusammenlegen; die Wünsche für einen wegfallenden Zug gehen dabei auf einen verbleibenden über.'
 			},
 			{
 				title: 'Interesse bekunden',
@@ -161,7 +168,7 @@ export const GUIDE: readonly GuideSection[] = [
 				],
 				due: ['WISHES'],
 				when: 'Semesterwoche 6–7',
-				text: 'Alle tragen an den Instanzen ein, was sie halten würden, mit Priorität und Notiz; wer von mehreren Zügen eines Moduls nur einen übernimmt, egal welchen, trägt sich für alle ein und wählt „Davon übernehme ich: nur einen“; wer einen Zug als Course in English halten würde, kreuzt „als CiE anbieten“ an. Darüber hinaus geben alle an, wie viele SWS modulbehaftete Lehre (ohne Abschlussarbeiten) sie in dem Semester übernehmen möchten, als Bereich von–bis. Die SWS-Angabe lesen bis zur Veröffentlichung nur die Leitungen der eigenen Fachgruppen und das Dekanat. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Eintragen lässt sich eine Instanz erst, wenn ihr Studiengang den Bedarf freigegeben hat; was man schon vorher halten möchte, lässt sich unter „Vormerkungen“ festhalten, und die Freigabe macht daraus Wünsche. Die Wunschrunde jeder Fachgruppe ist offen, bis ihre Leitung sie schließt; wer schließt, arbeitet mit dem, was gesammelt wurde. Veröffentlicht wird erst, wenn alle Runden geschlossen sind. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
+				text: 'Alle tragen an den Instanzen ein, was sie halten würden, mit Priorität und Notiz; wer von mehreren Zügen eines Moduls nur einen übernimmt, egal welchen, trägt sich für alle ein und wählt „Davon übernehme ich: nur einen“; wer einen Zug als Course in English halten würde, kreuzt „als CiE anbieten“ an. Darüber hinaus geben alle an, wie viele SWS modulbehaftete Lehre (ohne Abschlussarbeiten) sie in dem Semester übernehmen möchten, als Bereich von–bis. Die SWS-Angabe lesen bis zur Veröffentlichung nur die Leitungen der eigenen Fachgruppen und das Dekanat. Bis zur Veröffentlichung sieht das niemand sonst, auch nicht als Anzahl: niemand soll sich fragen müssen, ob ein Fach schon „besetzt“ ist. Eintragen lässt sich eine Instanz erst, wenn ihr Studiengang den Bedarf freigegeben hat; die Wunschphase beginnt mit der ersten Freigabe, und solange noch nicht alle Studiengänge freigegeben haben, steht unter „Jetzt dran“, für wie viele es schon geht; was man schon vorher halten möchte, lässt sich unter „Vormerkungen“ festhalten, und die Freigabe macht daraus Wünsche. Die Wunschrunde jeder Fachgruppe ist offen, bis ihre Leitung sie schließt; wer schließt, arbeitet mit dem, was gesammelt wurde. Veröffentlicht wird erst, wenn alle Runden geschlossen sind. Fällt dabei auf, dass im Bedarf ein Modul fehlt oder sich für eines niemand findet, ändert die Studiengangsleitung den Bedarf; er bleibt in der Wunschphase offen.'
 			},
 			{
 				title: 'Die Wunsch-SWS einfrieren, prüfen und veröffentlichen',
@@ -258,12 +265,15 @@ export function mayOpen(href: NavItem['href'], roles: readonly string[]): boolea
  * everybody: a card that tells somebody to enter wishes while the page cannot load the wishes
  * is worse than no card.
  */
-export function dueNow(phase: Phase | null, roles: readonly string[]): GuideStep[] {
+export function dueNow(
+	phase: Phase | null,
+	roles: readonly string[],
+	release?: DemandRelease
+): GuideStep[] {
 	if (roles.length === 0) return [];
-	const now: DuePhase = phase ?? 'UNSET';
 	return GUIDE.flatMap((section) => section.steps).filter(
 		(step) =>
-			step.due?.includes(now) &&
+			dueIn(step, phase, release) &&
 			// A step nobody in particular does is every colleague's — not a partner faculty's or
 			// an observer's, which state nothing here.
 			((step.who.length === 0 && !isOnlooker(roles)) ||
@@ -277,7 +287,51 @@ export function dueNow(phase: Phase | null, roles: readonly string[]): GuideStep
  */
 export function isDue(step: GuideStep, planning: PlanningState): boolean {
 	if (planning.kind === 'unknown') return false;
-	return step.due?.includes(planning.kind === 'set' ? planning.phase : 'UNSET') ?? false;
+	return planning.kind === 'set'
+		? dueIn(step, planning.phase, planning.release)
+		: dueIn(step, null, undefined);
+}
+
+/** Whether every planned study programme has released its demand; false without counts. */
+function allReleased(release: DemandRelease | undefined): boolean {
+	return release !== undefined && release.released >= release.planned;
+}
+
+/**
+ * The one question behind `dueNow` and `isDue`: is this step due in this phase? Without counts a
+ * step that waits for the releases stays due in the wish phase — saying too much there costs a
+ * glance, saying too little hides the step from the leads who still owe a release.
+ */
+function dueIn(step: GuideStep, phase: Phase | null, release: DemandRelease | undefined): boolean {
+	const now: DuePhase = phase ?? 'UNSET';
+	if (step.due?.includes(now)) return true;
+	return now === 'WISHES' && step.dueUntilReleased === true && !allReleased(release);
+}
+
+/**
+ * The line about the demand releases on the "Jetzt dran" card, or null where it has nothing to say.
+ *
+ * The wish phase begins with the first release, not when the last programme is ready, so in the
+ * wish phase a lecturer needs to know that some programmes are still missing — the wish page
+ * shows only the released ones. It counts programmes and their releases, which everybody reads
+ * anyway, and never anything about anybody's wishes.
+ */
+export function releaseStatus(planning: PlanningState): string | null {
+	if (planning.kind !== 'set' || !planning.release || planning.release.planned === 0) return null;
+	const { released, planned } = planning.release;
+	const ofAll = `${released} von ${planned} Studiengängen`;
+	switch (planning.phase) {
+		case 'DEMAND_PLANNING':
+			return released === 0
+				? 'Noch kein Studiengang hat seinen Bedarf für Wünsche freigegeben. Mit der ersten Freigabe beginnt die Wunschphase.'
+				: `Bedarf für Wünsche freigegeben: ${ofAll}.`;
+		case 'WISHES':
+			return released >= planned
+				? 'Alle Studiengänge haben ihren Bedarf für Wünsche freigegeben.'
+				: `Wünsche gehen bisher für ${ofAll}; die übrigen geben ihren Bedarf noch frei.`;
+		default:
+			return null;
+	}
 }
 
 /** How many due steps the card lists before it points at the full walk-through instead. */
@@ -287,6 +341,8 @@ export const DUE_NOW_LIMIT = 3;
 export type DueCard = {
 	/** "Sommersemester 2027 · Wunschphase", or null when there is nothing to name. */
 	heading: string | null;
+	/** How far the demand releases have got, under the heading — see `releaseStatus`. */
+	status: string | null;
 	steps: GuideStep[];
 	/** Due steps beyond the limit, which the card counts and links to rather than lists. */
 	more: number;
@@ -305,6 +361,7 @@ export function dueCard(planning: PlanningState, roles: readonly string[]): DueC
 	if (planning.kind === 'unknown' || roles.length === 0) {
 		return {
 			heading: null,
+			status: null,
 			steps: [],
 			more: 0,
 			note: 'Der Stand des Planungssemesters lässt sich gerade nicht abrufen.'
@@ -312,7 +369,7 @@ export function dueCard(planning: PlanningState, roles: readonly string[]): DueC
 	}
 
 	const phase = planning.kind === 'set' ? planning.phase : null;
-	const all = dueNow(phase, roles);
+	const all = dueNow(phase, roles, planning.kind === 'set' ? planning.release : undefined);
 	const heading =
 		planning.kind === 'set'
 			? `${semesterName(planning.code)} · ${PHASE_LABELS[planning.phase]}`
@@ -328,6 +385,7 @@ export function dueCard(planning: PlanningState, roles: readonly string[]): DueC
 
 	return {
 		heading,
+		status: releaseStatus(planning),
 		steps: all.slice(0, DUE_NOW_LIMIT),
 		more: Math.max(0, all.length - DUE_NOW_LIMIT),
 		note

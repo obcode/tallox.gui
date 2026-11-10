@@ -61,7 +61,8 @@
 		<h2 id="intro-phases" class="font-medium">Ein Semester in fünf Phasen</h2>
 		<p class="text-base-content/80 mt-1 max-w-3xl text-sm">
 			Geplant wird immer das nächste Semester, während das laufende beginnt. Die Phase schaltet das
-			Dekanat von Hand weiter, nie der Kalender.
+			Dekanat von Hand weiter, nie der Kalender; nur die Wunschphase beginnt von selbst, mit der
+			ersten Freigabe eines Studiengangs.
 			{#if data.planning.kind === 'set'}
 				Gerade geplant wird das <strong>{semesterName(data.planning.code)}</strong>, es steht in der
 				Phase „{PHASE_LABELS[data.planning.phase]}“.

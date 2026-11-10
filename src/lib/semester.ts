@@ -30,9 +30,10 @@ export const PHASE_LABELS: Record<Phase, string> = {
 };
 
 export const PHASE_HINTS: Record<Phase, string> = {
-	DEMAND_PLANNING: 'Die Studiengangsleitungen legen fest, welche Instanzen angeboten werden.',
+	DEMAND_PLANNING:
+		'Die Studiengangsleitungen legen fest, welche Instanzen angeboten werden. Die erste Freigabe für Wünsche schaltet in die Wunschphase.',
 	WISHES:
-		'Dozierende bekunden Interesse. Die Eintragungen sind vertraulich, bis das Dekanat sie veröffentlicht.',
+		'Dozierende bekunden Interesse, je Studiengang ab dessen Freigabe. Die Eintragungen sind vertraulich, bis das Dekanat sie veröffentlicht.',
 	ASSIGNMENT: 'Die Fachgruppenleitungen besetzen die Instanzen.',
 	REVIEW:
 		'Die Studiengangsleitungen prüfen Zuschnitt, Besetzung und SWS-Controlling. Bis zum Semesterende bleibt alles änderbar.',
@@ -156,4 +157,20 @@ export function wishesAreVisible(semester: SemesterLike): boolean {
  */
 export function mayStillPublish(semester: SemesterLike): boolean {
 	return !wishesAreVisible(semester);
+}
+
+/**
+ * The line about the demand releases on a semester's card under "Semester und Phasen", or null.
+ *
+ * Only while the releases matter for the phase: in the demand planning the first one moves the
+ * semester on, and in the wish phase the wish page offers only the released programmes. It counts
+ * programmes, never anything about wishes.
+ */
+export function demandReleaseLine(
+	phase: Phase,
+	release: { released: number; planned: number }
+): string | null {
+	if (release.planned === 0) return null;
+	if (phase !== 'DEMAND_PLANNING' && phase !== 'WISHES') return null;
+	return `Bedarf für Wünsche freigegeben: ${release.released} von ${release.planned} Studiengängen.`;
 }

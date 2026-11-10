@@ -46,6 +46,20 @@ test.describe('semesters and phases', () => {
 		await expect(page.getByRole('button', { name: /veröffentlichen/ })).toHaveCount(0);
 	});
 
+	test('says how many study programmes have released their demand for wishes', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/semester');
+
+		// The seed puts this semester back into Bedarfsplanung; the walk-through test may move it
+		// to the wish phase meanwhile, and the line belongs to both. The first release switches
+		// to the wish phase by itself, so the count is what tells a reader how far it has got.
+		// A count of programmes, never of wishes — the test above guards the other kind.
+		const row = cards(page).filter({ hasText: SEMESTERS.phase });
+		await expect(row).toContainText(/Bedarf für Wünsche freigegeben: \d+ von \d+ Studiengängen\./);
+	});
+
 	test('the dean’s office walks a semester through the process', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.fuenf);
 		await gotoRendered(page, '/semester');

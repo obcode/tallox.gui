@@ -497,9 +497,9 @@ export function closedPhaseHint(phase: string | null | undefined): string {
 export function openPhaseHint(phase: string | null | undefined): string {
 	switch (phase) {
 		case 'DEMAND_PLANNING':
-			return 'Der Bedarf wird gerade erst festgelegt — was hier steht, kann sich noch ändern. Eintragen kannst Du Dich trotzdem schon.';
+			return 'Der Bedarf wird gerade festgelegt — was hier steht, kann sich noch ändern. Eintragen kannst Du Dich bei den Studiengängen, die ihn schon für Wünsche freigegeben haben; für die übrigen lässt sich unter „Meine Lehre → Vormerkungen“ vormerken.';
 		case 'WISHES':
-			return 'Die Wunschphase läuft. Jetzt ist der Zeitpunkt, sich einzutragen.';
+			return 'Die Wunschphase läuft. Jetzt ist der Zeitpunkt, sich einzutragen — bei jedem Studiengang, sobald er seinen Bedarf für Wünsche freigegeben hat.';
 		case 'ASSIGNMENT':
 			return 'Die Zuteilung läuft bereits. Ändern geht weiter — sag der Fachgruppenleitung am besten Bescheid, damit es ankommt.';
 		case 'REVIEW':

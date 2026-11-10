@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Phase } from '$lib/gql/__generated__/graphql';
 import {
+	demandReleaseLine,
 	PHASE_HINTS,
 	PHASE_LABELS,
 	PHASE_ORDER,
@@ -189,5 +190,32 @@ describe('phaseProgress', () => {
 		const progress = phaseProgress('WISHES');
 		expect(progress.map((p) => p.phase)).toEqual([...PHASE_ORDER]);
 		expect(progress.map((p) => p.label)).toEqual(PHASE_ORDER.map((p) => PHASE_LABELS[p]));
+	});
+});
+
+describe('demandReleaseLine', () => {
+	it('counts the released programmes while the releases matter for the phase', () => {
+		expect(demandReleaseLine('DEMAND_PLANNING', { released: 0, planned: 8 })).toBe(
+			'Bedarf für Wünsche freigegeben: 0 von 8 Studiengängen.'
+		);
+		expect(demandReleaseLine('WISHES', { released: 3, planned: 8 })).toBe(
+			'Bedarf für Wünsche freigegeben: 3 von 8 Studiengängen.'
+		);
+	});
+
+	it('says nothing from the assignment on, or when no programme is planned', () => {
+		for (const phase of ['ASSIGNMENT', 'REVIEW', 'FINAL'] as const) {
+			expect(demandReleaseLine(phase, { released: 3, planned: 8 }), phase).toBeNull();
+		}
+		expect(demandReleaseLine('WISHES', { released: 0, planned: 0 })).toBeNull();
+	});
+});
+
+describe('PHASE_HINTS on the wish phase', () => {
+	// The first release starts the wish phase; the hint must not send anybody to wait for the
+	// dean's office to switch it.
+	it('says that the first release switches to the wish phase', () => {
+		expect(PHASE_HINTS.DEMAND_PLANNING).toMatch(/erste Freigabe für Wünsche schaltet/);
+		expect(PHASE_HINTS.WISHES).toMatch(/ab dessen Freigabe/);
 	});
 });
