@@ -36,6 +36,11 @@ type StaticRoute = Exclude<
 	// And again with the hand-entered teachers: the process description is linked by name from the
 	// help panel and „Jetzt dran“, like the introduction, and never from the menu or a guide step.
 	| '/ablauf'
+	// And with the two mail pages (2026-11-10): the API documentation is linked by name from the
+	// help panel, like the process description, and never from the menu — and the announcements
+	// are reached from the notifications page, the help panel and every announcement mail.
+	| '/api-doku'
+	| '/mitteilungen'
 >;
 
 /**
@@ -347,6 +352,15 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		label: 'Tokens',
 		href: '/konto/tokens',
 		hint: 'Personal Access Tokens für Auswertungen und zum Planen über die API'
+	},
+	{
+		// One entry for both mail pages: the announcements are linked from the top of this one
+		// (and out of the route union, see StaticRoute). No roles: an onlooker reads the
+		// announcements that reach them like everybody else; subscribing the backend refuses them.
+		emoji: '🔔',
+		label: 'Mail',
+		href: '/konto/benachrichtigungen',
+		hint: 'Benachrichtigungen abonnieren, Rundmails lesen und als Leitung schreiben'
 	}
 ];
 

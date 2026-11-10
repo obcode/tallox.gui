@@ -42,3 +42,4 @@ Kolleginnen und Kollegen.
 - [Planungs-Token in der Token-Seite](planning-token-ui.md) — Häkchen statt Scope, Hinweis und Badge, und warum `value={…}` neben einem reaktiven Geschwister das Feld leert
 - [Lehrpersonen von Hand](local-teachers-ui.md) — Reiter unter Zuteilung, Korrigieren/Stilllegen, `/ablauf` aus StaticRoute
 - [Zum Home-Bildschirm (zurückgestellt)](home-screen-install.md) — am 2026-11-10 gebaut und zurückgestellt; Wiederaufnahme per Revert des Reverts von `d49b299`
+- [Mail-Seiten](notification-ui.md) — Menüeintrag „Mail“, `/mitteilungen` aus StaticRoute (25er-Grenze), 🔔 auf der Modulseite, Vorschau im sandbox-iframe

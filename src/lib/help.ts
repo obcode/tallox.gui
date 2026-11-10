@@ -35,6 +35,33 @@ export type HelpStage = 'ONCE' | 'EACH_SEMESTER' | 'AFTERWARDS';
 
 export const HELP: readonly HelpEntry[] = [
 	{
+		question: 'Wie bekomme ich eine Mail, wenn ein Modul (wieder) angeboten wird?',
+		answer:
+			'Auf der Modulseite mit 🔔 „Benachrichtigen, wenn angeboten“. Die Mail kommt, sobald das Modul in einem Semester im Bedarf eines Studiengangs steht und dieser Studiengang seinen Bedarf freigegeben hat, und zwar in jedem Semester wieder, bis Du die Glocke ausschaltest. Ein Modul, das jemand nur probeweise anklickt, löst nichts aus: gemeldet wird, was zehn Minuten Bestand hat. Für mehrere Module auf einmal gibt es unter Mail die Abos für Deine Kompetenzen, Deine Fachgruppen oder einen Studiengang.',
+		who: [],
+		where: [
+			{ href: '/module', label: 'Modulkatalog' },
+			{ href: '/konto/benachrichtigungen', label: 'Mail' }
+		],
+		stage: 'ONCE'
+	},
+	{
+		question: 'Wann schickt mir Tallox eine Mail, und was steht darin?',
+		answer:
+			'Nur wenn Du es abonniert hast — ohne Abo kommt nichts, auch nichts über Dich selbst. Gemeldet wird nur, was offiziell ist: eine Freigabe des Bedarfs, eine Wunschrunde, die öffnet oder schließt, eine Veröffentlichung, eine neue Phase, die Frist zum Bestätigen Deiner Zuteilungen. Mehreres auf einmal kommt gebündelt in einer Mail, auf Wunsch einmal am Morgen. Wer sich wofür interessiert, steht in keiner Mail, auch nicht als Anzahl. Die Mails gehen an die Adresse, mit der Du Dich über die HM-Anmeldung einloggst. Pausieren und abbestellen geht unter Mail.',
+		who: [],
+		where: [{ href: '/konto/benachrichtigungen', label: 'Mail' }],
+		stage: 'ONCE'
+	},
+	{
+		question:
+			'Wie schreibe ich eine Rundmail an meine Fachgruppe oder an die Lehrenden meines Studiengangs?',
+		answer:
+			'Unter Mail über „Rundmails lesen und schreiben“. Die Fachgruppenleitung schreibt an die Mitglieder ihrer Fachgruppe, die Studiengangsleitung an alle, die im Semester in ihrem Studiengang zugeteilt sind oder sich eingetragen haben, das Dekanat an das ganze Kollegium, und alle Leitungen an alle Leitungen. Jede Person bekommt die Mail einzeln, Antworten gehen an Dich. „Vorschau“ zeigt die Mail, wie sie ankommt, und wie viele sie erreicht; erst danach lässt sie sich verschicken. Abonnieren muss die Rundmail niemand, abbestellen kann sie niemand. Verschicken geht nur im Browser, nicht über ein Token, und höchstens zehnmal am Tag.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE', 'ADMIN'],
+		where: [{ href: '/konto/benachrichtigungen', label: 'Mail' }]
+	},
+	{
 		question: 'Wie schließe ich die Wunschrunde meiner Fachgruppe, und wie öffne ich sie wieder?',
 		answer:
 			'Auf der Zuteilungsseite, je Fachgruppe und Semester. Offen ist sie von Anfang an: freischalten muss niemand etwas. Wer schließt, arbeitet ab dann mit dem, was eingetragen wurde. Wieder öffnen geht jederzeit. Das Dekanat kann die Wünsche eines Semesters erst veröffentlichen, wenn alle Fachgruppen mit Instanzen ihre Runde geschlossen haben; eine offene Runde hält die Veröffentlichung für alle auf. Wer nach der Veröffentlichung wieder öffnet, macht jede neue Eintragung sofort sichtbar; die Seite fragt deshalb noch einmal nach. Bitte nur in Absprache mit dem Dekanat.',

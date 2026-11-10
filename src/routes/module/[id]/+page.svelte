@@ -23,10 +23,16 @@
 	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
 	import HandbookLink from '$lib/components/HandbookLink.svelte';
 	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
-	import { hasAnyRole } from '$lib/roles';
+	import { hasAnyRole, isOnlooker } from '$lib/roles';
+	import { isModuleBell } from '$lib/notifications';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	// The bell: one own subscription, "whenever this module is offered".
+	const bell = $derived(
+		data.subscriptions.find((sub) => isModuleBell(sub, data.module.id)) ?? null
+	);
 
 	// Cosmetic, like every role check in this application — the backend refuses the mutation
 	// anyway, and it refuses it on the token path too. Worth doing so that a lecturer reads which
@@ -139,7 +145,31 @@
 <div class="flex flex-col gap-4">
 	<div>
 		<a class="link text-base-content/80 text-sm" href={resolve('/module')}>← Modulkatalog</a>
-		<h1 class="text-2xl font-semibold">{moduleName(data.module)}</h1>
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+			<h1 class="text-2xl font-semibold">{moduleName(data.module)}</h1>
+			{#if !isOnlooker(data.me?.roles ?? [])}
+				{#if bell}
+					<form method="POST" action="?/bellOff" use:enhance>
+						<input type="hidden" name="id" value={bell.id} />
+						<button
+							type="submit"
+							class="btn btn-sm btn-outline"
+							title="Du bekommst eine Mail, sobald dieses Modul in einem freigegebenen Bedarf steht. Klicken zum Abbestellen."
+							>🔔 Wird gemeldet</button
+						>
+					</form>
+				{:else}
+					<form method="POST" action="?/bellOn" use:enhance>
+						<button
+							type="submit"
+							class="btn btn-sm btn-ghost"
+							title="Eine Mail, sobald dieses Modul in einem Semester angeboten wird — also in einem freigegebenen Bedarf steht."
+							>🔕 Benachrichtigen, wenn angeboten</button
+						>
+					</form>
+				{/if}
+			{/if}
+		</div>
 		<p class="text-base-content/80 text-sm">
 			Heimatstudiengang {data.module.homeProgramme.code}
 			· {COURSE_TYPE_LABELS[data.module.courseType]}

@@ -9,6 +9,26 @@ import type { Actions, PageServerLoad } from './$types';
 
 const ModuleDocument = graphql(`
 	query Module($id: ID!) {
+		# Whether the bell is on: "tell me whenever this module is offered". Own subscriptions only —
+		# there is no field that says who else follows a module, and there must not be one.
+		myNotificationSubscriptions {
+			id
+			kind
+			semester
+			targetSet
+			module {
+				id
+				name
+				homeProgrammeCode
+			}
+			programme {
+				code
+			}
+			subjectGroup {
+				id
+				name
+			}
+		}
 		me {
 			programmes {
 				code
@@ -148,7 +168,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		if (!data.module) {
 			error(404, 'Dieses Modul gibt es nicht.');
 		}
-		return { module: data.module, me: data.me, subjectGroups: data.subjectGroups };
+		return {
+			module: data.module,
+			me: data.me,
+			subjectGroups: data.subjectGroups,
+			subscriptions: data.myNotificationSubscriptions
+		};
 	} catch (err) {
 		// Kit's own 404 from above passes; everything else is the backend refusing.
 		if (isHttpError(err)) throw err;
@@ -164,7 +189,44 @@ export const load: PageServerLoad = async ({ params }) => {
  * the order the person put them in is the order that gets stored, and the backend assigns the
  * positions from it.
  */
+const BellOnDocument = graphql(`
+	mutation ModuleBellOn($input: NotificationSubscriptionInput!) {
+		subscribeNotification(input: $input) {
+			id
+		}
+	}
+`);
+
+const BellOffDocument = graphql(`
+	mutation ModuleBellOff($id: ID!) {
+		unsubscribeNotification(id: $id)
+	}
+`);
+
 export const actions: Actions = {
+	/** 🔔 on: a mail whenever this module is offered, in any semester, in any programme. */
+	bellOn: async ({ params }) => {
+		try {
+			await backendRequest(BellOnDocument, {
+				input: { kind: 'MODULE_OFFERED', moduleId: params.id, delivery: 'IMMEDIATE' }
+			});
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { bell: true };
+	},
+
+	/** 🔔 off: removes that one subscription. */
+	bellOff: async ({ request }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		try {
+			await backendRequest(BellOffDocument, { id });
+		} catch (err) {
+			return fail(400, toRefusal(err));
+		}
+		return { bell: false };
+	},
+
 	/** Mark the module as a PBLV, or take the mark back. The same people as the split. */
 	projectBased: async ({ request, params }) => {
 		const form = await request.formData();

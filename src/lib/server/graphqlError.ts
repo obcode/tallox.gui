@@ -247,7 +247,17 @@ const PASS_THROUGH = new Set([
 	'COMPETENCE_MODULE_RETIRED',
 	'COMPETENCE_LEVEL_INVALID',
 	'COMPETENCE_NOTE_TOO_LONG',
-	'COMPETENCE_GROUP_REFUSED'
+	'COMPETENCE_GROUP_REFUSED',
+	// Subscriptions and announcements. All about the caller's own subscription or about whether
+	// they may write to an audience — none says who would have received anything.
+	'SUBSCRIPTION_INVALID',
+	'TOO_MANY_SUBSCRIPTIONS',
+	'SUBSCRIPTION_NOT_FOUND',
+	'ONLOOKER_SUBSCRIBES',
+	'AUDIENCE_NOT_ALLOWED',
+	'AUDIENCE_EMPTY',
+	'ANNOUNCEMENT_INVALID',
+	'RATE_LIMITED'
 ]);
 
 /** What is shown when the error is none of the known ones. */
