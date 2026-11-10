@@ -472,6 +472,23 @@ export function filterGroupOptions<G extends FilingGroup & { active: boolean }>(
 		.sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
+/**
+ * The subject groups the "eigene Lehrveranstaltung" form on the demand page offers: every active
+ * one, to everybody who may plan the programme.
+ *
+ * Not `filingGroupsFor`. Filing a module that already exists moves it between groups and wants
+ * both ends in reach; filing a course in the same step that creates it takes it from nowhere, so
+ * the backend lets anybody who may plan the programme choose any active group
+ * (`createLocalModule(subjectGroup:)`). The planning permission is the page's question — the form
+ * only appears where it holds — so this takes no roles. A retired group is not offered: the
+ * backend refuses it like one that does not exist.
+ */
+export function localCourseGroupOptions<G extends FilingGroup & { active: boolean }>(
+	all: readonly G[]
+): G[] {
+	return all.filter((g) => g.active).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
 /** ADMIN and the dean's office file across every group — `policy.FilingScope`'s `All`. */
 function filingReachesEveryGroup(roles: readonly string[]): boolean {
 	return roles.includes('ADMIN') || roles.includes('DEANS_OFFICE');

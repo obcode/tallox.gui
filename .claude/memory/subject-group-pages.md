@@ -29,9 +29,17 @@ Reichweite wie im Backend, als `mayRefileModule`/`filingGroupsFor` in `$lib/cata
   Reichweite liegt; auf der Einzelseite steht stattdessen, warum das Formular fehlt.
 - Eine Leitung ohne Gruppe: nichts.
 
-Aus `session.effectiveRoles` plus `me.subjectGroupsLed`, nicht aus `me.roles`. Die Bedarfsseite
-reicht `filingGroupsFor` noch `me.roles` herein — beim Verengen bietet sie damit mehr an, als der
-Server gerade erlaubt (kosmetisch, aber falsch herum).
+Aus `session.effectiveRoles` plus `me.subjectGroupsLed`, nicht aus `me.roles`.
+
+**Die Bedarfsseite nimmt `filingGroupsFor` nicht mehr (seit 2026-11-10, Backend v5.49.0).** Eine
+eigene Lehrveranstaltung bzw. ein FWP-Platzhalter wird mit `createLocalModule(subjectGroup:)` in
+derselben Transaktion einsortiert, und dort darf jede Person, die den Studiengang planen darf, jede
+**aktive** Fachgruppe wählen — die Zeile kommt aus dem Nichts, also wird keiner fremden Gruppe etwas
+weggenommen. Die Auswahl ist `localCourseGroupOptions` (aktive Gruppen, nach Name), immer sichtbar
+mit „noch keine“. Umhängen danach bleibt `setModulesSubjectGroup` mit der Regel oben: die
+Studiengangsleitung kann eine falsch gewählte Gruppe **nicht** selbst korrigieren. Unbekannt oder
+stillgelegt → `SUBJECT_GROUP_NOT_FOUND`, nichts angelegt; die Action ersetzt den Satz durch einen,
+der sagt, dass nichts angelegt wurde.
 
 E2E: `tests/module-filing.spec.ts` mit eigenem Datensatz `FILING` (Studiengang `E2F`). Die Modulnamen
 beginnen mit `E2F`, damit sie hinter den `E2E …`-Modulen sortieren: `subject-groups.spec.ts` sortiert

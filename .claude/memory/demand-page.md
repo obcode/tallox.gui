@@ -298,3 +298,13 @@ weil es beim Wechsel abschickt und das Suchformular nicht.
   während gefiltert wird.
 - `/zuteilung` bewusst noch nicht (Rückmeldung: dort weniger wichtig); die Funktionen passen dort
   genauso.
+
+## Eigene Lehrveranstaltung: Fachgruppe in einem Aufruf (2026-11-10)
+
+Die Action `createLocal` ruft `createLocalModule(input, subjectGroup)` und danach
+`declareCourseInstance` — früher kam als dritter Aufruf `setModulesSubjectGroup`, mit dem Fall
+„angelegt, aber Einsortieren abgelehnt". Das Feld „Fachgruppe“ steht jetzt für alle, die planen
+dürfen, und bietet jede aktive Gruppe (`localCourseGroupOptions`); Regel und Korrekturweg in
+[[subject-group-pages]]. E2E: „a programme lead files an own course into another subject group“
+(Prof. Vier legt an, Prof. Drei sieht es unter Zuteilung) räumt die Zeile im `finally` selbst weg,
+weil die Gruppe dem Zuteilungs-Datensatz gehört.
