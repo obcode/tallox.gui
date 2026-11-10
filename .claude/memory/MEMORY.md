@@ -41,3 +41,4 @@ Kolleginnen und Kollegen.
 - [Grafische Übersichten](visual-overview.md) — Phasen-Leiste, Kontingent- und SWS-Balken, Besetzungsstand, geschlossene Wunschrunden in einem Satz
 - [Planungs-Token in der Token-Seite](planning-token-ui.md) — Häkchen statt Scope, Hinweis und Badge, und warum `value={…}` neben einem reaktiven Geschwister das Feld leert
 - [Lehrpersonen von Hand](local-teachers-ui.md) — Reiter unter Zuteilung, Korrigieren/Stilllegen, `/ablauf` aus StaticRoute
+- [Zum Home-Bildschirm](home-screen-install.md) — Web-Manifest ohne Service Worker, `use-credentials`, Icons per Skript, Login-Ausnahme im Deployment für neue Dateien nachziehen
