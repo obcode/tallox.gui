@@ -118,6 +118,7 @@ const DemandDocument = graphql(`
 			contactHoursPerWeek
 			splitIsEstimated
 			plannable
+			independentWork
 			practicalKind
 			components {
 				kind
@@ -172,6 +173,7 @@ const DemandDocument = graphql(`
 				kind
 				splitIsEstimated
 				plannable
+				independentWork
 				practicalKind
 				components {
 					kind
@@ -252,6 +254,7 @@ const DemandDocument = graphql(`
 			source
 			kind
 			plannable
+			independentWork
 			splitIsEstimated
 			homeProgramme {
 				code

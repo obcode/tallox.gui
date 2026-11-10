@@ -14,7 +14,8 @@
 		dutyBadge,
 		formatHours,
 		mayWriteModuleSplit,
-		moduleName
+		moduleName,
+		NOT_PLANNED_BADGE
 	} from '$lib/catalogue';
 	import {
 		arrangeByBasket,
@@ -1240,7 +1241,9 @@
 								<span class="badge badge-ghost badge-sm">
 									{match.homeProgramme.code}
 								</span>
-								{#if !match.plannable}
+								{#if match.independentWork}
+									<span class="badge badge-ghost badge-sm">{NOT_PLANNED_BADGE}</span>
+								{:else if !match.plannable}
 									<span class="badge badge-ghost badge-sm">
 										{match.splitIsEstimated
 											? 'Aufteilung noch nicht bestätigt'

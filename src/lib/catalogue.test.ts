@@ -25,6 +25,7 @@ import {
 	mayRefileModule,
 	mayWriteModuleSplit,
 	moduleName,
+	plannedModules,
 	spoLabel,
 	teacherRole
 } from './catalogue';
@@ -420,5 +421,26 @@ describe('filterGroupOptions', () => {
 
 	it('keeps a retired group while it is the one selected', () => {
 		expect(filterGroupOptions(groups, 'a').map((g) => g.code)).toEqual(['AL', 'MA', 'WI']);
+	});
+});
+
+describe('plannedModules', () => {
+	const modules = [
+		{ id: 'a', independentWork: false },
+		{ id: 'thesis', independentWork: true },
+		{ id: 'b' }
+	];
+
+	it('leaves independent work out', () => {
+		expect(plannedModules(modules).map((m) => m.id)).toEqual(['a', 'b']);
+	});
+
+	// An entry made before the rule stays visible, so it can be withdrawn.
+	it('keeps independent work somebody already has an entry for', () => {
+		expect(plannedModules(modules, new Set(['thesis'])).map((m) => m.id)).toEqual([
+			'a',
+			'thesis',
+			'b'
+		]);
 	});
 });
