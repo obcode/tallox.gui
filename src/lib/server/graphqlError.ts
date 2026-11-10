@@ -125,6 +125,9 @@ const PASS_THROUGH = new Set([
 	'MODULE_NOT_DECOMPOSED',
 	// Independent work — a thesis — is not planned: the sentence says so, which is the whole answer.
 	'MODULE_NOT_PLANNED',
+	// A course the faculty entered and took out of the lists; the sentence names the repair,
+	// taking it back in on its catalogue page.
+	'MODULE_INACTIVE',
 	'TRACK_TAKEN',
 	'TRACK_INVALID',
 	'PROGRAMME_SEMESTER_INVALID',

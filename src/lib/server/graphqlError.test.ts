@@ -26,6 +26,14 @@ describe('toRefusal', () => {
 		});
 	});
 
+	it('passes the refusal for a deactivated course through, since it names the repair', () => {
+		const message =
+			'dieser Eintrag ist stillgelegt – bitte ihn zuerst im Modulkatalog wieder aufnehmen';
+		const refusal = toRefusal(clientError([{ message, extensions: { code: 'MODULE_INACTIVE' } }]));
+
+		expect(refusal).toEqual({ code: 'MODULE_INACTIVE', message, generic: false });
+	});
+
 	it('replaces unknown errors with a generic sentence', () => {
 		// The rule from CLAUDE.md: no raw backend error strings on write paths. A uniqueness
 		// violation passed through would later reveal that somebody has already registered —
