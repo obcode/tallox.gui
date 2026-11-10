@@ -172,6 +172,8 @@ const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
 	{ who: PERSONAS.eins, path: '/konto/kompetenzen' },
 	{ who: PERSONAS.eins, path: '/konto/rollen' },
 	{ who: PERSONAS.eins, path: '/konto/tokens' },
+	{ who: PERSONAS.eins, path: '/konto/benachrichtigungen' },
+	{ who: PERSONAS.fuenf, path: '/mitteilungen' },
 	{ who: PERSONAS.eins, path: '/konto/zuteilungen' },
 	{ who: PERSONAS.eins, path: `/wuensche?semester=${WISHES.semester}` },
 	{ who: PERSONAS.eins, path: '/module' },

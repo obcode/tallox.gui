@@ -131,6 +131,15 @@ export const GUIDE: readonly GuideSection[] = [
 				who: [],
 				where: [{ href: '/konto/kompetenzen', label: 'Meine Kompetenzen' }],
 				text: 'Welche Module Deiner Fachgruppen Du halten kannst, auch wenn es kurzfristig brennt, und für welche Du Dich interessierst, Dich aber erst einarbeiten müsstest. Die Fakultät bittet um mindestens drei Pflichtfächer, über alle Deine Fachgruppen zusammen, nicht je Fachgruppe. Abschlussarbeiten, Praxissemester und das Bachelorseminar stehen nicht zur Auswahl, weil sie nicht geplant werden. Einmal angeben, nicht jedes Semester. Das sehen nur Du, die zuständigen Leitungen und das Dekanat; die Fachgruppenleitung findet den Pool bei der Zuteilung. Was davon bei Dir noch fehlt, zeigt die Startseite unter „Dein Stand“; haben Deine Fachgruppen zusammen weniger als drei Pflichtfächer, zählen dort alle.'
+			},
+			{
+				title: 'Benachrichtigungen abonnieren',
+				who: [],
+				where: [
+					{ href: '/konto/benachrichtigungen', label: 'Mail' },
+					{ href: '/module', label: 'Modulkatalog' }
+				],
+				text: 'Tallox schreibt Dir eine Mail, wenn etwas offiziell wird, das Du abonniert hast: ein Studiengang gibt seinen Bedarf frei, eine Fachgruppe öffnet oder schließt ihre Wunschrunde, Wünsche oder Zuteilungen werden veröffentlicht, eine Frist rückt näher. Ohne Abo kommt nichts. Mit einem Klick übernimmst Du die empfohlenen Abos für Deine eigenen Vormerkungen, Wünsche, Zuteilungen und Fachgruppen; ein einzelnes Modul abonnierst Du mit 🔔 auf seiner Modulseite. Wer sich wofür interessiert, steht in keiner Mail. Rundmails der Leitungen kommen ohne Abo.'
 			}
 		]
 	},

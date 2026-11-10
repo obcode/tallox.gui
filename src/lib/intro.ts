@@ -35,6 +35,10 @@ export const PROMISES: readonly IntroPromise[] = [
 		text: 'Tallox hat eine offene Schnittstelle für eigene Auswertungen. Ein normales Token gibt, was Personen betrifft, nichts heraus: keine unveröffentlichten Wünsche anderer, keine gewünschten und eingeplanten SWS anderer, nicht die Liste „SWS im Kollegium“. Ein Token in einem Skript liest still und in großer Menge; eine Anmeldung im Browser ist einer Person zuzuordnen. Wer über die Schnittstelle planen will, etwa mit einem KI-Assistenten, legt ausdrücklich ein Planungs-Token an: Es kann so viel wie die Person im Browser, nicht mehr, gilt höchstens 90 Tage und steht jeden Tag im Zugriffsbericht. Die Verwaltung von Personen und Rollen, die Tokens selbst und das Zugriffsprotokoll erreicht kein Token.'
 	},
 	{
+		title: 'Tallox schreibt Dir nur, wenn etwas offiziell ist — und nur, wenn Du es willst',
+		text: 'Mails kommen nur zu dem, was Du selbst abonniert hast, und nur zu dem, was offiziell ist: eine Freigabe, eine Wunschrunde, eine Veröffentlichung, eine Frist. Was jemand nur probeweise anklickt, löst nichts aus. Wer sich wofür interessiert, steht in keiner Mail. Rundmails der Leitungen kommen ohne Abo; jede Person bekommt sie einzeln, und alle stehen in Tallox zum Nachlesen.'
+	},
+	{
 		title: 'Die Regeln stehen im Server, nicht in der Oberfläche',
 		text: 'Was Du sehen und ändern darfst, entscheidet der Server, und zwar für die Oberfläche und die Schnittstelle gleich. Ein Knopf, der fehlt, ist nur die Folge davon. Es gibt keine Rolle, die alles sieht, auch die Administration liest vor der Veröffentlichung keine Wünsche. Selbst die Rolle Einsicht, die die ganze Planung liest, sieht keine Wünsche und keine SWS-Angaben aus dem Kollegium. Muss sie doch hineinsehen, kann sie sich die Rolle Dekanat oder eine Leitung nur befristet geben, höchstens 30 Tage, und das steht jeden Tag im Zugriffsbericht.'
 	}

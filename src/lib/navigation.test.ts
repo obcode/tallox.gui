@@ -131,8 +131,13 @@ describe('ACCOUNT_ITEMS', () => {
 	});
 
 	it('holds the account and nothing else', () => {
-		// The help, the API documentation and the administration moved out; the menu is "me".
-		expect(ACCOUNT_ITEMS.map((i) => i.href)).toEqual(['/konto/rollen', '/konto/tokens']);
+		// The help, the API documentation and the administration moved out; the menu is "me" — my
+		// roles, my tokens, and the mail that reaches me (2026-11-10).
+		expect(ACCOUNT_ITEMS.map((i) => i.href)).toEqual([
+			'/konto/rollen',
+			'/konto/tokens',
+			'/konto/benachrichtigungen'
+		]);
 	});
 });
 
