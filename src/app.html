@@ -9,18 +9,6 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<!-- Home-screen install. use-credentials because browsers fetch the manifest without
-		     cookies by default, and behind an auth proxy that fetch would get a login redirect
-		     instead of the file. No service worker on purpose: nothing is cached on the device.
-		     iOS ignores the manifest icons and wants its own. Icons: scripts/make-icons.mjs. -->
-		<link
-			rel="manifest"
-			href="%sveltekit.assets%/manifest.webmanifest"
-			crossorigin="use-credentials"
-		/>
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
-		<meta name="apple-mobile-web-app-title" content="Tallox" />
-		<meta name="theme-color" content="#eef2f8" />
 		<!-- The fallback title. Pages override it with <svelte:head>, but without one here any
 		     page that forgets would have none at all — and a document without a <title> is a WCAG
 		     violation (2.4.2) and unfindable in a bar full of tabs.

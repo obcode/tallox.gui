@@ -124,14 +124,6 @@ export const HELP: readonly HelpEntry[] = [
 		stage: 'ONCE'
 	},
 	{
-		question: 'Kann ich Tallox wie eine App auf das Handy oder den Rechner legen?',
-		answer:
-			'Ja, als Symbol auf dem Home-Bildschirm oder im Dock. Auf dem iPhone oder iPad in Safari über „Teilen → Zum Home-Bildschirm“, auf Android in Chrome über das Menü und „App installieren“, am Rechner in Chrome oder Edge über das Installieren-Symbol in der Adressleiste, in Safari auf dem Mac über „Ablage → Zum Dock hinzufügen“. Tallox öffnet sich dann in einem eigenen Fenster ohne Browserleiste. Es bleibt aber dieselbe Webseite: das eduVPN muss verbunden sein, ohne Netz geht nichts, und auf dem Gerät wird nichts zwischengespeichert. Auf iPhone und iPad meldest Du Dich dort einmal eigens an, weil die Anmeldung aus Safari nicht mitkommt.',
-		who: [],
-		where: [{ href: '/wuensche', label: 'Wünsche' }],
-		stage: 'ONCE'
-	},
-	{
 		question: 'Was muss ich einmal einrichten?',
 		answer:
 			'Zwei Dinge, beide unter „Meine Lehre“: Deine Fachgruppen und danach Deine Kompetenzen, also welche Module Du halten kannst. Dazu kommt in jedem Semester die Angabe, wie viele SWS Du übernehmen möchtest. Was davon noch fehlt, zeigt die Startseite unter „Dein Stand“. Ist alles angegeben, steht dort nur noch „Alles angegeben“; mit einem neuen Planungssemester kommen die SWS wieder als offener Punkt dazu. Gespeichert wird dafür nichts eigenes: sie liest nur, was Du auf den Seiten eingetragen hast.',
