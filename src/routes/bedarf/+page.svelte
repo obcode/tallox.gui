@@ -1952,6 +1952,20 @@
 																	eigene Lehrveranstaltung
 																</span>
 															{/if}
+															<!-- Renaming and retiring a course of the faculty's own happens on its
+															     module page; the pencil says where. -->
+															{#if row.module.source === 'LOCAL' && mayPlan}
+																<a
+																	class="btn btn-ghost btn-xs"
+																	href={resolve('/module/[id]', { id: row.module.id })}
+																	title="Umbenennen oder aus den Listen nehmen"
+																	aria-label="{moduleName(
+																		row.module
+																	)} umbenennen oder aus den Listen nehmen"
+																>
+																	<span aria-hidden="true">✏️</span>
+																</a>
+															{/if}
 														</span>
 													</span>
 												</label>
