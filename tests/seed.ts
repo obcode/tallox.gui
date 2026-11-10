@@ -344,10 +344,15 @@ export function catalogueStatements(): string[] {
 		// second module deliberately names nobody — about one real module in thirty does, either
 		// because the source writes a placeholder or because it writes an address that is not in
 		// the list.
-		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor, active, faculty,
-		                      last_semester)
-		 VALUES ('${CATALOGUE.teacher}', 'prof.zwei@example.org', 'Prof. Dr. Zwei', 'Zwei, Prof.',
-		         true, true, 'FK07', '2026-WS')
+		//
+		// Every imported teacher carries the source's reference: since backend migration
+		// `local_teachers` a row without one is a teacher entered by hand, and the database refuses
+		// an imported row without it (`teacher_source_matches_ref`). The references are made up and
+		// far above anything the source hands out.
+		`INSERT INTO teacher (id, zpa_teacher_ref, mail, full_name, short_name, is_professor, active,
+		                      faculty, last_semester)
+		 VALUES ('${CATALOGUE.teacher}', 990000001, 'prof.zwei@example.org', 'Prof. Dr. Zwei',
+		         'Zwei, Prof.', true, true, 'FK07', '2026-WS')
 		 ON CONFLICT (id) DO NOTHING;`,
 
 		`UPDATE module SET responsible_teacher_id = '${CATALOGUE.teacher}'
@@ -356,19 +361,19 @@ export function catalogueStatements(): string[] {
 		// The admission screen's own rows: one per state its filter can be in. Every one of them
 		// grants nothing — a teacher is imported master data, and who may sign in is a decision
 		// somebody makes on that screen.
-		`INSERT INTO teacher (id, mail, full_name, short_name, is_professor,
+		`INSERT INTO teacher (id, zpa_teacher_ref, mail, full_name, short_name, is_professor,
 		                      is_lecturer_on_contract, is_staff, active, faculty, last_semester)
-		 VALUES ('${TEACHERS.admittable}', 'prof.sieben@example.org', 'Prof. Dr. Sieben',
+		 VALUES ('${TEACHERS.admittable}', 990000002, 'prof.sieben@example.org', 'Prof. Dr. Sieben',
 		         'Sieben, Prof.', true, false, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.spare}', 'prof.acht@example.org', 'Prof. Dr. Acht',
+		        ('${TEACHERS.spare}', 990000003, 'prof.acht@example.org', 'Prof. Dr. Acht',
 		         'Acht, Prof.', true, false, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.elsewhere}', 'prof.neun@example.org', 'Prof. Dr. Neun',
+		        ('${TEACHERS.elsewhere}', 990000004, 'prof.neun@example.org', 'Prof. Dr. Neun',
 		         'Neun, Prof.', true, false, false, true, 'FK99', '2026-WS'),
-		        ('${TEACHERS.onContract}', 'lba.zehn@example.org', 'Zehn, M.Sc.',
+		        ('${TEACHERS.onContract}', 990000005, 'lba.zehn@example.org', 'Zehn, M.Sc.',
 		         'Zehn, M.Sc.', false, true, false, true, 'FK07', '2026-WS'),
-		        ('${TEACHERS.former}', 'prof.elf@example.org', 'Prof. Dr. Elf',
+		        ('${TEACHERS.former}', 990000006, 'prof.elf@example.org', 'Prof. Dr. Elf',
 		         'Elf, Prof.', true, false, false, false, 'FK07', '2025-SS'),
-		        ('${TEACHERS.withoutMail}', NULL, 'Zwoelf, ohne Adresse',
+		        ('${TEACHERS.withoutMail}', 990000007, NULL, 'Zwoelf, ohne Adresse',
 		         'Zwoelf, ohne Adresse', true, false, true, true, 'FK07', '2026-WS')
 		 ON CONFLICT (id) DO NOTHING;`,
 
@@ -641,8 +646,9 @@ export function competenceStatements(): string[] {
 		// A lecturer on contract without an address — nobody can sign in as her, so the lead
 		// enters for her. Outside FK07, so the admission screen's pre-filter keeps her out of the
 		// lists another spec counts.
-		`INSERT INTO teacher (id, full_name, short_name, is_lecturer_on_contract, active, faculty)
-		 VALUES ('${COMPETENCES.teacher}', ${quote(COMPETENCES.teacherName)},
+		`INSERT INTO teacher (id, zpa_teacher_ref, full_name, short_name, is_lecturer_on_contract,
+		                      active, faculty)
+		 VALUES ('${COMPETENCES.teacher}', 990000008, ${quote(COMPETENCES.teacherName)},
 		         'Lehrbeauftragte, Kompetenz', true, true, 'EXT')
 		 ON CONFLICT (id) DO NOTHING;`,
 		// Released for wishes, so that registering interest gets to what the test is about.
