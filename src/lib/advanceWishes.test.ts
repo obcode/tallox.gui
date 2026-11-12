@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	ADVANCE_STATUS_LABELS,
 	advanceStatusBadge,
 	advanceBySemester,
 	advanceLevelLabel,
@@ -74,7 +75,7 @@ describe('notOfferedNotice', () => {
 
 	it('names the module, programme and semester', () => {
 		expect(notOfferedNotice([row({ status: 'NOT_OFFERED' })])).toBe(
-			'Nicht angeboten: Analysis (IF, Sommersemester 2028). Die Studiengangsleitung hat den Bedarf ohne dieses Modul freigegeben.'
+			'Nicht im Bedarf: Analysis (IF, Sommersemester 2028). Der freigegebene Bedarf enthält dieses Modul nicht.'
 		);
 	});
 
@@ -84,7 +85,7 @@ describe('notOfferedNotice', () => {
 			row({ status: 'NOT_OFFERED', semester: '2028-WS', module: { id: 'a', name: 'Alpha' } })
 		]);
 		expect(text).toContain('Alpha (IF, Wintersemester 2028/29) und Beta (IF, Sommersemester 2029)');
-		expect(text).toContain('ohne diese Module');
+		expect(text).toContain('enthalten diese Module nicht');
 	});
 });
 
@@ -92,7 +93,16 @@ describe('advanceStatusHint', () => {
 	it('says what each state means', () => {
 		expect(advanceStatusHint('PENDING', 'IF')).toContain('Studiengangsleitung von IF');
 		expect(advanceStatusHint('CONVERTED', 'IF')).toContain('Wunsch');
-		expect(advanceStatusHint('NOT_OFFERED', 'IF')).toContain('ohne dieses Modul');
+		expect(advanceStatusHint('NOT_OFFERED', 'IF')).toContain('enthält dieses Modul nicht');
+	});
+
+	// The status of one noted down after the release, too: the hint must not claim a release
+	// "without offering it" happened after the note, and must say the lead sees it.
+	it('reads true for one noted down after the release', () => {
+		const hint = advanceStatusHint('NOT_OFFERED', 'IF');
+		expect(hint).toContain('Studiengangsleitung sieht Deine Vormerkung');
+		expect(hint).toContain('wird sie zum Wunsch');
+		expect(ADVANCE_STATUS_LABELS.NOT_OFFERED).toBe('nicht im Bedarf');
 	});
 });
 

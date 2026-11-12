@@ -35,12 +35,12 @@
 		>
 			<h2 id="not-offered" class="text-lg font-semibold">📌 Vormerkungen</h2>
 			<p class="text-base-content/90 text-sm">
-				<span class="badge badge-warning badge-sm align-middle">nicht angeboten</span>
+				<span class="badge badge-warning badge-sm align-middle">nicht im Bedarf</span>
 				{notOffered}
 			</p>
 			<p class="text-base-content/80 mt-1 text-sm">
-				Wird das Modul doch noch angeboten, wird die Vormerkung zum Wunsch. Erledigtes ziehst Du
-				unter <a class="link" href={resolve('/wuensche/vormerkungen')}>Vormerkungen</a> zurück.
+				Kommt das Modul doch noch in den Bedarf, wird die Vormerkung zum Wunsch. Erledigtes ziehst
+				Du unter <a class="link" href={resolve('/wuensche/vormerkungen')}>Vormerkungen</a> zurück.
 			</p>
 		</section>
 	{/if}

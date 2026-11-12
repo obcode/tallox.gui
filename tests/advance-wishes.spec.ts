@@ -111,7 +111,7 @@ test.describe('advance wishes', () => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/wuensche/vormerkungen');
 		const card = page.locator('article').filter({ hasText: semesterName(SEMESTER) });
-		await expect(card.getByText('nicht angeboten', { exact: true })).toBeVisible();
+		await expect(card.getByText('nicht im Bedarf', { exact: true })).toBeVisible();
 
 		await gotoRendered(page, '/');
 		const notice = page.getByRole('region', { name: /Vormerkungen/ });
