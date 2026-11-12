@@ -254,6 +254,16 @@ export const HELP: readonly HelpEntry[] = [
 		stage: 'EACH_SEMESTER'
 	},
 	{
+		question: 'Warum sind im Phasenbalken zwei Phasen zugleich aktuell?',
+		answer:
+			'Weil die Wünsche je Studiengang aufgehen, sobald dessen Bedarf für Wünsche freigegeben ist, und nicht für alle auf einmal. Solange erst ein Teil der Studiengänge freigegeben hat, sind im Balken unter „Jetzt dran“ und unter „Semester und Phasen“ beide Striche aktuell: „Wunschphase“ ist so weit gefüllt, wie Studiengänge schon freigegeben haben, „Bedarfsplanung“ so weit, wie noch welche fehlen. Darunter steht dasselbe in Worten, etwa „Bedarfsplanung: 2 Studiengänge · Wunschphase: 10 Studiengänge“. Haben alle freigegeben, zeigt der Balken nur noch die Wunschphase. Gezählt werden nur Studiengänge, nie Wünsche.',
+		who: [],
+		where: [
+			{ href: '/wuensche', label: 'Wünsche' },
+			{ href: '/semester', label: 'Semester und Phasen' }
+		]
+	},
+	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
 			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten; in die Wunschphase wechselt das Semester schon von selbst, sobald der erste Studiengang seinen Bedarf für Wünsche freigibt.',

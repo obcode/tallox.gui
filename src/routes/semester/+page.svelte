@@ -70,7 +70,11 @@
 			</div>
 
 			<div class="max-w-xl">
-				<PhaseSteps phase={semester.phase} label="Phasen von {semesterName(semester.code)}" />
+				<PhaseSteps
+					phase={semester.phase}
+					release={semester.demandRelease}
+					label="Phasen von {semesterName(semester.code)}"
+				/>
 			</div>
 
 			<p class="text-base-content/80 text-sm">{PHASE_HINTS[semester.phase]}</p>
