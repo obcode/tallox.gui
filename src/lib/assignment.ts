@@ -1019,6 +1019,74 @@ export function isWideOpen(
 }
 
 /**
+ * Whether two or more people have asked for this cohort with „unbedingt“.
+ *
+ * Asked for so that a lead can settle such a clash early rather than discover it while filling
+ * the cohort. Distinct people, by mail: one person's entry is one entry.
+ *
+ * Under the same conditions as `isWideOpen` — the caller checks `mayShowGaps` first. For anybody
+ * else the list holds their own entries only, and the answer would be false as well as a hint
+ * about entries they may not read. A yes/no and never a number: „mehrfach“, not „3×“.
+ */
+export function isContested(
+	wishesHere: readonly { priority: string; person: { mail: string } }[]
+): boolean {
+	const firstChoice = new Set(
+		wishesHere.filter((w) => w.priority === 'FIRST_CHOICE').map((w) => w.person.mail)
+	);
+	return firstChoice.size >= 2;
+}
+
+/**
+ * Whether every entry on this cohort says „notfalls“ and nobody holds it yet.
+ *
+ * „notfalls“ usually means overtime, so a cohort that only has such offers is one where the lead
+ * may want to approach a part-time lecturer first. Once somebody holds it, the question has been
+ * answered and the hint would only be noise.
+ *
+ * Same conditions as `isContested`: only behind `mayShowGaps`.
+ */
+export function isOnlyIfNeeded(
+	wishesHere: readonly { priority: string }[],
+	held: readonly unknown[]
+): boolean {
+	return (
+		wishesHere.length > 0 &&
+		held.length === 0 &&
+		wishesHere.every((w) => w.priority === 'IF_NEEDED')
+	);
+}
+
+/** One cohort for the „Zu klären“ box, with what is to be settled there. */
+export type CohortToSettle = {
+	group: CohortGroup;
+	contested: boolean;
+	onlyIfNeeded: boolean;
+};
+
+/**
+ * The cohorts on display that carry either hint, in the order of the table.
+ *
+ * The twin of `cohortsWithoutInterest`, and under its three conditions: only behind
+ * `mayShowGaps`, only from the wishes the backend sent, and no number — the box names cohorts and
+ * what is to be settled, it neither counts entries nor sorts by them.
+ */
+export function cohortsToSettle(
+	groups: readonly CohortGroup[],
+	wishes: readonly { priority: string; person: { mail: string }; instance: { id: string } }[]
+): CohortToSettle[] {
+	const settle: CohortToSettle[] = [];
+	for (const group of groups) {
+		const wishesHere = wishes.filter((w) => w.instance.id === group.instance.id);
+		const held = group.rows.map((row) => row.assignment).filter((a) => a != null);
+		const contested = isContested(wishesHere);
+		const onlyIfNeeded = isOnlyIfNeeded(wishesHere, held);
+		if (contested || onlyIfNeeded) settle.push({ group, contested, onlyIfNeeded });
+	}
+	return settle;
+}
+
+/**
  * Whether the gap list may be shown for the tab somebody is looking at.
  *
  * The chosen tab has to be a subject group **this person leads**. Not one she is a member of —

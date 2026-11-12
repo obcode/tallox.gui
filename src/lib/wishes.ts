@@ -202,6 +202,23 @@ export function wisherLabel(wish: Pick<WishLike, 'person' | 'trackLimit' | 'cie'
 }
 
 /**
+ * The entries on one cohort, most wanted first and then by name — the order the assignment page
+ * lists them in beside the cohort, each with its level.
+ *
+ * Only a rearrangement of the entries the caller already holds: for a lead those are the entries
+ * on the group's modules, for everybody else their own. Nothing is counted or summarised here.
+ */
+export function wishersByPriority<W extends Pick<WishLike, 'person' | 'priority'>>(
+	wishes: readonly W[]
+): W[] {
+	const rank = (p: WishPriorityValue) => WISH_PRIORITIES.indexOf(p);
+	return [...wishes].sort(
+		(a, b) =>
+			rank(a.priority) - rank(b.priority) || a.person.name.localeCompare(b.person.name, 'de')
+	);
+}
+
+/**
  * The choices for „Davon übernehme ich“: every bound below the number of cohorts wished for.
  * A bound of all of them is no bound, and is the empty choice.
  */

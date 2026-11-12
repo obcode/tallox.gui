@@ -29,7 +29,10 @@ import {
 	programmeSections,
 	mayFillUnfiled,
 	UNFILED,
+	cohortsToSettle,
 	cohortsWithoutInterest,
+	isContested,
+	isOnlyIfNeeded,
 	isWideOpen,
 	mayShowGaps,
 	ownRows,
@@ -1049,5 +1052,57 @@ describe('lecturers on contract', () => {
 			cohortsWithContractLecturers(instances, assignments, contract, true).map((i) => i.id)
 		).toEqual(['a', 'c']);
 		expect(cohortsWithContractLecturers(instances, assignments, contract, false)).toHaveLength(3);
+	});
+});
+
+describe('the cohorts a lead should settle', () => {
+	const wish = (mail: string, priority: string, instance = 'i1') => ({
+		priority,
+		person: { mail },
+		instance: { id: instance }
+	});
+
+	it('calls a cohort contested when two people ask for it with „unbedingt“', () => {
+		expect(isContested([wish('a@x', 'FIRST_CHOICE'), wish('b@x', 'FIRST_CHOICE')])).toBe(true);
+	});
+
+	it('does not call one person contested, nor „unbedingt“ beside „gerne“', () => {
+		expect(isContested([wish('a@x', 'FIRST_CHOICE'), wish('a@x', 'FIRST_CHOICE')])).toBe(false);
+		expect(isContested([wish('a@x', 'FIRST_CHOICE'), wish('b@x', 'HAPPY_TO')])).toBe(false);
+	});
+
+	it('marks a cohort whose entries all say „notfalls“ while nobody holds it', () => {
+		expect(isOnlyIfNeeded([wish('a@x', 'IF_NEEDED'), wish('b@x', 'IF_NEEDED')], [])).toBe(true);
+	});
+
+	it('does not mark it where somebody offers more, where nobody wrote in, or once it is held', () => {
+		expect(isOnlyIfNeeded([wish('a@x', 'IF_NEEDED'), wish('b@x', 'HAPPY_TO')], [])).toBe(false);
+		expect(isOnlyIfNeeded([], [])).toBe(false);
+		expect(isOnlyIfNeeded([wish('a@x', 'IF_NEEDED')], [{ id: 'a1' }])).toBe(false);
+	});
+
+	it('lists the cohorts with either hint in table order, and nothing counted', () => {
+		const group = (id: string, assigned = false) =>
+			({
+				instance: { id },
+				label: id,
+				rows: [{ part: { id: `p-${id}` }, heading: 'Vorlesung', assignment: assigned ? {} : null }]
+			}) as unknown as Parameters<typeof cohortsToSettle>[0][number];
+		const settle = cohortsToSettle(
+			[group('i1'), group('i2'), group('i3'), group('i4', true)],
+			[
+				wish('a@x', 'FIRST_CHOICE', 'i1'),
+				wish('b@x', 'FIRST_CHOICE', 'i1'),
+				wish('a@x', 'IF_NEEDED', 'i2'),
+				wish('a@x', 'HAPPY_TO', 'i3'),
+				wish('a@x', 'IF_NEEDED', 'i4')
+			]
+		);
+		expect(settle.map((s) => [s.group.instance.id, s.contested, s.onlyIfNeeded])).toEqual([
+			['i1', true, false],
+			['i2', false, true]
+		]);
+		// No count travels with an entry: what to settle, never how many.
+		expect(Object.keys(settle[0]).sort()).toEqual(['contested', 'group', 'onlyIfNeeded']);
 	});
 });

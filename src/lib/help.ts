@@ -278,6 +278,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{
+		question: 'Was heißen „mehrfach unbedingt“, „nur notfalls“ und „Zu klären“ bei der Zuteilung?',
+		answer:
+			'Unter jedem Zug stehen alle, die sich eingetragen haben, jede Person mit ihrer Stufe („unbedingt“, „gerne“, „notfalls“), „unbedingt“ zuerst. Als Leitung der Fachgruppe (und im Dekanat) siehst Du zusätzlich zwei Hinweise: „mehrfach unbedingt“, wenn sich mehrere mit „unbedingt“ auf denselben Zug eingetragen haben, und „nur notfalls“, wenn alle Eintragungen „notfalls“ sagen und noch niemand eingeteilt ist — dann lohnt es sich, früh eine lehrbeauftragte Person anzusprechen. Der Kasten „Zu klären“ über der Tabelle fasst diese Züge zusammen. Zahlen stehen dort keine, und für alle anderen bleiben Eintragungen bis zur Veröffentlichung unsichtbar, auch als Hinweis.',
+		who: ['SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
 		question: 'Wie weit ist meine Fachgruppe mit dem Besetzen?',
 		answer:
 			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe, Abschluss, „nur CiE“ und Korb. Teile, die eine andere Fakultät hält, zählen nicht mit.',

@@ -135,7 +135,8 @@ test.describe('the assignment screen', () => {
 		).toBeVisible();
 
 		// The wish is next to the row it is about, which is the whole reason for this layout.
-		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name}`)).toBeVisible();
+		await expect(page.getByText('Eingetragen:')).toBeVisible();
+		await expect(page.getByText(`${PERSONAS.fuenf.name} · unbedingt`)).toBeVisible();
 
 		await openParts(page);
 		await expect(chooser(page, 'Vorlesung')).toContainText(PERSONAS.fuenf.name);
@@ -453,6 +454,89 @@ test.describe('the cohorts nobody has registered interest in', () => {
 	});
 });
 
+/**
+ * Where a lead has something to settle: two people asking for the same cohort with „unbedingt“,
+ * or a cohort that only has „notfalls“ offers and nobody in it yet. The same gate as the gap list
+ * above — the lead reads those entries anyway — and the second test is again the one that matters.
+ */
+test.describe('the cohorts a lead should settle', () => {
+	test.beforeAll(reset);
+	test.afterAll(reset);
+
+	const cohort = (page: Page) => page.locator(`tbody[data-cohort="${ASSIGNMENTS.instance}"]`);
+
+	// A second „unbedingt“ beside the fixture's. Admin, because no spec asserts about Admin's own
+	// entries — a wish given to anybody else would show up on pages other specs read.
+	const secondFirstChoice = () =>
+		runSql(
+			`INSERT INTO wish (course_instance_id, person_id, priority, note)
+			 SELECT '${ASSIGNMENTS.instance}', p.id, 1, '' FROM person p
+			  WHERE p.mail = '${PERSONAS.sechs.mail}'
+			 ON CONFLICT DO NOTHING;`,
+			'a second „unbedingt“ on the assignment fixture'
+		);
+
+	test('the lead sees each entry with its level, and a clash of „unbedingt“', async ({
+		asPersona
+	}) => {
+		await reset();
+		secondFirstChoice();
+
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		await expect(cohort(page).getByText(`${PERSONAS.sechs.name} · unbedingt`)).toBeVisible();
+		await expect(cohort(page).getByText(`${PERSONAS.fuenf.name} · unbedingt`)).toBeVisible();
+		await expect(cohort(page).getByText('mehrfach unbedingt')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Zu klären' })).toBeVisible();
+		await expect(
+			page.getByRole('listitem').filter({ hasText: ASSIGNMENTS.moduleName })
+		).toContainText('mehrfach unbedingt');
+		// Never a number about the entries.
+		await expect(page.getByText(/\d+\s*×/)).toHaveCount(0);
+	});
+
+	test('somebody who does not lead this group sees no such hint', async ({ asPersona }) => {
+		await reset();
+		secondFirstChoice();
+
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, URL);
+
+		await expect(page.getByRole('heading', { name: 'Zuteilung' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Zu klären' })).toHaveCount(0);
+		await expect(page.getByText('mehrfach unbedingt')).toHaveCount(0);
+		await expect(page.getByText('nur notfalls')).toHaveCount(0);
+	});
+
+	test('a cohort with nothing but „notfalls“ is marked until somebody holds it', async ({
+		asPersona
+	}) => {
+		await reset();
+		runSql(
+			`UPDATE wish SET priority = 3 WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+			'turning the fixture’s wish into „notfalls“'
+		);
+
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+
+		await expect(cohort(page).getByText(`${PERSONAS.fuenf.name} · notfalls`)).toBeVisible();
+		await expect(cohort(page).getByText('nur notfalls')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Zu klären' })).toBeVisible();
+		await expect(cohort(page).getByText('mehrfach unbedingt')).toHaveCount(0);
+
+		await runSql(
+			`INSERT INTO assignment (instance_part_id, person_id)
+			 SELECT '${ASSIGNMENTS.lecture}', p.id FROM person p WHERE p.mail = '${PERSONAS.fuenf.mail}';`,
+			'somebody holds the lecture'
+		);
+		await gotoRendered(page, URL);
+		await expect(cohort(page).getByText('nur notfalls')).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Zu klären' })).toHaveCount(0);
+	});
+});
+
 // How a cohort is taught, set where it is staffed. The lead of the subject group is the person who
 // asked for it, so she is the one who sets it here — and the demand screen of the programme reads
 // it back, which is where everybody else looks.
@@ -643,7 +727,7 @@ test.describe('English where the module description names it, and CiE by who tea
 		);
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
-		await expect(page.getByText(`Eingetragen: ${PERSONAS.fuenf.name} (als CiE)`)).toBeVisible();
+		await expect(page.getByText(`${PERSONAS.fuenf.name} (als CiE) · unbedingt`)).toBeVisible();
 	});
 });
 

@@ -20,7 +20,10 @@
 		partHours,
 		partsSummary,
 		savedHint,
+		cohortsToSettle,
 		cohortsWithoutInterest,
+		isContested,
+		isOnlyIfNeeded,
 		isWideOpen,
 		instancesOfTab,
 		instancesListedAsCie,
@@ -49,7 +52,12 @@
 	import { basketValue, cohortBasketOptions, cohortsInBasket } from '$lib/basket';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
-	import { wisherLabel } from '$lib/wishes';
+	import {
+		WISH_PRIORITY_LABELS,
+		WISH_PRIORITY_TINTS,
+		wisherLabel,
+		wishersByPriority
+	} from '$lib/wishes';
 	import {
 		CONFIRMATION_BADGES,
 		CONFIRMATION_HINTS,
@@ -227,6 +235,12 @@
 	const showGaps = $derived(mayShowGaps(tab, data.session?.effectiveRoles ?? [], data.led));
 
 	const gaps = $derived(showGaps ? cohortsWithoutInterest(shown, data.wishes) : []);
+
+	/**
+	 * Cohorts with a clash of „unbedingt“, or with nothing but „notfalls“ and nobody holding them.
+	 * Behind the same gate and under the same three conditions as the gap list above.
+	 */
+	const toSettle = $derived(showGaps ? cohortsToSettle(groups, data.wishes) : []);
 
 	/** Which row a refusal belongs to, so it can be rendered in that row and nowhere else. */
 	const refusalFor = $derived(new Map((form?.refusals ?? []).map((r) => [r.partId, r.message])));
@@ -726,6 +740,37 @@
 			</div>
 		{/if}
 
+		{#if showGaps && toSettle.length > 0}
+			<!--
+				The twin of the gap list: names of tracks and what is to be settled there, no number,
+				no sorting by interest. Only for the lead of this subject group.
+			-->
+			<div class="border-base-300 bg-base-100 mt-5 max-w-prose rounded-lg border p-4">
+				<h2 class="font-medium">Zu klären</h2>
+				<p class="text-base-content/80 mt-1 text-sm">
+					„mehrfach unbedingt“: mehrere haben sich mit „unbedingt“ eingetragen. „nur notfalls“: alle
+					Eintragungen sagen „notfalls“, und noch ist niemand eingeteilt — vielleicht lohnt es sich,
+					eine lehrbeauftragte Person anzusprechen. Sichtbar ist das nur der Leitung dieser
+					Fachgruppe und dem Dekanat, die diese Eintragungen ohnehin lesen.
+				</p>
+				<ul class="mt-2 flex flex-col gap-1">
+					{#each toSettle as item (item.group.instance.id)}
+						<li class="text-sm">
+							<span class="font-mono font-medium"
+								>{withTopic(cohortLabel(item.group.instance), item.group.instance.topic)}</span
+							>
+							<span class="text-base-content/90">— {item.group.instance.module.name}:</span>
+							{#if item.contested}<span class="badge badge-warning badge-sm"
+									>mehrfach unbedingt</span
+								>{/if}
+							{#if item.onlyIfNeeded}<span class="badge badge-info badge-sm">nur notfalls</span
+								>{/if}
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
+
 		{#if progress.parts > 0}
 			<!-- What is shown, filled so far: the filter above decides what "shown" is. -->
 			<div class="border-base-300 bg-base-100 mt-5 max-w-xl rounded-lg border p-4">
@@ -941,6 +986,20 @@
 														title="Noch kein Wunsch und noch niemand eingeteilt">ganz offen</span
 													>
 												{/if}
+												{#if showGaps && isContested(wishesHere)}
+													<span
+														class="badge badge-warning badge-sm mt-1 block w-fit"
+														title="Mehrere haben sich mit „unbedingt“ eingetragen"
+														>mehrfach unbedingt</span
+													>
+												{/if}
+												{#if showGaps && own.length > 0 && isOnlyIfNeeded(wishesHere, held)}
+													<span
+														class="badge badge-info badge-sm mt-1 block w-fit"
+														title="Alle Eintragungen sagen „notfalls“, und noch ist niemand eingeteilt"
+														>nur notfalls</span
+													>
+												{/if}
 											</td>
 											<td class="align-top text-right whitespace-nowrap">
 												{hoursLabel(group.instance.teachingHours)}
@@ -984,8 +1043,22 @@
 													{/if}
 												{/if}
 												{#if wishesHere.length > 0}
-													<p class="text-base-content/80 mt-1 text-xs">
-														Eingetragen: {wishesHere.map(wisherLabel).join(', ')}
+													<!-- Each entry with its level, most wanted first. One hue in three
+												     strengths as on the wish page, and the word always beside it, so
+												     the colour is never the only carrier. -->
+													<p
+														class="text-base-content/80 mt-1 flex flex-wrap items-center gap-1 text-xs"
+													>
+														<span>Eingetragen:</span>
+														{#each wishersByPriority(wishesHere) as wish (wish.id)}
+															<span
+																class="border-base-300 text-base-content rounded border px-1.5 py-0.5 {WISH_PRIORITY_TINTS[
+																	wish.priority
+																]}"
+																data-priority={wish.priority}
+																>{wisherLabel(wish)} · {WISH_PRIORITY_LABELS[wish.priority]}</span
+															>
+														{/each}
 													</p>
 												{/if}
 												<!-- Once the dean's office has asked, or once somebody confirmed anyway. -->
