@@ -34,7 +34,10 @@ import {
 	wishRowLabel,
 	wishRows,
 	boundedHours,
+	maxShare,
+	parseShareHours,
 	parseTrackLimitField,
+	shareLabel,
 	trackLimitChanges,
 	trackLimitChoices,
 	trackLimitField,
@@ -475,24 +478,28 @@ describe('wishChanges', () => {
 		instanceId: string,
 		priority: StoredWish['priority'],
 		note = '',
-		cie = false
+		cie = false,
+		shareHours: number | null = null
 	): StoredWish => ({
 		id: `w-${instanceId}`,
 		instanceId,
 		priority,
 		note,
-		cie
+		cie,
+		shareHours
 	});
 	const entry = (
 		instanceId: string,
 		priority: WishEntry['priority'],
 		note = '',
-		cie = false
+		cie = false,
+		shareHours: number | null = null
 	): WishEntry => ({
 		instanceId,
 		priority,
 		note,
-		cie
+		cie,
+		shareHours
 	});
 
 	it('produces nothing for the cells nobody touched', () => {
@@ -513,8 +520,22 @@ describe('wishChanges', () => {
 		);
 
 		expect(changes).toEqual([
-			{ kind: 'set', instanceId: 'i1', priority: 'FIRST_CHOICE', note: '', cie: false },
-			{ kind: 'set', instanceId: 'i2', priority: 'IF_NEEDED', note: '', cie: false }
+			{
+				kind: 'set',
+				instanceId: 'i1',
+				priority: 'FIRST_CHOICE',
+				note: '',
+				cie: false,
+				shareHours: null
+			},
+			{
+				kind: 'set',
+				instanceId: 'i2',
+				priority: 'IF_NEEDED',
+				note: '',
+				cie: false,
+				shareHours: null
+			}
 		]);
 	});
 
@@ -525,7 +546,14 @@ describe('wishChanges', () => {
 		);
 
 		expect(changes).toEqual([
-			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: 'nur die Vorlesung', cie: false }
+			{
+				kind: 'set',
+				instanceId: 'i1',
+				priority: 'HAPPY_TO',
+				note: 'nur die Vorlesung',
+				cie: false,
+				shareHours: null
+			}
 		]);
 	});
 
@@ -536,9 +564,60 @@ describe('wishChanges', () => {
 				[stored('i1', 'HAPPY_TO'), stored('i2', 'HAPPY_TO', '', true)]
 			)
 		).toEqual([
-			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: '', cie: true },
-			{ kind: 'set', instanceId: 'i2', priority: 'HAPPY_TO', note: '', cie: false }
+			{
+				kind: 'set',
+				instanceId: 'i1',
+				priority: 'HAPPY_TO',
+				note: '',
+				cie: true,
+				shareHours: null
+			},
+			{
+				kind: 'set',
+				instanceId: 'i2',
+				priority: 'HAPPY_TO',
+				note: '',
+				cie: false,
+				shareHours: null
+			}
 		]);
+	});
+
+	it('notices a share stated or taken back on its own', () => {
+		expect(
+			wishChanges(
+				[
+					entry('i1', 'HAPPY_TO', '', false, 4),
+					entry('i2', 'HAPPY_TO'),
+					entry('i3', 'HAPPY_TO', '', false, 2)
+				],
+				[
+					stored('i1', 'HAPPY_TO'),
+					stored('i2', 'HAPPY_TO', '', false, 2),
+					stored('i3', 'HAPPY_TO', '', false, 2)
+				]
+			)
+		).toEqual([
+			{ kind: 'set', instanceId: 'i1', priority: 'HAPPY_TO', note: '', cie: false, shareHours: 4 },
+			{
+				kind: 'set',
+				instanceId: 'i2',
+				priority: 'HAPPY_TO',
+				note: '',
+				cie: false,
+				shareHours: null
+			}
+		]);
+	});
+
+	it('reads a share from the form as whole SWS, and anything else as the whole cohort', () => {
+		expect(parseShareHours('4')).toBe(4);
+		expect(parseShareHours(' 2 ')).toBe(2);
+		expect(parseShareHours('')).toBeNull();
+		expect(parseShareHours('0')).toBeNull();
+		expect(parseShareHours('-1')).toBeNull();
+		expect(parseShareHours('2.5')).toBeNull();
+		expect(parseShareHours('x')).toBeNull();
 	});
 
 	it('withdraws what was set back to nothing', () => {
@@ -843,6 +922,44 @@ describe('the bound on cohorts', () => {
 		expect(wisherLabel({ person: { mail: 'e', name: 'Eins' }, trackLimit: 1, cie: true })).toBe(
 			'Eins (als CiE, nur einen der Züge)'
 		);
+	});
+
+	it('reads a share as part of the cohort, and as nothing for the whole of it', () => {
+		expect(shareLabel(4, 8)).toBe('4 von 8 SWS');
+		expect(shareLabel(2, 2.5)).toBe('2 von 2,5 SWS');
+		// The cohort shrank since the wish was entered: never more than the cohort.
+		expect(shareLabel(4, 2)).toBe('2 von 2 SWS');
+		expect(shareLabel(4, null)).toBe('4 SWS');
+		expect(shareLabel(null, 8)).toBe('');
+		expect(
+			wisherLabel({
+				person: { mail: 'e', name: 'Eins' },
+				shareHours: 4,
+				cie: true,
+				instance: { teachingHours: 8 }
+			})
+		).toBe('Eins (4 von 8 SWS, als CiE)');
+		expect(maxShare(2.5)).toBe(3);
+		expect(maxShare(0)).toBe(0);
+		expect(maxShare(null)).toBe(0);
+	});
+
+	it('counts a share instead of the whole cohort', () => {
+		const shared = (
+			id: string,
+			track: string,
+			hours: number,
+			share: number | null,
+			limit?: number
+		) => ({
+			...cohort(id, track, hours, limit),
+			shareHours: share
+		});
+		expect(boundedHours([shared('a', 'A', 8, 4), shared('b', 'B', 8, null)])).toBe(12);
+		// Under a bound, the dearer of the two counted shares.
+		expect(boundedHours([shared('a', 'A', 8, 4, 1), shared('b', 'B', 6, 2, 1)])).toBe(4);
+		// A share larger than what the cohort now costs counts the cohort.
+		expect(boundedHours([shared('a', 'A', 2, 4)])).toBe(2);
 	});
 
 	it('offers every bound below the number of cohorts wished for', () => {

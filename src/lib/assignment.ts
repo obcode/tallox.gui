@@ -4,7 +4,7 @@ import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
 import { compareFirstBaskets, firstOf, type CohortOrder } from '$lib/basket';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
 import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
-import { desiredHoursLabel, trackLimitLabel } from '$lib/wishes';
+import { desiredHoursLabel, shareLabel, trackLimitLabel } from '$lib/wishes';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -93,9 +93,11 @@ export type WishLike = {
 	priority: string;
 	note: string;
 	person: { id: string; name: string; mail?: string | null };
-	instance: { id: string };
+	instance: { id: string; teachingHours?: number | null };
 	/** „Of these cohorts, at most this many“ — see `trackLimitLabel`. */
 	trackLimit?: number | null;
+	/** „4 von 8 SWS“: the owner's share of the cohort, null for the whole — see `shareLabel`. */
+	shareHours?: number | null;
 };
 
 /** One statement of a module's competence pool, as much of it as the candidate list needs. */
@@ -582,7 +584,10 @@ export function candidatesFor(
 		// „nur einen der Züge“ belongs beside the level: whoever fills IF4B should know that the
 		// same person may be offering themselves for IF4A instead.
 		const bound = trackLimitLabel(wish.trackLimit);
-		const base = [words, bound, wish.note].filter((w) => w !== '').join(' · ');
+		// „4 von 8 SWS“: the person offers part of the cohort, and the note says which part. The
+		// lead divides the part with „abtrennen“ and fills both pieces.
+		const share = shareLabel(wish.shareHours, wish.instance.teachingHours);
+		const base = [words, share, bound, wish.note].filter((w) => w !== '').join(' · ');
 		add(
 			{
 				personId: wish.person.id,

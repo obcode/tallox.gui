@@ -49,6 +49,7 @@
 		trackSortKey,
 		trackLimitChoices,
 		trackLimitField,
+		shareLabel,
 		trackLimitLabel,
 		wishSortValue,
 		type OwnWishSortKey,
@@ -351,7 +352,7 @@
 										state locally and should start over exactly when what is saved has changed —
 										that is, after saving, and not during it.
 									-->
-									{#key `${wish?.id ?? ''}:${wish?.priority ?? ''}:${wish?.note ?? ''}`}
+									{#key `${wish?.id ?? ''}:${wish?.priority ?? ''}:${wish?.note ?? ''}:${wish?.shareHours ?? ''}`}
 										<WishCell
 											instanceId={cohort.instanceId}
 											label={withTopic(`${cohort.label} · ${row.module.name}`, row.topic)}
@@ -359,6 +360,7 @@
 											others={others[cohort.instanceId] ?? []}
 											open={open && closedReason === null}
 											englishPossible={row.module.englishPossible}
+											teachingHours={cohort.teachingHours}
 										/>
 									{/key}
 									<!-- Block and English sit with the track, not with the module: two tracks
@@ -699,6 +701,11 @@
 										<tr class={wishTint(wish.priority)}>
 											<td class="font-medium">
 												{wishRowLabel(wish.instance)}
+												{#if wish.shareHours != null}
+													<span class="block text-xs font-normal"
+														>{shareLabel(wish.shareHours, wish.instance.teachingHours)}</span
+													>
+												{/if}
 												{#if wish.trackLimit != null}
 													<span class="block text-xs font-normal"
 														>{trackLimitLabel(wish.trackLimit)}</span

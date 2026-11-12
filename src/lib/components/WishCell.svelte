@@ -7,6 +7,7 @@
 		WISH_PRIORITIES,
 		WISH_PRIORITY_HINTS,
 		WISH_PRIORITY_LABELS,
+		maxShare,
 		wisherLabel,
 		type WishChoice,
 		type WishLike
@@ -35,7 +36,8 @@
 		wish,
 		others,
 		open,
-		englishPossible
+		englishPossible,
+		teachingHours
 	}: {
 		instanceId: string;
 		/** `IF2A · Softwareentwicklung II` — the accessible name of both fields in this cell. */
@@ -52,11 +54,15 @@
 		open: boolean;
 		/** Whether the module description names English, which a CiE offer needs. */
 		englishPossible?: boolean;
+		/** What the cohort costs, the upper bound of a share of it. */
+		teachingHours?: number;
 	} = $props();
 
 	let choice = $state<WishChoice>(untrack(() => wish?.priority) ?? WISH_NONE);
 	let note = $state(untrack(() => wish?.note) ?? '');
 	let cie = $state(untrack(() => wish?.cie) ?? false);
+	let share = $state<number | null>(untrack(() => wish?.shareHours) ?? null);
+	const shareMax = $derived(maxShare(teachingHours));
 	const cieClosed = $derived(englishClosed(englishPossible, cie));
 </script>
 
@@ -111,6 +117,33 @@
 			/>
 			als CiE anbieten
 		</label>
+		<!--
+			A share of the cohort in whole SWS, for a cohort two people divide. Empty is the whole
+			cohort, the ordinary wish. Only where the cohort states its hours: a share of nothing is
+			refused by the backend.
+		-->
+		{#if shareMax > 0}
+			<label
+				class="flex items-center gap-1 text-xs"
+				title="Nur wenn Du Dir den Zug mit jemandem teilst: wie viele SWS davon Du übernehmen möchtest. Leer heißt den ganzen Zug. Welchen Teil, schreibst Du in die Notiz."
+			>
+				davon
+				<input
+					type="number"
+					name="share:{instanceId}"
+					bind:value={share}
+					min="1"
+					max={shareMax}
+					step="1"
+					placeholder="alle"
+					inputmode="numeric"
+					aria-label="Davon SWS für {label}"
+					class="input input-bordered input-xs w-16"
+					disabled={!open}
+				/>
+				SWS
+			</label>
+		{/if}
 	{/if}
 
 	{#if others.length > 0}

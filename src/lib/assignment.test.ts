@@ -198,6 +198,19 @@ describe('candidatesFor', () => {
 		expect(out.find((c) => c.personId === 'per1')!.hint).toBe('unbedingt');
 	});
 
+	it('says beside the level that somebody offers only part of the cohort', () => {
+		// The lead divides the part and fills both pieces; the note says which part.
+		const shared: WishLike[] = [
+			{ ...wishes[1], shareHours: 2, instance: { id: 'i1', teachingHours: 4 } },
+			{ ...wishes[0], shareHours: null, instance: { id: 'i1', teachingHours: 4 } }
+		];
+		const out = candidatesFor(['i1'], shared, [], [], []);
+		expect(out.find((c) => c.personId === 'per2')!.hint).toBe(
+			'notfalls · 2 von 4 SWS · nur die Vorlesung'
+		);
+		expect(out.find((c) => c.personId === 'per1')!.hint).toBe('unbedingt');
+	});
+
 	it('does not offer somebody who wished for a different cohort', () => {
 		const out = candidatesFor(['i1'], wishes, [], [], []);
 		expect(out.map((c) => c.personId)).not.toContain('per9');

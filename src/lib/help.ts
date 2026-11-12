@@ -229,7 +229,15 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie sage ich, dass ich nur die Vorlesung oder nur ein Praktikum halten möchte?',
 		answer:
-			'In der Notiz zum Wunsch. Gewünscht wird die Instanz, also etwa ein Modul für einen Zug; wer welchen Teil hält, legt die Fachgruppenleitung erst bei der Zuteilung fest, weil das eine Absprache zwischen mehreren ist.',
+			'In der Notiz zum Wunsch. Gewünscht wird die Instanz, also etwa ein Modul für einen Zug; wer welchen Teil hält, legt die Fachgruppenleitung erst bei der Zuteilung fest, weil das eine Absprache zwischen mehreren ist. Wie viele SWS davon Du übernehmen möchtest, kannst Du zusätzlich im Feld „davon … SWS“ angeben.',
+		who: ['LECTURER'],
+		where: [{ href: '/wuensche', label: 'Wünsche' }],
+		stage: 'EACH_SEMESTER'
+	},
+	{
+		question: 'Wie sage ich, dass ich mir einen Zug mit jemandem teile?',
+		answer:
+			'Mit dem Feld „davon … SWS“ unter dem Wunsch: Teilst Du Dir einen Zug, etwa weil jede Person die Hälfte der Vorlesung hält, trägst Du dort ein, wie viele SWS davon Du übernehmen möchtest, in ganzen SWS. Leer heißt den ganzen Zug, und so ist es im Normalfall. Welchen Teil Du hältst, schreibst Du in die Notiz. Die Fachgruppenleitung sieht den Anteil bei der Zuteilung neben Deinem Namen, etwa „4 von 8 SWS“, und teilt den Zug dort mit „abtrennen“ auf; nach der Veröffentlichung sieht ihn auch das Kollegium, vorher ist er so vertraulich wie der Wunsch. In der SWS-Summe Deiner Eintragungen zählt dann Dein Anteil statt des ganzen Zugs. Das Feld erscheint nur bei Zügen, für die SWS angegeben sind.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
@@ -273,7 +281,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wen kann ich bei der Zuteilung auswählen?',
 		answer:
-			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz und gegebenenfalls „als CiE“ oder „nur einen der Züge“, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
+			'Alle Lehrenden. Die Auswahl je Zug ist gegliedert: oben unter „Gewünscht“ alle, die sich für diesen Zug eingetragen haben, mit Stufe und Notiz und gegebenenfalls einem Anteil wie „4 von 8 SWS“, „als CiE“ oder „nur einen der Züge“, dann „Kompetenz“ und „Fachgruppe“, darunter unter „Weitere Lehrende“ alle anderen. Ein Wunsch ist ein Hinweis, keine Voraussetzung. Ohne JavaScript im Browser stehen dort nur die ersten Gruppen; weitere Personen findet dann die Suche über der Tabelle.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
