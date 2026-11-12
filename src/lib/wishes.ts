@@ -7,6 +7,7 @@ import {
 	type ReadInstanceLike,
 	type SeparateLike
 } from './demand';
+import { formatHours } from './catalogue';
 
 /**
  * The wish phase — registering interest in a course instance.
@@ -181,7 +182,42 @@ export type WishLike = {
 	 * and decides nothing in the assignment. Visible wherever the wish is, like the priority.
 	 */
 	cie?: boolean;
+	/**
+	 * The owner's share of the cohort in whole SWS: „4 von 8 SWS“, for a cohort two people divide.
+	 * Null for the whole cohort, which is the ordinary wish. How much, never which part — that stays
+	 * in the note and is settled in the assignment. Visible wherever the wish is, like the priority.
+	 */
+	shareHours?: number | null;
 };
+
+/**
+ * „4 von 8 SWS“ — how a share reads beside a name or an entry. Empty for the whole cohort.
+ *
+ * Without the total where the reader has none, and capped at the total where the cohort has
+ * shrunk since the wish was written: a share is checked when it is entered, not afterwards.
+ */
+export function shareLabel(
+	share: number | null | undefined,
+	total: number | null | undefined
+): string {
+	if (share == null) return '';
+	if (total == null || total <= 0) return `${formatHours(share)} SWS`;
+	return `${formatHours(Math.min(share, total))} von ${formatHours(total)} SWS`;
+}
+
+/** What one wish counts towards its owner's hours: the share, or the whole cohort. */
+export function wishHours(wish: Pick<WishLike, 'shareHours' | 'instance'>): number {
+	const total = wish.instance.teachingHours ?? 0;
+	return wish.shareHours == null ? total : Math.min(wish.shareHours, total);
+}
+
+/**
+ * The largest share the cohort allows: its hours rounded up, as the backend checks it. Zero where
+ * the cohort states no hours, which allows none.
+ */
+export function maxShare(total: number | null | undefined): number {
+	return total == null || total <= 0 ? 0 : Math.ceil(total);
+}
 
 /**
  * „nur einen der Züge“ — how a bound reads beside a name or an entry. Empty for no bound.
@@ -196,8 +232,16 @@ export function trackLimitLabel(limit: number | null | undefined): string {
 }
 
 /** A name with the bound behind it: „Prof. Eins (nur einen der Züge)“. */
-export function wisherLabel(wish: Pick<WishLike, 'person' | 'trackLimit' | 'cie'>): string {
-	const marks = [wish.cie ? 'als CiE' : '', trackLimitLabel(wish.trackLimit)].filter((m) => m);
+export function wisherLabel(
+	wish: Pick<WishLike, 'person' | 'trackLimit' | 'cie' | 'shareHours'> & {
+		instance?: { teachingHours?: number | null };
+	}
+): string {
+	const marks = [
+		shareLabel(wish.shareHours, wish.instance?.teachingHours),
+		wish.cie ? 'als CiE' : '',
+		trackLimitLabel(wish.trackLimit)
+	].filter((m) => m);
 	return marks.length === 0 ? wish.person.name : `${wish.person.name} (${marks.join(', ')})`;
 }
 
@@ -612,6 +656,8 @@ export function ownWishesBySemester(wishes: readonly WishLike[]): OwnWishSemeste
 /**
  * What one person's own entries add up to, with their bounds applied.
  *
+ * A wish with a share counts its share, not the whole cohort.
+ *
  * Under „höchstens N“ only the N dearest cohorts of that module in that programme count: it is
  * still an upper bound, and two cohorts offered as one are one cohort's hours, not two.
  */
@@ -625,7 +671,7 @@ export function boundedHours(wishes: readonly WishLike[]): number {
 		].join('\u0000');
 		const group = groups.get(key) ?? { limit: null, hours: [] };
 		group.limit = wish.trackLimit ?? group.limit;
-		group.hours.push(wish.instance.teachingHours ?? 0);
+		group.hours.push(wishHours(wish));
 		groups.set(key, group);
 	}
 	let total = 0;
@@ -634,6 +680,18 @@ export function boundedHours(wishes: readonly WishLike[]): number {
 		total += counted.reduce((sum, h) => sum + h, 0);
 	}
 	return total;
+}
+
+/**
+ * The way back from a „davon SWS“ field: a whole number of at least one, or null for the whole
+ * cohort. Anything else is null too — the field says „alle“ when it is empty, and the backend
+ * checks the upper bound.
+ */
+export function parseShareHours(value: string): number | null {
+	const text = value.trim();
+	if (text === '') return null;
+	const share = Number(text);
+	return Number.isInteger(share) && share >= 1 ? share : null;
 }
 
 /** One „Davon übernehme ich“ field as it comes back from the form. */
@@ -692,6 +750,8 @@ export type WishEntry = {
 	note: string;
 	/** Whether the CiE box was ticked. Absent from the form means no. */
 	cie: boolean;
+	/** „davon SWS“: the share in whole SWS, or null for the whole cohort (empty or absent). */
+	shareHours: number | null;
 };
 
 /** What the caller has stored for one instance, as the diff below needs it. */
@@ -701,11 +761,19 @@ export type StoredWish = {
 	priority: WishPriorityValue;
 	note: string;
 	cie: boolean;
+	shareHours: number | null;
 };
 
 /** What has to happen to one instance for the form to become the stored state. */
 export type WishChange =
-	| { kind: 'set'; instanceId: string; priority: WishPriorityValue; note: string; cie: boolean }
+	| {
+			kind: 'set';
+			instanceId: string;
+			priority: WishPriorityValue;
+			note: string;
+			cie: boolean;
+			shareHours: number | null;
+	  }
 	| { kind: 'withdraw'; instanceId: string; wishId: string };
 
 /**
@@ -741,7 +809,8 @@ export function wishChanges(
 			current &&
 			current.priority === entry.priority &&
 			current.note === entry.note &&
-			current.cie === entry.cie
+			current.cie === entry.cie &&
+			current.shareHours === entry.shareHours
 		) {
 			continue;
 		}
@@ -750,7 +819,8 @@ export function wishChanges(
 			instanceId: entry.instanceId,
 			priority: entry.priority,
 			note: entry.note,
-			cie: entry.cie
+			cie: entry.cie,
+			shareHours: entry.shareHours
 		});
 	}
 	return changes;

@@ -266,3 +266,17 @@ weiter ein Wunsch je Zug, dazu eine **Obergrenze je Zeile** (Backend `setWishTra
   Ohne Anzahl der gewünschten Züge im Text — die Grenze ist die Aussage, nicht die Zahl.
 - E2E: der zweite Zug wird im Test selbst im **späteren** Semester angelegt und von `reset` wieder
   entfernt — der Tabellentest behauptet für das erste Semester genau eine Zug-Spalte.
+
+## Anteil am Zug: „davon … SWS“ (2026-11-12)
+
+Collab-Meldung #37, Backend `Wish.shareHours`: Teilen sich zwei einen Zug, trägt jede Person unter
+dem Wunsch ein, wie viele SWS davon sie übernimmt — ganze SWS, leer = ganzer Zug (Olli: vorerst
+keine Prozentangabe). Das Feld steht in `WishCell` neben „als CiE anbieten“, nur wenn der Zug SWS
+hat (`maxShare`, die SWS aufgerundet wie im Backend), und läuft wie die Notiz durch die eine
+Formular-Action (`share:<id>`, `parseShareHours`, Diff in `wishChanges`). „4 von 4“ speichert das
+Backend als ganzen Zug, die Zelle zeigt danach leer.
+
+- `boundedHours` zählt den Anteil statt des Zugs (`wishHours`, gekappt an den aktuellen SWS).
+- `shareLabel` („4 von 8 SWS“) steht in „Meine Eintragungen“, in `wisherLabel` (Außerdem-Zeile nach
+  der Veröffentlichung, Zuteilung) und in der Kandidaten-Notiz der Zuteilung (`candidatesFor`).
+- Sichtbar wie die Stufe — kein Zähler, keine Summe über andere.

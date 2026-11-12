@@ -165,6 +165,7 @@ const AssignmentDocument = graphql(`
 			id
 			priority
 			cie
+			shareHours
 			note
 			trackLimit
 			person {
@@ -174,6 +175,7 @@ const AssignmentDocument = graphql(`
 			}
 			instance {
 				id
+				teachingHours
 			}
 		}
 		subjectGroup(id: $group) @include(if: $withGroup) {

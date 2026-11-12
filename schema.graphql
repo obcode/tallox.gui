@@ -385,6 +385,10 @@ releases its demand (`setDemandComplete`), it becomes a wish (`Wish`) on every c
 there is, with its priority and note, and `maxTracks` as `trackLimit`. A cohort declared after the
 release takes it then. It converts once: a wish withdrawn afterwards does not come back.
 
+After the release one may still be noted down for a module the released demand lacks; it waits
+there for the module to be added. That one becomes wishes only while the module's subject group has
+its wish round open — when the cohort comes, or when the round is opened again.
+
 Visible exactly like the wish it is going to be — to you; with full reach to the leads of the
 programme it names and of the module's subject group, and to the dean's office; to everybody once
 the semester's wishes are published. Never counted.
@@ -442,7 +446,8 @@ it without anybody touching the advance wish.
 """
 enum AdvanceWishStatus {
   """
-  Waiting for the study programme to release its demand for the semester.
+  Waiting for the study programme to release its demand with a cohort of the module — or, for one
+  noted down after the release, for the module's wish round to be open when the cohort comes.
   """
   PENDING
   """
@@ -450,8 +455,9 @@ enum AdvanceWishStatus {
   """
   CONVERTED
   """
-  The study programme released its demand without a cohort of the module: you are not needed for
-  this one, as things stand. Becomes `CONVERTED` should a cohort still be declared.
+  The study programme released its demand without a cohort of the module: not in the demand, as
+  things stand. Becomes `CONVERTED` should a cohort still be declared. Also what one noted down
+  after the release reads until then — the lead sees who would teach it should the demand grow.
   """
   NOT_OFFERED
 }
@@ -964,6 +970,12 @@ type CopyDemandReport {
   """
   notPlanned: Int!
   """
+  How many were left behind because their module is a course this faculty entered and has since
+  taken out of the lists (`changeLocalModule` with `active: false`). Counted rather than dropped
+  silently; taking the course back in and copying again brings them over.
+  """
+  inactive: Int!
+  """
   How many parts came with the new instances.
   """
   partsCreated: Int!
@@ -1274,6 +1286,8 @@ input DeclareCourseInstanceInput {
   The instance's parts are made from the module's confirmed split. A module whose split nobody has
   confirmed answers `MODULE_NOT_DECOMPOSED`; the repair is `setModuleComponents`. Independent
   work — a thesis — is not planned and answers `MODULE_NOT_PLANNED` (see `Module.independentWork`).
+  A course this faculty entered and took out of the lists (`changeLocalModule` with
+  `active: false`) answers `MODULE_INACTIVE`; the repair is taking it back in.
   """
   moduleId: ID!
   """
@@ -1475,7 +1489,8 @@ type DemandRefusal {
   """
   track: String!
   """
-  The machine-readable half: `INSTANCE_IN_USE`, `TRACK_TAKEN`, `MODULE_NOT_DECOMPOSED`.
+  The machine-readable half: `INSTANCE_IN_USE`, `TRACK_TAKEN`, `MODULE_NOT_DECOMPOSED`,
+  `MODULE_INACTIVE`.
 
   A refusal costs exactly the cohort it is about; the rest of the plan is applied. That is why
   they are reported rather than raised: one module that cannot be withdrawn must not undo fifteen
@@ -3144,6 +3159,10 @@ type Mutation {
   split states. A module whose split nobody has confirmed is refused with `MODULE_NOT_DECOMPOSED`
   — the proposal is never planned with.
 
+  A course this faculty entered and took out of the lists is refused with `MODULE_INACTIVE`:
+  demand for it would be demand nobody can see in the catalogue. Take it back in first
+  (`changeLocalModule` with `active: true`).
+
   Declaring the same cohort twice is `TRACK_TAKEN`.
   """
   declareCourseInstance(input: DeclareCourseInstanceInput!): CourseInstance! @fullReach @scope(area: PLANNING, verb: WRITE)
@@ -3156,6 +3175,9 @@ type Mutation {
 
   A part that is already held for the sibling cohorts is **not** copied — it already serves the
   new one, and copying it would be the same lecture twice with its hours counted twice.
+
+  `MODULE_INACTIVE` for a course this faculty entered and has since taken out of the lists, as in
+  `declareCourseInstance`.
   """
   duplicateCourseInstance(id: ID!,
     """
@@ -3329,7 +3351,9 @@ type Mutation {
   year, comes with it. That is the difference between this and declaring each instance by hand,
   and the reason it exists.
 
-  Instances already declared in the target are left untouched and counted as skipped. A shared
+  Instances already declared in the target are left untouched and counted as skipped. Instances
+  of a course this faculty entered and has since taken out of the lists stay behind, counted as
+  `inactive`. A shared
   lecture stays shared, because its sibling cohort is copied too.
 
   The permission is about the **target** semester: what is being written is next year's demand.
@@ -3714,6 +3738,14 @@ type Mutation {
     it out is `false`. `ENGLISH_NOT_OFFERED` where the module description does not name English.
     """
     cie: Boolean! = false
+
+    """
+    Your share of the cohort in whole teaching hours (SWS), from 1 up to the cohort's hours rounded
+    up. Like `note`, written with every call: leaving it out, or `null`, is the whole cohort, and so
+    is a share as large as the cohort's hours. `WISH_SHARE_OUT_OF_RANGE` otherwise, and for a cohort
+    whose hours nobody has stated yet.
+    """
+    shareHours: Int
   ): Wish! @scope(area: WISHES, verb: WRITE)
   """
   Withdraw one of your own wishes.
@@ -3757,7 +3789,8 @@ type Mutation {
 
   Yours only. Open in every phase but a finished semester (`WISH_PHASE_CLOSED`) and regardless of
   any wish round: being early is the point. `ADVANCE_WISH_RELEASED` once the programme has released
-  its demand for that semester — enter the wish itself then. `ADVANCE_WISH_CONVERTED` for one that
+  its demand for that semester **with a cohort of the module** — enter the wish itself then; a
+  module the released demand lacks can still be noted down. `ADVANCE_WISH_CONVERTED` for one that
   has already become wishes. `WISH_PRIORITY_INVALID`, `WISH_NOTE_TOO_LONG` and
   `WISH_TRACK_LIMIT_INVALID` as on a wish; `PROGRAMME_NOT_FOUND`, `MODULE_NOT_FOUND`;
   `MODULE_NOT_PLANNED` for independent work such as a thesis (see `Module.independentWork`).
@@ -5971,6 +6004,17 @@ type Wish {
   Visible wherever the wish is, like `priority`.
   """
   cie: Boolean!
+  """
+  The owner's share of the cohort, in whole teaching hours (SWS): „4 der 8 SWS“, for a lecture
+  two people divide between them. `null` for the whole cohort, which is the ordinary wish.
+
+  A statement of how much, not of which part: who holds the lecture and who the laboratory is
+  still settled in the assignment, and „nur der Teil Diskrete Mathematik“ stays in `note`.
+
+  Visible wherever the wish is, like `priority`: it is part of what somebody wants, not their own
+  words.
+  """
+  shareHours: Int
   """
   When it was first registered. `null` where the note is empty for you: the order in which people
   registered is the first-come information the confidentiality rule exists to make irrelevant.

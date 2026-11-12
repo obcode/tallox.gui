@@ -294,6 +294,35 @@ test.describe('the wish phase', () => {
 		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
 	});
 
+	test('a wish may state a share of the cohort in SWS', async ({ asPersona }) => {
+		// Two people divide a cohort: each wishes for it and says how many of its 4 SWS they take.
+		const page = await asPersona(PERSONAS.eins);
+		const share = () => page.getByRole('spinbutton', { name: /Davon SWS für .*E2E Fachmodul/ });
+
+		await gotoRendered(page, URL);
+		// Only beside a wish: there is nothing to take a share of without one.
+		await expect(share()).toHaveCount(0);
+		await cell(page).selectOption('HAPPY_TO');
+		await expect(summaryFor(page, WISHES.semester)).toBeVisible();
+		// Empty is the whole cohort, the ordinary wish.
+		await expect(share()).toHaveValue('');
+
+		const saved = page.waitForResponse(
+			(r) => r.request().method() === 'POST' && r.url().includes('/wuensche')
+		);
+		await share().fill('2');
+		await share().press('Tab');
+		await saved;
+
+		await gotoRendered(page, URL);
+		await expect(share()).toHaveValue('2');
+		// The own entries count the share, not the whole cohort.
+		await expect(page.getByText('2 von 4 SWS')).toBeVisible();
+
+		await cell(page).selectOption('');
+		await expect(page.getByRole('heading', { name: /Meine Eintragungen/ })).toHaveCount(0);
+	});
+
 	test('a chosen cell is marked, and unchosen ones are not', async ({ asPersona }) => {
 		// Reported as a wish after the first version: „wo habe ich etwas stehen" is what somebody
 		// scans this table for, and the answer should be readable off the surface rather than by

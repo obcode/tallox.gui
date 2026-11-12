@@ -7,6 +7,7 @@ import { parseDesiredRange } from '$lib/desiredHours';
 import {
 	isWishChoice,
 	othersForWishScreen,
+	parseShareHours,
 	parseTrackLimitField,
 	trackLimitChanges,
 	wishChanges,
@@ -132,6 +133,7 @@ const WishesDocument = graphql(`
 			priority
 			note
 			cie
+			shareHours
 			trackLimit
 			person {
 				mail
@@ -162,6 +164,7 @@ const WishesDocument = graphql(`
 			priority
 			note
 			cie
+			shareHours
 			trackLimit
 			person {
 				mail
@@ -256,6 +259,7 @@ const MyWishesDocument = graphql(`
 			priority
 			note
 			cie
+			shareHours
 			trackLimit
 			instance {
 				id
@@ -265,12 +269,25 @@ const MyWishesDocument = graphql(`
 `);
 
 const SetWishDocument = graphql(`
-	mutation SetWish($instance: ID!, $priority: WishPriority!, $note: String, $cie: Boolean!) {
-		setWish(courseInstanceId: $instance, priority: $priority, note: $note, cie: $cie) {
+	mutation SetWish(
+		$instance: ID!
+		$priority: WishPriority!
+		$note: String
+		$cie: Boolean!
+		$share: Int
+	) {
+		setWish(
+			courseInstanceId: $instance
+			priority: $priority
+			note: $note
+			cie: $cie
+			shareHours: $share
+		) {
 			id
 			priority
 			note
 			cie
+			shareHours
 		}
 	}
 `);
@@ -390,7 +407,13 @@ export const actions: Actions = {
 		const entryFor = (instanceId: string) => {
 			const existing = entries.get(instanceId);
 			if (existing) return existing;
-			const fresh: WishEntry = { instanceId, priority: '', note: '', cie: false };
+			const fresh: WishEntry = {
+				instanceId,
+				priority: '',
+				note: '',
+				cie: false,
+				shareHours: null
+			};
 			entries.set(instanceId, fresh);
 			return fresh;
 		};
@@ -409,6 +432,9 @@ export const actions: Actions = {
 				entryFor(key.slice('note:'.length)).note = text.trim();
 			} else if (key.startsWith('cie:')) {
 				entryFor(key.slice('cie:'.length)).cie = text === 'true';
+			} else if (key.startsWith('share:')) {
+				// „davon SWS“: empty is the whole cohort, like a share as large as the cohort.
+				entryFor(key.slice('share:'.length)).shareHours = parseShareHours(text);
 			} else if (key.startsWith('limit:')) {
 				// „Davon übernehme ich höchstens …“ — one per row, present only where the row has two
 				// or more of the caller's wishes. Absent means unchanged, never „alle“.
@@ -431,7 +457,8 @@ export const actions: Actions = {
 				instanceId: w.instance.id,
 				priority: w.priority,
 				note: w.note,
-				cie: w.cie
+				cie: w.cie,
+				shareHours: w.shareHours ?? null
 			}))
 		);
 
@@ -448,7 +475,8 @@ export const actions: Actions = {
 						instance: change.instanceId,
 						priority: change.priority as WishPriority,
 						note: change.note === '' ? null : change.note,
-						cie: change.cie
+						cie: change.cie,
+						share: change.shareHours
 					});
 				}
 				saved++;
