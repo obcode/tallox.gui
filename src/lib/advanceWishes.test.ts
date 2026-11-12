@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	advanceStatusBadge,
 	advanceBySemester,
 	advanceLevelLabel,
 	advanceSemesters,
@@ -155,5 +156,13 @@ describe('advanceLevelLabel', () => {
 	it('joins level and bound with a spaced dot', () => {
 		expect(advanceLevelLabel('FIRST_CHOICE', 1)).toBe('unbedingt · höchstens einen Zug');
 		expect(advanceLevelLabel('HAPPY_TO', null)).toBe('gerne');
+	});
+});
+
+describe('advanceStatusBadge', () => {
+	it('lets a wrapped label grow the badge instead of spilling out of it', () => {
+		for (const status of ['PENDING', 'CONVERTED', 'NOT_OFFERED'] as const) {
+			expect(advanceStatusBadge(status)).toContain('h-auto');
+		}
 	});
 });

@@ -7,8 +7,8 @@
 	import { programmeTitle } from '$lib/startOverview';
 	import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '$lib/wishes';
 	import {
-		ADVANCE_STATUS_BADGES,
 		ADVANCE_STATUS_LABELS,
+		advanceStatusBadge,
 		advanceBySemester,
 		advanceStatusHint,
 		advanceLevelLabel
@@ -188,8 +188,7 @@
 								</td>
 								<td class="text-sm">{a.note}</td>
 								<td>
-									<span class="badge badge-sm {ADVANCE_STATUS_BADGES[a.status]}"
-										>{ADVANCE_STATUS_LABELS[a.status]}</span
+									<span class={advanceStatusBadge(a.status)}>{ADVANCE_STATUS_LABELS[a.status]}</span
 									>
 									<p class="text-base-content/80 mt-1 text-xs">
 										{advanceStatusHint(a.status, a.programme.code)}

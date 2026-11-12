@@ -3,11 +3,7 @@
 	import { stackedTable } from '$lib/stackedTable';
 	import { semesterName } from '$lib/semester';
 	import { personLabel } from '$lib/subjectGroups';
-	import {
-		ADVANCE_STATUS_BADGES,
-		ADVANCE_STATUS_LABELS,
-		advanceLevelLabel
-	} from '$lib/advanceWishes';
+	import { ADVANCE_STATUS_LABELS, advanceStatusBadge, advanceLevelLabel } from '$lib/advanceWishes';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -76,9 +72,7 @@
 							</td>
 							<td class="text-sm">{a.note}</td>
 							<td>
-								<span class="badge badge-sm {ADVANCE_STATUS_BADGES[a.status]}"
-									>{ADVANCE_STATUS_LABELS[a.status]}</span
-								>
+								<span class={advanceStatusBadge(a.status)}>{ADVANCE_STATUS_LABELS[a.status]}</span>
 							</td>
 						</tr>
 					{/each}

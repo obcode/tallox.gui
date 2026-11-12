@@ -17,12 +17,20 @@ export const ADVANCE_STATUS_LABELS: Record<AdvanceWishStatus, string> = {
 	NOT_OFFERED: 'nicht angeboten'
 };
 
-/** The badge class per status. Semantic colours as backgrounds only, never as text. */
-export const ADVANCE_STATUS_BADGES: Record<AdvanceWishStatus, string> = {
+/** The badge colour per status. Semantic colours as backgrounds only, never as text. */
+const ADVANCE_STATUS_COLOURS: Record<AdvanceWishStatus, string> = {
 	PENDING: 'badge-ghost',
 	CONVERTED: 'badge-success',
 	NOT_OFFERED: 'badge-warning'
 };
+
+/**
+ * The full badge class for a status. The labels wrap in a narrow table column, and a daisyUI
+ * badge has a fixed height, so without `h-auto` the second line spills out of the pill.
+ */
+export function advanceStatusBadge(status: AdvanceWishStatus): string {
+	return `badge badge-sm h-auto py-0.5 text-left ${ADVANCE_STATUS_COLOURS[status]}`;
+}
 
 /** "höchstens einen Zug", "höchstens 2 Züge", or empty for no bound. */
 export function maxTracksLabel(maxTracks: number | null | undefined): string {
