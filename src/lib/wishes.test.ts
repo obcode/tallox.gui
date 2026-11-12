@@ -47,7 +47,8 @@ import {
 	OWN_WISH_SORT,
 	ownPriorityRank,
 	trackSortKey,
-	wishSortValue
+	wishSortValue,
+	wishersByPriority
 } from './wishes';
 import { sortRows } from './sorting';
 
@@ -890,5 +891,33 @@ describe('the bound on cohorts', () => {
 		// Every wish of the row withdrawn in this save: the backend dropped the bound with the last
 		// one, and would refuse a new one.
 		expect(trackLimitChanges([entry], new Set(), stored)).toEqual([]);
+	});
+});
+
+describe('the entries on a cohort, by level', () => {
+	const entry = (name: string, priority: 'FIRST_CHOICE' | 'HAPPY_TO' | 'IF_NEEDED') => ({
+		person: { name, mail: `${name}@x` },
+		priority
+	});
+
+	it('puts „unbedingt“ first and „notfalls“ last, and names within a level in order', () => {
+		const sorted = wishersByPriority([
+			entry('Prof. Zwei', 'IF_NEEDED'),
+			entry('Prof. Drei', 'FIRST_CHOICE'),
+			entry('Prof. Vier', 'HAPPY_TO'),
+			entry('Prof. Eins', 'FIRST_CHOICE')
+		]);
+		expect(sorted.map((w) => w.person.name)).toEqual([
+			'Prof. Drei',
+			'Prof. Eins',
+			'Prof. Vier',
+			'Prof. Zwei'
+		]);
+	});
+
+	it('leaves the list it was given alone', () => {
+		const given = [entry('B', 'IF_NEEDED'), entry('A', 'FIRST_CHOICE')];
+		wishersByPriority(given);
+		expect(given.map((w) => w.person.name)).toEqual(['B', 'A']);
 	});
 });
