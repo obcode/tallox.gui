@@ -135,7 +135,7 @@ const TEACHING: NavItem = {
 			emoji: '📌',
 			label: 'Vormerkungen',
 			href: '/wuensche/vormerkungen',
-			hint: 'Module für kommende Semester vormerken, bevor der Bedarf feststeht — sie werden mit der Freigabe zu Wünschen',
+			hint: 'Module für kommende Semester vormerken, bevor der Bedarf feststeht oder wenn sie nicht darin stehen — sie werden zu Wünschen, sobald das Modul im freigegebenen Bedarf steht',
 			colleaguesOnly: true
 		},
 		{

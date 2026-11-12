@@ -39,7 +39,14 @@
 			Was Du in einem kommenden Semester gern halten möchtest, auch wenn der Bedarf dafür noch nicht
 			feststeht — gern Jahre im Voraus. Sobald die Studiengangsleitung den Bedarf freigibt, wird aus
 			der Vormerkung ein <a class="link" href={resolve('/wuensche')}>Wunsch</a> auf jedem Zug des Moduls,
-			mit Stufe und Notiz. Bietet der Studiengang das Modul dann nicht an, steht hier „nicht angeboten“.
+			mit Stufe und Notiz. Bietet der Studiengang das Modul dann nicht an, steht hier „nicht im Bedarf“.
+		</p>
+		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
+			Auch nach der Freigabe kannst Du ein Modul vormerken, das nicht im Bedarf steht, etwa ein
+			Wahlfach, das nur nach Ankündigung läuft. So sieht die Studiengangsleitung, dass Du es
+			anbieten würdest, falls sich noch Bedarf ergibt; nimmt sie es auf, wird die Vormerkung zum
+			Wunsch, solange die Wunschrunde der Fachgruppe offen ist. Steht das Modul schon im Bedarf,
+			trägst Du Dich direkt auf der Seite <a class="link" href={resolve('/wuensche')}>Wünsche</a> ein.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			<strong>Eine Vormerkung ist kein Anspruch</strong>, sondern eine Ansage. Wer sie sieht: Du

@@ -184,8 +184,9 @@ const PASS_THROUGH = new Set([
 	'WISH_TRACK_LIMIT_WITHOUT_WISHES',
 	'WISH_PRIORITY_INVALID',
 	// Advance wishes („Vormerkungen“): only the caller's own rows are ever read on this path. The
-	// release is public; "already converted" and "not there or not yours" are about the caller's
-	// own entry, the second deliberately the same sentence for both, like WISH_NOT_FOUND.
+	// release and the demand's cohorts are public; "already converted" and "not there or not
+	// yours" are about the caller's own entry, the second deliberately the same sentence for both,
+	// like WISH_NOT_FOUND.
 	'ADVANCE_WISH_RELEASED',
 	'ADVANCE_WISH_CONVERTED',
 	'ADVANCE_WISH_NOT_FOUND',

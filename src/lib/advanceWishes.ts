@@ -3,10 +3,13 @@ import { semesterName } from '$lib/semester';
 import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '$lib/wishes';
 
 /**
- * Advance wishes („Vormerkungen“): interest in a module for a semester whose demand is not settled.
+ * Advance wishes („Vormerkungen“): interest in a module for a semester whose demand is not settled,
+ * or — since 2026-11-12 — for a module a released demand does not contain (yet).
  *
  * The backend turns one into a wish on every cohort once the programme releases its demand, and
- * reports `NOT_OFFERED` where the release has no cohort of the module. Nothing here decides who
+ * reports `NOT_OFFERED` where the release has no cohort of the module. That status is also what one
+ * noted down after the release reads until the module is added, so the label says what is true in
+ * both cases: the module is not in the demand. Nothing here decides who
  * sees what — the rows arrive filtered by the wish rule — and nothing here counts: a number of
  * advance wishes on a module is the confidential fact with the names taken out.
  */
@@ -14,7 +17,7 @@ import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '$lib/wishes';
 export const ADVANCE_STATUS_LABELS: Record<AdvanceWishStatus, string> = {
 	PENDING: 'wartet auf Freigabe',
 	CONVERTED: 'als Wunsch übernommen',
-	NOT_OFFERED: 'nicht angeboten'
+	NOT_OFFERED: 'nicht im Bedarf'
 };
 
 /** The badge colour per status. Semantic colours as backgrounds only, never as text. */
@@ -52,11 +55,11 @@ export function advanceLevelLabel(
 export function advanceStatusHint(status: AdvanceWishStatus, programmeCode: string): string {
 	switch (status) {
 		case 'PENDING':
-			return `Wird zum Wunsch, sobald die Studiengangsleitung von ${programmeCode} den Bedarf freigibt.`;
+			return `Wird zum Wunsch, sobald die Studiengangsleitung von ${programmeCode} den Bedarf mit diesem Modul freigibt. Nach der Freigabe Vorgemerktes wartet dafür außerdem auf eine offene Wunschrunde der Fachgruppe.`;
 		case 'CONVERTED':
 			return 'Steht jetzt als Wunsch auf jedem Zug des Moduls — ändern oder zurückziehen unter „Wünsche“.';
 		case 'NOT_OFFERED':
-			return `${programmeCode} hat den Bedarf freigegeben, ohne dieses Modul anzubieten. Wird es doch noch angeboten, wird die Vormerkung zum Wunsch.`;
+			return `Der freigegebene Bedarf von ${programmeCode} enthält dieses Modul nicht. Die Studiengangsleitung sieht Deine Vormerkung; kommt das Modul noch dazu, wird sie zum Wunsch.`;
 		default:
 			return '';
 	}
@@ -88,7 +91,8 @@ export const ADVANCE_HORIZON = 8;
  * The semesters one may note something down for: the ones after the current, four years ahead.
  *
  * Not the current one — its demand is settled or being settled, and the wish itself is the thing
- * to enter. The backend refuses a released programme anyway; the list just does not invite it.
+ * to enter. The backend refuses a module a released demand already has; the list just does not
+ * invite it.
  */
 export function advanceSemesters(today: Date, count = ADVANCE_HORIZON): string[] {
 	const out: string[] = [];
@@ -132,8 +136,10 @@ export function advanceBySemester<T extends AdvanceWishLike>(
 }
 
 /**
- * The start page's line for own advance wishes the release left out: "not needed after all", the
- * notification the faculty asked for. Null when there is none. Only own rows go in here.
+ * The start page's line for own advance wishes a released demand does not contain: "not needed
+ * after all", the notification the faculty asked for — or, for one noted down after the release,
+ * the reminder that it waits for the module to be added. Null when there is none. Only own rows go
+ * in here.
  */
 export function notOfferedNotice(rows: readonly AdvanceWishLike[]): string | null {
 	const missing = rows
@@ -149,8 +155,8 @@ export function notOfferedNotice(rows: readonly AdvanceWishLike[]): string | nul
 			? items[0]
 			: `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`;
 	return items.length === 1
-		? `Nicht angeboten: ${list}. Die Studiengangsleitung hat den Bedarf ohne dieses Modul freigegeben.`
-		: `Nicht angeboten: ${list}. Die Studiengangsleitungen haben den Bedarf ohne diese Module freigegeben.`;
+		? `Nicht im Bedarf: ${list}. Der freigegebene Bedarf enthält dieses Modul nicht.`
+		: `Nicht im Bedarf: ${list}. Die freigegebenen Bedarfe enthalten diese Module nicht.`;
 }
 
 export type AdvanceWishInput = {

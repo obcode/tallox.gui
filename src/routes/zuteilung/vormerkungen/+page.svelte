@@ -15,7 +15,9 @@
 		<p class="text-base-content/80 max-w-3xl text-sm">
 			Was sich Kolleginnen und Kollegen für ein kommendes Semester vorgemerkt haben, bevor der
 			Bedarf feststeht — eine Ansage, kein Anspruch. Mit der Freigabe des Bedarfs durch die
-			Studiengangsleitung wird jede Vormerkung zum Wunsch auf jedem Zug des Moduls.
+			Studiengangsleitung wird jede Vormerkung zum Wunsch auf jedem Zug des Moduls. Auch nach der
+			Freigabe lässt sich ein Modul vormerken, das nicht im Bedarf steht: „nicht im Bedarf“ heißt
+			dann, dass jemand es anbieten würde, falls sich noch Bedarf ergibt.
 		</p>
 		<p class="text-base-content/80 mt-2 max-w-3xl text-sm">
 			Du siehst die Vormerkungen für die Studiengänge und Fachgruppen, die Du leitest, das Dekanat
