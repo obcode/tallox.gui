@@ -30,7 +30,7 @@
 	},
 	"dependencies": {
 		"@sentry/sveltekit": "^10.70.0",
-		"graphql": "^16.11.0",
+		"graphql": "^16.15.0",
 		"graphql-request": "^7.2.0",
 		"write-excel-file": "^4.1.1"
 	},
