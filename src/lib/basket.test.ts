@@ -5,7 +5,10 @@ import {
 	cohortsInBasket,
 	compareFirstBaskets,
 	firstOf,
-	parseBasketChoice
+	orderParam,
+	parseBasketChoice,
+	parseCohortOrder,
+	type CohortOrder
 } from './basket';
 
 const cohort = (id: string, programme: string, baskets: string[] | null) => ({
@@ -25,6 +28,22 @@ describe('the basket choice in the address', () => {
 	it('is none without both halves', () => {
 		for (const raw of [null, undefined, '', '  ', 'IG', 'IG:', ':Korb']) {
 			expect(parseBasketChoice(raw)).toBeNull();
+		}
+	});
+});
+
+describe('the order in the address', () => {
+	it('reads back what it wrote, „nach Name“ as the absence of a value', () => {
+		for (const order of ['name', 'basket', 'size'] as CohortOrder[]) {
+			expect(parseCohortOrder(orderParam(order))).toBe(order);
+		}
+		expect(orderParam('name')).toBe('');
+		expect(orderParam('size')).toBe('sws');
+	});
+
+	it('is „nach Name“ for anything it does not know', () => {
+		for (const raw of [null, undefined, '', 'SWS', 'groesse']) {
+			expect(parseCohortOrder(raw)).toBe('name');
 		}
 	});
 });

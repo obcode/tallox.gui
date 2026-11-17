@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
-import { parseBasketChoice, type CohortOrder } from '$lib/basket';
+import { parseBasketChoice, parseCohortOrder } from '$lib/basket';
 import { withoutEmptyParams } from '$lib/demand';
 import type { PageServerLoad } from './$types';
 
@@ -42,6 +42,8 @@ const OverviewDocument = graphql(`
 			track
 			programmeSemester
 			baskets
+			dutyStatus
+			teachingHours
 			programme {
 				code
 				title
@@ -90,7 +92,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const programme = (url.searchParams.get('studiengang') ?? '').toUpperCase();
 	// Cuts of what is loaded: a basket of one programme, and the order inside each programme.
 	const basket = parseBasketChoice(url.searchParams.get('korb'));
-	const order: CohortOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
+	const order = parseCohortOrder(url.searchParams.get('sortierung'));
 
 	const ask = (withAssignments: boolean) =>
 		backendRequest(OverviewDocument, {

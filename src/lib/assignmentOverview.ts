@@ -1,5 +1,11 @@
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
-import { compareFirstBaskets, firstOf, type CohortOrder } from '$lib/basket';
+import type { DutyStatus, InstancePartKind } from '$lib/gql/__generated__/graphql';
+import {
+	compareBySize,
+	compareFirstBaskets,
+	dutyRank,
+	firstOf,
+	type CohortOrder
+} from '$lib/basket';
 import { cohortLabel } from '$lib/demand';
 
 /** An instance as the overview asks for it. */
@@ -11,6 +17,10 @@ export type OverviewInstance = {
 	module: { id: string; name: string; projectBased?: boolean };
 	/** The module's baskets in this cohort's programme; see `$lib/basket`. */
 	baskets?: readonly string[] | null;
+	/** Compulsory or elective in this cohort's programme; the order „Pflicht zuerst, nach SWS“. */
+	dutyStatus?: DutyStatus | null;
+	/** What the cohort costs the faculty, in SWS; the order „Pflicht zuerst, nach SWS“. */
+	teachingHours?: number;
 	parts: {
 		id: string;
 		kind: InstancePartKind;
@@ -54,6 +64,10 @@ export type OverviewModule = {
 	projectBased: boolean;
 	/** The basket the module sorts under with the order „nach Korb“, or null for none. */
 	basket: string | null;
+	/** Its duty in the programme, as `dutyRank` counts it; for the order `size`. */
+	dutyRank: number;
+	/** What its cohorts in the programme cost together, in SWS; for the order `size`. */
+	hours: number;
 	cohorts: OverviewCohort[];
 };
 
@@ -75,7 +89,8 @@ export type OverviewProgramme = {
  * Sorted the way somebody reads it: programmes by code, modules by name, cohorts by label. With
  * the order `basket` the modules of each programme sort by their first basket before the name,
  * modules without a basket last — the overview is cut by programme already, so the order always
- * has one programme's regulations to go by.
+ * has one programme's regulations to go by. With the order `size` they sort compulsory first and
+ * then by the hours their cohorts cost, most first, as on the assignment page (`moduleBlocks`).
  */
 export function assignmentOverview(
 	instances: readonly OverviewInstance[],
@@ -99,10 +114,13 @@ export function assignmentOverview(
 				name: instance.module.name,
 				projectBased: instance.module.projectBased ?? false,
 				basket: firstOf(instance.baskets),
+				dutyRank: dutyRank(instance.dutyStatus),
+				hours: 0,
 				cohorts: []
 			};
 			programme.modules.push(module);
 		}
+		module.hours += instance.teachingHours ?? 0;
 		const host = instance.coveredBy?.acceptedAt ? instance.coveredBy.instance : null;
 		module.cohorts.push({
 			instanceId: instance.id,
@@ -123,6 +141,7 @@ export function assignmentOverview(
 		programme.modules.sort(
 			(a, b) =>
 				(order === 'basket' ? compareFirstBaskets(a.basket, b.basket) : 0) ||
+				(order === 'size' ? compareBySize(a, b) : 0) ||
 				a.name.localeCompare(b.name, 'de')
 		);
 		for (const module of programme.modules) {

@@ -122,8 +122,11 @@ test.describe('the basket filter on the assignment screen', () => {
 			`${DEGREES.bachelor} · ${DEGREES.basket}`,
 			`${DEGREES.unrecorded} · ${DEGREES.basket}`
 		]);
-		// The order only means something inside one programme, so it waits for the grouping.
-		await expect(order(page)).toHaveCount(0);
+		// „nach Korb“ only means something inside one programme, so it waits for the grouping.
+		await expect(order(page).getByRole('option')).toHaveText([
+			'nach Name',
+			'Pflicht zuerst, nach SWS'
+		]);
 
 		await korb(page).selectOption({ label: `${DEGREES.bachelor} · ${DEGREES.basket}` });
 		await expect(page).toHaveURL(new RegExp(`korb=${DEGREES.bachelor}%3A`));
@@ -141,7 +144,12 @@ test.describe('the basket filter on the assignment screen', () => {
 		await expect(cohort(page, DEGREES.bachelor)).toBeVisible();
 		await expect(cohort(page, DEGREES.unrecorded)).toHaveCount(0);
 
-		// Grouped by programme, the order is offered and goes into the address.
+		// Grouped by programme, the order by basket is offered and goes into the address.
+		await expect(order(page).getByRole('option')).toHaveText([
+			'nach Name',
+			'nach Korb',
+			'Pflicht zuerst, nach SWS'
+		]);
 		await order(page).selectOption('korb');
 		await expect(page).toHaveURL(/sortierung=korb/);
 
@@ -169,5 +177,49 @@ test.describe('the basket filter on the assignment screen', () => {
 		await expect(
 			page.getByText('Mit „alle“ bei „Korb“ stehen die übrigen wieder da.')
 		).toBeVisible();
+	});
+});
+
+/**
+ * The order „Pflicht zuerst, nach SWS“: the faculty council's order for talking the assignment
+ * through. Which module lands where is pinned by the unit tests of `moduleBlocks`; here the switch,
+ * the address and the explanation, with and without the grouping. Read-only as well.
+ */
+test.describe('the order by duty and hours on the assignment screen', () => {
+	const order = (page: Page) => page.getByRole('combobox', { name: 'Sortierung', exact: true });
+	const hint = (page: Page) => page.getByText('Pflichtmodule zuerst, dann Module');
+
+	test('goes into the address, explains itself and keeps every cohort', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, BASE);
+		await expect(hint(page)).toHaveCount(0);
+
+		await order(page).selectOption('sws');
+		await expect(page).toHaveURL(/sortierung=sws/);
+		await expect(hint(page)).toBeVisible();
+		for (const code of [DEGREES.bachelor, DEGREES.master, DEGREES.unrecorded]) {
+			await expect(cohort(page, code)).toBeVisible();
+		}
+		await checkA11y(page);
+
+		// It survives the grouping by programme, and „nach Name“ leaves a clean address.
+		await page
+			.getByRole('combobox', { name: 'Gruppiert nach', exact: true })
+			.selectOption('studiengang');
+		await expect(page).toHaveURL(/nach=studiengang/);
+		await expect(page).toHaveURL(/sortierung=sws/);
+		await expect(order(page)).toHaveValue('sws');
+		await order(page).selectOption('');
+		await expect(page).not.toHaveURL(/sortierung=/);
+		await expect(hint(page)).toHaveCount(0);
+	});
+
+	test('the overview offers it too', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.fuenf);
+		await gotoRendered(page, `/zuteilung/uebersicht?semester=${DEGREES.semester}&sortierung=sws`);
+		await expect(order(page)).toHaveValue('sws');
 	});
 });

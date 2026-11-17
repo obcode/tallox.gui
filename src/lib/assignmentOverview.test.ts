@@ -78,4 +78,36 @@ describe('the assignment overview', () => {
 		expect(names('name')).toEqual(['Analysis', 'Betriebssysteme', 'Compilerbau']);
 		expect(names('basket')).toEqual(['Compilerbau', 'Analysis', 'Betriebssysteme']);
 	});
+
+	// Compulsory first, then by what the module's cohorts in the programme cost together.
+	it('sorts the modules of a programme compulsory first and by hours where asked', () => {
+		const sized = (
+			id: string,
+			module: string,
+			dutyStatus: OverviewInstance['dutyStatus'],
+			teachingHours: number,
+			track = ''
+		): OverviewInstance => ({
+			...instance(id, 'IF', module, track, [{ id: `${id}-p`, kind: 'LECTURE' }]),
+			dutyStatus,
+			teachingHours
+		});
+		const [programme] = assignmentOverview(
+			[
+				sized('a', 'Analysis', 'ELECTIVE', 30),
+				sized('b1', 'Betriebssysteme', 'COMPULSORY', 6, 'A'),
+				sized('b2', 'Betriebssysteme', 'COMPULSORY', 6, 'B'),
+				sized('c', 'Compilerbau', 'COMPULSORY', 10),
+				sized('d', 'Datenbanken', 'MIXED', 40)
+			],
+			[],
+			'size'
+		);
+		expect(programme.modules.map((m) => [m.name, m.hours])).toEqual([
+			['Betriebssysteme', 12],
+			['Compilerbau', 10],
+			['Datenbanken', 40],
+			['Analysis', 30]
+		]);
+	});
 });
