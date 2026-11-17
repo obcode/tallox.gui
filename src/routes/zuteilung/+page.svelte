@@ -49,7 +49,7 @@
 		programmeLabel
 	} from '$lib/catalogue';
 	import { trackSaves } from '$lib/saveOnLeave';
-	import { basketValue, cohortBasketOptions, cohortsInBasket } from '$lib/basket';
+	import { basketValue, cohortBasketOptions, cohortsInBasket, orderParam } from '$lib/basket';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
 	import {
@@ -177,10 +177,16 @@
 	 * without a heading — the module blocks as they always were. Opt-in, because a group such as
 	 * mathematics fills one module across several programmes in a single block.
 	 */
+	/**
+	 * The order without the grouping by programme. „nach Korb“ needs one programme's regulations to
+	 * go by, so it falls back to the name there; „Pflicht zuerst, nach SWS“ works across programmes.
+	 */
+	const ungroupedOrder = $derived(data.selected.order === 'basket' ? 'name' : data.selected.order);
+
 	const sections = $derived(
 		data.selected.byProgramme
 			? programmeSections(groups, data.selected.order)
-			: [{ programme: null, blocks: moduleBlocks(groups) }]
+			: [{ programme: null, blocks: moduleBlocks(groups, ungroupedOrder) }]
 	);
 
 	/**
@@ -333,7 +339,7 @@
 		{ name: 'cie', value: data.selected.onlyCie ? '1' : '' },
 		{ name: 'lb', value: data.selected.onlyContract ? '1' : '' },
 		{ name: 'korb', value: basketParam },
-		{ name: 'sortierung', value: data.selected.order === 'basket' ? 'korb' : '' }
+		{ name: 'sortierung', value: orderParam(data.selected.order) }
 	]);
 
 	/**
@@ -537,7 +543,7 @@
 				'cie',
 				'lb',
 				...(baskets.length > 0 ? ['korb'] : []),
-				...(baskets.length > 0 && data.selected.byProgramme ? ['sortierung'] : [])
+				'sortierung'
 			])}
 			<label class="form-control">
 				<span class="label-text text-sm">Abschluss</span>
@@ -608,23 +614,37 @@
 						{/each}
 					</select>
 				</label>
-				{#if data.selected.byProgramme}
-					<label class="form-control">
-						<span class="label-text text-sm">Sortierung</span>
-						<select
-							name="sortierung"
-							aria-label="Sortierung"
-							class="select select-bordered select-sm"
-							onchange={(e) => e.currentTarget.form?.requestSubmit()}
-						>
-							<option value="">nach Name</option>
-							<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
-						</select>
-					</label>
-				{/if}
 			{/if}
+			<!-- „nach Korb“ only with the grouping by programme: a basket belongs to one programme's
+			     regulations. The other two orders work on the whole tab. -->
+			<label class="form-control">
+				<span class="label-text text-sm">Sortierung</span>
+				<select
+					name="sortierung"
+					aria-label="Sortierung"
+					class="select select-bordered select-sm"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				>
+					<option value="">nach Name</option>
+					{#if baskets.length > 0 && data.selected.byProgramme}
+						<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
+					{/if}
+					<option value="sws" selected={data.selected.order === 'size'}>
+						Pflicht zuerst, nach SWS
+					</option>
+				</select>
+			</label>
 			<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 		</form>
+
+		{#if data.selected.order === 'size'}
+			<p class="text-base-content/80 mt-2 max-w-prose text-sm">
+				Pflichtmodule zuerst, dann Module, die nur in manchen Fassungen der Prüfungsordnung Pflicht
+				sind, dann Wahlpflicht und FWP – jeweils die mit den meisten SWS zuerst. Gezählt wird, was
+				die Züge eines Moduls hier zusammen kosten, mit allen Praktikumsgruppen. PBLVs stehen wie
+				immer am Ende.
+			</p>
+		{/if}
 
 		{#if withoutDegree.length > 0}
 			<p class="text-base-content/80 mt-2 max-w-prose text-sm">

@@ -12,7 +12,7 @@ import {
 	UNFILED
 } from '$lib/assignment';
 import { parseDegreeParam } from '$lib/catalogue';
-import { parseBasketChoice, type CohortOrder } from '$lib/basket';
+import { parseBasketChoice, parseCohortOrder } from '$lib/basket';
 import { cieChanges, formatChanges, topicChanges, withoutEmptyParams } from '$lib/demand';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -85,6 +85,8 @@ const AssignmentDocument = graphql(`
 			topic
 			# The module's baskets in this cohort's own programme: the "Korb" filter and order.
 			baskets
+			# Compulsory or elective there: the order "Pflicht zuerst, nach SWS".
+			dutyStatus
 			programme {
 				code
 				title
@@ -379,10 +381,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	const byProgramme = url.searchParams.get('nach') === 'studiengang';
 	const onlyCie = url.searchParams.get('cie') === '1';
 	const onlyContract = url.searchParams.get('lb') === '1';
-	// A basket of one programme, and the order inside each programme. Cuts of what is loaded, like
-	// the degree; the order only applies with the grouping by programme, see `moduleBlocks`.
+	// A basket of one programme, and the order of the modules. Cuts of what is loaded, like the
+	// degree; the order „nach Korb“ only applies with the grouping by programme, see `moduleBlocks`.
 	const basket = parseBasketChoice(url.searchParams.get('korb'));
-	const order: CohortOrder = url.searchParams.get('sortierung') === 'korb' ? 'basket' : 'name';
+	const order = parseCohortOrder(url.searchParams.get('sortierung'));
 
 	const ask = (semester: string) =>
 		backendRequest(AssignmentDocument, {

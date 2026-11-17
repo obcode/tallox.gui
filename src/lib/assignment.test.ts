@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { DutyStatus } from '$lib/gql/__generated__/graphql';
 import {
 	assignmentChanges,
 	candidateSections,
@@ -708,6 +709,115 @@ describe('the basket order', () => {
 			'Betriebssysteme',
 			'Agiles Projekt'
 		]);
+	});
+});
+
+describe('the order „Pflicht zuerst, nach SWS“', () => {
+	const cohort = (
+		module: string,
+		name: string,
+		dutyStatus: DutyStatus | null,
+		teachingHours: number,
+		over: Partial<InstanceLike> = {}
+	) =>
+		cohortGroups(
+			[
+				instance({
+					id: `${module}-${over.programme?.code ?? 'IF'}-${over.track ?? 'A'}`,
+					dutyStatus,
+					teachingHours,
+					module: { id: module, name },
+					...over
+				})
+			],
+			[]
+		)[0];
+
+	// What the faculty council asked for: the large compulsory modules first, then the small ones,
+	// then the electives; PBLVs still last; equal keys by name.
+	it('sorts compulsory first, then by the hours the cohorts cost, PBLVs last', () => {
+		const blocks = moduleBlocks(
+			[
+				cohort('m1', 'Analysis', 'COMPULSORY', 6),
+				cohort('m2', 'Datenbanken', 'ELECTIVE', 12),
+				cohort('m3', 'Betriebssysteme', 'COMPULSORY', 10),
+				cohort('m4', 'Compilerbau', 'MIXED', 4),
+				cohort('m5', 'Fremdes Modul', null, 20),
+				cohort('m6', 'Algorithmen', 'COMPULSORY', 6),
+				cohort('m7', 'Agiles Projekt', 'COMPULSORY', 30, {
+					module: { id: 'm7', name: 'Agiles Projekt', projectBased: true }
+				})
+			],
+			'size'
+		);
+		expect(blocks.map((b) => b.name)).toEqual([
+			'Betriebssysteme',
+			'Algorithmen',
+			'Analysis',
+			'Compilerbau',
+			'Fremdes Modul',
+			'Datenbanken',
+			'Agiles Projekt'
+		]);
+	});
+
+	// The load to distribute is every cohort of the module on the tab, laboratory groups included.
+	it('counts the hours of all cohorts of a module together', () => {
+		const blocks = moduleBlocks(
+			[
+				cohort('m1', 'Analysis', 'COMPULSORY', 8, { track: 'A' }),
+				cohort('m1', 'Analysis', 'COMPULSORY', 8, { track: 'B' }),
+				cohort('m2', 'Betriebssysteme', 'COMPULSORY', 12)
+			],
+			'size'
+		);
+		expect(blocks.map((b) => [b.name, b.hours])).toEqual([
+			['Analysis', 16],
+			['Betriebssysteme', 12]
+		]);
+	});
+
+	// A module compulsory in one programme and elective in another is compulsory for the screen.
+	it('ranks a block by the strongest duty among its programmes', () => {
+		const blocks = moduleBlocks(
+			[
+				cohort('m1', 'Analysis', 'ELECTIVE', 4, { programme: { code: 'IG' } }),
+				cohort('m1', 'Analysis', 'COMPULSORY', 4, { programme: { code: 'IF' } }),
+				cohort('m2', 'Betriebssysteme', 'ELECTIVE', 20)
+			],
+			'size'
+		);
+		expect(blocks.map((b) => b.name)).toEqual(['Analysis', 'Betriebssysteme']);
+	});
+
+	it('passes the order into every programme section', () => {
+		const [section] = programmeSections(
+			[cohort('m1', 'Analysis', 'ELECTIVE', 20), cohort('m2', 'Betriebssysteme', 'COMPULSORY', 2)],
+			'size'
+		);
+		expect(section.blocks.map((b) => b.name)).toEqual(['Betriebssysteme', 'Analysis']);
+	});
+
+	// The keys are catalogue and demand. Who holds a part must not move a row: before publication
+	// that order would be the confidential count without the number. Wishes are not even an input.
+	it('does not move when assignments are added', () => {
+		const one = instance({
+			id: 'i1',
+			dutyStatus: 'ELECTIVE',
+			teachingHours: 4,
+			module: { id: 'm1', name: 'Analysis' }
+		});
+		const two = instance({
+			id: 'i2',
+			dutyStatus: 'ELECTIVE',
+			teachingHours: 4,
+			module: { id: 'm2', name: 'Betriebssysteme' }
+		});
+		const bare = moduleBlocks(cohortGroups([one, two], []), 'size').map((b) => b.name);
+		const busy = moduleBlocks(cohortGroups([one, two], [held({ part: { id: 'p1' } })]), 'size').map(
+			(b) => b.name
+		);
+		expect(busy).toEqual(bare);
 	});
 });
 

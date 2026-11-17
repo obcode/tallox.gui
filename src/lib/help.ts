@@ -314,9 +314,19 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung/lehrpersonen', label: 'Lehrpersonen' }]
 	},
 	{
+		question: 'Wie gehe ich bei der Zuteilung die großen Pflichtmodule zuerst durch?',
+		answer:
+			'Über der Tabelle unter „Sortierung“ „Pflicht zuerst, nach SWS“ wählen. Dann stehen oben die Pflichtmodule, dann Module, die nur in manchen Fassungen der Prüfungsordnung Pflicht sind, dann Wahlpflicht und FWP; innerhalb davon jeweils die Module mit den meisten SWS zuerst, bei Gleichstand nach Name. Gezählt wird, was die Züge eines Moduls auf dem Reiter zusammen kosten, mit allen Praktikumsgruppen, nicht die SWS aus dem Modulkatalog. Ist ein Modul in einem Studiengang Pflicht und in einem anderen Wahlpflicht, zählt es als Pflicht. PBLVs bleiben am Ende. So lässt sich im gemeinsamen Termin die Reihenfolge einhalten, die der Fakultätsrat beschlossen hat. Die Sortierung geht mit und ohne „Gruppiert nach: Studiengang“, und es gibt sie auch in der Übersicht der Zuteilung. Sie hängt nur vom Modul und vom Bedarf ab, nie davon, wer sich eingetragen hat oder wer etwas hält. Die Auswahl steht in der Adresse, ein Link darauf lässt sich weitergeben.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/zuteilung/uebersicht', label: 'Zuteilung, Übersicht' }
+		]
+	},
+	{
 		question: 'Wie sehe ich bei der Zuteilung nur die Bachelor- oder nur die Mastermodule?',
 		answer:
-			'Über der Tabelle unter „Abschluss“ Bachelor oder Master wählen. Unter „Gruppiert nach“ lässt sich die Tabelle außerdem nach Studiengang ordnen: ein Modul, das zwei Studiengänge anbieten, steht dann bei beiden, jeweils mit deren Zügen. Beides bleibt beim Wechsel der Fachgruppe erhalten. Wer nach Korb filtern oder sortieren will, findet das unter „Korb“ und „Sortierung“ daneben. Den Abschluss-Filter gibt es auch im Modulkatalog.',
+			'Über der Tabelle unter „Abschluss“ Bachelor oder Master wählen. Unter „Gruppiert nach“ lässt sich die Tabelle außerdem nach Studiengang ordnen: ein Modul, das zwei Studiengänge anbieten, steht dann bei beiden, jeweils mit deren Zügen. Beides bleibt beim Wechsel der Fachgruppe erhalten. Wer nach Korb filtern oder sortieren will, findet das unter „Korb“ und „Sortierung“ daneben; dort steht auch „Pflicht zuerst, nach SWS“. Den Abschluss-Filter gibt es auch im Modulkatalog.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [
 			{ href: '/zuteilung', label: 'Zuteilung' },

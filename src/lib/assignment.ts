@@ -1,7 +1,13 @@
 import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
-import type { Degree, InstancePartKind } from '$lib/gql/__generated__/graphql';
-import { compareFirstBaskets, firstOf, type CohortOrder } from '$lib/basket';
+import type { Degree, DutyStatus, InstancePartKind } from '$lib/gql/__generated__/graphql';
+import {
+	compareBySize,
+	compareFirstBaskets,
+	dutyRank,
+	firstOf,
+	type CohortOrder
+} from '$lib/basket';
 import { withTopic, type DeliveryFormat } from '$lib/demand';
 import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
 import { desiredHoursLabel, shareLabel, trackLimitLabel } from '$lib/wishes';
@@ -62,6 +68,8 @@ export type InstanceLike = {
 	topic?: string | null;
 	/** The baskets the module sits in within this cohort's programme; see `$lib/basket`. */
 	baskets?: readonly string[] | null;
+	/** Compulsory or elective in this cohort's programme; the order „Pflicht zuerst, nach SWS“. */
+	dutyStatus?: DutyStatus | null;
 	/**
 	 * The other study programmes' demands this cohort meets, where any are agreed.
 	 *
@@ -277,6 +285,10 @@ export type ModuleBlock = {
 	projectBased: boolean;
 	/** The basket the block sorts under with the order „nach Korb“, or null for none. */
 	basket: string | null;
+	/** The strongest duty over its cohorts, as `dutyRank` counts it; for the order `size`. */
+	dutyRank: number;
+	/** What its cohorts in this block cost together, in SWS; for the order `size`. */
+	hours: number;
 	cohorts: CohortGroup[];
 };
 
@@ -296,6 +308,13 @@ export type ModuleBlock = {
  * basket after those with one, and the PBLVs still last. Only meaningful within one programme —
  * a basket belongs to one programme's regulations — which is why the page offers it only together
  * with the grouping by programme; the block's basket is read off its first cohort.
+ *
+ * With the order `size` — „Pflicht zuerst, nach SWS“ — the blocks sort compulsory first, then
+ * compulsory under some versions of the regulations, then the rest, and within each by the hours
+ * the block's cohorts cost together, most first: the load there is to distribute, laboratory
+ * groups included, not the hours a student attends. A block of cohorts from several programmes
+ * counts as compulsory if it is compulsory in any of them. The PBLVs still last. Both keys come
+ * from the catalogue and the demand, never from who wishes for or holds a part.
  */
 export function moduleBlocks(
 	groups: readonly CohortGroup[],
@@ -310,8 +329,12 @@ export function moduleBlocks(
 			name: module.name,
 			projectBased: module.projectBased ?? false,
 			basket: firstOf(group.instance.baskets),
+			dutyRank: dutyRank(group.instance.dutyStatus),
+			hours: 0,
 			cohorts: []
 		};
+		block.dutyRank = Math.min(block.dutyRank, dutyRank(group.instance.dutyStatus));
+		block.hours += group.instance.teachingHours;
 		block.cohorts.push(group);
 		blocks.set(module.id, block);
 	}
@@ -328,6 +351,7 @@ export function moduleBlocks(
 		(a, b) =>
 			Number(a.projectBased) - Number(b.projectBased) ||
 			(order === 'basket' ? compareFirstBaskets(a.basket, b.basket) : 0) ||
+			(order === 'size' ? compareBySize(a, b) : 0) ||
 			a.name.localeCompare(b.name, 'de')
 	);
 }

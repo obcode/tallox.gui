@@ -7,9 +7,11 @@
  * only in its own programme. The demand page shows one programme at a time and keeps its simpler
  * helpers in `$lib/demand`.
  *
- * Everything here reads catalogue data only. Nothing is sorted or filtered by who holds a part or
- * who wishes for it: that would be the aggregate the assignment screen must never show.
+ * Everything here reads catalogue and demand data only. Nothing is sorted or filtered by who holds
+ * a part or who wishes for it: that would be the aggregate the assignment screen must never show.
  */
+
+import type { DutyStatus } from '$lib/gql/__generated__/graphql';
 
 /** A cohort, as much of it as the basket filter needs: its programme and its module's baskets there. */
 export type CohortBasketLike = {
@@ -23,8 +25,49 @@ export type BasketOption = { value: string; label: string };
 /** A chosen basket of one programme, or none. */
 export type BasketChoice = { programme: string; basket: string } | null;
 
-/** The order the "Sortierung" switch offers. */
-export type CohortOrder = 'name' | 'basket';
+/**
+ * The order the "Sortierung" switch offers: „nach Name“, „nach Korb“, or „Pflicht zuerst, nach
+ * SWS“ (`size`) — the order in which the faculty council wants the assignment talked through: the
+ * large compulsory modules first, then the small ones, then the electives.
+ */
+export type CohortOrder = 'name' | 'basket' | 'size';
+
+/** The address value of each order; „nach Name“ is the absence of one. */
+const ORDER_PARAMS: Record<CohortOrder, string> = { name: '', basket: 'korb', size: 'sws' };
+
+/** Reads the order from the address; anything unknown is „nach Name“. */
+export function parseCohortOrder(raw: string | null | undefined): CohortOrder {
+	if (raw === ORDER_PARAMS.basket) return 'basket';
+	if (raw === ORDER_PARAMS.size) return 'size';
+	return 'name';
+}
+
+/** The address value of an order, empty for „nach Name“. */
+export function orderParam(order: CohortOrder): string {
+	return ORDER_PARAMS[order];
+}
+
+/**
+ * Where a duty status ranks in the order `size`: compulsory first, then the modules compulsory
+ * only under some versions of the regulations, then everything else — electives, and modules that
+ * do not appear in the programme's catalogue at all.
+ */
+export function dutyRank(status: DutyStatus | null | undefined): number {
+	if (status === 'COMPULSORY') return 0;
+	if (status === 'MIXED') return 1;
+	return 2;
+}
+
+/** What the order `size` sorts a module by: its strongest duty, and the hours its cohorts cost. */
+export type SizeKey = { dutyRank: number; hours: number };
+
+/**
+ * Compares two modules for the order `size`: the stronger duty first, and within the same duty the
+ * module that costs more hours first. Ties are left to the caller, which sorts by name.
+ */
+export function compareBySize(a: SizeKey, b: SizeKey): number {
+	return a.dutyRank - b.dutyRank || b.hours - a.hours;
+}
 
 /** The reading order of baskets, the same as on the demand page and in the statistics. */
 function basketCompare(a: string, b: string): number {

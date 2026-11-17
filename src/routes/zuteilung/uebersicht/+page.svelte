@@ -98,18 +98,24 @@
 					{/each}
 				</select>
 			</label>
-			<label class="flex flex-col gap-1">
-				<span class="label-text text-sm">Sortierung</span>
-				<select
-					name="sortierung"
-					onchange={(e) => e.currentTarget.form?.requestSubmit()}
-					class="select select-sm w-40 max-w-full"
-				>
-					<option value="">nach Name</option>
-					<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
-				</select>
-			</label>
 		{/if}
+		<label class="flex flex-col gap-1">
+			<span class="label-text text-sm">Sortierung</span>
+			<select
+				name="sortierung"
+				aria-label="Sortierung"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				class="select select-sm w-56 max-w-full"
+			>
+				<option value="">nach Name</option>
+				{#if baskets.length > 0}
+					<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
+				{/if}
+				<option value="sws" selected={data.selected.order === 'size'}>
+					Pflicht zuerst, nach SWS
+				</option>
+			</select>
+		</label>
 		<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
 	</form>
 
