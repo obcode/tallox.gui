@@ -11,6 +11,7 @@
 import type {
 	ZpaChangeType,
 	ZpaObjectKind,
+	ZpaProjectionStatus,
 	ZpaSyncStatus,
 	ZpaSyncTrigger
 } from '$lib/gql/__generated__/graphql';
@@ -144,8 +145,14 @@ export function lastSuccessful<T extends { status: ZpaSyncStatus; finishedAt?: s
 /**
  * What a run's counts say, in one sentence.
  *
- * "Keine Änderungen" is the ordinary answer and deserves to be a sentence rather than three
- * zeroes: the whole point of the nightly job is that most nights are quiet.
+ * Nothing new is the ordinary answer and deserves to be a sentence rather than three zeroes: the
+ * whole point of the nightly job is that most nights are quiet.
+ *
+ * The sentence names what it compares, because on 2026-11-18 it did not: the counts compare the
+ * fetch with what the previous run had already fetched, not with the catalogue. A module the
+ * nightly run brought is not new again in the morning, and "keine Änderungen" on a run that
+ * nonetheless brought a module into the catalogue read like an error. What reached the catalogue
+ * is describeCatalogue's sentence.
  */
 export function describeCounts(run: {
 	appeared: number;
@@ -156,7 +163,93 @@ export function describeCounts(run: {
 	if (run.appeared > 0) parts.push(`${run.appeared} neu`);
 	if (run.changed > 0) parts.push(`${run.changed} geändert`);
 	if (run.disappeared > 0) parts.push(`${run.disappeared} entfallen`);
-	return parts.length === 0 ? 'keine Änderungen' : parts.join(', ');
+	return parts.length === 0
+		? 'im ZPA nichts geändert seit dem vorigen Abgleich'
+		: `im ZPA ${parts.join(', ')}`;
+}
+
+/** The projection of a run, as far as the page reads it. */
+export type RunProjection = {
+	status: ZpaProjectionStatus;
+	modulesAdded: number;
+	addedModules: readonly string[];
+};
+
+/**
+ * What a run brought into the catalogue, or null when there is nothing to say.
+ *
+ * Silent rather than "kein Modul neu" when none was added. Projections from before 2026-11-18
+ * recorded nothing and read as zero, and a sentence claiming nothing arrived would be false for
+ * exactly the run that prompted this — so only the positive statement is made.
+ */
+export function describeCatalogue(projection: RunProjection | null | undefined): string | null {
+	if (!projection) return null;
+	switch (projection.status) {
+		case 'RUNNING':
+			return 'Katalog wird aufgebaut';
+		case 'FAILED':
+			return 'Katalog nicht aufgebaut';
+		case 'SUCCEEDED':
+			if (projection.modulesAdded === 0) return null;
+			return projection.modulesAdded === 1
+				? '1 Modul neu im Katalog'
+				: `${projection.modulesAdded} Module neu im Katalog`;
+	}
+}
+
+/** The counts and the catalogue, as the line under a run. */
+export function describeRun(run: {
+	appeared: number;
+	changed: number;
+	disappeared: number;
+	projection?: RunProjection | null;
+}): string {
+	const catalogue = describeCatalogue(run.projection);
+	return catalogue ? `${describeCounts(run)} · ${catalogue}` : describeCounts(run);
+}
+
+/**
+ * How long after a run's end the page keeps reading while its projection has not settled.
+ *
+ * The projection starts only once the run has finished, and takes a fraction of a second. The
+ * bound keeps a run whose projection never comes — nothing configured to project, or a crashed
+ * process — from making the page poll for ever.
+ */
+export const PROJECTION_GRACE_MS = 30_000;
+
+/**
+ * Whether a finished run's projection is still to come, so the page keeps following it.
+ *
+ * Only after a run that fully succeeded: no other run projects.
+ */
+export function awaitingProjection(
+	run: { status: ZpaSyncStatus; finishedAt?: string | null; projection?: RunProjection | null },
+	now: Date = new Date()
+): boolean {
+	if (run.status !== 'SUCCEEDED' || !run.finishedAt) return false;
+	if (run.projection && run.projection.status !== 'RUNNING') return false;
+	return now.getTime() - new Date(run.finishedAt).getTime() < PROJECTION_GRACE_MS;
+}
+
+/**
+ * The refusals of a manual run, worded here by their code.
+ *
+ * The backend's sentences for these are terse and are not on the pass-through list in
+ * `$lib/server/graphqlError.ts`, so without this the person at the button read the generic
+ * failure — for the most ordinary refusal there is, now that the leads press it too: somebody
+ * else's run, or the nightly one, is still going. None of them gives anything away.
+ */
+export const SYNC_REFUSALS: Record<string, string> = {
+	ZPA_SYNC_RUNNING:
+		'Es läuft schon ein Abgleich, angestoßen von jemand anderem oder nächtlich. Einen zweiten startet Tallox nicht; sein Ergebnis steht hier, sobald er fertig ist.',
+	ZPA_SYNCED_RECENTLY:
+		'Der letzte Abgleich ist erst wenige Minuten her. Danach ist zehn Minuten Pause, damit das ZPA nicht überlastet wird; was er geholt hat, steht in der Liste.',
+	ZPA_NOT_CONFIGURED: 'Der ZPA-Abgleich ist in dieser Installation nicht eingerichtet.'
+};
+
+/** The sentence for a refusal: the page's own wording where it has one. */
+export function refusalSentence(refusal: { code: string; message: string }): string {
+	return SYNC_REFUSALS[refusal.code] ?? refusal.message;
 }
 
 /**

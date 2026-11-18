@@ -8,6 +8,7 @@ import {
 	isPartnerOnly,
 	mayPreviewRoles,
 	mayPreviewWithoutRoles,
+	mayProjectCatalogue,
 	mayRunImport,
 	roleLabel,
 	sortRoles
@@ -124,5 +125,15 @@ describe('who runs the import', () => {
 		expect(mayRunImport(['DEANS_OFFICE', 'LECTURER'])).toBe(true);
 		expect(mayRunImport(['OBSERVER'])).toBe(false);
 		expect(mayRunImport(['LECTURER'])).toBe(false);
+		// Since 2026-11-18: a lead fetches the module they had entered in the ZPA.
+		expect(mayRunImport(['PROGRAMME_LEAD'])).toBe(true);
+		expect(mayRunImport(['SUBJECT_GROUP_LEAD', 'LECTURER'])).toBe(true);
+	});
+
+	it("keeps the rebuild of the catalogue with administration and the dean's office", () => {
+		expect(mayProjectCatalogue(['ADMIN'])).toBe(true);
+		expect(mayProjectCatalogue(['DEANS_OFFICE'])).toBe(true);
+		expect(mayProjectCatalogue(['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD'])).toBe(false);
+		expect(mayProjectCatalogue(['OBSERVER'])).toBe(false);
 	});
 });

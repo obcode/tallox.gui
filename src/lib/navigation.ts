@@ -299,8 +299,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				emoji: '📥',
 				label: 'ZPA-Import',
 				href: '/verwaltung/zpa',
-				hint: 'Wann kamen die Modul-Stammdaten zuletzt, und was hat sich geändert',
-				roles: ['ADMIN', 'DEANS_OFFICE', 'OBSERVER']
+				hint: 'Neue Module aus dem ZPA holen, und sehen, was sich zuletzt geändert hat',
+				roles: ['ADMIN', 'DEANS_OFFICE', 'PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'OBSERVER']
 			},
 			{
 				emoji: '📋',
