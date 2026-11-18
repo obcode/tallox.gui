@@ -202,7 +202,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 				emoji: '🧩',
 				label: 'Besetzen',
 				href: '/zuteilung',
-				hint: 'Instanzen besetzen',
+				hint: 'Instanzen besetzen – nach Fachgruppe oder Studiengang',
 				roles: ASSIGNING,
 				exact: true
 			},

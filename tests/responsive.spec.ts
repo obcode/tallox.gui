@@ -1,5 +1,5 @@
 import { PERSONAS, test, expect, gotoRendered, openDropdown, type Persona } from './fixtures';
-import { ASSIGNMENTS, CATALOGUE, COMPETENCES, DEMAND, WISHES } from './seed';
+import { ASSIGNMENTS, CATALOGUE, COMPETENCES, DEMAND, PROGRAMME_VIEW, WISHES } from './seed';
 
 /**
  * Tablet-first, as laid down in CLAUDE.md: fully usable from 768px, clean at 375px.
@@ -188,6 +188,10 @@ const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
 		path: `/zuteilung?semester=${ASSIGNMENTS.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`
 	},
 	{ who: PERSONAS.drei, path: `/zuteilung/kompetenzen?fachgruppe=${COMPETENCES.subjectGroup}` },
+	{
+		who: PERSONAS.vier,
+		path: `/zuteilung?semester=${PROGRAMME_VIEW.semester}&studiengang=${PROGRAMME_VIEW.programme}`
+	},
 	{ who: PERSONAS.fuenf, path: '/semester' },
 	{ who: PERSONAS.fuenf, path: `/wuensche/kollegium?semester=${WISHES.semester}` },
 	{ who: PERSONAS.fuenf, path: '/zuteilung/uebersicht' },

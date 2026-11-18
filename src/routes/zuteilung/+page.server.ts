@@ -48,6 +48,7 @@ const AssignmentDocument = graphql(`
 		$withGroup: Boolean!
 		$search: String!
 		$withSearch: Boolean!
+		$withProgramme: Boolean!
 	) {
 		planningSemester {
 			code
@@ -218,6 +219,28 @@ const AssignmentDocument = graphql(`
 				mail
 			}
 		}
+		# The same pool for the view of one study programme, which spans every subject group. Through
+		# the same filter, so a programme lead gets the modules of their programmes.
+		programmeCompetences: competences @include(if: $withProgramme) {
+			id
+			level
+			note
+			module {
+				id
+			}
+			holder {
+				personId
+				teacherId
+				name
+				mail
+			}
+		}
+		# The programmes the dean's office may choose for the view of one study programme. Not
+		# confidential: any account reads the list of programmes.
+		programmes {
+			code
+			title
+		}
 		teachers(search: $search) @include(if: $withSearch) {
 			id
 			name
@@ -241,6 +264,12 @@ const AssignmentDocument = graphql(`
 			# the wrong field: it grants nothing and the backend does not read it.
 			subjectGroupsLed {
 				id
+			}
+			# Which study programmes this person leads: the view of one programme across every
+			# subject group is offered for these.
+			programmes {
+				code
+				title
 			}
 		}
 	}
@@ -374,7 +403,10 @@ export const load: PageServerLoad = async ({ url }) => {
 		redirect(303, query === '' ? url.pathname : `${url.pathname}?${query}`);
 	}
 	const wanted = url.searchParams.get('semester') ?? '';
-	const group = url.searchParams.get('fachgruppe') ?? '';
+	// One study programme across every subject group, instead of one subject group. The two are
+	// alternatives, and the programme wins where an address names both.
+	const programme = (url.searchParams.get('studiengang') ?? '').trim();
+	const group = programme !== '' ? '' : (url.searchParams.get('fachgruppe') ?? '');
 	const search = (url.searchParams.get('q') ?? '').trim();
 	// The view, not the data: both cut what the page already loaded, so neither reaches the query.
 	const degree = parseDegreeParam(url.searchParams.get('abschluss'));
@@ -397,7 +429,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			group: isGroupID(group) ? group : '00000000-0000-0000-0000-000000000000',
 			withGroup: isGroupID(group),
 			search,
-			withSearch: search !== ''
+			withSearch: search !== '',
+			withProgramme: programme !== '' && semester !== ''
 		});
 
 	let data;
@@ -438,7 +471,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		load: data.assignedTeachingHours ?? [],
 		found: data.teachers ?? [],
 		everyone: data.everyone ?? [],
-		competences: data.competences ?? [],
+		competences: data.competences ?? data.programmeCompetences ?? [],
+		programmes: data.programmes,
+		myProgrammes: data.me?.programmes ?? [],
 		windows: data.wishWindows ?? [],
 		me: data.me,
 		led: data.me?.subjectGroupsLed ?? [],
@@ -449,6 +484,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		selected: {
 			semester: wanted,
 			group,
+			programme,
 			search,
 			degree,
 			byProgramme,

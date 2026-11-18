@@ -26,6 +26,10 @@
 		isOnlyIfNeeded,
 		isWideOpen,
 		instancesOfTab,
+		instancesOfProgramme,
+		mayShowProgrammeView,
+		programmeViewChoices,
+		countableGroups,
 		instancesListedAsCie,
 		instancesOfDegree,
 		programmeSections,
@@ -119,8 +123,35 @@
 	/** Whether to offer that tab at all — the two roles that may fill such an instance. */
 	const offerUnfiled = $derived(mayFillUnfiled(data.session?.effectiveRoles ?? []));
 
+	const roles = $derived(data.session?.effectiveRoles ?? []);
+
+	/** The study programmes offered as a view of their own, across every subject group. */
+	const programmeChoices = $derived(
+		programmeViewChoices(roles, data.myProgrammes, data.programmes)
+	);
+
+	/** The programme named in the address, if any — whether it may be shown is the next question. */
+	const programmeCode = $derived(data.selected.programme);
+
+	/**
+	 * Whether the page shows one study programme instead of one subject group. Only for a programme
+	 * whose rows all reach this person: anywhere else it would be a view of withheld rows.
+	 */
+	const programmeView = $derived(
+		mayShowProgrammeView(programmeCode, roles, data.myProgrammes, data.programmes)
+	);
+
+	/** The programme being shown, with its title. */
+	const shownProgramme = $derived(
+		programmeView ? (programmeChoices.find((p) => p.code === programmeCode) ?? null) : null
+	);
+
 	/** The instances of the tab, before the degree filter: what the notice below is about. */
-	const tabInstances = $derived(instancesOfTab(data.instances, tab));
+	const tabInstances = $derived(
+		programmeView
+			? instancesOfProgramme(data.instances, programmeCode)
+			: instancesOfTab(data.instances, tab)
+	);
 
 	/** What the table shows: the tab, cut to one degree, to CiE and to a basket where chosen. */
 	/** Who teaches on contract, from the teacher list the page loaded: „LB“ and its filter. */
@@ -162,7 +193,19 @@
 	});
 
 	const groups: CohortGroup[] = $derived(cohortGroups(shown, data.assignments as AssignmentLike[]));
-	const progress = $derived(fillProgress(groups));
+	/**
+	 * Only the cohorts whose assignments all reach this person count: a cohort the backend withholds
+	 * looks unfilled, and counting it would be false.
+	 */
+	const counted = $derived(
+		countableGroups(groups, {
+			published: data.semester?.assignmentsPublishedAt != null,
+			roles,
+			ledGroups: data.led.map((g) => g.id),
+			ledProgrammes: data.myProgrammes.map((p) => p.code)
+		})
+	);
+	const progress = $derived(fillProgress(counted.groups));
 
 	/**
 	 * The programmes a degree filter leaves out because nobody has recorded theirs. Named on the
@@ -184,7 +227,7 @@
 	const ungroupedOrder = $derived(data.selected.order === 'basket' ? 'name' : data.selected.order);
 
 	const sections = $derived(
-		data.selected.byProgramme
+		data.selected.byProgramme || programmeView
 			? programmeSections(groups, data.selected.order)
 			: [{ programme: null, blocks: moduleBlocks(groups, ungroupedOrder) }]
 	);
@@ -238,7 +281,12 @@
 	 * And no number, anywhere: names of tracks, nothing counted, nothing coloured, nothing
 	 * sorted by it.
 	 */
-	const showGaps = $derived(mayShowGaps(tab, data.session?.effectiveRoles ?? [], data.led));
+	const showGaps = $derived(
+		programmeView
+			? // The view of a programme is only offered where every wish of it reaches this person.
+				true
+			: mayShowGaps(tab, roles, data.led)
+	);
 
 	const gaps = $derived(showGaps ? cohortsWithoutInterest(shown, data.wishes) : []);
 
@@ -333,6 +381,7 @@
 	const filterFields = $derived([
 		{ name: 'semester', value: data.semester?.code ?? data.selected.semester },
 		{ name: 'fachgruppe', value: data.selected.group },
+		{ name: 'studiengang', value: data.selected.programme },
 		{ name: 'q', value: data.selected.search },
 		{ name: 'abschluss', value: degreeParam(data.selected.degree) },
 		{ name: 'nach', value: data.selected.byProgramme ? 'studiengang' : '' },
@@ -479,7 +528,7 @@
 
 	<form method="GET" class="mt-5 flex flex-col gap-1">
 		<span class="label-text text-sm">Fachgruppe</span>
-		{@render carriedOver(['fachgruppe'])}
+		{@render carriedOver(['fachgruppe', 'studiengang'])}
 		<div role="tablist" class="tabs tabs-box w-fit max-w-full flex-wrap">
 			{#each groupTabs as group (group.id)}
 				{@const active = group.id === data.group?.id}
@@ -520,7 +569,45 @@
 		</div>
 	</form>
 
-	{#if tab === null}
+	{#if programmeChoices.length > 0}
+		<!--
+			Or one study programme across every subject group: for the programme lead, who otherwise
+			clicks through every group to find the gaps of their programme. Offered for the programmes
+			whose rows all reach this person, so it gathers what they read anyway.
+		-->
+		<form method="GET" class="mt-3 flex flex-wrap items-end gap-2">
+			{@render carriedOver(['fachgruppe', 'studiengang'])}
+			<label class="form-control">
+				<span class="label-text text-sm">oder ganzer Studiengang</span>
+				<select
+					name="studiengang"
+					aria-label="Studiengang"
+					class="select select-bordered select-sm max-w-full"
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				>
+					<option value="">—</option>
+					{#each programmeChoices as programme (programme.code)}
+						<option value={programme.code} selected={programme.code === shownProgramme?.code}>
+							{programme.code} – {programme.title}
+						</option>
+					{/each}
+				</select>
+			</label>
+			<noscript><button type="submit" class="btn btn-sm">Anzeigen</button></noscript>
+		</form>
+	{/if}
+
+	{#if programmeCode !== '' && !programmeView}
+		<div class="card bg-base-200 mt-4 max-w-prose">
+			<div class="card-body">
+				<h2 class="card-title text-base">Studiengang nicht verfügbar</h2>
+				<p>
+					Die Ansicht eines ganzen Studiengangs gibt es für die Studiengänge, die Du leitest, und
+					für das Dekanat. Wähle oben eine Fachgruppe oder einen Deiner Studiengänge.
+				</p>
+			</div>
+		</div>
+	{:else if tab === null && !programmeView}
 		<div class="card bg-base-200 mt-4 max-w-prose">
 			<div class="card-body">
 				<h2 class="card-title text-base">Fachgruppe wählen</h2>
@@ -528,6 +615,12 @@
 					Besetzt wird fachgruppenweise. Das ist auch die Einheit, in der die Zuständigkeit liegt —
 					und eine Seite mit allen Instanzen der Fakultät und allen Lehrenden darin wäre keine.
 				</p>
+				{#if programmeChoices.length > 0}
+					<p>
+						Als Studiengangsleitung kannst Du stattdessen einen ganzen Studiengang wählen, über alle
+						Fachgruppen hinweg.
+					</p>
+				{/if}
 			</div>
 		</div>
 	{:else}
@@ -561,18 +654,20 @@
 					{/each}
 				</select>
 			</label>
-			<label class="form-control">
-				<span class="label-text text-sm">Gruppiert nach</span>
-				<select
-					name="nach"
-					aria-label="Gruppiert nach"
-					class="select select-bordered select-sm"
-					onchange={(e) => e.currentTarget.form?.requestSubmit()}
-				>
-					<option value="">Modul</option>
-					<option value="studiengang" selected={data.selected.byProgramme}>Studiengang</option>
-				</select>
-			</label>
+			{#if !programmeView}
+				<label class="form-control">
+					<span class="label-text text-sm">Gruppiert nach</span>
+					<select
+						name="nach"
+						aria-label="Gruppiert nach"
+						class="select select-bordered select-sm"
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					>
+						<option value="">Modul</option>
+						<option value="studiengang" selected={data.selected.byProgramme}>Studiengang</option>
+					</select>
+				</label>
+			{/if}
 			<label class="flex items-center gap-2 pb-1 text-sm">
 				<input
 					name="cie"
@@ -626,7 +721,7 @@
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 				>
 					<option value="">nach Name</option>
-					{#if baskets.length > 0 && data.selected.byProgramme}
+					{#if baskets.length > 0 && (data.selected.byProgramme || programmeView)}
 						<option value="korb" selected={data.selected.order === 'basket'}>nach Korb</option>
 					{/if}
 					<option value="sws" selected={data.selected.order === 'size'}>
@@ -700,6 +795,14 @@
 					{/if}
 				</div>
 			</form>
+		{:else if programmeView && shownProgramme}
+			<div class="alert alert-info mt-5 max-w-prose">
+				<span>
+					Alle Züge von <strong>{shownProgramme.code} – {shownProgramme.title}</strong>, über alle
+					Fachgruppen hinweg. Die Wunschphase schließt jede Fachgruppenleitung für ihre Fachgruppe;
+					den Stand siehst Du im Reiter der Fachgruppe.
+				</span>
+			</div>
 		{:else}
 			<div class="alert alert-info mt-5 max-w-prose">
 				<span>
@@ -744,8 +847,8 @@
 				<p class="text-base-content/80 mt-1 text-sm">
 					Auf diese Züge hat sich bisher niemand eingetragen — derselbe Stand, der unten in den
 					Auswahllisten steht, nur zusammengefasst. Sichtbar ist er Dir, weil Du die Eintragungen
-					dieser Fachgruppe ohnehin liest; für alle anderen bleiben sie bis zur Veröffentlichung
-					unsichtbar.
+					{programmeView ? 'dieses Studiengangs' : 'dieser Fachgruppe'} ohnehin liest; für alle anderen
+					bleiben sie bis zur Veröffentlichung unsichtbar.
 				</p>
 				<ul class="mt-2 flex flex-col gap-1">
 					{#each gaps as instance (instance.id)}
@@ -770,8 +873,9 @@
 				<p class="text-base-content/80 mt-1 text-sm">
 					„mehrfach unbedingt“: mehrere haben sich mit „unbedingt“ eingetragen. „nur notfalls“: alle
 					Eintragungen sagen „notfalls“, und noch ist niemand eingeteilt — vielleicht lohnt es sich,
-					eine lehrbeauftragte Person anzusprechen. Sichtbar ist das nur der Leitung dieser
-					Fachgruppe und dem Dekanat, die diese Eintragungen ohnehin lesen.
+					eine lehrbeauftragte Person anzusprechen. Sichtbar ist das nur der Leitung
+					{programmeView ? 'dieses Studiengangs' : 'dieser Fachgruppe'} und dem Dekanat, die diese Eintragungen
+					ohnehin lesen.
 				</p>
 				<ul class="mt-2 flex flex-col gap-1">
 					{#each toSettle as item (item.group.instance.id)}
@@ -806,6 +910,12 @@
 					max={progress.parts}
 					aria-label="Besetzte Teile"
 				></progress>
+				{#if counted.partial}
+					<p class="text-base-content/80 mt-2 text-sm">
+						Gezählt sind nur die Züge, deren Besetzung Du vor der Veröffentlichung schon siehst —
+						etwa die Deiner Studiengänge.
+					</p>
+				{/if}
 			</div>
 		{/if}
 
@@ -816,8 +926,8 @@
 					<p>
 						Im Korb <strong>{data.selected.basket.programme} · {data.selected.basket.basket}</strong
 						>
-						hat <strong>{data.group?.name ?? 'diese Auswahl'}</strong> mit dieser Auswahl keine Instanz.
-						Mit „alle“ bei „Korb“ stehen die übrigen wieder da.
+						hat <strong>{data.group?.name ?? shownProgramme?.code ?? 'diese Auswahl'}</strong> mit dieser
+						Auswahl keine Instanz. Mit „alle“ bei „Korb“ stehen die übrigen wieder da.
 					</p>
 				</div>
 			</div>
@@ -827,8 +937,8 @@
 					<h2 class="card-title text-base">Nichts zu besetzen</h2>
 					<p>
 						Im Abschluss <strong>{DEGREE_LABELS[data.selected.degree]}</strong> hat
-						<strong>{data.group?.name ?? 'diese Auswahl'}</strong> in diesem Semester keine Instanz. Mit
-						„alle“ stehen die übrigen wieder da.
+						<strong>{data.group?.name ?? shownProgramme?.code ?? 'diese Auswahl'}</strong> in diesem Semester
+						keine Instanz. Mit „alle“ stehen die übrigen wieder da.
 					</p>
 				</div>
 			</div>
@@ -837,9 +947,11 @@
 				<div class="card-body">
 					<h2 class="card-title text-base">Nichts zu besetzen</h2>
 					<p>
-						Für <strong>{data.group?.name ?? 'Module ohne Fachgruppe'}</strong> ist in diesem
-						Semester keine Instanz mit Teilen angemeldet. Das ist eine Aussage über den Bedarf,
-						nicht über die Zuteilung — auf der
+						Für <strong
+							>{data.group?.name ?? shownProgramme?.code ?? 'Module ohne Fachgruppe'}</strong
+						>
+						ist in diesem Semester keine Instanz mit Teilen angemeldet. Das ist eine Aussage über den
+						Bedarf, nicht über die Zuteilung — auf der
 						<a class="link" href="{resolve('/bedarf')}?semester={data.semester.code}"
 							>Bedarfsseite</a
 						>

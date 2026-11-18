@@ -549,6 +549,7 @@ export function seedSql(): string {
 		...wishStatements(),
 		...assignmentStatements(),
 		...degreeStatements(),
+		...programmeViewStatements(),
 		...competenceStatements(),
 		...setupStatements(),
 		...filingStatements(),
@@ -1350,5 +1351,87 @@ export function sortingStatements(): string[] {
 		        ('${SORTING.omegaPart}', '${SORTING.omegaInstance}', 'LECTURE', 0, 4);`,
 		// Released for wishes, so that registering interest gets to what the test is about.
 		releaseForWishes(SORTING.semester, SORTING.programme)
+	];
+}
+
+/**
+ * The view of one study programme on the assignment screen: a programme with a cohort in each of
+ * two subject groups, and a cohort of another programme in the first group.
+ *
+ * Its own programme, groups and modules, so that no other spec's rows move. Vier leads the
+ * programme and neither group: she is the programme lead the view is for, and on the first
+ * group's tab the persona whose progress line counts only her own programme's cohort.
+ *
+ * Seeded after the degree fixture, whose bachelor's programme holds the foreign cohort.
+ */
+export const PROGRAMME_VIEW = {
+	semester: ASSIGNMENTS.semester,
+	programme: 'E2P',
+	programmeTitle: 'Studiengangs-Ansicht-Test',
+	foreign: DEGREES.bachelor,
+	groups: {
+		first: '0e2e0000-0000-4000-8000-0000000000f1',
+		second: '0e2e0000-0000-4000-8000-0000000000f2'
+	},
+	groupNames: { first: 'Ansicht-Testfachgruppe Eins', second: 'Ansicht-Testfachgruppe Zwei' },
+	modules: {
+		first: '0e2e0000-0000-4000-8000-0000000000f3',
+		second: '0e2e0000-0000-4000-8000-0000000000f4'
+	},
+	moduleNames: { first: 'E2E Ansichtsmodul Eins', second: 'E2E Ansichtsmodul Zwei' },
+	instances: {
+		first: '0e2e0000-0000-4000-8000-0000000000f5',
+		second: '0e2e0000-0000-4000-8000-0000000000f6',
+		foreign: '0e2e0000-0000-4000-8000-0000000000f7'
+	}
+} as const;
+
+export function programmeViewStatements(): string[] {
+	const v = PROGRAMME_VIEW;
+	const instances = Object.values(v.instances)
+		.map((id) => `'${id}'`)
+		.join(', ');
+	const cohorts = [
+		{ id: v.instances.first, module: v.modules.first, programme: v.programme },
+		{ id: v.instances.second, module: v.modules.second, programme: v.programme },
+		{ id: v.instances.foreign, module: v.modules.first, programme: v.foreign }
+	];
+
+	return [
+		`DELETE FROM assignment WHERE instance_part_id IN
+		   (SELECT id FROM instance_part WHERE course_instance_id IN (${instances}));`,
+		`DELETE FROM wish WHERE course_instance_id IN (${instances});`,
+		`DELETE FROM course_instance WHERE id IN (${instances});`,
+
+		`INSERT INTO programme (code, title, degree)
+		 VALUES (${quote(v.programme)}, ${quote(v.programmeTitle)}, 'BACHELOR')
+		 ON CONFLICT (code) DO NOTHING;`,
+		...(['first', 'second'] as const).flatMap((key, index) => [
+			`INSERT INTO module (id, home_programme_id, name, course_type, frequency,
+			                     contact_hours_per_week, credits)
+			 SELECT '${v.modules[key]}', id, ${quote(v.moduleNames[key])}, 'SU',
+			        'EVERY_SEMESTER', 4, 5 FROM programme WHERE code = ${quote(v.programme)}
+			 ON CONFLICT (id) DO NOTHING;`,
+			`INSERT INTO subject_group (id, code, name)
+			 VALUES ('${v.groups[key]}', 'E2EPV${index + 1}', ${quote(v.groupNames[key])})
+			 ON CONFLICT (code) DO NOTHING;`,
+			`INSERT INTO module_subject_group (module_id, subject_group_id)
+			 VALUES ('${v.modules[key]}', '${v.groups[key]}')
+			 ON CONFLICT (module_id) DO UPDATE SET subject_group_id = EXCLUDED.subject_group_id;`
+		]),
+		...cohorts.flatMap((c) => [
+			`INSERT INTO course_instance (id, semester_id, module_id, programme_id, track,
+			                              programme_semester)
+			 SELECT '${c.id}', s.id, '${c.module}', pr.id, '', 3
+			   FROM semester s, programme pr
+			  WHERE s.code = ${quote(v.semester)} AND pr.code = ${quote(c.programme)};`,
+			`INSERT INTO instance_part (course_instance_id, kind, position, teaching_hours)
+			 VALUES ('${c.id}', 'LECTURE', 0, 4);`
+		]),
+
+		`INSERT INTO person_programme_scope (person_id, role, programme_id)
+		 SELECT p.id, 'PROGRAMME_LEAD', pr.id FROM person p, programme pr
+		  WHERE p.mail = 'prof.vier@example.org' AND pr.code = ${quote(v.programme)}
+		 ON CONFLICT DO NOTHING;`
 	];
 }

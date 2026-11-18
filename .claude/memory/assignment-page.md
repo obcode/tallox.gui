@@ -279,3 +279,21 @@ Der Filter `?lb=1` (`cohortsWithContractLecturers`) schneidet nur die Zeilen zu,
 dieser Person ohnehin zeigt, und zählt nichts. Die Zahl „davon … Lehrbeauftragte“ in der Statistik
 kommt fertig vom Backend (`contractLecturerHours`, `null` = nicht Deine Zahl) und wird in der
 Gesamtzeile nur summiert, wenn keine Zeile `null` ist.
+
+## Ganzer Studiengang (seit 2026-11-18, Issue 60)
+
+`?studiengang=<code>` statt `?fachgruppe=`: alle Züge eines Studiengangs über alle Fachgruppen,
+auch die ohne Fachgruppe. Angeboten (`programmeViewChoices`) nach den **effektiven** Rollen:
+Dekanat alle Studiengänge (`programmes`), Studiengangsleitung `me.programmes`. Ein fremder Code
+zeigt „Studiengang nicht verfügbar“, keine Zeilen. Gleiche Begründung wie `mayShowGaps`: nur wo
+jede Zuteilung und jeder Wunsch des Studiengangs ohnehin ankommt (`CoversProgramme` im Backend),
+deshalb auch „Noch ohne Interesse“ und „Zu klären“ dort. Kein Backend-Umbau; der
+Kompetenz-Pool kommt als `programmeCompetences: competences` ohne Argument. Sektionen wie mit
+„Gruppiert nach: Studiengang“, also auch „nach Korb“; „Gruppiert nach“ ist dort ausgeblendet.
+
+**Nebenbefund behoben:** Der „Stand der Besetzung“ zählte im Reiter einer fremden Fachgruppe
+auch Züge, deren Zuteilungen das Backend einer Studiengangsleitung vorenthält — sie sahen
+unbesetzt aus. Jetzt zählt `countableGroups`/`reachesAssignmentsOf` nur Züge, deren Besetzung
+ankommt (veröffentlicht, Dekanat, Leitung der Fachgruppe oder des Studiengangs), und ein Satz
+sagt, wenn nur ein Teil gezählt ist. E2E: `tests/programme-view.spec.ts`, Fixture
+`PROGRAMME_VIEW` (E2P, zwei Fachgruppen E2EPV1/2, ein Fremdzug E2B).
