@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+	PROJECTION_GRACE_MS,
+	awaitingProjection,
+	describeCatalogue,
 	describeCounts,
+	describeRun,
 	describeProgress,
+	refusalSentence,
 	freshness,
 	lastSuccessful,
 	runProgress,
@@ -79,15 +84,114 @@ describe('statusBadge', () => {
 });
 
 describe('describeCounts', () => {
-	it('says nothing happened as a sentence', () => {
-		// The ordinary outcome, and three zeroes would read as a fault.
-		expect(describeCounts({ appeared: 0, changed: 0, disappeared: 0 })).toBe('keine Änderungen');
+	it('says nothing happened as a sentence, and against what', () => {
+		// The ordinary outcome, and three zeroes would read as a fault. "keine Änderungen" alone
+		// read as "nothing arrived" on a run that brought a module into the catalogue.
+		expect(describeCounts({ appeared: 0, changed: 0, disappeared: 0 })).toBe(
+			'im ZPA nichts geändert seit dem vorigen Abgleich'
+		);
 	});
 
 	it('names only what is non-zero', () => {
 		expect(describeCounts({ appeared: 0, changed: 4, disappeared: 1 })).toBe(
-			'4 geändert, 1 entfallen'
+			'im ZPA 4 geändert, 1 entfallen'
 		);
+	});
+});
+
+describe('refusalSentence', () => {
+	it('words the refusals of a manual run itself, whatever the backend said', () => {
+		// The generic sentence the server-side mapping substitutes for unknown codes.
+		const generic = 'Das hat nicht geklappt.';
+		expect(refusalSentence({ code: 'ZPA_SYNC_RUNNING', message: generic })).toMatch(
+			/^Es läuft schon ein Abgleich/
+		);
+		expect(refusalSentence({ code: 'ZPA_SYNCED_RECENTLY', message: generic })).toMatch(
+			/zehn Minuten Pause/
+		);
+	});
+
+	it('keeps any other sentence', () => {
+		expect(refusalSentence({ code: 'FORBIDDEN', message: 'Nicht erlaubt.' })).toBe(
+			'Nicht erlaubt.'
+		);
+	});
+});
+
+describe('describeCatalogue', () => {
+	const succeeded = (modulesAdded: number) => ({
+		status: 'SUCCEEDED' as const,
+		modulesAdded,
+		addedModules: []
+	});
+
+	it('names the modules that arrived', () => {
+		expect(describeCatalogue(succeeded(1))).toBe('1 Modul neu im Katalog');
+		expect(describeCatalogue(succeeded(3))).toBe('3 Module neu im Katalog');
+	});
+
+	it('claims nothing when none was added', () => {
+		// Projections from before the count existed read as zero; "kein Modul neu" would be
+		// false for them.
+		expect(describeCatalogue(succeeded(0))).toBeNull();
+		expect(describeCatalogue(null)).toBeNull();
+	});
+
+	it('says when the catalogue is still being built or was not', () => {
+		expect(describeCatalogue({ ...succeeded(0), status: 'RUNNING' })).toBe(
+			'Katalog wird aufgebaut'
+		);
+		expect(describeCatalogue({ ...succeeded(0), status: 'FAILED' })).toBe(
+			'Katalog nicht aufgebaut'
+		);
+	});
+});
+
+describe('describeRun', () => {
+	it('is the 2026-11-18 case: nothing new in the ZPA, a module new in the catalogue', () => {
+		expect(
+			describeRun({
+				appeared: 0,
+				changed: 0,
+				disappeared: 0,
+				projection: { status: 'SUCCEEDED', modulesAdded: 1, addedModules: ['IF · Neu'] }
+			})
+		).toBe('im ZPA nichts geändert seit dem vorigen Abgleich · 1 Modul neu im Katalog');
+	});
+
+	it('is the counts alone without a projection', () => {
+		expect(describeRun({ appeared: 2, changed: 0, disappeared: 0, projection: null })).toBe(
+			'im ZPA 2 neu'
+		);
+	});
+});
+
+describe('awaitingProjection', () => {
+	const finished = '2026-11-18T09:27:10Z';
+	const at = (seconds: number) => new Date(new Date(finished).getTime() + seconds * 1000);
+
+	it('waits for the projection of a run that just succeeded', () => {
+		const run = { status: 'SUCCEEDED' as const, finishedAt: finished, projection: null };
+		expect(awaitingProjection(run, at(1))).toBe(true);
+		expect(
+			awaitingProjection(
+				{ ...run, projection: { status: 'RUNNING', modulesAdded: 0, addedModules: [] } },
+				at(1)
+			)
+		).toBe(true);
+	});
+
+	it('stops when it has settled, after the grace, or for a run that does not project', () => {
+		const run = { status: 'SUCCEEDED' as const, finishedAt: finished, projection: null };
+		expect(
+			awaitingProjection(
+				{ ...run, projection: { status: 'SUCCEEDED', modulesAdded: 1, addedModules: [] } },
+				at(1)
+			)
+		).toBe(false);
+		expect(awaitingProjection(run, at(PROJECTION_GRACE_MS / 1000 + 1))).toBe(false);
+		expect(awaitingProjection({ ...run, status: 'PARTIAL' }, at(1))).toBe(false);
+		expect(awaitingProjection({ ...run, finishedAt: null }, at(1))).toBe(false);
 	});
 });
 

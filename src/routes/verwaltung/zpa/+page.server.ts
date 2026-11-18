@@ -25,6 +25,11 @@ const ImportRunsDocument = graphql(`
 				fetched
 				error
 			}
+			projection {
+				status
+				modulesAdded
+				addedModules
+			}
 		}
 	}
 `);
@@ -53,6 +58,8 @@ const ProjectionsDocument = graphql(`
 			status
 			programmesWritten
 			modulesWritten
+			modulesAdded
+			addedModules
 			offeringsWritten
 			offeringsRemoved
 			error
@@ -127,7 +134,8 @@ export const load: PageServerLoad = async ({ url, depends }) => {
 			projection: zpaCatalogueProjections[0] ?? null
 		};
 	} catch (err) {
-		// A refusal here means the caller is neither administration nor the dean's office. The
+		// A refusal here means the caller may not read the import — not administration, the dean's
+		// office, an observer, or a lead who leads something. The
 		// root layout already turns "no account at all" into its own page, so passing this on
 		// as a 403 keeps the two from being confused.
 		error(403, toRefusal(err).message);

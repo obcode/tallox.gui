@@ -39,6 +39,29 @@ test.describe('the ZPA import page', () => {
 		await expect(page.getByRole('heading', { name: 'ZPA-Import' })).toBeVisible();
 	});
 
+	test('a programme lead starts a run but does not rebuild the catalogue', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		// Since 2026-11-18: a new module is entered in the ZPA at a lead's initiative, and the lead
+		// fetches it. Vier leads a programme in the seed. There is no ZPA behind this stack, so the
+		// run ends in "not configured" — which is the proof that the lead got past the permission:
+		// a refusal of the role would read differently.
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, '/');
+		await expect(page.getByRole('link', { name: /ZPA-Import/ }).first()).toBeAttached();
+
+		await gotoRendered(page, '/verwaltung/zpa');
+		await expect(page.getByRole('heading', { name: 'ZPA-Import' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Katalog neu aufbauen' })).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'Jetzt abgleichen' }).click();
+		await expect(
+			page.getByText('Der ZPA-Abgleich ist in dieser Installation nicht eingerichtet.')
+		).toBeVisible();
+		await checkA11y(page);
+	});
+
 	test('a lecturer is refused', async ({ asPersona }) => {
 		// Cosmetic hiding is not the point — the lock is policy.MayReadZPAImport and it is
 		// checked through both doors in Go. What this proves is that the refusal arrives as a
@@ -75,6 +98,7 @@ test.describe('a run in progress', () => {
 	const RUN = 'e2e00000-0000-4000-8000-00000000c0de';
 	const kind = (name: string) =>
 		`INSERT INTO zpa_sync_run_kind (run_id, kind, status, fetched) VALUES ('${RUN}', '${name}', 'SUCCEEDED', 1);`;
+	// The projection goes with its run (ON DELETE CASCADE).
 	const reset = () => runSql(`DELETE FROM zpa_sync_run WHERE id = '${RUN}';`, 'removing the run');
 
 	test.skip(!process.env.TALLOX_DB_URL, 'needs the database to arrange a run');
@@ -122,5 +146,33 @@ test.describe('a run in progress', () => {
 		await expect(page.getByRole('button', { name: 'Jetzt abgleichen' })).toBeEnabled();
 		await expect(page.getByText('Dauert etwa eine Viertelminute.')).toBeVisible();
 		expect(reloaded).toBe(false);
+	});
+
+	test('names what reached the catalogue when nothing changed in the ZPA', async ({
+		asPersona
+	}) => {
+		// The case of 2026-11-18: a manual run fetched nothing new — the nightly run had — and a
+		// module still arrived in the catalogue. The line used to say only "keine Änderungen".
+		runSql(
+			`INSERT INTO zpa_sync_run (id, trigger, started_at, finished_at, status)
+			   VALUES ('${RUN}', 'MANUAL', now() - interval '1 minute', now() - interval '50 seconds',
+			           'SUCCEEDED');
+			 INSERT INTO zpa_catalogue_projection
+			        (run_id, started_at, finished_at, status, modules_added, added_modules)
+			   VALUES ('${RUN}', now() - interval '50 seconds', now() - interval '49 seconds',
+			           'SUCCEEDED', 1, '{"IF · Neues Wahlpflichtmodul"}');`,
+			'arranging a run that brought a module into the catalogue'
+		);
+
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, `/verwaltung/zpa?lauf=${RUN}`);
+
+		await expect(
+			page
+				.getByText('im ZPA nichts geändert seit dem vorigen Abgleich · 1 Modul neu im Katalog')
+				.first()
+		).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Neu im Katalog' })).toBeVisible();
+		await expect(page.getByText('IF · Neues Wahlpflichtmodul')).toBeVisible();
 	});
 });

@@ -120,11 +120,22 @@ export function isOnlooker(roles: readonly string[]): boolean {
 }
 
 /**
- * Whether these roles start a module import or rebuild the catalogue. The backend's
- * policy.MayTriggerZPASync: the administration and the dean's office. An observer reads the
- * import and runs nothing.
+ * Whether these roles start a module import. The backend's policy.MayTriggerZPASync: the
+ * administration, the dean's office and, since 2026-11-18, programme and subject group leads — a
+ * new module is entered in the ZPA at their initiative, and they fetch it themselves. The backend
+ * also wants a lead to lead something; the roles alone cannot say that, so an unscoped lead sees
+ * the button and meets the refusal. An observer reads the import and runs nothing.
  */
 export function mayRunImport(roles: readonly string[]): boolean {
+	return hasAnyRole(roles, ['ADMIN', 'DEANS_OFFICE', 'PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD']);
+}
+
+/**
+ * Whether these roles rebuild the catalogue without fetching. The backend's
+ * policy.MayProjectZPACatalogue: the administration and the dean's office only — it is for when
+ * the projection's rules change, and every successful import projects anyway.
+ */
+export function mayProjectCatalogue(roles: readonly string[]): boolean {
 	return hasAnyRole(roles, ['ADMIN', 'DEANS_OFFICE']);
 }
 

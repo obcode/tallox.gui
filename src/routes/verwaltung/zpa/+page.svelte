@@ -10,16 +10,18 @@
 		STATUS_LABELS,
 		TRIGGER_LABELS,
 		ZPA_DEPENDENCY,
-		describeCounts,
+		awaitingProjection,
 		describeProgress,
+		describeRun,
 		freshness,
 		lastSuccessful,
+		refusalSentence,
 		runProgress,
 		runningRun,
 		statusBadge
 	} from '$lib/zpa';
 	import { FINDING_LABELS, findingIsAlarming } from '$lib/catalogue';
-	import { mayRunImport } from '$lib/roles';
+	import { mayProjectCatalogue, mayRunImport } from '$lib/roles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -27,26 +29,37 @@
 	const fresh = $derived(freshness(newest?.finishedAt));
 	const current = $derived(runningRun(data.runs));
 	const running = $derived(current !== undefined);
-	// An observer reads this page and starts nothing; the two buttons would only meet a refusal.
+	// An observer reads this page and starts nothing; the buttons would only meet a refusal. A lead
+	// starts a run but does not rebuild the catalogue on its own.
 	const mayRun = $derived(mayRunImport(data.session?.effectiveRoles ?? []));
+	const mayProject = $derived(mayProjectCatalogue(data.session?.effectiveRoles ?? []));
 
 	// The clock the elapsed seconds are measured against. Ticks with the polling, so the number
 	// moves while the run does even when no endpoint has finished in between.
 	let now = $state(new Date());
 	const progress = $derived(current ? runProgress(current, now) : null);
+	// The projection starts only once the run has finished, so the page keeps reading for a moment
+	// after it — otherwise "1 Modul neu im Katalog" would arrive only on the next visit.
+	const settling = $derived(
+		!running && data.runs[0] !== undefined && awaitingProjection(data.runs[0], now)
+	);
 
 	// While a run is going, read the page again once a second. It also follows a run the
 	// nightly job started while the page happened to be open. The interval ends with the run:
 	// the effect re-runs when `running` turns false and the cleanup clears it.
 	$effect(() => {
-		if (!running) return;
+		if (!running && !settling) return;
 		const timer = setInterval(() => {
 			now = new Date();
 			void invalidate(ZPA_DEPENDENCY);
 		}, POLL_INTERVAL_MS);
 		return () => clearInterval(timer);
 	});
-	const refusal = $derived(form && 'message' in form ? form : null);
+	const refusal = $derived(
+		form && typeof form.code === 'string' && typeof form.message === 'string'
+			? { code: form.code, message: form.message }
+			: null
+	);
 
 	const dateFormat = new Intl.DateTimeFormat('de-DE', {
 		dateStyle: 'medium',
@@ -63,7 +76,9 @@
 		<h1 class="text-2xl font-semibold">ZPA-Import</h1>
 		<p class="text-base-content/80 text-sm">
 			Die Modul-Stammdaten kommen aus dem ZPA. Tallox holt sie nächtlich und merkt sich, was sich
-			geändert hat — die SPOs selbst werden weiterhin dort gepflegt.
+			geändert hat — die SPOs selbst werden weiterhin dort gepflegt. Ist ein neues Modul im ZPA
+			eingetragen, holen die Studiengangs- und Fachgruppenleitungen es mit „Jetzt abgleichen“
+			sofort.
 		</p>
 	</div>
 
@@ -93,7 +108,7 @@
 		{#if newest}
 			<p class="text-base-content/80 text-sm">
 				{when(newest.finishedAt)} · {TRIGGER_LABELS[newest.trigger]}{#if newest.startedBy},
-					angestoßen von {newest.startedBy}{/if} · {describeCounts(newest)}
+					angestoßen von {newest.startedBy}{/if} · {describeRun(newest)}
 			</p>
 		{/if}
 
@@ -141,12 +156,13 @@
 		{#if refusal}
 			<p class="text-base-content/80 text-sm">
 				<span class="badge badge-error badge-sm">nicht ausgeführt</span>
-				{refusal.message}
+				{refusalSentence(refusal)}
 			</p>
 		{:else if form?.started && !running}
 			<p class="text-base-content/80 text-sm">
 				<span class="badge badge-success badge-sm">fertig</span>
-				Der Abgleich ist durchgelaufen. Das Ergebnis steht oben und in der Liste darunter.
+				Der Abgleich ist durchgelaufen. Das Ergebnis steht oben und in der Liste darunter{#if settling};
+					der Katalog wird gerade aufgebaut{/if}.
 			</p>
 		{:else if form?.projected}
 			<p class="text-base-content/80 text-sm">
@@ -187,7 +203,8 @@
 				</span>
 				{when(data.projection.finishedAt ?? data.projection.startedAt)} ·
 				{data.projection.programmesWritten} Studiengänge ·
-				{data.projection.modulesWritten} Module ·
+				{data.projection.modulesWritten} Module{#if data.projection.modulesAdded > 0}
+					(davon {data.projection.modulesAdded} neu){/if} ·
 				{data.projection.offeringsWritten} Zuordnungen{#if data.projection.offeringsRemoved > 0},
 					{data.projection.offeringsRemoved} entfallen{/if}
 				{#if data.projection.runId === null}
@@ -241,7 +258,7 @@
 			</p>
 		{/if}
 
-		{#if mayRun}
+		{#if mayProject}
 			<form
 				method="POST"
 				action="?/project"
@@ -288,7 +305,7 @@
 								{when(run.startedAt)}
 							</span>
 							<span class="text-base-content/80 text-xs">
-								{TRIGGER_LABELS[run.trigger]} · {describeCounts(run)}
+								{TRIGGER_LABELS[run.trigger]} · {describeRun(run)}
 							</span>
 						</button>
 					{/each}
@@ -333,10 +350,31 @@
 					</table>
 				</div>
 
-				<h3 class="mb-2 font-semibold">Änderungen</h3>
+				{#if data.selected.projection && data.selected.projection.addedModules.length > 0}
+					<!--
+						What this run brought into the catalogue, by name: the answer to "is the module I
+						had entered in the ZPA here now". It can be non-empty while the list of changes
+						below is empty — the module was fetched earlier and projected only now.
+					-->
+					<h3 class="mb-2 font-semibold">Neu im Katalog</h3>
+					<ul class="mb-4 list-inside list-disc text-sm">
+						{#each data.selected.projection.addedModules as label (label)}
+							<li>{label}</li>
+						{/each}
+						{#if data.selected.projection.modulesAdded > data.selected.projection.addedModules.length}
+							<li class="text-base-content/80">
+								und {data.selected.projection.modulesAdded -
+									data.selected.projection.addedModules.length} weitere
+							</li>
+						{/if}
+					</ul>
+				{/if}
+
+				<h3 class="mb-2 font-semibold">Änderungen im ZPA</h3>
 				{#if data.changes.length === 0}
 					<p class="text-base-content/80 text-sm">
-						Nichts. Das ist der Normalfall — die Stammdaten ändern sich selten.
+						Nichts seit dem vorigen Abgleich. Das ist der Normalfall — die Stammdaten ändern sich
+						selten, und was der nächtliche Abgleich schon geholt hat, steht bei seinem Lauf.
 					</p>
 				{:else}
 					<div class="overflow-x-auto">

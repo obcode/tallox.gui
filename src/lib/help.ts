@@ -90,6 +90,16 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},
 	{
+		question: 'Ein Modul steht neu im ZPA, aber noch nicht in Tallox. Was tun?',
+		answer:
+			'Unter Verwaltung → ZPA-Import auf „Jetzt abgleichen“. Das dürfen die Studiengangsleitungen und Fachgruppenleitungen, sofern ihnen ein Studiengang oder eine Fachgruppe zugeordnet ist, das Dekanat und die Administration; sonst holt es der nächtliche Abgleich. Ein Abgleich dauert etwa eine Viertelminute. Läuft schon einer, egal wer ihn angestoßen hat, startet Tallox keinen zweiten, sondern meldet „Ein Abgleich läuft bereits“. Nach einem erfolgreichen Abgleich gibt es zehn Minuten Pause, damit das ZPA nicht überlastet wird. Kam ein Modul neu in den Katalog, steht am Lauf „1 Modul neu im Katalog“ und unter „Neu im Katalog“ der Name. „im ZPA nichts geändert seit dem vorigen Abgleich“ heißt dagegen nur, dass der vorige Abgleich, meist der nächtliche, das Modul schon geholt hat; dann steht es bereits im Modulkatalog. Danach fehlt meist noch die SWS-Aufteilung, siehe unten.',
+		who: ['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD', 'DEANS_OFFICE', 'ADMIN'],
+		where: [
+			{ href: '/verwaltung/zpa', label: 'ZPA-Import' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
 		question: 'Warum lässt sich für ein Modul keine Instanz anlegen?',
 		answer:
 			'Meist fehlt die SWS-Aufteilung: wie sich die SWS des Moduls auf Vorlesung, Praktikum und Übung verteilen. Das ZPA liefert sie nicht, deshalb trägt sie die Studiengangsleitung des Heimatstudiengangs, die Fachgruppenleitung des Moduls oder das Dekanat einmal auf der Modulseite ein. Fehlt sie, schlägt Tallox eine vor, die auf der Bedarfsseite bestätigt oder korrigiert wird. Abschlussarbeiten, die praktischen Studiensemester und das Bachelorseminar werden gar nicht geplant, weil Studierende sie direkt mit einer Lehrperson vereinbaren: Sie stehen nicht in der Bedarfstabelle, und in der Suche nach Modulen anderer Studiengänge steht an ihnen „wird nicht geplant“. Was davon schon früher im Bedarf stand, bleibt sichtbar und lässt sich herausnehmen.',

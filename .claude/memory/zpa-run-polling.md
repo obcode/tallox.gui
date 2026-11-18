@@ -29,3 +29,18 @@ einen Handlauf abweist. Geprüft wird auch, dass **kein** `load`-Event kommt, da
 das Polling war.
 
 Warum keine Subscription: steht in `architecture-decisions.md` (tallox.dev).
+
+## Nach dem Lauf: die Projektion abwarten, und die Absagen (2026-11-18)
+
+Seit Leitungen den Knopf haben (Backend v5.56.0), sagt die Zeile eines Laufs auch, was im
+Katalog ankam (`ZpaSyncRun.projection.modulesAdded`). Die Projektion startet erst **nach**
+`finishedAt`. Deshalb pollt die Seite weiter, solange `awaitingProjection` gilt, längstens
+`PROJECTION_GRACE_MS` (30 s): Ohne Grenze pollte sie ewig, wenn nie projiziert wird.
+`describeCatalogue` schweigt bei 0. Alte Projektionen lesen sich als 0, und „kein Modul neu“
+wäre gerade für den Lauf falsch, der den Anlass gab.
+
+Die ZPA-Absagen (`ZPA_SYNC_RUNNING`, `ZPA_SYNCED_RECENTLY`, `ZPA_NOT_CONFIGURED`) standen nie auf
+der Allowlist in `graphqlError.ts`. Am Knopf kam also der generische Fehlersatz an, auch für
+„läuft schon“. Jetzt formuliert sie `SYNC_REFUSALS` in `$lib/zpa.ts` nach dem Code. Lehre: Wer
+eine neue Absage in einer Form-Action zeigt, prüft, ob ihr Code durchgelassen oder hier
+formuliert wird.

@@ -198,6 +198,7 @@ const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
 	{ who: PERSONAS.sechs, path: '/verwaltung/personen' },
 	{ who: PERSONAS.sechs, path: '/verwaltung/fachgruppen' },
 	{ who: PERSONAS.sechs, path: '/verwaltung/zpa' },
+	{ who: PERSONAS.vier, path: '/verwaltung/zpa' },
 	{ who: PERSONAS.sechs, path: '/verwaltung/zugriffe' },
 	{ who: PERSONAS.sechs, path: '/verwaltung/diagnose' }
 ];
