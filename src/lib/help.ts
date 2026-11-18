@@ -305,8 +305,15 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie weit ist meine Fachgruppe mit dem Besetzen?',
 		answer:
-			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe, Abschluss, „nur CiE“ und Korb. Teile, die eine andere Fakultät hält, zählen nicht mit.',
+			'Über der Tabelle der Zuteilungsseite steht der „Stand der Besetzung“: wie viele Teile und SWS besetzt sind, von allen, die gerade angezeigt werden. Er folgt der Auswahl darüber, also Fachgruppe oder Studiengang, Abschluss, „nur CiE“ und Korb. Teile, die eine andere Fakultät hält, zählen nicht mit. Gezählt wird nur, wessen Besetzung Du vor der Veröffentlichung schon siehst: als Studiengangsleitung im Reiter einer fremden Fachgruppe also nur die Züge Deiner Studiengänge; darauf weist ein Satz unter dem Balken hin.',
 		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
+		question: 'Wie weit ist mein Studiengang mit dem Besetzen?',
+		answer:
+			'Auf der Zuteilungsseite unter den Fachgruppen-Reitern bei „oder ganzer Studiengang“ einen Deiner Studiengänge wählen. Dann stehen alle Züge des Studiengangs in einer Tabelle, über alle Fachgruppen hinweg und auch die ohne Fachgruppe, mit Besetzung, Wünschen und dem „Stand der Besetzung“ für genau diesen Studiengang. „Noch ohne Interesse“ und „Zu klären“ stehen dort ebenfalls. Mit „Korb“ und der Sortierung „nach Korb“ prüfst Du Wahlpflicht-Körbe. Besetzen kannst Du dort wie gewohnt. Angeboten werden die Studiengänge, die Du leitest; das Dekanat kann jeden wählen. Die Ansicht fasst nur zusammen, was Du ohnehin lesen darfst; für das übrige Kollegium bleibt der Zwischenstand bis zur Veröffentlichung vertraulich.',
+		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{

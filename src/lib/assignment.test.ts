@@ -24,6 +24,11 @@ import {
 	type InstanceLike,
 	type WishLike,
 	instancesOfTab,
+	instancesOfProgramme,
+	mayShowProgrammeView,
+	programmeViewChoices,
+	reachesAssignmentsOf,
+	countableGroups,
 	instancesListedAsCie,
 	instancesOfDegree,
 	programmesWithoutDegree,
@@ -1227,5 +1232,92 @@ describe('the cohorts a lead should settle', () => {
 		]);
 		// No count travels with an entry: what to settle, never how many.
 		expect(Object.keys(settle[0]).sort()).toEqual(['contested', 'group', 'onlyIfNeeded']);
+	});
+});
+
+describe('the view of one study programme', () => {
+	const IF = { code: 'IF', title: 'Informatik' };
+	const WI = { code: 'WI', title: 'Wirtschaftsinformatik' };
+	const DC = { code: 'DC', title: 'Data Science' };
+	const all = [WI, IF, DC];
+
+	it('offers every programme to the dean’s office, sorted', () => {
+		expect(programmeViewChoices(['DEANS_OFFICE'], [], all).map((p) => p.code)).toEqual([
+			'DC',
+			'IF',
+			'WI'
+		]);
+	});
+
+	it('offers a programme lead the programmes they lead and no other', () => {
+		expect(programmeViewChoices(['PROGRAMME_LEAD'], [IF], all)).toEqual([IF]);
+		expect(mayShowProgrammeView('IF', ['PROGRAMME_LEAD'], [IF], all)).toBe(true);
+		expect(mayShowProgrammeView('WI', ['PROGRAMME_LEAD'], [IF], all)).toBe(false);
+	});
+
+	// The led programmes come from `me`, which the role preview does not narrow. A lead previewing
+	// the lecturer's view must not get a view built from rows the backend now withholds.
+	it('offers nothing to a lead previewing another role, nor to a subject group lead', () => {
+		expect(programmeViewChoices(['LECTURER'], [IF], all)).toEqual([]);
+		expect(mayShowProgrammeView('IF', ['LECTURER'], [IF], all)).toBe(false);
+		expect(programmeViewChoices(['SUBJECT_GROUP_LEAD'], [], all)).toEqual([]);
+	});
+
+	it('shows nothing without a programme chosen', () => {
+		expect(mayShowProgrammeView('', ['DEANS_OFFICE'], [], all)).toBe(false);
+		expect(instancesOfProgramme([instance()], '')).toEqual([]);
+	});
+
+	it('gathers the cohorts of the programme across subject groups, unfiled ones included', () => {
+		const maths = instance({ id: 'a' });
+		const software = instance({
+			id: 'b',
+			module: { id: 'm2', name: 'SE', subjectGroup: { id: 'g2', code: 'SW' } }
+		});
+		const unfiled = instance({ id: 'c', module: { id: 'm3', name: 'FWP', subjectGroup: null } });
+		const elsewhere = instance({ id: 'd', programme: { code: 'WI' } });
+		expect(
+			instancesOfProgramme([maths, software, unfiled, elsewhere], 'IF').map((i) => i.id)
+		).toEqual(['a', 'b', 'c']);
+	});
+});
+
+describe('which cohorts the progress line counts', () => {
+	const before = { published: false, ledGroups: [], ledProgrammes: [] };
+	const ifMaths = instance();
+	const wiMaths = instance({ id: 'i2', programme: { code: 'WI' } });
+
+	it('counts everything once the assignments are published', () => {
+		expect(reachesAssignmentsOf(wiMaths, { ...before, published: true, roles: ['LECTURER'] })).toBe(
+			true
+		);
+	});
+
+	it('counts everything for the dean’s office', () => {
+		expect(reachesAssignmentsOf(wiMaths, { ...before, roles: ['DEANS_OFFICE'] })).toBe(true);
+	});
+
+	it('counts a subject group lead’s own group only', () => {
+		const reach = { ...before, roles: ['SUBJECT_GROUP_LEAD'], ledGroups: ['g1'] };
+		expect(reachesAssignmentsOf(wiMaths, reach)).toBe(true);
+		expect(reachesAssignmentsOf(wiMaths, { ...reach, ledGroups: ['g2'] })).toBe(false);
+	});
+
+	// The side finding: on another group's tab, a programme lead's view of the other programmes'
+	// cohorts is withheld by the backend, and those cohorts looked unfilled.
+	it('counts a programme lead’s own programmes only, and says the count is partial', () => {
+		const reach = { ...before, roles: ['PROGRAMME_LEAD'], ledProgrammes: ['IF'] };
+		expect(reachesAssignmentsOf(ifMaths, reach)).toBe(true);
+		expect(reachesAssignmentsOf(wiMaths, reach)).toBe(false);
+
+		const groups = cohortGroups([ifMaths, wiMaths], []);
+		const counted = countableGroups(groups, reach);
+		expect(counted.groups.map((g) => g.instance.id)).toEqual(['i1']);
+		expect(counted.partial).toBe(true);
+		expect(countableGroups(groups, { ...reach, roles: ['DEANS_OFFICE'] }).partial).toBe(false);
+	});
+
+	it('counts nothing for a lecturer before publication', () => {
+		expect(reachesAssignmentsOf(ifMaths, { ...before, roles: ['LECTURER'] })).toBe(false);
 	});
 });

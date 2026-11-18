@@ -1170,3 +1170,98 @@ export function fillProgress(groups: readonly CohortGroup[]): FillProgress {
 	}
 	return progress;
 }
+
+/** A study programme as the programme selection offers it. */
+export type ProgrammeChoice = { code: string; title: string };
+
+/**
+ * The study programmes whose cohorts this person may see gathered in one view across every
+ * subject group: all of them for the dean's office, the led ones for a programme lead, none for
+ * anybody else.
+ *
+ * Asked for by a programme lead who otherwise had to click through every subject group to find
+ * the gaps in their programme. By the *effective* roles, for the reason `mayShowGaps` gives: the
+ * led programmes come from `me`, which the role preview does not narrow, while the rows it would
+ * gather do get narrowed — a lead previewing the lecturer's view would otherwise get a view, and a
+ * progress line, built from withheld rows.
+ */
+export function programmeViewChoices(
+	roles: readonly string[],
+	mine: readonly ProgrammeChoice[],
+	all: readonly ProgrammeChoice[]
+): ProgrammeChoice[] {
+	const chosen = roles.includes('DEANS_OFFICE')
+		? all
+		: roles.includes('PROGRAMME_LEAD')
+			? mine
+			: [];
+	return [...chosen].sort((a, b) => a.code.localeCompare(b.code, 'de'));
+}
+
+/**
+ * Whether this programme may be shown as a view of its own. Mirrors the backend's
+ * `AssignmentFilter.CoversProgramme`: only where every assignment and every wish of the programme
+ * reaches this person anyway, so the view rearranges rows they already have and adds nothing.
+ */
+export function mayShowProgrammeView(
+	code: string,
+	roles: readonly string[],
+	mine: readonly ProgrammeChoice[],
+	all: readonly ProgrammeChoice[]
+): boolean {
+	return code !== '' && programmeViewChoices(roles, mine, all).some((p) => p.code === code);
+}
+
+/** The cohorts of one study programme, across every subject group — and in no group. */
+export function instancesOfProgramme<T extends { programme: { code: string } }>(
+	instances: readonly T[],
+	code: string
+): T[] {
+	if (code === '') return [];
+	return instances.filter((i) => i.programme.code === code);
+}
+
+/** What decides whose assignments reach somebody before publication. */
+export type AssignmentReach = {
+	published: boolean;
+	roles: readonly string[];
+	/** Subject groups this person leads, by id. */
+	ledGroups: readonly string[];
+	/** Study programmes this person leads, by code. */
+	ledProgrammes: readonly string[];
+};
+
+/**
+ * Whether every assignment of this cohort reaches this person: the backend's rule in
+ * `CanSeeAssignment`, read for a whole cohort. After publication everybody's; before it the dean's
+ * office's, and a lead's for the cohorts of their subject group or programme.
+ *
+ * The progress line counts only such cohorts. A cohort whose assignments the backend withholds
+ * looks unfilled, and counting it would say something false — a programme lead on another subject
+ * group's tab saw that group's other programmes as empty.
+ */
+export function reachesAssignmentsOf(
+	instance: Pick<InstanceLike, 'programme' | 'module'>,
+	reach: AssignmentReach
+): boolean {
+	if (reach.published) return true;
+	if (reach.roles.includes('DEANS_OFFICE')) return true;
+	const group = instance.module.subjectGroup?.id;
+	if (reach.roles.includes('SUBJECT_GROUP_LEAD') && group && reach.ledGroups.includes(group))
+		return true;
+	return (
+		reach.roles.includes('PROGRAMME_LEAD') && reach.ledProgrammes.includes(instance.programme.code)
+	);
+}
+
+/**
+ * The cohorts the progress line may count, and whether that is all of them — so the page can say
+ * that it counted only some.
+ */
+export function countableGroups(
+	groups: readonly CohortGroup[],
+	reach: AssignmentReach
+): { groups: CohortGroup[]; partial: boolean } {
+	const countable = groups.filter((g) => reachesAssignmentsOf(g.instance, reach));
+	return { groups: countable, partial: countable.length < groups.length };
+}
