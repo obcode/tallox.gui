@@ -73,6 +73,7 @@
 				<PhaseSteps
 					phase={semester.phase}
 					release={semester.demandRelease}
+					rounds={semester.wishRounds}
 					label="Phasen von {semesterName(semester.code)}"
 				/>
 			</div>

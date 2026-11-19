@@ -282,6 +282,17 @@ export const HELP: readonly HelpEntry[] = [
 		]
 	},
 	{
+		question:
+			'Meine Fachgruppe hat ihre Wunschrunde geschlossen. Warum steht das Semester nicht auf Zuteilung?',
+		answer:
+			'Weil die Phase für das ganze Semester gilt und das Dekanat sie umschaltet, während jede Fachgruppe ihre Wunschrunde selbst schließt. Der Balken teilt sich nur nach Studiengängen auf, nicht nach Fachgruppen; beides in einem Balken würde sich falsch lesen. Wie weit die Fachgruppen sind, steht deshalb in einer eigenen Zeile darunter, etwa „Wunschrunde geschlossen: 1 von 6 Fachgruppen“. Gezählt werden nur Fachgruppen mit Instanzen im Semester, nie Wünsche. In der Zuteilung steht die Zeile nur, solange noch eine Runde offen ist, denn darauf wartet die Veröffentlichung der Wünsche. Zuteilen kann die Fachgruppenleitung trotzdem schon jetzt: Die Zuteilung ist in jeder Phase offen, bis das Semester abgeschlossen ist.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [
+			{ href: '/semester', label: 'Semester und Phasen' },
+			{ href: '/zuteilung', label: 'Zuteilung' }
+		]
+	},
+	{
 		question: 'Lässt sich die Veröffentlichung der Wünsche oder der Zuteilung zurücknehmen?',
 		answer:
 			'Nein. Beide Veröffentlichungen schaltet das Dekanat auf der Semesterseite, und beide sind endgültig. Die Wünsche lassen sich erst veröffentlichen, wenn jede Fachgruppe mit Instanzen im Semester ihre Wunschrunde geschlossen hat; sonst nennt die Meldung die offenen. Module ohne Fachgruppe halten das nicht auf. Zuteilung und Bedarf bleiben aber auch danach änderbar, bis das Semester abgeschlossen ist. Die Phase lässt sich in beide Richtungen umschalten; in die Wunschphase wechselt das Semester schon von selbst, sobald der erste Studiengang seinen Bedarf für Wünsche freigibt.',

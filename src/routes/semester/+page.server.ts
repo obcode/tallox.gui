@@ -14,6 +14,10 @@ const SemestersDocument = graphql(`
 				released
 				planned
 			}
+			wishRounds {
+				closed
+				groups
+			}
 			isPlanningSemester
 			reachablePhases
 			wishesPublishedAt

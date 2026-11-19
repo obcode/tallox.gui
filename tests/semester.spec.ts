@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 import { runSql } from './psql';
-import { SEMESTERS } from './seed';
+import { SEMESTERS, WISHES } from './seed';
 
 /**
  * The semester page, against the real stack.
@@ -83,6 +83,24 @@ test.describe('semesters and phases', () => {
 		}
 		// Exactly one phase is the stored one, split or not.
 		await expect(bar.locator('[aria-current="step"]')).toHaveCount(1);
+	});
+
+	test('says how far the subject groups’ wish rounds have got, under the bar', async ({
+		asPersona
+	}) => {
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/semester');
+
+		// The wish fixture's semester is in the wish phase and has an instance in a subject group.
+		// Other specs shut and reopen that group's round, so the figure is read as a pattern. It
+		// counts subject groups, never wishes; and it is a line, not a share: the bar keeps
+		// "Zuteilung" upcoming however many rounds are shut.
+		const row = cards(page).filter({ hasText: WISHES.semester });
+		await expect(row.locator('[data-wish-rounds]')).toHaveText(
+			/^(Wunschrunde geschlossen: \d+ von \d+ Fachgruppen?\.|Alle Fachgruppen haben ihre Wunschrunde geschlossen\.)$/
+		);
+		const bar = row.getByRole('list', { name: /Phasen von/ });
+		await expect(bar.getByRole('listitem').nth(2)).not.toHaveAttribute('aria-current', 'step');
 	});
 
 	test('the dean’s office walks a semester through the process', async ({ asPersona }) => {

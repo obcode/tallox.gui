@@ -11,6 +11,10 @@ const PlanningSemesterQuery = graphql(`
 				released
 				planned
 			}
+			wishRounds {
+				closed
+				groups
+			}
 		}
 	}
 `);
@@ -37,6 +41,10 @@ export async function loadPlanningState(): Promise<PlanningState> {
 					release: {
 						released: semester.demandRelease.released,
 						planned: semester.demandRelease.planned
+					},
+					rounds: {
+						closed: semester.wishRounds.closed,
+						groups: semester.wishRounds.groups
 					}
 				}
 			: { kind: 'unset' };

@@ -1,5 +1,5 @@
 import type { Phase } from '$lib/gql/__generated__/graphql';
-import type { DemandRelease } from '$lib/planning';
+import type { DemandRelease, WishRounds } from '$lib/planning';
 
 /**
  * Semesters and phases, in the language the faculty speaks them.
@@ -121,6 +121,27 @@ export function phaseSplitLine(current: Phase, release?: DemandRelease | null): 
 		`${PHASE_LABELS.DEMAND_PLANNING}: ${programmes(release.planned - release.released)} · ` +
 		`${PHASE_LABELS.WISHES}: ${programmes(release.released)}`
 	);
+}
+
+/**
+ * The line about the subject groups' wish rounds under the phase bar, or null where it has nothing
+ * to say: "Wunschrunde geschlossen: 1 von 6 Fachgruppen."
+ *
+ * A line and not a segment, deliberately. Rounds run per subject group while the bar splits demand
+ * planning and wish phase per programme; filling "Zuteilung" by subject groups would put two
+ * different counts into one bar, and the phase itself stays the dean's office's switch.
+ *
+ * In the wish phase always, and in the assignment only while a round is still open — then it is
+ * what publishing the wishes waits for. Counts subject groups, never anything about wishes.
+ */
+export function wishRoundsLine(phase: Phase, rounds?: WishRounds | null): string | null {
+	if (!rounds || rounds.groups === 0) return null;
+	const { closed, groups } = rounds;
+	if (phase === 'ASSIGNMENT' && closed >= groups) return null;
+	if (phase !== 'WISHES' && phase !== 'ASSIGNMENT') return null;
+	if (closed >= groups) return 'Alle Fachgruppen haben ihre Wunschrunde geschlossen.';
+	const of = groups === 1 ? '1 Fachgruppe' : `${groups} Fachgruppen`;
+	return `Wunschrunde geschlossen: ${closed} von ${of}.`;
 }
 
 /**
