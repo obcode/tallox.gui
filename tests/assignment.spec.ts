@@ -351,6 +351,63 @@ test.describe('the wish round switch', () => {
 		await expect(cell).toBeEnabled();
 	});
 
+	test('the lead shows the group its wishes once the round is shut, and only the group sees them', async ({
+		asPersona
+	}) => {
+		// Eins becomes a member of the group for this test only; Zwei stays outside it. The
+		// fixture's one wish is the dean's office's, on the group's module.
+		const membership = `person_subject_group WHERE subject_group_id = '${ASSIGNMENTS.subjectGroup}'
+		   AND person_id = (SELECT id FROM person WHERE mail = '${PERSONAS.eins.mail}')`;
+		await runSql(
+			`INSERT INTO person_subject_group (person_id, subject_group_id)
+			 SELECT id, '${ASSIGNMENTS.subjectGroup}' FROM person WHERE mail = '${PERSONAS.eins.mail}'
+			 ON CONFLICT DO NOTHING;`,
+			'making Eins a member of the assignment subject group'
+		);
+		try {
+			const lead = await asPersona(PERSONAS.drei);
+			await gotoRendered(lead, URL);
+			const show = lead.getByText('Wünsche in der Fachgruppe zeigen …');
+
+			// While the round is open there is nothing to offer: the backend would refuse it.
+			await expect(show).toHaveCount(0);
+
+			await lead.getByRole('button', { name: 'Wunschphase schließen' }).click();
+			await expect(lead.getByRole('button', { name: 'Wunschphase öffnen' })).toBeVisible();
+
+			// Before: the member sees nobody else's entry, and neither does the outsider.
+			const member = await asPersona(PERSONAS.eins);
+			const outsider = await asPersona(PERSONAS.zwei);
+			const wishes = `/wuensche?semester=${ASSIGNMENTS.semester}`;
+			await gotoRendered(member, wishes);
+			await expect(member.getByText(`Außerdem: ${PERSONAS.fuenf.name}`)).toHaveCount(0);
+
+			// It cannot be taken back, so it takes a second click.
+			await show.click();
+			await lead.getByRole('button', { name: 'Ja, allen in der Fachgruppe zeigen' }).click();
+			await expect(lead.getByText('In der Fachgruppe gezeigt')).toBeVisible();
+			await expect(show).toHaveCount(0);
+
+			await gotoRendered(member, wishes);
+			await expect(member.getByText(`Außerdem: ${PERSONAS.fuenf.name}`)).toBeVisible();
+			await expect(
+				member.getByText(
+					/Zuteilungs-Testfachgruppe hat ihre Wünsche schon in der Fachgruppe gezeigt/
+				)
+			).toBeVisible();
+			// The note stays with the people responsible.
+			await expect(member.getByText('gerne die Vorlesung')).toHaveCount(0);
+
+			// Outside the group nothing changes: no name, no number.
+			await gotoRendered(outsider, wishes);
+			const body = (await outsider.locator('main').textContent()) ?? '';
+			expect(body).not.toContain(PERSONAS.fuenf.name);
+			expect(body).not.toMatch(/Außerdem:/);
+		} finally {
+			await runSql(`DELETE FROM ${membership};`, 'removing Eins from the assignment subject group');
+		}
+	});
+
 	test('a programme that has not released its demand is not offered until its lead releases it', async ({
 		asPersona
 	}) => {

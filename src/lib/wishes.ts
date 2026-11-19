@@ -489,9 +489,22 @@ export function myWishByInstance(wishes: readonly WishLike[]): Map<string, WishL
  */
 export function othersForWishScreen<T>(
 	publishedAt: string | null | undefined,
-	wishes: readonly T[] | null | undefined
+	wishes: readonly T[] | null | undefined,
+	/**
+	 * The subject groups whose lead has shown the wishes on the group's modules to the group
+	 * (`groupsShowingWishes`). Rows on those modules stay: the round there is shut, so there is no
+	 * head start left to protect, and the backend hands them to the group's members for exactly
+	 * this screen. Rows on every other module are dropped as before.
+	 */
+	groupsShowing: ReadonlySet<string> = new Set(),
+	groupOf: (wish: T) => string | null | undefined = () => null
 ): T[] {
-	return publishedAt ? [...(wishes ?? [])] : [];
+	if (publishedAt) return [...(wishes ?? [])];
+	if (groupsShowing.size === 0) return [];
+	return (wishes ?? []).filter((w) => {
+		const group = groupOf(w);
+		return group != null && groupsShowing.has(group);
+	});
 }
 
 /**
@@ -586,15 +599,30 @@ export function othersHint(
 	 * here (see `othersForWishScreen`). The sentence says where, so that the absence on this page
 	 * does not read as a missing permission; it says nothing about the entries themselves.
 	 */
-	leadsGroups = false
+	leadsGroups = false,
+	/**
+	 * The names of the subject groups whose lead has shown the group its wishes. Public, like the
+	 * shut rounds; whether the reader is a member decides what the backend hands over, not this
+	 * sentence.
+	 */
+	groupsShowing: readonly string[] = []
 ): string {
 	if (publishedAt) {
 		return 'Die Wünsche sind veröffentlicht: hier steht, wer sich außerdem eingetragen hat.';
 	}
-	const rule =
+	let rule =
 		'Bis zur Veröffentlichung sind die Eintragungen anderer hier nicht sichtbar — auch nicht als ' +
 		'Anzahl. Das ist Absicht: niemand soll sich fragen müssen, ob ein Fach schon „besetzt" ist, ' +
 		'bevor man sich einträgt.';
+	if (groupsShowing.length > 0) {
+		const names = [...groupsShowing].sort((a, b) => a.localeCompare(b, 'de')).join(', ');
+		rule +=
+			(groupsShowing.length === 1
+				? ` Ausnahme: die Fachgruppe ${names} hat ihre Wünsche schon in der Fachgruppe gezeigt.`
+				: ` Ausnahme: die Fachgruppen ${names} haben ihre Wünsche schon in der Fachgruppe gezeigt.`) +
+			' Wer zu einer solchen Fachgruppe gehört, sieht bei deren Modulen, wer sich außerdem ' +
+			'eingetragen hat.';
+	}
 	if (leadsGroups) {
 		return (
 			rule +
@@ -854,6 +882,21 @@ export function closedSubjectGroups(
 		if (!window.open) closed.add(window.subjectGroup.id);
 	}
 	return closed;
+}
+
+/**
+ * Which subject groups have shown their wishes to their members, by id.
+ *
+ * A public fact about the process, like the shut rounds: it says nothing about any wish.
+ */
+export function groupsShowingWishes(
+	windows: { wishesPublishedAt?: string | null; subjectGroup: { id: string } }[]
+): Set<string> {
+	const showing = new Set<string>();
+	for (const window of windows) {
+		if (window.wishesPublishedAt) showing.add(window.subjectGroup.id);
+	}
+	return showing;
 }
 
 /** Which study programmes have released their demand for wishes, by code. */

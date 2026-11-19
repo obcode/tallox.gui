@@ -71,6 +71,9 @@ const PASS_THROUGH = new Set([
 	// Publishing the wishes while a subject group's round is open. It names the open groups,
 	// which every colleague can read in the list of subject groups anyway.
 	'WISH_WINDOWS_OPEN',
+	// Showing a subject group its wishes while that group's round is open. About the round, which
+	// every colleague sees on the wish page, and the sentence says what to do first.
+	'WISH_WINDOW_OPEN',
 	// The module catalogue. Published by the examination office and not confidential, so the
 	// sentences give nothing away — and two of them are the whole point of having distinct
 	// codes at all.

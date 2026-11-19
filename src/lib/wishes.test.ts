@@ -6,6 +6,7 @@ import {
 	WISH_PRIORITY_TINTS,
 	closedPhaseHint,
 	closedSubjectGroups,
+	groupsShowingWishes,
 	cohortIn,
 	releaseReason,
 	unreleasedNotice,
@@ -725,6 +726,68 @@ describe('othersForWishScreen', () => {
 	it('keeps everything once published', () => {
 		expect(othersForWishScreen('2026-10-27T12:00:00Z', rows)).toEqual(rows);
 		expect(othersForWishScreen('2026-10-27T12:00:00Z', null)).toEqual([]);
+	});
+});
+
+describe('othersForWishScreen within a subject group', () => {
+	const rows = [
+		{ id: 'w1', group: 'g1' },
+		{ id: 'w2', group: 'g2' },
+		{ id: 'w3', group: null }
+	];
+	const groupOf = (w: { group: string | null }) => w.group;
+
+	// The case of the issue: one group has shut its round and shown its wishes to its members;
+	// the rows on its modules may stay, every other row is still dropped.
+	it('keeps only the rows on modules of a group that has shown its wishes', () => {
+		expect(othersForWishScreen(null, rows, new Set(['g1']), groupOf).map((w) => w.id)).toEqual([
+			'w1'
+		]);
+	});
+
+	it('drops everything when no group has shown its wishes', () => {
+		expect(othersForWishScreen(null, rows, new Set(), groupOf)).toEqual([]);
+	});
+
+	it('never keeps a row on a module in no subject group', () => {
+		expect(
+			othersForWishScreen(null, rows, new Set(['g1', 'g2']), groupOf).map((w) => w.id)
+		).toEqual(['w1', 'w2']);
+	});
+
+	it('lets the semester publication win', () => {
+		expect(othersForWishScreen('2026-10-27T12:00:00Z', rows, new Set(), groupOf)).toEqual(rows);
+	});
+});
+
+describe('groupsShowingWishes', () => {
+	it('names the groups with a date and nothing else', () => {
+		const showing = groupsShowingWishes([
+			{ wishesPublishedAt: '2026-11-19T12:00:00Z', subjectGroup: { id: 'g1' } },
+			{ wishesPublishedAt: null, subjectGroup: { id: 'g2' } },
+			{ subjectGroup: { id: 'g3' } }
+		]);
+		expect([...showing]).toEqual(['g1']);
+	});
+});
+
+describe('othersHint within a subject group', () => {
+	it('names the groups that have shown their wishes, and says nothing about the entries', () => {
+		const hint = othersHint(null, false, ['Mathematik']);
+		expect(hint).toMatch(/Fachgruppe Mathematik hat ihre Wünsche schon in der Fachgruppe gezeigt/);
+		expect(hint).toMatch(/nicht sichtbar/);
+		expect(hint).not.toMatch(/niemand hat|noch niemand|keine Interess/i);
+	});
+
+	it('uses the plural for several groups', () => {
+		expect(othersHint(null, false, ['B', 'A'])).toMatch(/Fachgruppen A, B haben/);
+	});
+
+	it('stays as before without such a group, and the semester publication wins', () => {
+		expect(othersHint(null, false, [])).toBe(othersHint(null));
+		expect(othersHint('2026-10-27T12:00:00Z', false, ['A'])).toBe(
+			othersHint('2026-10-27T12:00:00Z')
+		);
 	});
 });
 

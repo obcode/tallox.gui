@@ -198,6 +198,7 @@ const AssignmentDocument = graphql(`
 		# The exceptions, not the state of every group: absent means open.
 		wishWindows(semester: $semester) @include(if: $withSemester) {
 			open
+			wishesPublishedAt
 			subjectGroup {
 				id
 			}
@@ -380,6 +381,14 @@ const SetWindowDocument = graphql(`
 	mutation SetWishWindow($semester: String!, $group: ID!, $open: Boolean!) {
 		setWishWindow(semester: $semester, subjectGroupId: $group, open: $open) {
 			open
+		}
+	}
+`);
+
+const ShowGroupWishesDocument = graphql(`
+	mutation PublishSubjectGroupWishes($semester: String!, $group: ID!) {
+		publishSubjectGroupWishes(semester: $semester, subjectGroupId: $group) {
+			wishesPublishedAt
 		}
 	}
 `);
@@ -703,6 +712,30 @@ export const actions: Actions = {
 
 		try {
 			await backendRequest(SetWindowDocument, { semester, group, open });
+		} catch (err) {
+			return fail(403, { message: toRefusal(err).message, refusals: [] });
+		}
+		return { saved: 0, refusals: [] };
+	},
+
+	/**
+	 * Show the wishes on this subject group's modules to everybody in the group.
+	 *
+	 * Its own action for the same reason as `window`, and more so: it cannot be taken back. The
+	 * backend refuses it while the round is open and lets only the group's lead and the dean's
+	 * office do it; the page only asks for the second click.
+	 */
+	showGroupWishes: async ({ request }) => {
+		const form = await request.formData();
+		const semester = String(form.get('semester') ?? '');
+		const group = String(form.get('fachgruppe') ?? '');
+
+		if (semester === '' || group === '') {
+			return fail(400, { message: 'Kein Semester oder keine Fachgruppe gewählt.', refusals: [] });
+		}
+
+		try {
+			await backendRequest(ShowGroupWishesDocument, { semester, group });
 		} catch (err) {
 			return fail(403, { message: toRefusal(err).message, refusals: [] });
 		}

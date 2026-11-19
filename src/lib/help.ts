@@ -69,6 +69,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{
+		question: 'Wie zeige ich die Wünsche meiner Fachgruppe allen in der Fachgruppe?',
+		answer:
+			'Auf der Zuteilungsseite im Reiter der Fachgruppe, sobald ihre Wunschrunde geschlossen ist: „Wünsche in der Fachgruppe zeigen …“ und dann „Ja, allen in der Fachgruppe zeigen“. Ab dann sehen alle Mitglieder der Fachgruppe auf der Wunschseite, wer sich auf welche Module der Fachgruppe eingetragen hat, mit Stufe; die Notiz und der Zeitpunkt der Eintragung bleiben bei den Zuständigen. Wünsche auf Modulen anderer Fachgruppen bleiben vertraulich, und wer nicht zur Fachgruppe gehört, sieht nichts, auch keine Anzahl. Das lässt sich nicht zurücknehmen. Wer die Runde danach wieder öffnet, macht jede neue Eintragung sofort für die Fachgruppe sichtbar. Das Dekanat kann es für jede Fachgruppe ebenso; die Veröffentlichung für das ganze Semester bleibt beim Dekanat.',
+		who: ['SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
 		question: 'Wie sehe ich als Administration in unveröffentlichte Wünsche hinein?',
 		answer:
 			'Gar nicht mit der Administration allein: sie liest bewusst keine Wünsche. Wer hineinsehen muss, gibt sich unter Personen und Rollen die Rolle Dekanat oder eine Leitung, sich selbst aber nur mit „Befristet bis“, höchstens 30 Tage; ohne Datum lehnt Tallox das ab. Solange die Rolle gilt, steht sie jede Nacht im Zugriffsbericht. Anderen Personen lässt sich jede Rolle auch unbefristet geben — die Administrationsrolle sogar nur so: sie ist die Rolle, die alle anderen wieder hereinlässt, und lässt sich deshalb nicht befristen.',
@@ -231,7 +238,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wer sieht meine Wünsche?',
 		answer:
-			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe. Deine Notiz und wann Du Dich eingetragen hast, lesen weiter nur die Zuständigen. Veröffentlicht wird erst, wenn alle Fachgruppen ihre Wunschrunde geschlossen haben.',
+			'Bis zur Veröffentlichung nur Du, die Leitung des Studiengangs der Instanz, die Leitung der Fachgruppe des Moduls und das Dekanat. Alle anderen sehen nichts davon, auch keine Anzahl. Ab der Veröffentlichung durch das Dekanat sieht das ganze Kollegium, wer sich wo eingetragen hat, über die Schnittstelle auch mit Stufe. Deine Notiz und wann Du Dich eingetragen hast, lesen weiter nur die Zuständigen. Veröffentlicht wird erst, wenn alle Fachgruppen ihre Wunschrunde geschlossen haben. Vorher kann die Leitung einer Fachgruppe, deren Runde geschlossen ist, die Wünsche auf den Modulen ihrer Fachgruppe allen in der Fachgruppe zeigen; Wünsche auf Modulen anderer Fachgruppen bleiben davon unberührt.',
 		who: ['LECTURER'],
 		where: [{ href: '/wuensche', label: 'Wünsche' }],
 		stage: 'EACH_SEMESTER'
