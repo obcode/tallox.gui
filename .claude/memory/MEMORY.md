@@ -7,6 +7,7 @@ Wissensbasis des Frontends. Übergreifendes und Betriebswissen liegt im privaten
 Kolleginnen und Kollegen.
 
 - [Fehlernummern](error-ids.md) — jeder unerwartete Fehler hat eine Nummer: auf der Fehlerseite, im Log mit Stacktrace, als GlitchTip-Tag
+- [Veralteter Tab nach Deploy](stale-build.md) — Chunk weg nach Deploy: Version pollen, nächster Klick lädt voll, Fehlerseite lädt einmal neu, nichts an GlitchTip; Query-Strings raus aus den Events
 - [Security-Audit 2026-10](security-audit-2026-10.md) — F1–F4/H1–H7 und die Regel „ClientError verlässt backend.ts nie“; nach dem Deploy ein GlitchTip-Event prüfen
 - [Identität über AsyncLocalStorage](auth-header-relay.md) — warum der SSR-Hop X-Remote-User selbst mitschicken muss
 - [Keine Aggregate über unveröffentlichte Wünsche](no-wish-aggregates.md) — der Leckkanal, den Zeilenfilterung nicht schließt

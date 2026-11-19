@@ -11,7 +11,12 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
+
+		// An open tab asks every five minutes whether a newer build is deployed, so that
+		// NewVersionReload can turn the next click into a full load instead of an import of a
+		// chunk that no longer exists. It asks on returning to the tab as well.
+		version: { pollInterval: 5 * 60_000 }
 	},
 
 	vitePlugin: {

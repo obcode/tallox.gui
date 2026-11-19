@@ -6,6 +6,8 @@ declare global {
 			message: string;
 			/** Set for unexpected errors: shown on the error page, heads the log line. */
 			errorId?: string;
+			/** Set in the browser when the page's code is gone after a deploy. See $lib/staleBuild. */
+			staleBuild?: boolean;
 		}
 		interface Locals {
 			/** The verified mail address, set by the auth proxy. Undefined locally. */

@@ -5,6 +5,7 @@
 	import LeaveGuard from '$lib/components/LeaveGuard.svelte';
 	import NarrowingBanner from '$lib/components/NarrowingBanner.svelte';
 	import NavBar from '$lib/components/NavBar.svelte';
+	import NewVersionReload from '$lib/components/NewVersionReload.svelte';
 	import type { LayoutData } from './$types';
 	import '../app.css';
 
@@ -38,6 +39,7 @@
 	</main>
 
 	<LeaveGuard />
+	<NewVersionReload />
 
 	<Footer server={data.serverBuild} theme={data.theme} {effectiveRoles} {grantedRoles} {narrowed} />
 </div>
