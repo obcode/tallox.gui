@@ -1,7 +1,10 @@
 import * as Sentry from '@sentry/sveltekit';
 import type { HandleClientError } from '@sveltejs/kit';
+import { updated } from '$app/state';
 import { env } from '$env/dynamic/public';
 import { reportUnexpectedError } from '$lib/errorReport';
+import { scrubBreadcrumb, scrubEvent } from '$lib/sentryScrub';
+import { isStaleBuildError } from '$lib/staleBuild';
 
 /**
  * Report browser errors to GlitchTip.
@@ -28,9 +31,13 @@ if (env.PUBLIC_SENTRY_DSN) {
 		// Stated rather than inherited: this screen shows teaching load and the wishes of
 		// named colleagues, and what leaves it is not a default worth taking on trust.
 		//
-		// NOTE: breadcrumbs still record the URLs visited. A person id in a path is in the
-		// issue as well.
-		sendDefaultPii: false
+		// NOTE: breadcrumbs still record the paths visited. A person id in a path is in the
+		// issue as well; query strings are cut off below.
+		sendDefaultPii: false,
+		// Addresses without their query strings: the person search carries what was typed into
+		// it, the diagnosis a mail address. See $lib/sentryScrub.
+		beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb),
+		beforeSend: (event) => scrubEvent(event)
 	});
 }
 
@@ -39,8 +46,19 @@ if (env.PUBLIC_SENTRY_DSN) {
  * on the server; the line goes to the browser console, the event to the collector when a DSN
  * is set. See $lib/errorReport.
  */
-export const handleError: HandleClientError = ({ error, event, status, message }) =>
-	reportUnexpectedError(
+export const handleError: HandleClientError = ({ error, event, status, message }) => {
+	// A tab older than the last deploy, asking for a chunk that is gone. Not a failure of Tallox,
+	// so no number and no report: ask for the version, which makes the next navigation a full
+	// load (NewVersionReload), and let the error page reload if it is shown. See $lib/staleBuild.
+	if (isStaleBuildError(error)) {
+		void updated.check();
+		return {
+			message:
+				'Diese Seite ließ sich nicht nachladen, meist weil Tallox gerade aktualisiert wurde.',
+			staleBuild: true
+		};
+	}
+	return reportUnexpectedError(
 		{ error, status, message, path: event.url.pathname, routeId: event.route.id },
 		{
 			capture: (err, errorId) => {
@@ -50,3 +68,4 @@ export const handleError: HandleClientError = ({ error, event, status, message }
 			version: __APP_VERSION__
 		}
 	);
+};
