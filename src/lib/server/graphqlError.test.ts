@@ -34,6 +34,13 @@ describe('toRefusal', () => {
 		expect(refusal).toEqual({ code: 'MODULE_INACTIVE', message, generic: false });
 	});
 
+	it('passes the refusal for an open subject group round through, since it names the repair', () => {
+		const message = 'die Wunschphase dieser Fachgruppe ist noch offen; schließe sie zuerst';
+		const refusal = toRefusal(clientError([{ message, extensions: { code: 'WISH_WINDOW_OPEN' } }]));
+
+		expect(refusal).toEqual({ code: 'WISH_WINDOW_OPEN', message, generic: false });
+	});
+
 	it('replaces unknown errors with a generic sentence', () => {
 		// The rule from CLAUDE.md: no raw backend error strings on write paths. A uniqueness
 		// violation passed through would later reveal that somebody has already registered —

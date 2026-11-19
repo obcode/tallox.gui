@@ -7,6 +7,7 @@ import { parseDesiredRange } from '$lib/desiredHours';
 import {
 	isWishChoice,
 	othersForWishScreen,
+	groupsShowingWishes,
 	parseShareHours,
 	parseTrackLimitField,
 	trackLimitChanges,
@@ -183,6 +184,11 @@ const WishesDocument = graphql(`
 				module {
 					id
 					name
+					# Which subject group the module belongs to, so that the load can keep the rows of a
+					# group that has shown its wishes to its members. See othersForWishScreen.
+					subjectGroup {
+						id
+					}
 				}
 			}
 		}
@@ -196,6 +202,7 @@ const WishesDocument = graphql(`
 		# is a module in no subject group at all.
 		wishWindows(semester: $semester) @include(if: $withSemester) {
 			open
+			wishesPublishedAt
 			subjectGroup {
 				id
 				code
@@ -371,9 +378,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		// Every semester, so the summary above the table is the whole picture. The cells pick
 		// their own row out of it by instance id, which is semester-specific anyway.
 		myWishes: data.myWishes,
-		// Other people's entries only once they are published — also for the leads, who may read
-		// them before, but do that on the assignment screen. See `othersForWishScreen`.
-		wishes: othersForWishScreen(data.semester?.wishesPublishedAt, data.wishes),
+		// Other people's entries only once they are published, for the semester or within the
+		// module's subject group — also for the leads, who may read them before, but do that on the
+		// assignment screen. See `othersForWishScreen`.
+		wishes: othersForWishScreen(
+			data.semester?.wishesPublishedAt,
+			data.wishes,
+			groupsShowingWishes(data.wishWindows ?? []),
+			(w) => w.instance.module.subjectGroup?.id
+		),
 		windows: data.wishWindows ?? [],
 		completions: data.demandCompletions ?? [],
 		desiredHours: data.myDesiredTeachingHours?.[0] ?? null,

@@ -725,7 +725,13 @@
 		</section>
 	{/if}
 
-	<p class="text-base-content/80 max-w-3xl text-sm">{othersHint(published, data.leadsGroups)}</p>
+	<p class="text-base-content/80 max-w-3xl text-sm">
+		{othersHint(
+			published,
+			data.leadsGroups,
+			data.windows.filter((w) => w.wishesPublishedAt).map((w) => w.subjectGroup.name)
+		)}
+	</p>
 
 	{#if unreleased}
 		<div class="border-base-300 bg-base-100 rounded-lg border p-4">

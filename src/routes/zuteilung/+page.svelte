@@ -81,6 +81,7 @@
 		hoursLabel,
 		withTopic
 	} from '$lib/demand';
+	import { formatMoment } from '$lib/tokens';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -286,6 +287,15 @@
 	 * belongs to nobody.
 	 */
 	const hasWishRound = $derived(data.group !== null);
+
+	/**
+	 * When this subject group's lead showed the group its wishes, or null.
+	 *
+	 * A fact about the process like the round itself, public to everybody signed in.
+	 */
+	const groupWishesShownAt = $derived(
+		data.windows.find((w) => w.subjectGroup.id === data.group?.id)?.wishesPublishedAt ?? null
+	);
 
 	/**
 	 * The instances of this subject group that nobody has registered interest in yet.
@@ -892,6 +902,35 @@
 					{/if}
 				</div>
 			</form>
+			<!--
+				Showing the group its wishes. Only once the round is shut — the backend refuses it
+				before — and only while the semester has not been published, after which there is
+				nothing left to show. It cannot be taken back, so it gets the second click.
+			-->
+			{#if groupWishesShownAt}
+				<p class="text-base-content/80 mt-2 max-w-prose text-sm">
+					<span class="badge badge-info badge-sm align-middle">In der Fachgruppe gezeigt</span>
+					Seit {formatMoment(groupWishesShownAt)} sehen alle in <strong>{data.group.name}</strong>
+					auf der Wunschseite, wer sich auf die Module der Fachgruppe eingetragen hat.
+				</p>
+			{:else if !roundOpen && !data.semester.wishesPublishedAt}
+				<form method="POST" action={actionUrl('showGroupWishes')} class="mt-2">
+					<input type="hidden" name="semester" value={data.semester.code} />
+					<input type="hidden" name="fachgruppe" value={data.group.id} />
+					<details class="max-w-prose">
+						<summary class="btn btn-sm">Wünsche in der Fachgruppe zeigen …</summary>
+						<p class="text-base-content/80 mt-2 text-sm">
+							Danach sehen alle in <strong>{data.group.name}</strong> auf der Wunschseite, wer sich auf
+							welche Module der Fachgruppe eingetragen hat, mit Stufe, aber ohne Notiz. Wünsche auf Modulen
+							anderer Fachgruppen bleiben vertraulich, und wer nicht zur Fachgruppe gehört, sieht nichts.
+							Das lässt sich nicht zurücknehmen.
+						</p>
+						<button type="submit" class="btn btn-sm btn-warning mt-2">
+							Ja, allen in der Fachgruppe zeigen
+						</button>
+					</details>
+				</form>
+			{/if}
 		{:else if programmeView && shownProgramme}
 			<div class="alert alert-info mt-5 max-w-prose">
 				<span>
