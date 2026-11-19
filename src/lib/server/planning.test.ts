@@ -14,19 +14,21 @@ describe('loadPlanningState', () => {
 		backendRequest.mockReset();
 	});
 
-	it('passes the planning semester, its phase and its demand releases through', async () => {
+	it('passes the planning semester, its phase, its demand releases and its wish rounds through', async () => {
 		backendRequest.mockResolvedValue({
 			planningSemester: {
 				code: '2027-SS',
 				phase: 'WISHES',
-				demandRelease: { released: 3, planned: 8 }
+				demandRelease: { released: 3, planned: 8 },
+				wishRounds: { closed: 1, groups: 6 }
 			}
 		});
 		await expect(loadPlanningState()).resolves.toEqual({
 			kind: 'set',
 			code: '2027-SS',
 			phase: 'WISHES',
-			release: { released: 3, planned: 8 }
+			release: { released: 3, planned: 8 },
+			rounds: { closed: 1, groups: 6 }
 		});
 	});
 

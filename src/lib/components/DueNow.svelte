@@ -47,6 +47,7 @@
 			<PhaseSteps
 				phase={planning.phase}
 				release={planning.release}
+				rounds={planning.rounds}
 				label="Phasen des Planungssemesters"
 			/>
 		</div>

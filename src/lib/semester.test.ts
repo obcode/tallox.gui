@@ -13,6 +13,7 @@ import {
 	semesterName,
 	semesterShortName,
 	wishesAreVisible,
+	wishRoundsLine,
 	semesterTerm
 } from './semester';
 
@@ -248,6 +249,36 @@ describe('phaseSplitLine', () => {
 		expect(phaseSplitLine('DEMAND_PLANNING', { released: 0, planned: 12 })).toBeNull();
 		expect(phaseSplitLine('ASSIGNMENT', { released: 3, planned: 12 })).toBeNull();
 		expect(phaseSplitLine('WISHES', null)).toBeNull();
+	});
+});
+
+describe('wishRoundsLine', () => {
+	it('counts the shut rounds in the wish phase', () => {
+		expect(wishRoundsLine('WISHES', { closed: 1, groups: 6 })).toBe(
+			'Wunschrunde geschlossen: 1 von 6 Fachgruppen.'
+		);
+		expect(wishRoundsLine('WISHES', { closed: 0, groups: 1 })).toBe(
+			'Wunschrunde geschlossen: 0 von 1 Fachgruppe.'
+		);
+		expect(wishRoundsLine('WISHES', { closed: 6, groups: 6 })).toBe(
+			'Alle Fachgruppen haben ihre Wunschrunde geschlossen.'
+		);
+	});
+
+	it('stays in the assignment only while publishing still waits for a round', () => {
+		expect(wishRoundsLine('ASSIGNMENT', { closed: 4, groups: 6 })).toBe(
+			'Wunschrunde geschlossen: 4 von 6 Fachgruppen.'
+		);
+		expect(wishRoundsLine('ASSIGNMENT', { closed: 6, groups: 6 })).toBeNull();
+	});
+
+	it('says nothing where rounds do not matter or nothing is counted', () => {
+		for (const phase of ['DEMAND_PLANNING', 'REVIEW', 'FINAL'] as Phase[]) {
+			expect(wishRoundsLine(phase, { closed: 1, groups: 6 })).toBeNull();
+		}
+		expect(wishRoundsLine('WISHES', { closed: 0, groups: 0 })).toBeNull();
+		expect(wishRoundsLine('WISHES', null)).toBeNull();
+		expect(wishRoundsLine('WISHES', undefined)).toBeNull();
 	});
 });
 

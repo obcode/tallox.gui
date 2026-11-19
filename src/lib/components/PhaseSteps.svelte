@@ -1,17 +1,24 @@
 <script lang="ts">
 	import type { Phase } from '$lib/gql/__generated__/graphql';
-	import type { DemandRelease } from '$lib/planning';
-	import { phaseProgress, phaseSplitLine } from '$lib/semester';
+	import type { DemandRelease, WishRounds } from '$lib/planning';
+	import { phaseProgress, phaseSplitLine, wishRoundsLine } from '$lib/semester';
 
 	let {
 		phase,
 		release = null,
+		rounds = null,
 		label = 'Phasen des Semesters'
-	}: { phase: Phase; release?: DemandRelease | null; label?: string } = $props();
+	}: {
+		phase: Phase;
+		release?: DemandRelease | null;
+		rounds?: WishRounds | null;
+		label?: string;
+	} = $props();
 
 	const steps = $derived(phaseProgress(phase, release));
 	const at = $derived(steps.findIndex((s) => s.phase === phase));
 	const split = $derived(phaseSplitLine(phase, release));
+	const roundsLine = $derived(wishRoundsLine(phase, rounds));
 </script>
 
 <!--
@@ -22,6 +29,9 @@
 	While only some programmes have released their demand, demand planning and wish phase are both
 	current, each segment filled by its share of the programmes; the line below says the same in
 	words. `aria-current` stays on the stored phase.
+
+	The subject groups' wish rounds get a line of their own under the bar, never a share of it:
+	they run per subject group, the bar's split per programme. See `wishRoundsLine`.
 
 	Below sm a fifth of a phone is too narrow for "Studiengangs-Review": the names move into the
 	list for screen readers only, and one line under the bar names the current phase instead.
@@ -69,4 +79,7 @@
 	<p class="mt-1 text-xs sm:hidden" aria-hidden="true">
 		Phase {at + 1} von {steps.length}: <span class="font-semibold">{steps[at].label}</span>
 	</p>
+{/if}
+{#if roundsLine}
+	<p class="text-base-content/90 mt-1 text-xs" data-wish-rounds>{roundsLine}</p>
 {/if}
