@@ -34,7 +34,9 @@
 		instancesOfDegree,
 		programmeSections,
 		programmesWithoutDegree,
-		mayFillUnfiled,
+		mayOnlyFileUnfiled,
+		offersUnfiledTab,
+		unfiledModules,
 		mayShowGaps,
 		MIXED_CHOICE,
 		UNFILED,
@@ -52,7 +54,7 @@
 		formatHours,
 		programmeLabel
 	} from '$lib/catalogue';
-	import { trackSaves } from '$lib/saveOnLeave';
+	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
 	import { basketValue, cohortBasketOptions, cohortsInBasket, orderParam } from '$lib/basket';
 	import GearIcon from '$lib/components/GearIcon.svelte';
 	import { facultiesElsewhere } from '$lib/demand';
@@ -120,10 +122,23 @@
 	/** Whether the tab in the address is the one for instances nobody has filed. */
 	const unfiled = $derived(tab === UNFILED);
 
-	/** Whether to offer that tab at all — the two roles that may fill such an instance. */
-	const offerUnfiled = $derived(mayFillUnfiled(data.session?.effectiveRoles ?? []));
-
 	const roles = $derived(data.session?.effectiveRoles ?? []);
+
+	/**
+	 * Whether to offer that tab at all: to the two roles that may fill such an instance, and to a
+	 * subject group lead, who may take its module into their group.
+	 */
+	const offerUnfiled = $derived(offersUnfiledTab(roles, data.led));
+
+	/** Whether that tab shows the filing action instead of the table — for the lead who may not fill. */
+	const onlyFiling = $derived(unfiled && mayOnlyFileUnfiled(roles, data.led));
+
+	/** The groups this person may file the modules of that tab into. */
+	const filingTargets = $derived(
+		data.subjectGroups
+			.filter((g) => data.led.some((l) => l.id === g.id))
+			.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+	);
 
 	/** The study programmes offered as a view of their own, across every subject group. */
 	const programmeChoices = $derived(
@@ -152,6 +167,9 @@
 			? instancesOfProgramme(data.instances, programmeCode)
 			: instancesOfTab(data.instances, tab)
 	);
+
+	/** The modules waiting on the unfiled tab for a lead to file them. */
+	const waiting = $derived(onlyFiling ? unfiledModules(tabInstances) : []);
 
 	/** What the table shows: the tab, cut to one degree, to CiE and to a basket where chosen. */
 	/** Who teaches on contract, from the teacher list the page loaded: „LB“ and its filter. */
@@ -623,6 +641,85 @@
 				{/if}
 			</div>
 		</div>
+	{:else if onlyFiling}
+		<!--
+			A subject group lead on the unfiled tab. Filling these cohorts is the programme lead's or the
+			dean's office's, and their wishes are withheld from the lead until the module is in one of
+			their groups; what the lead can do is exactly that — file it. Afterwards the cohorts stand
+			under that group's tab like every other.
+		-->
+		<section class="border-base-300 bg-base-100 mt-4 flex flex-col gap-3 rounded-lg border p-4">
+			<h2 class="text-lg font-semibold">Module ohne Fachgruppe</h2>
+			<p class="text-base-content/80 max-w-prose text-sm">
+				Diese Module haben in diesem Semester Instanzen, gehören aber noch keiner Fachgruppe an.
+				Besetzen können sie so nur die Studiengangsleitung und das Dekanat. Gehört ein Modul in
+				Deine Fachgruppe, übernimm es hier: Dann steht es unter deren Reiter, Du siehst die Wünsche
+				darauf und besetzt es wie gewohnt.
+			</p>
+			{#if form && 'filed' in form && form.filed}
+				<p class="text-sm" role="status">
+					<span class="badge badge-success badge-sm align-middle">übernommen</span>
+					{form.filed.count === 1 ? 'Ein Modul' : `${form.filed.count} Module`} jetzt in
+					<strong>{form.filed.group}</strong>.
+				</p>
+			{:else if form && 'filing' in form && form.message}
+				<p class="text-sm" role="alert">
+					<span class="badge badge-error badge-sm align-middle">nicht übernommen</span>
+					{form.message}
+				</p>
+			{/if}
+			{#if waiting.length === 0}
+				<p class="text-sm">In diesem Semester gibt es keine Instanzen ohne Fachgruppe.</p>
+			{:else}
+				<form
+					method="POST"
+					action="?/file"
+					class="flex flex-col gap-3"
+					use:askBeforeLeave={{
+						label: 'Ausgewählte Module, noch nicht übernommen',
+						canSave: false
+					}}
+				>
+					<ul class="flex flex-col gap-2">
+						{#each waiting as module (module.id)}
+							<li>
+								<label class="flex items-start gap-2">
+									<input
+										type="checkbox"
+										name="moduleId"
+										value={module.id}
+										class="checkbox checkbox-sm mt-0.5"
+									/>
+									<span>
+										<a class="link font-medium" href={resolve(`/module/${module.id}`)}>
+											{module.name}
+										</a>
+										<span class="text-base-content/80 text-sm">· {module.cohorts.join(', ')}</span>
+									</span>
+								</label>
+							</li>
+						{/each}
+					</ul>
+					<div class="flex flex-wrap items-end gap-2">
+						{#if filingTargets.length === 1}
+							<input type="hidden" name="subjectGroup" value={filingTargets[0].id} />
+						{:else}
+							<label class="form-control">
+								<span class="label-text text-sm">übernehmen in</span>
+								<select name="subjectGroup" class="select select-bordered select-sm max-w-full">
+									{#each filingTargets as group (group.id)}
+										<option value={group.id}>{group.name}</option>
+									{/each}
+								</select>
+							</label>
+						{/if}
+						<button type="submit" class="btn btn-sm btn-primary">
+							{filingTargets.length === 1 ? `In ${filingTargets[0].name} übernehmen` : 'Übernehmen'}
+						</button>
+					</div>
+				</form>
+			{/if}
+		</section>
 	{:else}
 		<!--
 			The view: only bachelor or only master, and grouped by programme on request. Both only

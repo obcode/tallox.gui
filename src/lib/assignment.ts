@@ -1,4 +1,4 @@
-import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
+import { PART_KIND_LABELS, formatHours, mayFileModules } from '$lib/catalogue';
 import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
 import type { Degree, DutyStatus, InstancePartKind } from '$lib/gql/__generated__/graphql';
 import {
@@ -211,7 +211,9 @@ export function partHours(part: PartLike): string {
 }
 
 /** The cohort label: the programme's code, the cohort year, and the track letter. */
-export function cohortLabel(instance: InstanceLike): string {
+export function cohortLabel(
+	instance: Pick<InstanceLike, 'programme' | 'programmeSemester' | 'track'>
+): string {
 	const year = instance.programmeSemester == null ? '' : String(instance.programmeSemester);
 	return `${instance.programme.code}${year}${instance.track}`;
 }
@@ -987,6 +989,65 @@ export function programmesWithoutDegree<
  */
 export function mayFillUnfiled(roles: readonly string[]): boolean {
 	return roles.includes('PROGRAMME_LEAD') || roles.includes('DEANS_OFFICE');
+}
+
+/**
+ * Whether to offer the "no subject group" tab — to fill it, or to file its modules.
+ *
+ * A subject group lead may not fill such an instance (see `mayFillUnfiled`), but may take its
+ * module into a group they lead (`policy.MayFileModule`), and from then on reads and fills it
+ * under that group's tab like any other. Without the tab the lead had no way to learn which
+ * instances of the semester were waiting for exactly that — asked for on 2026-11-19. So the lead
+ * gets the tab, with the filing action instead of the table (`mayOnlyFileUnfiled`).
+ *
+ * An unscoped lead gets neither: leading no group, there is nothing to file into.
+ */
+export function offersUnfiledTab(
+	roles: readonly string[],
+	led: readonly { id: string }[]
+): boolean {
+	return mayFillUnfiled(roles) || mayFileModules(roles, led);
+}
+
+/**
+ * Whether the unfiled tab shows the filing action instead of the assignment table.
+ *
+ * For whoever may file but not fill: the table would offer a control on every row that the
+ * backend refuses, and show no wishes — they are withheld from a subject group lead on a module in
+ * no group, and stay so until the module is filed.
+ */
+export function mayOnlyFileUnfiled(
+	roles: readonly string[],
+	led: readonly { id: string }[]
+): boolean {
+	return !mayFillUnfiled(roles) && mayFileModules(roles, led);
+}
+
+/** One module on the unfiled tab, with the cohorts of this semester that wait for it. */
+export type UnfiledModule = { id: string; name: string; cohorts: string[] };
+
+/**
+ * The modules behind the instances of the unfiled tab — the unit that is filed, because the
+ * subject group belongs to the module and not to a cohort. Sorted by name; the cohorts of each in
+ * label order.
+ */
+export function unfiledModules(
+	instances: readonly Pick<InstanceLike, 'module' | 'programme' | 'programmeSemester' | 'track'>[]
+): UnfiledModule[] {
+	const byId = new Map<string, UnfiledModule>();
+	for (const i of instances) {
+		if (i.module.subjectGroup) continue;
+		let m = byId.get(i.module.id);
+		if (!m) {
+			m = { id: i.module.id, name: i.module.name, cohorts: [] };
+			byId.set(m.id, m);
+		}
+		const label = cohortLabel(i);
+		if (!m.cohorts.includes(label)) m.cohorts.push(label);
+	}
+	const out = [...byId.values()];
+	for (const m of out) m.cohorts.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
+	return out.sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
 /**

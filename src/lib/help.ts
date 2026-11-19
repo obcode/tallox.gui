@@ -317,6 +317,16 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{
+		question: 'Was mache ich als Fachgruppenleitung unter „ohne Fachgruppe“?',
+		answer:
+			'Dort stehen die Module, die im Semester Instanzen haben, aber noch keiner Fachgruppe angehören, mit ihren Zügen. Besetzen können sie so nur die Studiengangsleitung und das Dekanat, und die Wünsche darauf siehst Du noch nicht. Gehört ein Modul in Deine Fachgruppe, kreuze es an und übernimm es: Dann steht es unter dem Reiter Deiner Fachgruppe, Du siehst die Wünsche und besetzt es wie gewohnt. Dasselbe geht im Modulkatalog mit dem Filter „ohne Fachgruppe“.',
+		who: ['SUBJECT_GROUP_LEAD'],
+		where: [
+			{ href: '/zuteilung', label: 'Zuteilung' },
+			{ href: '/module', label: 'Modulkatalog' }
+		]
+	},
+	{
 		question: 'Wie teile ich Lehrbeauftragte zu, die kein Tallox-Konto haben?',
 		answer:
 			'Auf der Zuteilungsseite wie alle anderen: sie stehen unter „Weitere Lehrende“ in der Auswahl, auch ohne Tallox-Konto. Ein Konto brauchen sie dafür nicht. Wen das ZPA als lehrbeauftragt führt, trägt in der Auswahl ein „LB“ vor dem Hinweis, auch wenn die Person schon zugeteilt ist. Der Haken „nur Lehrbeauftragte“ über der Tabelle zeigt nur die Züge, in denen Lehrbeauftragte einen Teil halten. Wer noch nicht im ZPA steht, legst Du zuerst unter Zuteilung → Lehrpersonen an.',

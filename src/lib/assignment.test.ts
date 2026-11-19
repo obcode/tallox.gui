@@ -34,6 +34,9 @@ import {
 	programmesWithoutDegree,
 	programmeSections,
 	mayFillUnfiled,
+	mayOnlyFileUnfiled,
+	offersUnfiledTab,
+	unfiledModules,
 	UNFILED,
 	cohortsToSettle,
 	cohortsWithoutInterest,
@@ -952,6 +955,65 @@ describe('who is offered the unfiled tab', () => {
 
 	it('is not the subject group lead, whose reach is a group', () => {
 		expect(mayFillUnfiled(['LECTURER', 'SUBJECT_GROUP_LEAD'])).toBe(false);
+	});
+
+	// The lead may not fill, but may file the module into a group they lead — and needs the tab to
+	// find out which modules are waiting for that.
+	const led = [{ id: 'g1' }];
+	it('is also the subject group lead, who files instead of filling', () => {
+		expect(offersUnfiledTab(['LECTURER', 'SUBJECT_GROUP_LEAD'], led)).toBe(true);
+		expect(mayOnlyFileUnfiled(['LECTURER', 'SUBJECT_GROUP_LEAD'], led)).toBe(true);
+	});
+
+	it('is not an unscoped lead, who has no group to file into', () => {
+		expect(offersUnfiledTab(['SUBJECT_GROUP_LEAD'], [])).toBe(false);
+		expect(mayOnlyFileUnfiled(['SUBJECT_GROUP_LEAD'], [])).toBe(false);
+	});
+
+	it('is not a lecturer', () => {
+		expect(offersUnfiledTab(['LECTURER'], [])).toBe(false);
+	});
+
+	it('keeps the table for whoever may fill, even when they also lead a group', () => {
+		expect(offersUnfiledTab(['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD'], led)).toBe(true);
+		expect(mayOnlyFileUnfiled(['PROGRAMME_LEAD', 'SUBJECT_GROUP_LEAD'], led)).toBe(false);
+		expect(mayOnlyFileUnfiled(['DEANS_OFFICE'], [])).toBe(false);
+	});
+});
+
+describe('the modules of the unfiled tab', () => {
+	const cohort = (
+		moduleId: string,
+		name: string,
+		code: string,
+		year: number,
+		track: string,
+		group: { id: string; code: string } | null = null
+	) => ({
+		module: { id: moduleId, name, subjectGroup: group },
+		programme: { code },
+		programmeSemester: year,
+		track
+	});
+
+	it('lists each module once, with its cohorts, by name', () => {
+		expect(
+			unfiledModules([
+				cohort('m2', 'Zeta', 'IF', 4, 'B'),
+				cohort('m1', 'Alpha', 'IF', 2, ''),
+				cohort('m2', 'Zeta', 'IF', 4, 'A'),
+				cohort('m2', 'Zeta', 'DC', 4, '')
+			])
+		).toEqual([
+			{ id: 'm1', name: 'Alpha', cohorts: ['IF2'] },
+			{ id: 'm2', name: 'Zeta', cohorts: ['DC4', 'IF4A', 'IF4B'] }
+		]);
+	});
+
+	it('leaves out modules that already have a group', () => {
+		expect(unfiledModules([cohort('m1', 'Alpha', 'IF', 2, '', { id: 'g1', code: 'SE' })])).toEqual(
+			[]
+		);
 	});
 });
 

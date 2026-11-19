@@ -713,13 +713,55 @@ test.describe('the demand table', () => {
 		}
 	});
 
-	// The tab is a convenience and not a boundary, but offering somebody a screen on which every
-	// row refuses them is how people learn to ignore refusals.
-	test('the unfiled tab is not offered to a subject group lead', async ({ asPersona }) => {
-		const page = await asPersona(PERSONAS.drei);
-		await gotoRendered(page, `/zuteilung?semester=${DEMAND.semester}`);
+	// A subject group lead may not fill a cohort whose module is in no group, but may take the
+	// module into a group they lead — and needs the tab to find out which modules wait for that.
+	// So the tab is offered, with the filing action instead of a table whose every row would
+	// refuse them; after filing, the cohort stands under the group's tab. Asked for on 2026-11-19.
+	test('a subject group lead files an unfiled module from the unfiled tab', async ({
+		asPersona,
+		checkA11y
+	}) => {
+		const name = 'E2E Kurzfristiges FWP zum Einsortieren';
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+		await page.getByText('Eigene Lehrveranstaltung oder FWP-Platzhalter anlegen').click();
+		await page.getByRole('textbox', { name: 'Name' }).fill(name);
+		await page.getByRole('button', { name: 'Anlegen und anmelden' }).click();
+		await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible();
 
-		await expect(page.getByRole('tab', { name: 'ohne Fachgruppe' })).toHaveCount(0);
+		try {
+			const lead = await asPersona(PERSONAS.drei);
+			await gotoRendered(lead, `/zuteilung?semester=${DEMAND.semester}`);
+			await lead.getByRole('tab', { name: 'ohne Fachgruppe' }).click();
+
+			await expect(lead.getByRole('heading', { name: 'Module ohne Fachgruppe' })).toBeVisible();
+			// No assignment table: every row of it would refuse a subject group lead.
+			await expect(lead.getByRole('button', { name: 'Alles speichern' })).toHaveCount(0);
+
+			await lead.getByRole('checkbox', { name: new RegExp(name) }).check();
+			await lead
+				.getByRole('combobox', { name: 'übernehmen in' })
+				.selectOption({ label: 'Zuteilungs-Testfachgruppe' });
+			await lead.getByRole('button', { name: 'Übernehmen' }).click();
+			await expect(lead.getByRole('status')).toContainText('Zuteilungs-Testfachgruppe');
+			await expect(lead.getByRole('checkbox', { name: new RegExp(name) })).toHaveCount(0);
+
+			await gotoRendered(
+				lead,
+				`/zuteilung?semester=${DEMAND.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`
+			);
+			await expect(lead.getByRole('cell', { name, exact: true })).toBeVisible();
+			await checkA11y(lead);
+		} finally {
+			runSql(
+				`DELETE FROM course_instance WHERE module_id IN
+				   (SELECT id FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)});
+				 DELETE FROM module_component WHERE module_id IN
+				   (SELECT id FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)});
+				 DELETE FROM module WHERE source = 'LOCAL' AND name = ${quoted(name)};`,
+				'removing the filed own course'
+			);
+		}
 	});
 
 	// The "Art" filter, which knew two of the three answers.

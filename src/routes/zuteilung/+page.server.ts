@@ -384,6 +384,17 @@ const SetWindowDocument = graphql(`
 	}
 `);
 
+const FileModulesDocument = graphql(`
+	mutation FileUnfiledModules($moduleIds: [ID!]!, $subjectGroup: ID) {
+		setModulesSubjectGroup(moduleIds: $moduleIds, subjectGroup: $subjectGroup) {
+			modulesAssigned
+			subjectGroup {
+				name
+			}
+		}
+	}
+`);
+
 /**
  * Whether this tab names a subject group the backend can look up.
  *
@@ -696,6 +707,40 @@ export const actions: Actions = {
 			return fail(403, { message: toRefusal(err).message, refusals: [] });
 		}
 		return { saved: 0, refusals: [] };
+	},
+
+	/**
+	 * Take modules from the unfiled tab into a subject group the caller leads.
+	 *
+	 * What a subject group lead does on that tab instead of filling: the backend lets them file a
+	 * module in no group into one of theirs (`policy.MayFileModule`), and from then on its cohorts
+	 * stand under that group's tab with their wishes. The same mutation as the module catalogue's;
+	 * the backend checks both ends of the move.
+	 */
+	file: async ({ request }) => {
+		const form = await request.formData();
+		const moduleIds = form.getAll('moduleId').map(String).filter(Boolean);
+		const subjectGroup = String(form.get('subjectGroup') ?? '');
+		if (moduleIds.length === 0 || subjectGroup === '') {
+			return fail(400, {
+				message: 'Bitte mindestens ein Modul und eine Fachgruppe wählen.',
+				refusals: [],
+				filing: true
+			});
+		}
+		try {
+			const data = await backendRequest(FileModulesDocument, { moduleIds, subjectGroup });
+			return {
+				saved: 0,
+				refusals: [] as RowRefusal[],
+				filed: {
+					count: data.setModulesSubjectGroup.modulesAssigned,
+					group: data.setModulesSubjectGroup.subjectGroup?.name ?? ''
+				}
+			};
+		} catch (err) {
+			return fail(400, { message: toRefusal(err).message, refusals: [], filing: true });
+		}
 	}
 };
 
