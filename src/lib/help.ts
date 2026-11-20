@@ -92,7 +92,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Kann ich nach der Wunschrunde noch Züge ergänzen oder zusammenlegen?',
 		answer:
-			'Ja, bis das Semester abgeschlossen ist. Wer einem Modul, das weiter angeboten wird, einen Zug wegnimmt, legt zusammen: die Wünsche für den wegfallenden Zug gehen auf einen verbleibenden über. Wer beide Züge gewünscht hat, behält einen Wunsch mit der stärkeren Stufe und beiden Notizen. Ist dem wegfallenden Zug schon jemand zugeteilt, wird zuerst die Zuteilung gelöst. Ein Modul ganz zu streichen geht erst, wenn niemand mehr dafür eingetragen ist.',
+			'Ja, bis das Semester abgeschlossen ist. Wer einem Modul, das weiter angeboten wird, einen Zug wegnimmt, legt zusammen: die Wünsche für den wegfallenden Zug gehen auf einen verbleibenden über. Wer beide Züge gewünscht hat, behält einen Wunsch mit der stärkeren Stufe und beiden Notizen. Ist dem wegfallenden Zug schon jemand zugeteilt, wird zuerst die Zuteilung gelöst. Ein Modul ganz zu streichen, für das sich Kolleginnen oder Kollegen eingetragen haben, fragt Tallox beim Speichern eigens nach: Erst mit dem Haken „trotzdem zurückziehen“ wird es zurückgezogen, und die Wünsche dafür verfallen. Wer „Modul wird doch nicht angeboten“ für „meine Wünsche“ abonniert hat, bekommt dann eine Mail. Eine Zuteilung löst das nie, die wird in der Zuteilung gelöst. Was beim Speichern nicht ging, nennt Tallox mit Modul, Zug und Grund.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/bedarf', label: 'Bedarf' }]
 	},

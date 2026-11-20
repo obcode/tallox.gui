@@ -21,8 +21,9 @@ describe('notification labels', () => {
 	it('offers only sets the backend accepts for a kind', () => {
 		expect(targetSetsFor('DEMAND_RELEASED')).toEqual(['MY_PROGRAMMES']);
 		expect(targetSetsFor('PHASE_ADVANCED')).toEqual([]);
-		// An instance somebody wished for cannot be withdrawn, so the set says nothing about it.
-		expect(targetSetsFor('MODULE_WITHDRAWN')).not.toContain('MY_WISHES');
+		// A cohort can be withdrawn with its wishes lapsing, so „meine Wünsche“ hears of it; an
+		// instance somebody holds cannot be withdrawn, so „meine Zuteilungen“ says nothing about it.
+		expect(targetSetsFor('MODULE_WITHDRAWN')).toContain('MY_WISHES');
 		expect(targetSetsFor('MODULE_WITHDRAWN')).not.toContain('MY_ASSIGNMENTS');
 	});
 
