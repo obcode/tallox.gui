@@ -49,6 +49,7 @@
 	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
 	import NoteIcon from '$lib/components/NoteIcon.svelte';
 	import { hasAnyRole } from '$lib/roles';
+	import { refusalSummary, refusedModules, wishedRefusals } from '$lib/demandRefusals';
 	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
 	import {
 		PHASE_HINTS,
@@ -364,7 +365,8 @@
 		}
 		if (showResult && form && 'report' in form && form.report) {
 			const r = form.report;
-			const refused = r.refused.length > 0 ? ` ${r.refused.length} nicht möglich.` : '';
+			// Every refusal with module, cohort and reason — „1 nicht möglich“ left the lead guessing.
+			const refused = refusalSummary(r.refused);
 			// What happened in *other* programmes goes after it and not into the total: a row that
 			// came about next to another programme holds nothing, and a host that withdrew has handed
 			// its teaching on. Both are invisible when all it says is „1 angelegt“.
@@ -412,6 +414,13 @@
 	 * throws on an already-open dialog, hence the close-then-open.
 	 */
 	let showConfirm = $state(true);
+
+	/** Modules the preview refused only for their wishes — the dialog offers to let those lapse. */
+	const wishedModules = $derived(
+		form && 'preview' in form && form.preview
+			? refusedModules(wishedRefusals(form.preview.refused))
+			: []
+	);
 	let confirmEl = $state<HTMLDialogElement | null>(null);
 	/**
 	 * True while the close-then-open of the upgrade is in flight.
@@ -1439,18 +1448,20 @@
 				<h2 id="withdraw-confirm-title" class="mb-2 font-medium">
 					<span aria-hidden="true">⚠️</span> Bitte bestätigen
 				</h2>
-				<p class="text-base-content/90 text-sm">
-					Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit.
-					Bleibt das Modul angeboten, gehen Wünsche für einen wegfallenden Zug auf einen verbleibenden
-					über. Ist schon jemand zugeteilt, wird die Instanz einzeln abgelehnt und bleibt.
-				</p>
-				<ul class="mt-2 flex flex-col gap-1">
-					{#each form.preview.withdrawn as change, i (i)}
-						<li class="text-base-content/90 text-sm">
-							{change.moduleName}{change.track ? ` — Zug ${change.track}` : ''}
-						</li>
-					{/each}
-				</ul>
+				{#if form.preview.withdrawn.length > 0}
+					<p class="text-base-content/90 text-sm">
+						Dieser Schritt zieht {form.preview.withdrawn.length} Instanz(en) zurück. Die Teile gehen mit.
+						Bleibt das Modul angeboten, gehen Wünsche für einen wegfallenden Zug auf einen verbleibenden
+						über. Ist schon jemand zugeteilt, wird die Instanz einzeln abgelehnt und bleibt.
+					</p>
+					<ul class="mt-2 flex flex-col gap-1">
+						{#each form.preview.withdrawn as change, i (i)}
+							<li class="text-base-content/90 text-sm">
+								{change.moduleName}{change.track ? ` — Zug ${change.track}` : ''}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				<!--
 					What would happen in *another* programme, and in the conditional at that.
 
@@ -1477,6 +1488,33 @@
 						Außerdem: {form.preview.created.length} neu, {form.preview.changed.length} geändert.
 					</p>
 				{/if}
+				{#if wishedModules.length > 0}
+					<!--
+						Cohorts refused only because colleagues registered interest in them. Withdrawn only
+						with this tick, per module: the wishes lapse, and the people who made them can be
+						told by mail if they subscribed.
+					-->
+					<fieldset class="mt-3 flex flex-col gap-1">
+						<legend class="text-base-content/90 mb-1 text-sm">
+							Für diese Module haben sich Kolleginnen oder Kollegen eingetragen:
+						</legend>
+						{#each wishedModules as r (r.moduleId)}
+							<label class="flex items-start gap-2 text-sm">
+								<input
+									type="checkbox"
+									class="checkbox checkbox-sm mt-0.5"
+									name="dropWishes"
+									form="withdraw-apply"
+									value={r.moduleId}
+								/>
+								<span>
+									{r.moduleName}{r.track ? ` — Zug ${r.track}` : ''}: trotzdem zurückziehen. Die
+									Wünsche dafür verfallen.
+								</span>
+							</label>
+						{/each}
+					</fieldset>
+				{/if}
 				<div class="modal-action">
 					<!--
 						The way out the box did not have. A modal without a cancel is a dead end — and without
@@ -1490,6 +1528,7 @@
 						<button type="submit" class="btn btn-sm">Abbrechen</button>
 					</form>
 					<form
+						id="withdraw-apply"
 						method="POST"
 						action="?/apply"
 						use:enhance={() =>

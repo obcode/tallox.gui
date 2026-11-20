@@ -371,6 +371,73 @@ test.describe('the demand table', () => {
 		await expect(page.getByText('1 zurückgezogen')).toBeVisible();
 	});
 
+	// Reported: a module somebody had wished for could not be taken out of the demand, and the save
+	// said only "1 nicht möglich". Now the refusal names module and reason, and a second tick in
+	// the dialog withdraws it anyway, the wishes lapsing.
+	test('names why a withdrawal failed, and withdraws despite wishes after a second tick', async ({
+		asPersona
+	}) => {
+		const wished = `SELECT 1 FROM wish w
+		   JOIN course_instance c ON c.id = w.course_instance_id
+		  WHERE c.module_id = '${CATALOGUE.confirmable}'`;
+		const cleanUp = `DELETE FROM wish WHERE course_instance_id IN
+		    (SELECT id FROM course_instance WHERE module_id = '${CATALOGUE.confirmable}');
+		  DELETE FROM lapsed_wish WHERE module_id = '${CATALOGUE.confirmable}';`;
+
+		const page = await asPersona(PERSONAS.vier);
+		await gotoRendered(page, DEMAND_URL);
+		const row = () => page.getByRole('row', { name: /E2E Modul zum Bestätigen/ }).first();
+
+		// Offered again — the test before withdrew it — and then somebody wishes for it. Fuenf, for
+		// the reason seed.ts gives.
+		await row().locator('input[name="offer"]').check();
+		await expect(page.getByText('1 angelegt')).toBeVisible({ timeout: 15_000 });
+		runSql(
+			`INSERT INTO wish (course_instance_id, person_id, priority, note)
+			 SELECT c.id, p.id, 1, '' FROM course_instance c
+			   JOIN semester s ON s.id = c.semester_id, person p
+			  WHERE c.module_id = '${CATALOGUE.confirmable}' AND s.code = ${quoted(DEMAND.semester)}
+			    AND p.mail = 'dekanat@example.org';`,
+			'a wish on the module to withdraw'
+		);
+
+		try {
+			await gotoRendered(page, DEMAND_URL);
+			await row().locator('input[name="offer"]').uncheck();
+
+			// Without the extra tick: refused, with module and reason.
+			const dialog = page.getByRole('dialog');
+			await expect(dialog).toBeVisible({ timeout: 15_000 });
+			const drop = dialog.getByRole('checkbox', { name: /E2E Modul zum Bestätigen/ });
+			await expect(drop).not.toBeChecked();
+			await dialog.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
+			await expect(
+				page.getByText(/Nicht möglich — E2E Modul zum Bestätigen: hierfür haben sich/)
+			).toBeVisible({ timeout: 15_000 });
+			runSql(
+				`DO $$ BEGIN IF NOT EXISTS (${wished}) THEN
+				   RAISE EXCEPTION 'the wish went without the tick'; END IF; END $$;`,
+				'checking the wish is still there'
+			);
+
+			// With it: withdrawn, the wish lapses.
+			await gotoRendered(page, DEMAND_URL);
+			await row().locator('input[name="offer"]').uncheck();
+			await expect(dialog).toBeVisible({ timeout: 15_000 });
+			await dialog.getByRole('checkbox', { name: /E2E Modul zum Bestätigen/ }).check();
+			await dialog.getByRole('button', { name: 'Zurückziehen und speichern' }).click();
+			await expect(page.getByText('1 zurückgezogen')).toBeVisible({ timeout: 15_000 });
+			await expect(page.getByText(/Nicht möglich/)).toHaveCount(0);
+			runSql(
+				`DO $$ BEGIN IF EXISTS (${wished}) THEN
+				   RAISE EXCEPTION 'the wish survived the withdrawal'; END IF; END $$;`,
+				'checking the wish lapsed'
+			);
+		} finally {
+			runSql(cleanUp, 'removing the wish again');
+		}
+	});
+
 	// Reported from the beta: withdrawing one module offered to withdraw two cohorts of another,
 	// whose tick was greyed out. It had been planned while its split was still an estimate, which
 	// the table no longer allows — so the box was disabled, a disabled box is not submitted, and

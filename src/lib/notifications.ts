@@ -67,12 +67,13 @@ export function targetSetLabel(set: NotificationTargetSet): string {
 
 /**
  * Which sets can say something about which kind — the backend's `targetSetKinds`. Withdrawal is
- * missing for wishes and assignments because an instance somebody wished for or holds cannot be
- * withdrawn at all.
+ * missing for assignments because an instance somebody holds cannot be withdrawn at all. For
+ * wishes it is there: a programme lead may withdraw a cohort and let its wishes lapse, and the
+ * mail goes to exactly the people whose wish lapsed.
  */
 const SET_KINDS: Record<NotificationTargetSet, readonly NotificationKind[]> = {
 	MY_ADVANCE_WISHES: ['MODULE_OFFERED', 'MODULE_WITHDRAWN', 'ADVANCE_WISH_RESOLVED'],
-	MY_WISHES: ['WISH_WINDOW_CHANGED', 'ASSIGNMENTS_PUBLISHED'],
+	MY_WISHES: ['MODULE_WITHDRAWN', 'WISH_WINDOW_CHANGED', 'ASSIGNMENTS_PUBLISHED'],
 	MY_ASSIGNMENTS: ['ASSIGNMENTS_PUBLISHED', 'CONFIRMATION_DUE'],
 	MY_COMPETENCES: ['MODULE_OFFERED', 'MODULE_WITHDRAWN'],
 	MY_SUBJECT_GROUPS: ['MODULE_OFFERED', 'MODULE_WITHDRAWN', 'WISH_WINDOW_CHANGED'],

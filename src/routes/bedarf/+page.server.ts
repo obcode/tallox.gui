@@ -1,3 +1,4 @@
+import { wishedRefusals, withDroppedWishes } from '$lib/demandRefusals';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { ALL_PART_KINDS, frequenciesForTerm, localCourseGroupOptions } from '$lib/catalogue';
 import {
@@ -396,10 +397,12 @@ const PlanDocument = graphql(`
 				groupsAfter
 			}
 			refused {
+				moduleId
 				moduleName
 				track
 				code
 				message
+				cause
 			}
 		}
 	}
@@ -859,7 +862,9 @@ export const actions: Actions = {
 
 		try {
 			const preview = await runPlan(variables);
-			if (preview.withdrawn.length > 0) {
+			// Also a cohort the preview refused only for its wishes: the dialog offers to let them
+			// lapse, behind a tick of its own.
+			if (preview.withdrawn.length > 0 || wishedRefusals(preview.refused).length > 0) {
 				return {
 					preview,
 					// What the confirmation re-submits. Server-built, so the second call plans
@@ -888,6 +893,9 @@ export const actions: Actions = {
 				generic: false
 			});
 		}
+
+		// The modules whose wishes the dialog's ticks let lapse. Only those get dropWishes.
+		entries = withDroppedWishes(entries, form.getAll('dropWishes').map(String));
 
 		try {
 			return {
