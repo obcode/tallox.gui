@@ -246,3 +246,33 @@ describe('the assignment area', () => {
 		expect(area(['PARTNER_READER'])!.href).toBe('/zuteilung/uebersicht');
 	});
 });
+
+describe('the statistics area', () => {
+	const area = (roles: string[]) =>
+		visibleNavItems(NAV_ITEMS, roles).find((i) => i.label === 'Statistik');
+	const tabs = (roles: string[]) => area(roles)?.children?.map((c) => c.label) ?? [];
+
+	it('offers the big courses to the dean’s office and both kinds of lead', () => {
+		expect(tabs(['DEANS_OFFICE'])).toEqual(['SWS-Controlling', 'Große Fächer']);
+		expect(tabs(['PROGRAMME_LEAD'])).toEqual(['SWS-Controlling', 'Große Fächer']);
+		expect(area(['DEANS_OFFICE'])!.href).toBe('/statistik');
+	});
+
+	it('leads a subject group lead straight to the big courses', () => {
+		expect(tabs(['LECTURER', 'SUBJECT_GROUP_LEAD'])).toEqual(['Große Fächer']);
+		expect(area(['LECTURER', 'SUBJECT_GROUP_LEAD'])!.href).toBe('/statistik/grosse-faecher');
+	});
+
+	// The backend answers them their own row at most, so the page is not offered.
+	it('offers neither lecturers nor onlookers the big courses', () => {
+		expect(area(['LECTURER'])).toBeUndefined();
+		expect(tabs(['OBSERVER'])).toEqual(['SWS-Controlling']);
+		expect(tabs(['PARTNER_READER'])).toEqual(['SWS-Controlling']);
+	});
+
+	it('keeps the controlling tab inactive on the big courses', () => {
+		const controlling = area(['DEANS_OFFICE'])!.children![0];
+		expect(isActive(controlling, '/statistik/grosse-faecher')).toBe(false);
+		expect(isActive(area(['DEANS_OFFICE'])!, '/statistik/grosse-faecher')).toBe(true);
+	});
+});
