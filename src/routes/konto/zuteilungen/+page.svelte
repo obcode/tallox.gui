@@ -12,7 +12,7 @@
 	} from '#lib/demand.ts';
 	import { cieRows, teachingBySemester } from '#lib/myAssignments.ts';
 	import { autosave } from '#lib/saveOnLeave.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import {
 		CONFIRMATION_BADGES,
 		CONFIRMATION_LABELS,

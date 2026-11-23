@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
 	import PeoplePicker from '#lib/components/PeoplePicker.svelte';
 	import { askBeforeLeave, autosave } from '#lib/saveOnLeave.ts';

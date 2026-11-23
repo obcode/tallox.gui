@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { stackedTable } from '#lib/stackedTable.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
 	import {
 		AREA_HINTS,

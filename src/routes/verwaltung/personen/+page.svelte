@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { stackedTable } from '#lib/stackedTable.ts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { SvelteSet, SvelteURL, SvelteURLSearchParams } from 'svelte/reactivity';

@@ -1,6 +1,6 @@
 import { tick } from 'svelte';
 import type { ActionResult, SubmitFunction } from '$app/forms';
-import { enhance } from '$app/forms';
+import { enhance } from '#lib/enhance.ts';
 import { PendingChanges, serializeFields } from '#lib/pendingChanges.ts';
 
 /**

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
 	import { namesOf } from '#lib/localTeachers.ts';
 	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
