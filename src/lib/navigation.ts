@@ -242,11 +242,31 @@ export const NAV_ITEMS: readonly NavItem[] = [
 		// the API by everybody; the roles here only decide who finds it in the bar.
 		emoji: '📊',
 		label: 'Statistik',
-		href: '/statistik',
-		hint: 'SWS-Controlling: Lehre je Studiengang gegen das Kontingent',
+		hint: 'SWS-Controlling je Studiengang und große Fächer je Person',
 		// And the partner faculties: the controlling of their programmes is what they follow. And an
-		// observer, who follows all of it.
-		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'PARTNER_READER', 'OBSERVER']
+		// observer, who follows all of it. The subject group leads for the big courses only.
+		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'SUBJECT_GROUP_LEAD', 'PARTNER_READER', 'OBSERVER'],
+		children: [
+			{
+				// Exact: the big courses live below it and are a tab of their own.
+				emoji: '📊',
+				label: 'SWS-Controlling',
+				href: '/statistik',
+				hint: 'Lehre je Studiengang gegen das Kontingent',
+				roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE', 'PARTNER_READER', 'OBSERVER'],
+				exact: true
+			},
+			{
+				// The faculty council's rule on big courses (FKR 387). The roles are the ones the
+				// backend answers every row for; anybody else gets their own row only, through the
+				// API as well, so the page is not offered to them.
+				emoji: '🏛️',
+				label: 'Große Fächer',
+				href: '/statistik/grosse-faecher',
+				hint: 'Wer mit vielen SWS genug große Pflicht- und Korbfächer hält (FKR 387)',
+				roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE']
+			}
+		]
 	},
 	{
 		// Running the faculty's side of the installation: not a step of the planning, so it comes

@@ -45,3 +45,4 @@ Kolleginnen und Kollegen.
 - [Zum Home-Bildschirm (zurückgestellt)](home-screen-install.md) — am 2026-11-10 gebaut und zurückgestellt; Wiederaufnahme per Revert des Reverts von `d49b299`
 - [Mail-Seiten](notification-ui.md) — „Benachrichtigungen“ + „Rundmails“ im Namensmenü; die 25er-Grenze von `resolve()` per `asRoute()` behoben; 🔔 auf der Modulseite
 - [Eigene Lehrveranstaltungen bearbeiten](local-module-edit.md) — Umbenennen/Stilllegen auf der Modulseite, frisch lesen vor dem Schreiben, wer darf
+- [Große Fächer (FKR 387)](big-courses-page.md) — `/statistik/grosse-faecher`, Statistik als Bereich mit Reitern, alles rechnet das Backend, Leitungen sehen alle schon während der Planung

@@ -183,6 +183,7 @@ const EVERY_PAGE: readonly { who: Persona; path: string }[] = [
 	{ who: PERSONAS.vier, path: `/bedarf?semester=${DEMAND.semester}` },
 	{ who: PERSONAS.fuenf, path: `/bedarf?semester=${DEMAND.semester}&bearbeiten=1` },
 	{ who: PERSONAS.vier, path: '/statistik' },
+	{ who: PERSONAS.fuenf, path: '/statistik/grosse-faecher' },
 	{
 		who: PERSONAS.drei,
 		path: `/zuteilung?semester=${ASSIGNMENTS.semester}&fachgruppe=${ASSIGNMENTS.subjectGroup}`

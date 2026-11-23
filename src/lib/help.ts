@@ -167,6 +167,13 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/statistik', label: 'Statistik' }]
 	},
 	{
+		question: 'Wie prüfe ich die großen Fächer (FKR 387)?',
+		answer:
+			'Unter Statistik → Große Fächer, je Studienjahr (Wintersemester und folgendes Sommersemester). Je Professorin und Professor stehen dort die eingeplanten SWS im Winter, im Sommer und im Mittel, das Soll und das Ist an großen Fächern und der Status „erfüllt“, „nicht erfüllt“ oder „nicht anwendbar“. Soll: zwei große Fächer ab 20 SWS im Mittel, eines ab 10 SWS, darunter nichts. Groß ist ein Pflicht- oder Korbfach eines beliebigen Studiengangs (FWP zählt nicht), in dem die Person selbst mindestens 6 SWS hält, auch über mehrere Züge zusammen, oder das die ganze Kohorte umfasst (ein Zug oder eine gemeinsame Vorlesung für alle Züge) und in dem sie die Vorlesung hält. Dasselbe Fach im Winter und im Sommer zählt zweimal. Gezählt wird die Zuteilung, nicht das Deputat; Honorarprofs und Lehrbeauftragte stehen nicht darin. Solange eines der beiden Semester noch nicht in der Zuteilung ist, ist die Übersicht als „vorläufig“ markiert. Sie ist ein Hinweis, keine Sperre. Alle Zeilen sehen das Dekanat, die Fachgruppen- und die Studiengangsleitungen, schon während der Planung, im Browser und mit Planungs-Token; alle anderen und jedes normale Token nur die eigene.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/statistik/grosse-faecher', label: 'Große Fächer' }]
+	},
+	{
 		question: 'Wie benenne ich einen Platzhalter um oder werde ihn wieder los?',
 		answer:
 			'Auf der Seite des Eintrags im Modulkatalog, unter „Eigene Lehrveranstaltung“; in der Bedarfsplanung führt der Stift ✏️ neben dem Namen dorthin. Das geht für alles, was die Fakultät selbst angelegt hat, also eigene Lehrveranstaltungen und FWP-Platzhalter, nicht für Module aus dem ZPA. Dort lassen sich Name, Art, Lehrform und SWS ändern. „Aus den Listen nehmen“ legt den Eintrag still: Er verschwindet aus Bedarfsplanung, Modulkatalog und Auswahllisten, gelöscht wird aber nichts, und frühere Semester behalten ihn. Steht er in einem laufenden Semester noch im Bedarf, nimm ihn dort zuerst mit „−“ heraus. Im Modulkatalog findet ihn der Haken „zurückgezogene und stillgelegte anzeigen“ wieder, und „Wieder aufnehmen“ holt ihn zurück. Solange er stillgelegt ist, lässt er sich nicht in den Bedarf nehmen, auch nicht über die Schnittstelle, und beim Übernehmen des Bedarfs aus einem früheren Semester bleibt er zurück. Das dürfen die Studiengangsleitung des Heimatstudiengangs und das Dekanat.',
