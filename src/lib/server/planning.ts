@@ -1,5 +1,5 @@
-import { graphql } from '$lib/gql/__generated__';
-import type { PlanningState } from '$lib/planning';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { PlanningState } from '#lib/planning.ts';
 import { backendRequest } from './backend';
 
 const PlanningSemesterQuery = graphql(`

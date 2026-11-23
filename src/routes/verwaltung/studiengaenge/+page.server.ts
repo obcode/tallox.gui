@@ -1,10 +1,10 @@
 import { error, fail } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
-import { parseDegreeParam } from '$lib/catalogue';
-import { studyYearOf } from '$lib/controlling';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { ProgrammeStatus } from '#lib/gql/__generated__/graphql.ts';
+import { parseDegreeParam } from '#lib/catalogue.ts';
+import { studyYearOf } from '#lib/controlling.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

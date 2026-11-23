@@ -1,4 +1,4 @@
-import type { ThemeChoice } from '$lib/themes';
+import type { ThemeChoice } from '#lib/themes.ts';
 
 declare global {
 	namespace App {
@@ -6,7 +6,7 @@ declare global {
 			message: string;
 			/** Set for unexpected errors: shown on the error page, heads the log line. */
 			errorId?: string;
-			/** Set in the browser when the page's code is gone after a deploy. See $lib/staleBuild. */
+			/** Set in the browser when the page's code is gone after a deploy. See #lib/staleBuild. */
 			staleBuild?: boolean;
 		}
 		interface Locals {
@@ -15,7 +15,7 @@ declare global {
 			remoteDisplayname?: string;
 			/**
 			 * Role narrowing from the cookie. `undefined` = not narrowed, `[]` = narrowed to no
-			 * role at all. See $lib/assumedRoles.
+			 * role at all. See #lib/assumedRoles.
 			 */
 			assumedRoles?: string[];
 			/** Resolved from the cookie, see hooks.server.ts. Never an unchecked value. */

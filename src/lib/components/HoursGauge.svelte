@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { desiredRangeLabel, LOAD_VERDICT_LABELS, loadGauge } from '$lib/desiredHours';
-	import { desiredHoursLabel } from '$lib/wishes';
+	import { desiredRangeLabel, LOAD_VERDICT_LABELS, loadGauge } from '#lib/desiredHours.ts';
+	import { desiredHoursLabel } from '#lib/wishes.ts';
 
 	let {
 		planned,

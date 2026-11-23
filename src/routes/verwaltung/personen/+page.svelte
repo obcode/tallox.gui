@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { SvelteSet, SvelteURL, SvelteURLSearchParams } from 'svelte/reactivity';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
-	import { ALL_ROLES, ROLE_HINTS, ROLE_LABELS, displayName, sortRoles } from '$lib/roles';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { askBeforeLeave, autosave } from '#lib/saveOnLeave.ts';
+	import { ALL_ROLES, ROLE_HINTS, ROLE_LABELS, displayName, sortRoles } from '#lib/roles.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import {
 		ACCOUNT_STATES,
 		ACCOUNT_STATE_LABELS,
@@ -32,7 +32,7 @@
 		teacherFilterParams,
 		type TeacherAccountRow,
 		type TeacherFilter
-	} from '$lib/teacherAccounts';
+	} from '#lib/teacherAccounts.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -96,7 +96,7 @@
 		// Through parse and back, so that the address carries the same shape the server would
 		// write and an unknown value cannot survive a click.
 		selected = parseTeacherFilter(params);
-		const next = new SvelteURL(page.url);
+		const next = new SvelteURL(page.url.href);
 		next.search = String(teacherFilterParams(selected));
 		// `resolve()` is wrong here — it builds a route, and this is the route we are already on
 		// with a different query string. The address is taken from page.url, so it carries

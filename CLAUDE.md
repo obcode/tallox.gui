@@ -74,7 +74,7 @@ its author and does nothing else. Validating it here would create a second opini
 permissions, and two opinions about permissions is one more than this project may have.
 
 `undefined` means "not narrowed", `[]` means "narrowed to no role at all". They are different
-states and travel as "no header" and "header with an empty value" — see `$lib/assumedRoles.ts`.
+states and travel as "no header" and "header with an empty value" — see `#lib/assumedRoles.ts`.
 
 **Three failure modes, three different pages.** A person with an HM login but no row in
 `person` is not a broken backend, and used to be shown as one ("Backend nicht erreichbar" in
@@ -111,16 +111,21 @@ GUI change that needs a new field waits for the backend release that ships it �
 commit. The E2E job additionally validates every document against the schema of the backend
 commit it runs with (`TALLOX_CODEGEN_SCHEMA`), which catches a field the backend removed after
 the pinned release. The release file also carries the directive usages, which is where the
-schema reference gets its door badges from (`$lib/schemaDoc.ts`).
+schema reference gets its door badges from (`#lib/schemaDoc.ts`).
 
 ## Conventions
 
-- **Svelte 5 in runes mode**, globally. `svelte.config.js` sets `compilerOptions.runes: true`,
-  so `export let`, `$:`, `on:click`, `createEventDispatcher` and `<slot>` are **compile
-  errors**, not style preferences. Use `$props()`, `$state()`, `$derived`, `$effect()`,
+- **Svelte 5 in runes mode**, globally. The `sveltekit()` call in `vite.config.ts` sets
+  `compilerOptions.runes: true`, so `export let`, `$:`, `on:click`, `createEventDispatcher` and
+  `<slot>` are **compile errors**, not style preferences. Use `$props()`, `$state()`, `$derived`, `$effect()`,
   callback props, `{@render children()}`.
-  `dynamicCompileOptions` compiles `node_modules` in legacy mode — that escape hatch is for
-  dependencies, never for `src/`.
+  `dynamicCompileOptions` lets the compiler detect the mode per component in `node_modules` —
+  that escape hatch is for dependencies, never for `src/`.
+- **SvelteKit 3: no `svelte.config.js`, no `$lib`, declared env.** The SvelteKit options are
+  arguments of `sveltekit()` in `vite.config.ts` (`vitest.config.ts` extends that file).
+  `src/lib` is imported as `#lib/…` with the file extension (`#lib/catalogue.ts`), a Node
+  subpath import from `package.json`. Environment variables exist only once declared in
+  `src/env.ts`, and are read from `$app/env/private` / `$app/env/public`.
 - **TypeScript only.** `strict: true`. No `.js` files in `src/`.
 - **Styling: Tailwind v4 (CSS-first) + daisyUI.** The theme is a **cookie**, resolved in
   `hooks.server.ts` and written into `<html data-theme>` via `transformPageChunk` — not
@@ -160,7 +165,7 @@ schema reference gets its door badges from (`$lib/schemaDoc.ts`).
   sein"). Not only no sideways scroll of the page — nothing may hide behind a sideways scroll of
   its own either. Horizontal padding comes from `+layout.svelte`; pages do not add their own.
   Grids are always `grid-cols-1 sm:grid-cols-N`.
-  **Every table is `class="table table-stack" use:stackedTable`** (`$lib/stackedTable`): it
+  **Every table is `class="table table-stack" use:stackedTable`** (`#lib/stackedTable`): it
   measures whether its columns fit its box and otherwise turns into cards, one per row, with the
   column heads copied onto the cells as labels and the sort buttons in a row above. A cell whose
   head does not describe it sets its own `data-label` (empty for none). Keep `min-w-[…]` on wide
@@ -183,7 +188,7 @@ schema reference gets its door badges from (`$lib/schemaDoc.ts`).
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
 - **A form that shows a state saves itself; nothing is lost by navigating away** (asked for on
   2026-10-20, after a tick on a page with a "Speichern" button was gone on the next page). Every
-  POST form uses one of the actions in `$lib/saveOnLeave` **instead of** `use:enhance`:
+  POST form uses one of the actions in `#lib/saveOnLeave` **instead of** `use:enhance`:
   `autosave` (ticks, choices, fields saved on change/leaving; the button moves into
   `<noscript>`), `askBeforeLeave` (creating something — token, account, split — keeps its button,
   and leaving with input asks save/discard/stay), or `trackSaves` (pages with their own saving

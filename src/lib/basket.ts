@@ -5,13 +5,13 @@
  * A basket belongs to one programme's regulations — "Pflichtmodule" of one programme is not the
  * "Pflichtmodule" of another — so a choice here names the programme as well, and a cohort matches
  * only in its own programme. The demand page shows one programme at a time and keeps its simpler
- * helpers in `$lib/demand`.
+ * helpers in `#lib/demand`.
  *
  * Everything here reads catalogue and demand data only. Nothing is sorted or filtered by who holds
  * a part or who wishes for it: that would be the aggregate the assignment screen must never show.
  */
 
-import type { DutyStatus } from '$lib/gql/__generated__/graphql';
+import type { DutyStatus } from '#lib/gql/__generated__/graphql.ts';
 
 /** A cohort, as much of it as the basket filter needs: its programme and its module's baskets there. */
 export type CohortBasketLike = {

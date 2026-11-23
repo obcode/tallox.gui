@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scrubBreadcrumb, scrubEvent, withoutQuery } from './sentryScrub';
+import { DATA_COLLECTION, scrubBreadcrumb, scrubEvent, withoutQuery } from './sentryScrub';
 
 describe('withoutQuery', () => {
 	it('cuts at the query and at the fragment', () => {
@@ -73,5 +73,17 @@ describe('scrubEvent', () => {
 
 	it('passes an event without request or breadcrumbs through', () => {
 		expect(scrubEvent({ message: 'x' })).toEqual({ message: 'x' });
+	});
+});
+
+describe('DATA_COLLECTION', () => {
+	it('lets the SDK collect nothing on its own', () => {
+		const leaves = (value: unknown): unknown[] =>
+			value !== null && typeof value === 'object' && !Array.isArray(value)
+				? Object.values(value).flatMap(leaves)
+				: [value];
+		for (const leaf of leaves(DATA_COLLECTION)) {
+			expect(leaf === false || (Array.isArray(leaf) && leaf.length === 0)).toBe(true);
+		}
 	});
 });

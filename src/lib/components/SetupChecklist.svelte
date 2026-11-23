@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SetupCard } from '$lib/setup';
+	import type { SetupCard } from '#lib/setup.ts';
 	import GuidePlaces from './GuidePlaces.svelte';
 
 	let { card, roles }: { card: SetupCard; roles: readonly string[] } = $props();

@@ -1,7 +1,7 @@
 /**
  * The module import, in the language the faculty speaks it.
  *
- * The same translation `$lib/semester.ts` does, and for the same reason: the backend is English
+ * The same translation `#lib/semester.ts` does, and for the same reason: the backend is English
  * throughout, and the mapping to the words people read happens once, here.
  *
  * Svelte-free on purpose, so vitest can check the part that is easy to get wrong — the
@@ -14,7 +14,7 @@ import type {
 	ZpaProjectionStatus,
 	ZpaSyncStatus,
 	ZpaSyncTrigger
-} from '$lib/gql/__generated__/graphql';
+} from '#lib/gql/__generated__/graphql.ts';
 
 export const STATUS_LABELS: Record<ZpaSyncStatus, string> = {
 	RUNNING: 'läuft',
@@ -235,7 +235,7 @@ export function awaitingProjection(
  * The refusals of a manual run, worded here by their code.
  *
  * The backend's sentences for these are terse and are not on the pass-through list in
- * `$lib/server/graphqlError.ts`, so without this the person at the button read the generic
+ * `#lib/server/graphqlError.ts`, so without this the person at the button read the generic
  * failure — for the most ordinary refusal there is, now that the leads press it too: somebody
  * else's run, or the nightly one, is still going. None of them gives anything away.
  */

@@ -1,9 +1,9 @@
-import type { ScopeArea, ScopeVerb } from '$lib/gql/__generated__/graphql';
+import type { ScopeArea, ScopeVerb } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * Scopes in the language the faculty speaks them, and the choice a token dialogue offers.
  *
- * The same translation `$lib/roles.ts` and `$lib/semester.ts` do. Free of Svelte so the two
+ * The same translation `#lib/roles.ts` and `#lib/semester.ts` do. Free of Svelte so the two
  * things that are easy to get wrong here can be checked in vitest: which areas are worth
  * offering, and what an empty selection means.
  */

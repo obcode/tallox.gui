@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
-	import type { NotificationKind } from '$lib/gql/__generated__/graphql';
+	import type { NotificationKind } from '#lib/gql/__generated__/graphql.ts';
 	import {
 		deliveryLabel,
 		kindLabel,
@@ -11,9 +11,9 @@
 		targetSetLabel,
 		targetSetsFor,
 		targetsFor
-	} from '$lib/notifications';
-	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
-	import { stackedTable } from '$lib/stackedTable';
+	} from '#lib/notifications.ts';
+	import { askBeforeLeave, autosave } from '#lib/saveOnLeave.ts';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -101,7 +101,9 @@
 							<td>{kindLabel(s.kind)}</td>
 							<td>
 								{#if s.module}
-									<a class="link" href={resolve(`/module/${s.module.id}`)}>{targetLabel(s)}</a>
+									<a class="link" href={resolve('/module/[id]', { id: s.module.id })}
+										>{targetLabel(s)}</a
+									>
 								{:else}
 									{targetLabel(s)}
 								{/if}

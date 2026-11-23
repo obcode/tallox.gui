@@ -1,11 +1,11 @@
-import type { Role } from '$lib/gql/__generated__/graphql';
-import { isActive } from '$lib/navigation';
-import type { GuideLink } from '$lib/guide';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
+import { isActive } from '#lib/navigation.ts';
+import type { GuideLink } from '#lib/guide.ts';
 
 /**
  * Short answers to the questions that come up once a semester and are forgotten by the next.
  *
- * Data for the same reasons as `$lib/guide.ts`, and checked the same way: every `href` must be a
+ * Data for the same reasons as `#lib/guide.ts`, and checked the same way: every `href` must be a
  * route the navigation knows, and the help panel links it only where the menu would. The guide
  * tells the process in order; these answer a question somebody already has, which is why they
  * are phrased as questions and sorted by the page they belong to rather than by the process.

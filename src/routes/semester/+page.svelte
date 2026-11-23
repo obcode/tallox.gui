@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
-	import { hasAnyRole } from '$lib/roles';
+	import { hasAnyRole } from '#lib/roles.ts';
 	import {
 		demandReleaseLine,
 		PHASE_HINTS,
@@ -10,12 +10,12 @@
 		phaseButtonLabel,
 		semesterName,
 		wishesAreVisible
-	} from '$lib/semester';
-	import { formatMoment } from '$lib/tokens';
-	import { formatDueDate } from '$lib/confirmation';
-	import { autosave } from '$lib/saveOnLeave';
-	import { desiredHoursStage, STAGE_LABELS } from '$lib/desiredHours';
-	import PhaseSteps from '$lib/components/PhaseSteps.svelte';
+	} from '#lib/semester.ts';
+	import { formatMoment } from '#lib/tokens.ts';
+	import { formatDueDate } from '#lib/confirmation.ts';
+	import { autosave } from '#lib/saveOnLeave.ts';
+	import { desiredHoursStage, STAGE_LABELS } from '#lib/desiredHours.ts';
+	import PhaseSteps from '#lib/components/PhaseSteps.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

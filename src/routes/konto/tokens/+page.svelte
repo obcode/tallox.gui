@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
 	import {
 		AREA_HINTS,
@@ -10,11 +10,11 @@
 		UNREACHABLE_AREAS,
 		areaFieldName,
 		describeScopes
-	} from '$lib/scopes';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
-	import { expiresIn, formatMoment, STATUS_BADGE, STATUS_LABEL, tokenStatus } from '$lib/tokens';
+	} from '#lib/scopes.ts';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
+	import { expiresIn, formatMoment, STATUS_BADGE, STATUS_LABEL, tokenStatus } from '#lib/tokens.ts';
 	import type { ActionData, PageData } from './$types';
 
 	type TokenSortKey = 'description' | 'status' | 'created' | 'expires' | 'used';

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import {
 		ALL_DEGREES,
 		DEGREE_LABELS,
@@ -8,14 +8,14 @@
 		PROGRAMME_STATUS_LABELS,
 		degreeParam,
 		programmeStatusBadge
-	} from '$lib/catalogue';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { formatHours } from '$lib/catalogue';
-	import { studyYearLabel } from '$lib/controlling';
-	import { hasAnyRole } from '$lib/roles';
-	import { autosave } from '$lib/saveOnLeave';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
-	import type { ProgrammeStatus } from '$lib/gql/__generated__/graphql';
+	} from '#lib/catalogue.ts';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { formatHours } from '#lib/catalogue.ts';
+	import { studyYearLabel } from '#lib/controlling.ts';
+	import { hasAnyRole } from '#lib/roles.ts';
+	import { autosave } from '#lib/saveOnLeave.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
+	import type { ProgrammeStatus } from '#lib/gql/__generated__/graphql.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

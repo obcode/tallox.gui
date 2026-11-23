@@ -1,4 +1,6 @@
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -23,8 +25,36 @@ function appVersion(): string {
 	}
 }
 
+// The SvelteKit configuration. Since SvelteKit 3 it is passed to the plugin here; a
+// svelte.config.js is refused. vitest.config.ts extends this file, so tests compile with the
+// same options.
+const kit = sveltekit({
+	// The master switch: this whole project runs in runes mode. Legacy syntax (`export let`,
+	// `$:`, `on:click`, `createEventDispatcher`, `<slot>`) is a compile error from here on, not
+	// a question of style.
+	compilerOptions: { runes: true },
+
+	preprocess: vitePreprocess(),
+
+	adapter: adapter(),
+
+	// An open tab asks every five minutes whether a newer build is deployed, so that
+	// NewVersionReload can turn the next click into a full load instead of an import of a
+	// chunk that no longer exists. It asks on returning to the tab as well.
+	version: { pollInterval: 5 * 60_000 },
+
+	// Third-party libraries that ship their .svelte sources sometimes still use legacy
+	// syntax. The global runes:true would break them — so for node_modules the mode is left
+	// to the compiler, which detects it per component. Not `runes: false`: SvelteKit 3's own
+	// root component uses runes syntax and does not compile in legacy mode.
+	// This escape hatch is for dependencies, never for src/.
+	dynamicCompileOptions({ filename }) {
+		if (filename.includes('node_modules')) return { runes: undefined };
+	}
+});
+
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [tailwindcss(), kit],
 
 	define: {
 		__APP_VERSION__: JSON.stringify(appVersion()),

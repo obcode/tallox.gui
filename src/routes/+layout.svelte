@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import AreaTabs from '$lib/components/AreaTabs.svelte';
-	import Footer from '$lib/components/Footer.svelte';
-	import LeaveGuard from '$lib/components/LeaveGuard.svelte';
-	import NarrowingBanner from '$lib/components/NarrowingBanner.svelte';
-	import NavBar from '$lib/components/NavBar.svelte';
-	import NewVersionReload from '$lib/components/NewVersionReload.svelte';
+	import AreaTabs from '#lib/components/AreaTabs.svelte';
+	import Footer from '#lib/components/Footer.svelte';
+	import LeaveGuard from '#lib/components/LeaveGuard.svelte';
+	import NarrowingBanner from '#lib/components/NarrowingBanner.svelte';
+	import NavBar from '#lib/components/NavBar.svelte';
+	import NewVersionReload from '#lib/components/NewVersionReload.svelte';
 	import type { LayoutData } from './$types';
 	import '../app.css';
 

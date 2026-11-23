@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { EXAMPLE_QUERY } from '$lib/apiExamples';
+	import { EXAMPLE_QUERY } from '#lib/apiExamples.ts';
 
 	let { endpoint }: { endpoint: string } = $props();
 

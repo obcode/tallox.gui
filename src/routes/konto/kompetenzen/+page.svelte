@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
-	import CompetenceRow from '$lib/components/CompetenceRow.svelte';
-	import { trackSaves } from '$lib/saveOnLeave';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	import CompetenceRow from '#lib/components/CompetenceRow.svelte';
+	import { trackSaves } from '#lib/saveOnLeave.ts';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import {
 		COMPETENCE_LEVEL_HINTS,
 		COMPETENCE_LEVEL_LABELS,
@@ -16,7 +16,7 @@
 		outsideStatements,
 		savedHint,
 		sortModules
-	} from '$lib/competences';
+	} from '#lib/competences.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

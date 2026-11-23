@@ -8,3 +8,13 @@ allowBuilds:
   '@sentry/cli': false
   '@tailwindcss/oxide': true
   esbuild: true
+
+# Security overrides, each for a Dependabot alert that no release of the parent fixes.
+# Scoped to the one parent, so nothing else is moved. Remove an entry once its parent ships
+# the fix on its own.
+overrides:
+  # GHSA-rj75-hqrm-r3gf. @tailwindcss/typography 0.5.20 (latest) pins exactly 6.0.10.
+  '@tailwindcss/typography>postcss-selector-parser': ^6.1.5
+  # GHSA-g3hv-75wg-m249. graphql-config 5.x and 6.0 both ask for minimatch ^10; the fix is
+  # only in 11. Used by `pnpm codegen` for its document globs, so a codegen run covers it.
+  'graphql-config>minimatch': ^11.0.1

@@ -1,6 +1,6 @@
-import type { AdvanceWishStatus, WishPriority } from '$lib/gql/__generated__/graphql';
-import { semesterName } from '$lib/semester';
-import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '$lib/wishes';
+import type { AdvanceWishStatus, WishPriority } from '#lib/gql/__generated__/graphql.ts';
+import { semesterName } from '#lib/semester.ts';
+import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '#lib/wishes.ts';
 
 /**
  * Advance wishes („Vormerkungen“): interest in a module for a semester whose demand is not settled,

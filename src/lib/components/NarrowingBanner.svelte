@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { secureCookieAttribute } from '$lib/cookies';
+	import { secureCookieAttribute } from '#lib/cookies.ts';
 	import { invalidateAll } from '$app/navigation';
-	import { ASSUME_COOKIE } from '$lib/assumedRoles';
-	import { roleLabels } from '$lib/roles';
+	import { ASSUME_COOKIE } from '#lib/assumedRoles.ts';
+	import { roleLabels } from '#lib/roles.ts';
 
 	let { effectiveRoles }: { effectiveRoles: readonly string[] } = $props();
 

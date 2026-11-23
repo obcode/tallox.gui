@@ -43,7 +43,10 @@ function stackOf(error: unknown): string {
  * Reports the error and returns what the error page gets. A 404 is a wrong address, not a
  * failure: no number, no stack, nothing reported, and the page keeps SvelteKit's message.
  */
-export function reportUnexpectedError(input: UnexpectedError, sinks: ErrorSinks): App.Error {
+export function reportUnexpectedError(
+	input: UnexpectedError,
+	sinks: ErrorSinks
+): Omit<App.Error, 'status'> {
 	if (input.status === 404) return { message: input.message };
 
 	const errorId = newErrorId();

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { ENGLISH_NOT_OFFERED, englishClosed } from '$lib/demand';
+	import { ENGLISH_NOT_OFFERED, englishClosed } from '#lib/demand.ts';
 	import {
 		WISH_NONE,
 		WISH_NONE_LABEL,
@@ -11,7 +11,7 @@
 		wisherLabel,
 		type WishChoice,
 		type WishLike
-	} from '$lib/wishes';
+	} from '#lib/wishes.ts';
 
 	/**
 	 * One cell of the wish table: how much this person wants this cohort, and why.

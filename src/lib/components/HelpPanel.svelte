@@ -3,8 +3,8 @@
 	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { helpFor, type HelpEntry } from '$lib/help';
-	import type { PlanningState } from '$lib/planning';
+	import { helpFor, type HelpEntry } from '#lib/help.ts';
+	import type { PlanningState } from '#lib/planning.ts';
 	import DueNow from './DueNow.svelte';
 	import GuidePlaces from './GuidePlaces.svelte';
 

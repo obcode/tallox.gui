@@ -1,9 +1,9 @@
 import { error, redirect } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import { parseBasketChoice, parseCohortOrder } from '$lib/basket';
-import { withoutEmptyParams } from '$lib/demand';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { parseBasketChoice, parseCohortOrder } from '#lib/basket.ts';
+import { withoutEmptyParams } from '#lib/demand.ts';
 import type { PageServerLoad } from './$types';
 
 /**

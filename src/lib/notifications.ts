@@ -3,7 +3,7 @@ import type {
 	NotificationDelivery,
 	NotificationKind,
 	NotificationTargetSet
-} from '$lib/gql/__generated__/graphql';
+} from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * What the subscription and announcement pages say about kinds, targets and audiences.

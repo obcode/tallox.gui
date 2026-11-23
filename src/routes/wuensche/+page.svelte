@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
-	import HoursGauge from '$lib/components/HoursGauge.svelte';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { autosave, trackSaves } from '$lib/saveOnLeave';
-	import WishCell from '$lib/components/WishCell.svelte';
-	import DesiredRangeFields from '$lib/components/DesiredRangeFields.svelte';
-	import { applyOrder, nextSort, sortRows, type SortState } from '$lib/sorting';
-	import { formatHours } from '$lib/catalogue';
+	import HoursGauge from '#lib/components/HoursGauge.svelte';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { autosave, trackSaves } from '#lib/saveOnLeave.ts';
+	import WishCell from '#lib/components/WishCell.svelte';
+	import DesiredRangeFields from '#lib/components/DesiredRangeFields.svelte';
+	import { applyOrder, nextSort, sortRows, type SortState } from '#lib/sorting.ts';
+	import { formatHours } from '#lib/catalogue.ts';
 	import {
 		facultiesElsewhere,
 		formatBadges,
@@ -16,8 +16,8 @@
 		hoursLabel,
 		moduleRowKey,
 		withTopic
-	} from '$lib/demand';
-	import { semesterName, semesterShortName } from '$lib/semester';
+	} from '#lib/demand.ts';
+	import { semesterName, semesterShortName } from '#lib/semester.ts';
 	import {
 		heldForOthers,
 		closedPhaseHint,
@@ -55,14 +55,14 @@
 		type OwnWishSortKey,
 		type WishRow,
 		type WishSortKey
-	} from '$lib/wishes';
+	} from '#lib/wishes.ts';
 	import {
 		desiredHoursStage,
 		gaugeScale,
 		loadBreakdown,
 		STAGE_HINTS,
 		STAGE_LABELS
-	} from '$lib/desiredHours';
+	} from '#lib/desiredHours.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { leadLine, moduleCountLabel, programmeTitle } from '$lib/startOverview';
+	import { leadLine, moduleCountLabel, programmeTitle } from '#lib/startOverview.ts';
 
 	type Lead = { id: string; name: string; mail: string };
 
@@ -75,7 +75,9 @@
 									<ul class="text-base-content/90 mt-1 flex flex-col gap-0.5 pl-4">
 										{#each group.modules as module (module.id)}
 											<li>
-												<a class="link" href={resolve(`/module/${module.id}`)}>{module.name}</a>
+												<a class="link" href={resolve('/module/[id]', { id: module.id })}
+													>{module.name}</a
+												>
 												<span class="text-base-content/80">({module.homeProgrammeCode})</span>
 											</li>
 										{/each}

@@ -1,9 +1,9 @@
 import { fail } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import type { ScopeArea } from '$lib/gql/__generated__/graphql';
-import { SELECTABLE_AREAS, areaFieldName, selectedScopes, type AreaChoice } from '$lib/scopes';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { ScopeArea } from '#lib/gql/__generated__/graphql.ts';
+import { SELECTABLE_AREAS, areaFieldName, selectedScopes, type AreaChoice } from '#lib/scopes.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const MyTokens = graphql(`

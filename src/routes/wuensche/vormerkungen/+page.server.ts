@@ -1,9 +1,9 @@
 import { error, fail } from '@sveltejs/kit';
-import { advanceSemesters, parseAdvanceForm } from '$lib/advanceWishes';
-import { plannedModules } from '$lib/catalogue';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { advanceSemesters, parseAdvanceForm } from '#lib/advanceWishes.ts';
+import { plannedModules } from '#lib/catalogue.ts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

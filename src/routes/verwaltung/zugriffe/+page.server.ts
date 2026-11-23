@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import type { AccessDoor } from '$lib/gql/__generated__/graphql';
-import { windowDays } from '$lib/access';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import type { AccessDoor } from '#lib/gql/__generated__/graphql.ts';
+import { windowDays } from '#lib/access.ts';
 
 const AccessLogDocument = graphql(`
 	query AccessLog($filter: AccessLogFilter, $limit: Int!, $before: ID) {

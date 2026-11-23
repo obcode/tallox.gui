@@ -1,4 +1,4 @@
-import { leadNames, personLabel } from '$lib/subjectGroups';
+import { leadNames, personLabel } from '#lib/subjectGroups.ts';
 
 /**
  * The start page's "who leads what": every programme and every subject group, with the people

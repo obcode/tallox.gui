@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { asRoute } from '$lib/navigation';
-	import { mayOpen, type GuideLink } from '$lib/guide';
+	import { asRoute } from '#lib/navigation.ts';
+	import { mayOpen, type GuideLink } from '#lib/guide.ts';
 
 	let { links, roles }: { links: readonly GuideLink[]; roles: readonly string[] } = $props();
 </script>

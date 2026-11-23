@@ -1,5 +1,5 @@
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
 
 /**
  * Carrying a module's split over to its existing instances, for every page that offers it.

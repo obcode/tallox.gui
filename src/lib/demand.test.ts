@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 import {
 	borrowedFromLabel,
 	englishClosed,

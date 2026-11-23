@@ -1,4 +1,4 @@
-import type { Role } from '$lib/gql/__generated__/graphql';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * The roles in German.

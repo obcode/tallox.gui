@@ -4,7 +4,7 @@
 		refusedLines,
 		splitSummary,
 		type SplitApplicationLike
-	} from '$lib/splitApplication';
+	} from '#lib/splitApplication.ts';
 
 	/**
 	 * What carrying a split over would do, or did — the backend's report as lines.

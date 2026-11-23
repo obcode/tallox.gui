@@ -1,11 +1,11 @@
 import { tick } from 'svelte';
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
-import { enhance } from '$app/forms';
-import { PendingChanges, serializeFields } from '$lib/pendingChanges';
+import type { ActionResult, SubmitFunction } from '$app/forms';
+import { enhance } from '#lib/enhance.ts';
+import { PendingChanges, serializeFields } from '#lib/pendingChanges.ts';
 
 /**
  * Forms that save themselves, forms that ask before somebody leaves them, and the one register
- * both report to. The rules are in `$lib/pendingChanges`; this file wires a form element to them.
+ * both report to. The rules are in `#lib/pendingChanges`; this file wires a form element to them.
  *
  * Every action here **replaces `use:enhance`** on its form rather than sitting next to it. The
  * register has to see each submission leave and come back, and a page that added the action

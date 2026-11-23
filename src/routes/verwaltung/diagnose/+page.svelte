@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { displayName, roleLabel } from '$lib/roles';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { displayName, roleLabel } from '#lib/roles.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

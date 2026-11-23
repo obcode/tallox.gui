@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { flushSync } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
@@ -46,24 +46,24 @@
 		ownRows,
 		isArranged,
 		divisionDefault
-	} from '$lib/assignment';
+	} from '#lib/assignment.ts';
 	import {
 		ALL_DEGREES,
 		DEGREE_LABELS,
 		degreeParam,
 		formatHours,
 		programmeLabel
-	} from '$lib/catalogue';
-	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
-	import { basketValue, cohortBasketOptions, cohortsInBasket, orderParam } from '$lib/basket';
-	import GearIcon from '$lib/components/GearIcon.svelte';
-	import { facultiesElsewhere } from '$lib/demand';
+	} from '#lib/catalogue.ts';
+	import { askBeforeLeave, trackSaves } from '#lib/saveOnLeave.ts';
+	import { basketValue, cohortBasketOptions, cohortsInBasket, orderParam } from '#lib/basket.ts';
+	import GearIcon from '#lib/components/GearIcon.svelte';
+	import { facultiesElsewhere } from '#lib/demand.ts';
 	import {
 		WISH_PRIORITY_LABELS,
 		WISH_PRIORITY_TINTS,
 		wisherLabel,
 		wishersByPriority
-	} from '$lib/wishes';
+	} from '#lib/wishes.ts';
 	import {
 		CONFIRMATION_BADGES,
 		CONFIRMATION_HINTS,
@@ -71,8 +71,8 @@
 		confirmationsByPerson,
 		holderStates,
 		type ConfirmationState
-	} from '$lib/confirmation';
-	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '$lib/semester';
+	} from '#lib/confirmation.ts';
+	import { PHASE_HINTS, PHASE_LABELS, semesterName, semesterShortName } from '#lib/semester.ts';
 	import {
 		DELIVERY_LABELS,
 		ENGLISH_NOT_OFFERED,
@@ -80,8 +80,8 @@
 		englishClosed,
 		hoursLabel,
 		withTopic
-	} from '$lib/demand';
-	import { formatMoment } from '$lib/tokens';
+	} from '#lib/demand.ts';
+	import { formatMoment } from '#lib/tokens.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -701,7 +701,7 @@
 										class="checkbox checkbox-sm mt-0.5"
 									/>
 									<span>
-										<a class="link font-medium" href={resolve(`/module/${module.id}`)}>
+										<a class="link font-medium" href={resolve('/module/[id]', { id: module.id })}>
 											{module.name}
 										</a>
 										<span class="text-base-content/80 text-sm">· {module.cohorts.join(', ')}</span>

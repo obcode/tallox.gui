@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { areaFor, isActive, asRoute } from '$lib/navigation';
+	import { areaFor, isActive, asRoute } from '#lib/navigation.ts';
 
 	/**
 	 * The pages of the area the reader is in, as tabs above the page — "Meine Lehre" is wishes,

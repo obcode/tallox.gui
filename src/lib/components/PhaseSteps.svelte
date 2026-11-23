@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Phase } from '$lib/gql/__generated__/graphql';
-	import type { DemandRelease, WishRounds } from '$lib/planning';
-	import { phaseProgress, phaseSplitLine, wishRoundsLine } from '$lib/semester';
+	import type { Phase } from '#lib/gql/__generated__/graphql.ts';
+	import type { DemandRelease, WishRounds } from '#lib/planning.ts';
+	import { phaseProgress, phaseSplitLine, wishRoundsLine } from '#lib/semester.ts';
 
 	let {
 		phase,

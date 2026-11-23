@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
 	import { invalidate } from '$app/navigation';
 	import type { ActionData, PageData } from './$types';
 	import {
@@ -19,9 +19,9 @@
 		runProgress,
 		runningRun,
 		statusBadge
-	} from '$lib/zpa';
-	import { FINDING_LABELS, findingIsAlarming } from '$lib/catalogue';
-	import { mayProjectCatalogue, mayRunImport } from '$lib/roles';
+	} from '#lib/zpa.ts';
+	import { FINDING_LABELS, findingIsAlarming } from '#lib/catalogue.ts';
+	import { mayProjectCatalogue, mayRunImport } from '#lib/roles.ts';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

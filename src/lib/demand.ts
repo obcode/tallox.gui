@@ -1,14 +1,14 @@
 /**
  * The demand, in the language the faculty speaks it.
  *
- * The same translation `$lib/catalogue.ts` and `$lib/semester.ts` do. Svelte-free on purpose, so
+ * The same translation `#lib/catalogue.ts` and `#lib/semester.ts` do. Svelte-free on purpose, so
  * vitest can check the parts that are easy to get wrong — and the cohort label is the one that
  * gets read the most often and acted on: somebody looks for IF3A and either finds it or believes
  * their module is not planned.
  */
 
-import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import { PART_KIND_LABELS, formatHours } from '#lib/catalogue.ts';
+import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 
 /** A part of an instance, as much of it as the display needs. */
 export type PartLike = {

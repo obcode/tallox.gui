@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import { exportFileName, exportSheets } from '$lib/export';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { workbook } from '$lib/server/export';
-import { toRefusal } from '$lib/server/graphqlError';
+import { exportFileName, exportSheets } from '#lib/export.ts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { workbook } from '#lib/server/export.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import type { RequestHandler } from './$types';
 
 /**

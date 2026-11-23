@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { fieldsOf, pendingChanges } from '$lib/saveOnLeave';
+	import { fieldsOf, pendingChanges } from '#lib/saveOnLeave.ts';
 
 	/**
 	 * Nothing typed into Tallox is lost by clicking somewhere else.

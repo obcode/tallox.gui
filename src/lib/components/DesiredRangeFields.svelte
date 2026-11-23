@@ -10,7 +10,7 @@
 	 * since the last one.
 	 */
 	import { untrack } from 'svelte';
-	import { desiredHoursLabel } from '$lib/wishes';
+	import { desiredHoursLabel } from '#lib/wishes.ts';
 
 	let {
 		min,

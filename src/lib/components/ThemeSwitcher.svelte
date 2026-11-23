@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { secureCookieAttribute } from '$lib/cookies';
+	import { secureCookieAttribute } from '#lib/cookies.ts';
 	import {
 		SYSTEM_THEME,
 		THEME_COOKIE,
 		THEME_COOKIE_MAX_AGE,
 		THEMES,
 		type ThemeChoice
-	} from '$lib/themes';
+	} from '#lib/themes.ts';
 
 	let { current }: { current: ThemeChoice } = $props();
 

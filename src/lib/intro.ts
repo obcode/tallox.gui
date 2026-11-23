@@ -1,13 +1,13 @@
-import type { Phase } from '$lib/gql/__generated__/graphql';
-import type { GuideLink } from '$lib/guide';
-import { concerns, HELP, type HelpEntry, type HelpStage } from '$lib/help';
-import type { PlanningState } from '$lib/planning';
+import type { Phase } from '#lib/gql/__generated__/graphql.ts';
+import type { GuideLink } from '#lib/guide.ts';
+import { concerns, HELP, type HelpEntry, type HelpStage } from '#lib/help.ts';
+import type { PlanningState } from '#lib/planning.ts';
 
 /**
  * The introduction: what Tallox is for, what it promises, and how a semester runs — told to
  * somebody who teaches and plans nothing.
  *
- * Data for the same reasons as `$lib/guide.ts` and `$lib/help.ts`. The links are checked against
+ * Data for the same reasons as `#lib/guide.ts` and `#lib/help.ts`. The links are checked against
  * the navigation and rendered only where the menu would show them; and the text is the corpus a
  * later assistant answers from, so it should exist once and in one place.
  *

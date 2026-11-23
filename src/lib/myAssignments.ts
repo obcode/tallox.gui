@@ -1,4 +1,4 @@
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 
 /** One of the caller's own assignments, in the shape `myAssignments` answers. */
 export type MyAssignmentLike = {

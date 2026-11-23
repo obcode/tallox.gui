@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/public';
+import * as env from '$app/env/public';
 import type { LayoutServerLoad } from './$types';
-import { loadServerBuildInfo } from '$lib/server/buildInfo';
-import { loadPlanningState } from '$lib/server/planning';
-import { loadSession } from '$lib/server/session';
+import { loadServerBuildInfo } from '#lib/server/buildInfo.ts';
+import { loadPlanningState } from '#lib/server/planning.ts';
+import { loadSession } from '#lib/server/session.ts';
 
 /**
  * What appears in the frame on every page: identity, roles, theme, server version, and the
@@ -37,7 +37,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		//
 		// From the environment rather than from the source: this repository is public and the
 		// space it points at is not, and it makes "temporary" a configuration change instead of
-		// a revert. `$env/dynamic/public` rather than `static`, so the deployment can set it
+		// a revert. Read at start-up rather than baked in (src/env.ts), so the deployment can set it
 		// without a rebuild.
 		feedbackUrl: env.PUBLIC_TALLOX_FEEDBACK_URL || null,
 		remoteUser: locals.remoteUser ?? null,

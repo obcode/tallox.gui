@@ -5,7 +5,7 @@
  * whose breadcrumbs held the start of a name.
  *
  * So every URL is cut at `?` and `#` before it is sent — the same rule as the log line in
- * $lib/errorReport, which names the path and never the URL. The path is what finds the page; the
+ * #lib/errorReport, which names the path and never the URL. The path is what finds the page; the
  * filter that was set on it is not worth a name.
  *
  * Structural types rather than Sentry's own, so the module stays a pure function of its input.
@@ -59,3 +59,26 @@ export function scrubEvent<E extends ScrubbableEvent>(event: E): E {
 	if (event.breadcrumbs) scrubbed.breadcrumbs = event.breadcrumbs.map(scrubBreadcrumb);
 	return scrubbed;
 }
+
+/**
+ * What the SDK may collect on its own, for the browser and the server alike.
+ *
+ * Sentry 11 replaced `sendDefaultPii` with this option, and its defaults collect everything:
+ * user fields, cookies, headers, query strings, bodies, GraphQL variables and the local
+ * variables of every stack frame. Here that would be mail addresses, wish notes and the
+ * identity the proxy set. So everything is off, and what an issue needs — the message, the
+ * stack, the path, the error number — is attached by the code that captures it.
+ */
+export const DATA_COLLECTION = {
+	userInfo: false,
+	cookies: false,
+	httpHeaders: false,
+	httpBodies: [],
+	urlQueryParams: false,
+	graphQL: { document: false, variables: false },
+	genAI: { inputs: false, outputs: false },
+	mcp: { inputs: false, outputs: false },
+	databaseQueryData: false,
+	queues: false,
+	stackFrameVariables: false
+};

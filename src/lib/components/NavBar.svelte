@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems, asRoute } from '$lib/navigation';
-	import type { PlanningState } from '$lib/planning';
+	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems, asRoute } from '#lib/navigation.ts';
+	import type { PlanningState } from '#lib/planning.ts';
 	import HelpPanel from './HelpPanel.svelte';
 
 	let {

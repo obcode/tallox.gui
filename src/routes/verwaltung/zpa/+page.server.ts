@@ -1,9 +1,9 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import { ZPA_DEPENDENCY } from '$lib/zpa';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { ZPA_DEPENDENCY } from '#lib/zpa.ts';
 
 const ImportRunsDocument = graphql(`
 	query ZpaSyncRuns {

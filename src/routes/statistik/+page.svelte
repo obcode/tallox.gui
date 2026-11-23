@@ -1,7 +1,13 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
-	import { DUTY_LABELS, dutyBadge, formatHours, moduleName, programmeLabel } from '$lib/catalogue';
+	import {
+		DUTY_LABELS,
+		dutyBadge,
+		formatHours,
+		moduleName,
+		programmeLabel
+	} from '#lib/catalogue.ts';
 	import {
 		balanceBadge,
 		controllingTable,
@@ -14,11 +20,11 @@
 		studyYearSemesters,
 		studyYearTable,
 		type ControllingRow
-	} from '$lib/controlling';
-	import type { DutyStatus } from '$lib/gql/__generated__/graphql';
-	import { cohortLabel } from '$lib/demand';
-	import QuotaBars from '$lib/components/QuotaBars.svelte';
-	import { semesterName, semesterShortName } from '$lib/semester';
+	} from '#lib/controlling.ts';
+	import type { DutyStatus } from '#lib/gql/__generated__/graphql.ts';
+	import { cohortLabel } from '#lib/demand.ts';
+	import QuotaBars from '#lib/components/QuotaBars.svelte';
+	import { semesterName, semesterShortName } from '#lib/semester.ts';
 
 	let { data } = $props();
 

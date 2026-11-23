@@ -1,11 +1,11 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { graphql } from '$lib/gql/__generated__';
-import type { Role } from '$lib/gql/__generated__/graphql';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import { ALL_ROLES } from '$lib/roles';
-import type { TeacherAccountRow } from '$lib/teacherAccounts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { ALL_ROLES } from '#lib/roles.ts';
+import type { TeacherAccountRow } from '#lib/teacherAccounts.ts';
 
 /** Which of the two lists is on screen. The ZPA one, because that is where the work is. */
 export type View = 'zpa' | 'konten';

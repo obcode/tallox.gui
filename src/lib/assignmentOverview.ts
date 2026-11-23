@@ -1,12 +1,12 @@
-import type { DutyStatus, InstancePartKind } from '$lib/gql/__generated__/graphql';
+import type { DutyStatus, InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 import {
 	compareBySize,
 	compareFirstBaskets,
 	dutyRank,
 	firstOf,
 	type CohortOrder
-} from '$lib/basket';
-import { cohortLabel } from '$lib/demand';
+} from '#lib/basket.ts';
+import { cohortLabel } from '#lib/demand.ts';
 
 /** An instance as the overview asks for it. */
 export type OverviewInstance = {
@@ -15,7 +15,7 @@ export type OverviewInstance = {
 	programmeSemester?: number | null;
 	programme: { code: string; title: string };
 	module: { id: string; name: string; projectBased?: boolean };
-	/** The module's baskets in this cohort's programme; see `$lib/basket`. */
+	/** The module's baskets in this cohort's programme; see `#lib/basket`. */
 	baskets?: readonly string[] | null;
 	/** Compulsory or elective in this cohort's programme; the order „Pflicht zuerst, nach SWS“. */
 	dutyStatus?: DutyStatus | null;

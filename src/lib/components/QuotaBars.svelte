@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatHours, programmeLabel } from '$lib/catalogue';
-	import { quotaUsage, type StudyYearRow } from '$lib/controlling';
+	import { formatHours, programmeLabel } from '#lib/catalogue.ts';
+	import { quotaUsage, type StudyYearRow } from '#lib/controlling.ts';
 
 	let {
 		rows,

@@ -28,6 +28,26 @@ export default ts.config(
 		}
 	},
 	{
+		// Forms stay on their page: #lib/enhance passes `navigate: false`, which SvelteKit 3's own
+		// enhance does not. A direct import would quietly bring the navigation back.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: ['src/lib/enhance.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: [
+						{
+							name: '$app/forms',
+							importNames: ['enhance'],
+							message: "Use enhance from '#lib/enhance.ts', which keeps the page where it is."
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		ignores: [
 			'build/',
 			'.svelte-kit/',

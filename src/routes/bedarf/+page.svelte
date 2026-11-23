@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { enhance } from '#lib/enhance.ts';
+	import type { SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
 		ALL_COURSE_TYPES,
@@ -16,7 +16,7 @@
 		mayWriteModuleSplit,
 		moduleName,
 		NOT_PLANNED_BADGE
-	} from '$lib/catalogue';
+	} from '#lib/catalogue.ts';
 	import {
 		arrangeByBasket,
 		basketOptions,
@@ -43,21 +43,21 @@
 		MAX_TRACKS,
 		MAX_TOPIC_LENGTH,
 		rowListsCie
-	} from '$lib/demand';
-	import DemandOverview from '$lib/components/DemandOverview.svelte';
-	import GearIcon from '$lib/components/GearIcon.svelte';
-	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
-	import NoteIcon from '$lib/components/NoteIcon.svelte';
-	import { hasAnyRole } from '$lib/roles';
-	import { refusalSummary, refusedModules, wishedRefusals } from '$lib/demandRefusals';
-	import { askBeforeLeave, trackSaves } from '$lib/saveOnLeave';
+	} from '#lib/demand.ts';
+	import DemandOverview from '#lib/components/DemandOverview.svelte';
+	import GearIcon from '#lib/components/GearIcon.svelte';
+	import SplitApplicationReport from '#lib/components/SplitApplicationReport.svelte';
+	import NoteIcon from '#lib/components/NoteIcon.svelte';
+	import { hasAnyRole } from '#lib/roles.ts';
+	import { refusalSummary, refusedModules, wishedRefusals } from '#lib/demandRefusals.ts';
+	import { askBeforeLeave, trackSaves } from '#lib/saveOnLeave.ts';
 	import {
 		PHASE_HINTS,
 		PHASE_LABELS,
 		semesterName,
 		semesterShortName,
 		semesterTerm
-	} from '$lib/semester';
+	} from '#lib/semester.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

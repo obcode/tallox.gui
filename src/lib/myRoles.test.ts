@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Role } from '$lib/gql/__generated__/graphql';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
 import {
 	needsAttention,
 	programmeReach,

@@ -16,7 +16,7 @@
  * asks this register before any navigation.
  *
  * Kept free of the DOM and of SvelteKit so it can be tested on its own; the actions that wire a
- * form to it live in `$lib/saveOnLeave`.
+ * form to it live in `#lib/saveOnLeave`.
  */
 
 export type Mode = 'auto' | 'ask';

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { safeFragment } from '$lib/announcementBody';
-	import { audienceKey, audienceLabel } from '$lib/notifications';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
+	import { safeFragment } from '#lib/announcementBody.ts';
+	import { audienceKey, audienceLabel } from '#lib/notifications.ts';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

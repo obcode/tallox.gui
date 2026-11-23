@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/enhance.ts';
 	import { resolve } from '$app/paths';
-	import PeoplePicker from '$lib/components/PeoplePicker.svelte';
-	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
+	import PeoplePicker from '#lib/components/PeoplePicker.svelte';
+	import { askBeforeLeave, autosave } from '#lib/saveOnLeave.ts';
 	import {
 		isPlausibleCode,
 		leadNames,
 		mayLead,
 		openWorkSentence,
 		splitByActivity
-	} from '$lib/subjectGroups';
+	} from '#lib/subjectGroups.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
