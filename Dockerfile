@@ -9,6 +9,8 @@ FROM base AS builder
 ARG APP_VERSION
 ENV APP_VERSION=$APP_VERSION
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+# pnpm applies patches/ (patchedDependencies) during install, so it must be there first.
+COPY patches/ patches/
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
@@ -17,6 +19,8 @@ RUN pnpm run build
 # from the lockfile. --ignore-scripts, because postinstall hooks are purely for development.
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+# pnpm applies patches/ (patchedDependencies) during install, so it must be there first.
+COPY patches/ patches/
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 FROM node:24-alpine
