@@ -9,12 +9,14 @@
 	// for an error in the root layout, because that layout is the thing that failed.
 	const forbidden = $derived(page.status === 403);
 
-	// The page's code is gone after a deploy: loading the address in full fetches the new build.
-	// Once per address and minute, so a chunk that is missing for good does not reload forever.
-	// See #lib/staleBuild.
+	// The page's code is gone after a deploy, or its data request was lost to an expired login:
+	// loading the address in full fetches the new build or passes through the login. Once per
+	// address and minute, so a chunk that is missing for good or a connection that is really gone
+	// does not reload forever. See #lib/staleBuild.
+	const reloadable = $derived(!!(page.error?.staleBuild || page.error?.lostRequest));
 	let reloading = $state(false);
 	onMount(() => {
-		if (!page.error?.staleBuild) return;
+		if (!reloadable) return;
 		let storage: Storage | null = null;
 		try {
 			storage = sessionStorage;
@@ -51,13 +53,15 @@
 			</p>
 		{/if}
 
-		{#if page.error?.staleBuild}
+		{#if reloadable}
 			{#if reloading}
 				<p class="text-base-content/80 mt-3 text-sm" role="status">Die Seite wird neu geladen …</p>
 			{:else}
-				<p class="text-base-content/80 mt-3 text-sm">
-					Neu laden holt die aktuelle Fassung. Was Du gespeichert hast, bleibt erhalten.
-				</p>
+				{#if page.error?.staleBuild}
+					<p class="text-base-content/80 mt-3 text-sm">
+						Neu laden holt die aktuelle Fassung. Was Du gespeichert hast, bleibt erhalten.
+					</p>
+				{/if}
 				<button type="button" class="btn btn-primary btn-sm mt-3" onclick={() => location.reload()}>
 					Seite neu laden
 				</button>

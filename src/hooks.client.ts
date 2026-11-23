@@ -4,7 +4,7 @@ import { updated } from '$app/state';
 import * as env from '$app/env/public';
 import { reportUnexpectedError } from '#lib/errorReport.ts';
 import { DATA_COLLECTION, scrubBreadcrumb, scrubEvent } from '#lib/sentryScrub.ts';
-import { isStaleBuildError } from '#lib/staleBuild.ts';
+import { isLostRequestError, isStaleBuildError } from '#lib/staleBuild.ts';
 
 /**
  * Report browser errors to GlitchTip.
@@ -25,6 +25,9 @@ if (env.PUBLIC_SENTRY_DSN) {
 	Sentry.init({
 		dsn: env.PUBLIC_SENTRY_DSN,
 		environment: env.PUBLIC_SENTRY_ENVIRONMENT || 'production',
+		// Ties every issue to the build it came from, so a fix can be checked against the
+		// release that carried it.
+		release: __APP_VERSION__,
 		// Errors only. GlitchTip does not read traces, and every span would be another
 		// request out of every user's browser.
 		tracesSampleRate: 0,
@@ -58,6 +61,16 @@ export const handleError: HandleClientError = ({ kind, error, event }) => {
 			message:
 				'Diese Seite ließ sich nicht nachladen, meist weil Tallox gerade aktualisiert wurde.',
 			staleBuild: true
+		};
+	}
+	// The data request of a navigation got no readable answer, almost always because the login
+	// expired. Not a failure of Tallox either, so no number and no report: the error page loads
+	// the address in full, which passes through the login and back. See #lib/staleBuild.
+	if (isLostRequestError(error)) {
+		return {
+			message:
+				'Die Verbindung ist abgerissen, meist weil die Anmeldung abgelaufen ist. Neu laden meldet Dich wieder an.',
+			lostRequest: true
 		};
 	}
 	// Errors thrown with `error()` and SvelteKit's own 404s pass through here as well since

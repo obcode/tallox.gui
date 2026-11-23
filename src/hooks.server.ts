@@ -26,6 +26,7 @@ if (reporting) {
 	Sentry.init({
 		dsn: env.SENTRY_DSN,
 		environment: env.SENTRY_ENVIRONMENT || 'production',
+		release: __APP_VERSION__,
 		// Errors only — GlitchTip does not read traces.
 		tracesSampleRate: 0,
 		// No request headers, cookies, bodies, query strings or stack-frame variables: the headers

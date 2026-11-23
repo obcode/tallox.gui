@@ -31,6 +31,37 @@ export function isStaleBuildError(error: unknown): boolean {
 	return STALE_BUILD_MESSAGES.some((m) => message.includes(m));
 }
 
+/**
+ * A navigation whose data request never got an answer the page could read.
+ *
+ * Client-side navigation fetches the next page's data (`__data.json`). Once the login has
+ * expired, the auth proxy answers that request with a redirect to the identity provider, and the
+ * provider's CORS headers are ones no browser accepts for a credentialed request. The fetch then
+ * fails without a status, the browser calls it a TypeError, and the tab shows the error page
+ * instead of the login. These were most of the browser issues until 2026-11-23.
+ *
+ * A full load of the same address follows the redirect as a top-level navigation, which is
+ * allowed, and ends at the login and then back on the page. A connection that is really gone
+ * fails the same way again and is stopped by the reload guard below.
+ *
+ * Matched exactly, because "Failed to fetch dynamically imported module" starts the same way and
+ * is a stale build, not a lost request.
+ */
+const LOST_REQUEST_MESSAGES = new Set([
+	// Chromium
+	'Failed to fetch',
+	// Firefox
+	'NetworkError when attempting to fetch resource.',
+	// Safari
+	'Load failed',
+	// Older WebKit
+	'network error'
+]);
+
+export function isLostRequestError(error: unknown): boolean {
+	return error instanceof TypeError && LOST_REQUEST_MESSAGES.has(error.message);
+}
+
 const RELOAD_KEY = 'tallox:stale-build-reload';
 
 /** A second failure for the same address within this time is not a stale tab. */
