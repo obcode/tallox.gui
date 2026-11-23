@@ -13,7 +13,7 @@ kam als Teil 1.
   filtert (Fachgruppe nach Mitgliedschaft, Status), sortiert und benennt nur.
 - **Wer was sieht, entscheidet das Backend**: Dekanat, Fachgruppen- und Studiengangsleitungen alle
   Professorinnen und Professoren (bewusst schon während der Planung, auch für Studiengangsleitungen —
-  Ollis Entscheidung), alle anderen und jedes normale Token nur die eigene Zeile. Die Seite sagt das
+  so entschieden), alle anderen und jedes normale Token nur die eigene Zeile. Die Seite sagt das
   in einem Satz, wenn die Rolle keine Leitung ist.
 - **Statistik ist seitdem ein Bereich mit Kindern**: „SWS-Controlling“ (`/statistik`, `exact`) und
   „Große Fächer“. Der Bereich trägt zusätzlich `SUBJECT_GROUP_LEAD`; eine reine Fachgruppenleitung
