@@ -18,3 +18,10 @@ overrides:
   # GHSA-g3hv-75wg-m249. graphql-config 5.x and 6.0 both ask for minimatch ^10; the fix is
   # only in 11. Used by `pnpm codegen` for its document globs, so a codegen run covers it.
   'graphql-config>minimatch': ^11.0.1
+
+# One-line fix for sveltejs/kit#17500: capture_scroll throws when a history entry has no
+# record (back/forward into an entry made by an earlier document, an iOS reload), which
+# leaves the client router stuck until a reload. Remove once a Kit release contains the
+# upstream fix; pnpm refuses to install when the patch no longer applies to a new version.
+patchedDependencies:
+  '@sveltejs/kit@3.4.0': patches/@sveltejs__kit@3.4.0.patch

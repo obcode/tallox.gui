@@ -1,0 +1,16 @@
+diff --git a/src/runtime/client/client.js b/src/runtime/client/client.js
+index 5e491ae8cc9e1ad26720ae492f8a77d32765fe8e..5a82b8e57cdaf241ebb785fe717e10eee2fb9656 100644
+--- a/src/runtime/client/client.js
++++ b/src/runtime/client/client.js
+@@ -161,7 +161,10 @@ if (DEV) {
+ 
+ /** @param {number} index */
+ function capture_scroll(index) {
+-	history_info[index].scroll = scroll_state();
++	// Patched (obcode): a history entry can lack its record, see sveltejs/kit#17500.
++	// Create it instead of throwing, which left the router stuck until a reload.
++	// Remove this patch once a Kit release contains the upstream fix.
++	(history_info[index] ??= {}).scroll = scroll_state();
+ }
+ 
+ /**
