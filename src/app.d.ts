@@ -8,6 +8,8 @@ declare global {
 			errorId?: string;
 			/** Set in the browser when the page's code is gone after a deploy. See #lib/staleBuild. */
 			staleBuild?: boolean;
+			/** Set in the browser when a navigation lost its data request. See #lib/staleBuild. */
+			lostRequest?: boolean;
 		}
 		interface Locals {
 			/** The verified mail address, set by the auth proxy. Undefined locally. */

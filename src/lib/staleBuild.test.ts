@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claimReload, isStaleBuildError, RELOAD_GUARD_MS } from './staleBuild';
+import { claimReload, isLostRequestError, isStaleBuildError, RELOAD_GUARD_MS } from './staleBuild';
 
 function memoryStorage() {
 	const data = new Map<string, string>();
@@ -75,5 +75,31 @@ describe('claimReload', () => {
 		const storage = memoryStorage();
 		storage.setItem('tallox:stale-build-reload', 'not json');
 		expect(claimReload(storage, href, 1_000)).toBe(false);
+	});
+});
+
+describe('isLostRequestError', () => {
+	it.each([
+		['Chromium', 'Failed to fetch'],
+		['Firefox', 'NetworkError when attempting to fetch resource.'],
+		['Safari', 'Load failed'],
+		['older WebKit', 'network error']
+	])('recognises %s', (_, message) => {
+		expect(isLostRequestError(new TypeError(message))).toBe(true);
+	});
+
+	it('leaves stale builds and every other error alone', () => {
+		expect(
+			isLostRequestError(
+				new TypeError(
+					'Failed to fetch dynamically imported module: https://example.org/_app/immutable/nodes/7.abc.js'
+				)
+			)
+		).toBe(false);
+		expect(isLostRequestError(new Error('Failed to fetch'))).toBe(false);
+		expect(isLostRequestError('Failed to fetch')).toBe(false);
+		expect(
+			isLostRequestError(new TypeError("Cannot read properties of undefined (reading 'id')"))
+		).toBe(false);
 	});
 });
