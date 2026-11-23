@@ -1,6 +1,6 @@
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { berlinToday } from '$lib/confirmation';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { berlinToday } from '#lib/confirmation.ts';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -40,7 +40,7 @@ const StartOverviewDocument = graphql(`
 `);
 
 /**
- * What I have stated about myself, for "Dein Stand" (`$lib/setup.ts`).
+ * What I have stated about myself, for "Dein Stand" (`#lib/setup.ts`).
  *
  * Only own rows: membership, the own competence count over all groups, and whether I have stated my
  * hours. The hours of every semester rather than the planning semester's, so one round trip

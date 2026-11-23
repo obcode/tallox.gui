@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
@@ -10,11 +10,11 @@
 		isTeacherRow,
 		poolsByModule,
 		sortModules
-	} from '$lib/competences';
-	import { NOT_PLANNED_BADGE, plannedModules } from '$lib/catalogue';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	} from '#lib/competences.ts';
+	import { NOT_PLANNED_BADGE, plannedModules } from '#lib/catalogue.ts';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

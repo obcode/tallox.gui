@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import DueNow from '$lib/components/DueNow.svelte';
-	import SetupChecklist from '$lib/components/SetupChecklist.svelte';
-	import WhoLeadsWhat from '$lib/components/WhoLeadsWhat.svelte';
-	import { setupCard } from '$lib/setup';
-	import { notOfferedNotice } from '$lib/advanceWishes';
+	import DueNow from '#lib/components/DueNow.svelte';
+	import SetupChecklist from '#lib/components/SetupChecklist.svelte';
+	import WhoLeadsWhat from '#lib/components/WhoLeadsWhat.svelte';
+	import { setupCard } from '#lib/setup.ts';
+	import { notOfferedNotice } from '#lib/advanceWishes.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

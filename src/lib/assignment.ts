@@ -1,16 +1,16 @@
-import { PART_KIND_LABELS, formatHours, mayFileModules } from '$lib/catalogue';
-import { COMPETENCE_LEVEL_OTHERS } from '$lib/competences';
-import type { Degree, DutyStatus, InstancePartKind } from '$lib/gql/__generated__/graphql';
+import { PART_KIND_LABELS, formatHours, mayFileModules } from '#lib/catalogue.ts';
+import { COMPETENCE_LEVEL_OTHERS } from '#lib/competences.ts';
+import type { Degree, DutyStatus, InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 import {
 	compareBySize,
 	compareFirstBaskets,
 	dutyRank,
 	firstOf,
 	type CohortOrder
-} from '$lib/basket';
-import { withTopic, type DeliveryFormat } from '$lib/demand';
-import { desiredRangeLabel, type DesiredRange } from '$lib/desiredHours';
-import { desiredHoursLabel, shareLabel, trackLimitLabel } from '$lib/wishes';
+} from '#lib/basket.ts';
+import { withTopic, type DeliveryFormat } from '#lib/demand.ts';
+import { desiredRangeLabel, type DesiredRange } from '#lib/desiredHours.ts';
+import { desiredHoursLabel, shareLabel, trackLimitLabel } from '#lib/wishes.ts';
 
 /**
  * The assignment screen: who holds which part of which instance.
@@ -53,20 +53,20 @@ export type InstanceLike = {
 		subjectGroup?: { id: string; code: string } | null;
 		/** A practice-accompanying course (PBLV, `projectBased` is the older name): given out last. */
 		projectBased?: boolean;
-		/** Whether the module description names English; see `englishClosed` in `$lib/demand`. */
+		/** Whether the module description names English; see `englishClosed` in `#lib/demand`. */
 		englishPossible?: boolean;
 	};
 	parts: PartLike[];
-	/** How the cohort is taught; see `formatChanges` in `$lib/demand`. */
+	/** How the cohort is taught; see `formatChanges` in `#lib/demand`. */
 	delivery?: DeliveryFormat;
 	taughtInEnglish?: boolean;
 	/** Whether the language is a decision about this cohort rather than the catalogue's. */
 	taughtInEnglishOverridden?: boolean;
 	/** Whether the cohort is listed as a course in English (CiE), set by hand. */
 	cie?: boolean;
-	/** Which seminar the cohort is, for an umbrella module; see `withTopic` in `$lib/demand`. */
+	/** Which seminar the cohort is, for an umbrella module; see `withTopic` in `#lib/demand`. */
 	topic?: string | null;
-	/** The baskets the module sits in within this cohort's programme; see `$lib/basket`. */
+	/** The baskets the module sits in within this cohort's programme; see `#lib/basket`. */
 	baskets?: readonly string[] | null;
 	/** Compulsory or elective in this cohort's programme; the order „Pflicht zuerst, nach SWS“. */
 	dutyStatus?: DutyStatus | null;

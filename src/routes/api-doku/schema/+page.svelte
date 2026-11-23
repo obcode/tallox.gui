@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
-	import { anchorFor, describeBlocks, inlineSegments, type SchemaType } from '$lib/schemaDoc';
+	import { anchorFor, describeBlocks, inlineSegments, type SchemaType } from '#lib/schemaDoc.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

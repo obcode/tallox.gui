@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { dueCard } from '$lib/guide';
-	import type { PlanningState } from '$lib/planning';
+	import { dueCard } from '#lib/guide.ts';
+	import type { PlanningState } from '#lib/planning.ts';
 	import GuidePlaces from './GuidePlaces.svelte';
 	import PhaseSteps from './PhaseSteps.svelte';
 

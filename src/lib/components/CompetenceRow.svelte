@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
-	import { NOT_PLANNED_BADGE } from '$lib/catalogue';
+	import { NOT_PLANNED_BADGE } from '#lib/catalogue.ts';
 	import {
 		COMPETENCE_LEVEL_HINTS,
 		COMPETENCE_LEVEL_LABELS,
@@ -10,7 +10,7 @@
 		type CompetenceChoice,
 		type GroupModuleLike,
 		type OwnCompetenceLike
-	} from '$lib/competences';
+	} from '#lib/competences.ts';
 
 	/**
 	 * One module of the competence profile: the level and a note.
@@ -41,7 +41,7 @@
 
 <tr>
 	<td>
-		<a class="link" href={resolve(`/module/${module.id}`)}>{name}</a>
+		<a class="link" href={resolve('/module/[id]', { id: module.id })}>{name}</a>
 		<span class="text-base-content/80">({module.homeProgrammeCode})</span>
 		{#if module.independentWork}
 			<span class="badge badge-ghost badge-sm">{NOT_PLANNED_BADGE}</span>

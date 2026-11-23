@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ApiConsole from '$lib/components/ApiConsole.svelte';
+	import ApiConsole from '#lib/components/ApiConsole.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

@@ -1,4 +1,4 @@
-import type { Phase } from '$lib/gql/__generated__/graphql';
+import type { Phase } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * How far the demand releases of a semester have got: `released` of the `planned` study programmes.
@@ -16,8 +16,8 @@ export type WishRounds = { closed: number; groups: number };
 
 /**
  * Which semester is being planned and where it stands — what the layout loads for the
- * "Jetzt dran" card. Outside `$lib/server` because the card renders it; the loader is
- * `loadPlanningState` in `$lib/server/planning.ts`.
+ * "Jetzt dran" card. Outside `#lib/server` because the card renders it; the loader is
+ * `loadPlanningState` in `#lib/server/planning.ts`.
  */
 export type PlanningState =
 	/**

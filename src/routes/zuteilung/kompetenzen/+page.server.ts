@@ -1,10 +1,10 @@
 import { error, fail } from '@sveltejs/kit';
-import { plannedModules } from '$lib/catalogue';
-import { graphql } from '$lib/gql/__generated__';
-import type { CompetenceLevel } from '$lib/gql/__generated__/graphql';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import { isCompetenceLevel } from '$lib/competences';
+import { plannedModules } from '#lib/catalogue.ts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { CompetenceLevel } from '#lib/gql/__generated__/graphql.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { isCompetenceLevel } from '#lib/competences.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

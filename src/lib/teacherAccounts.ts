@@ -144,7 +144,9 @@ export const FILTER_MARKER = 'filter';
  * marker is there, and an empty facet then means what it says — this facet filters nothing —
  * so that "show me all faculties" survives a reload.
  */
-export function parseTeacherFilter(params: URLSearchParams): TeacherFilter {
+export function parseTeacherFilter(
+	params: Pick<URLSearchParams, 'get' | 'getAll' | 'has'>
+): TeacherFilter {
 	if (!params.has(FILTER_MARKER)) {
 		return { ...DEFAULT_FILTER };
 	}

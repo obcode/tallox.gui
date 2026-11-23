@@ -1,13 +1,14 @@
-import type { Handle, HandleServerError } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
-import { env } from '$env/dynamic/private';
-import { authContext } from '$lib/server/backend';
-import { stripIdentityHeaders } from '$lib/server/reporting';
-import { isRefusedPath } from '$lib/requestPath';
-import { reportUnexpectedError } from '$lib/errorReport';
-import { ASSUME_COOKIE, parseAssumedRoles } from '$lib/assumedRoles';
-import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
+import * as env from '$app/env/private';
+import { authContext } from '#lib/server/backend.ts';
+import { stripIdentityHeaders } from '#lib/server/reporting.ts';
+import { DATA_COLLECTION } from '#lib/sentryScrub.ts';
+import { isRefusedPath } from '#lib/requestPath.ts';
+import { reportUnexpectedError } from '#lib/errorReport.ts';
+import { ASSUME_COOKIE, parseAssumedRoles } from '#lib/assumedRoles.ts';
+import { resolveTheme, THEME_COOKIE, themeAttribute } from '#lib/themes.ts';
 
 /**
  * The one place for identity, the access gate and the write lock.
@@ -27,11 +28,11 @@ if (reporting) {
 		environment: env.SENTRY_ENVIRONMENT || 'production',
 		// Errors only — GlitchTip does not read traces.
 		tracesSampleRate: 0,
-		sendDefaultPii: false,
-		// No request headers at all. `sendDefaultPii: false` strips the cookie and the IP headers
-		// and keeps the rest — and the rest includes the identity the proxy set on the request.
-		// The URL and the method are enough to find a failure; a mail address is not needed to.
-		integrations: [Sentry.requestDataIntegration({ include: { headers: false } })],
+		// No request headers, cookies, bodies, query strings or stack-frame variables: the headers
+		// include the identity the proxy set on the request, and Sentry 11 collects all of it by
+		// default. The URL path and the method are enough to find a failure; a mail address is
+		// not needed to. See DATA_COLLECTION.
+		dataCollection: DATA_COLLECTION,
 		beforeSend: stripIdentityHeaders
 	});
 }
@@ -39,14 +40,18 @@ if (reporting) {
 /**
  * Failures from SSR loads, form actions and /gui-api handlers: a number on the error page, the
  * stack under that number in the container log, and the event tagged with it in the collector
- * when a DSN is set. See $lib/errorReport.
+ * when a DSN is set. See #lib/errorReport.
  */
-export const handleError: HandleServerError = ({ error, event, status, message }) =>
-	reportUnexpectedError(
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+	// Since SvelteKit 3 every error passes through here, including those thrown with `error()`
+	// and SvelteKit's own 404s. Those are answers, not failures: they keep their status and
+	// message, get no number and are not reported. Only `unknown` is what this hook is for.
+	if (kind !== 'unknown') return;
+	return reportUnexpectedError(
 		{
 			error,
-			status,
-			message,
+			status: 500,
+			message: 'Internal Error',
 			method: event.request.method,
 			path: event.url.pathname,
 			routeId: event.route.id
@@ -59,6 +64,7 @@ export const handleError: HandleServerError = ({ error, event, status, message }
 			version: __APP_VERSION__
 		}
 	);
+};
 
 export const guiHandle: Handle = async ({ event, resolve }) => {
 	if (isRefusedPath(event.url.pathname)) {

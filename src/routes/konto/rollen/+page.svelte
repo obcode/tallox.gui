@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import type { Role } from '$lib/gql/__generated__/graphql';
+	import type { Role } from '#lib/gql/__generated__/graphql.ts';
 	import {
 		needsAttention,
 		programmeReach,
 		reachHint,
 		subjectGroupReach,
 		type ScopeReach
-	} from '$lib/myRoles';
-	import { ROLE_HINTS, ROLE_LABELS, roleLabels, sortRoles } from '$lib/roles';
+	} from '#lib/myRoles.ts';
+	import { ROLE_HINTS, ROLE_LABELS, roleLabels, sortRoles } from '#lib/roles.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

@@ -1,4 +1,4 @@
-import type { AccessDoor, AccessOutcome } from '$lib/gql/__generated__/graphql';
+import type { AccessDoor, AccessOutcome } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * The access log in German.

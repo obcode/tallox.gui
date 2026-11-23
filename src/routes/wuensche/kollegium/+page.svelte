@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
-	import DesiredRangeFields from '$lib/components/DesiredRangeFields.svelte';
-	import HoursGauge from '$lib/components/HoursGauge.svelte';
-	import SortHeader from '$lib/components/SortHeader.svelte';
+	import DesiredRangeFields from '#lib/components/DesiredRangeFields.svelte';
+	import HoursGauge from '#lib/components/HoursGauge.svelte';
+	import SortHeader from '#lib/components/SortHeader.svelte';
 	import {
 		desiredHoursStage,
 		desiredRangeLabel,
@@ -13,12 +13,12 @@
 		OVERVIEW_SORT_KEYS,
 		STAGE_LABELS,
 		type OverviewSortKey
-	} from '$lib/desiredHours';
-	import { hasAnyRole } from '$lib/roles';
-	import { autosave } from '$lib/saveOnLeave';
-	import { semesterName } from '$lib/semester';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
-	import { desiredHoursLabel } from '$lib/wishes';
+	} from '#lib/desiredHours.ts';
+	import { hasAnyRole } from '#lib/roles.ts';
+	import { autosave } from '#lib/saveOnLeave.ts';
+	import { semesterName } from '#lib/semester.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
+	import { desiredHoursLabel } from '#lib/wishes.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

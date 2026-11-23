@@ -53,7 +53,7 @@ test.describe('accessibility', () => {
 		});
 	}
 
-	// On a phone the wide tables become cards (see $lib/stackedTable): the same cells in a
+	// On a phone the wide tables become cards (see #lib/stackedTable): the same cells in a
 	// different box, with the column heads as labels and the sort buttons in a row above.
 	for (const { who, path } of [
 		{ who: PERSONAS.eins, path: `/wuensche?semester=${WISHES.semester}` },

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { autosave } from '$lib/saveOnLeave';
-	import { personLabel } from '$lib/subjectGroups';
+	import { autosave } from '#lib/saveOnLeave.ts';
+	import { personLabel } from '#lib/subjectGroups.ts';
 
 	/**
 	 * A set of people, ticked or not, saved as a whole.

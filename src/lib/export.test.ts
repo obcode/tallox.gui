@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LoadInput } from '$lib/controlling';
+import type { LoadInput } from '#lib/controlling.ts';
 import {
 	LOAD_HEADER,
 	PLANNING_HEADER,

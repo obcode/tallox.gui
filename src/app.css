@@ -156,7 +156,7 @@
 }
 
 /*
- * A table that becomes a list of cards when it does not fit — see `$lib/stackedTable`, which
+ * A table that becomes a list of cards when it does not fit — see `#lib/stackedTable`, which
  * measures the table against its container, sets `.stacked`, and copies each column head onto its
  * cells as `data-label`.
  *

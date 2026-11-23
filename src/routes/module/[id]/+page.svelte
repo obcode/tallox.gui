@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { enhance } from '$app/forms';
-	import { askBeforeLeave, autosave } from '$lib/saveOnLeave';
+	import { askBeforeLeave, autosave } from '#lib/saveOnLeave.ts';
 	import { resolve } from '$app/paths';
 	import {
 		ALL_PART_KINDS,
@@ -21,12 +21,12 @@
 		MODULE_KIND_LABELS,
 		moduleName,
 		spoLabel
-	} from '$lib/catalogue';
-	import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
-	import HandbookLink from '$lib/components/HandbookLink.svelte';
-	import SplitApplicationReport from '$lib/components/SplitApplicationReport.svelte';
-	import { hasAnyRole, isOnlooker } from '$lib/roles';
-	import { isModuleBell } from '$lib/notifications';
+	} from '#lib/catalogue.ts';
+	import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
+	import HandbookLink from '#lib/components/HandbookLink.svelte';
+	import SplitApplicationReport from '#lib/components/SplitApplicationReport.svelte';
+	import { hasAnyRole, isOnlooker } from '#lib/roles.ts';
+	import { isModuleBell } from '#lib/notifications.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

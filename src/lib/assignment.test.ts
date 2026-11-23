@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DutyStatus } from '$lib/gql/__generated__/graphql';
+import type { DutyStatus } from '#lib/gql/__generated__/graphql.ts';
 import {
 	assignmentChanges,
 	candidateSections,

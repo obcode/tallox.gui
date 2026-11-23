@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { ServerBuildInfo } from '$lib/buildInfo';
-	import { releaseUrl } from '$lib/release';
+	import type { ServerBuildInfo } from '#lib/buildInfo.ts';
+	import { releaseUrl } from '#lib/release.ts';
 	import RoleSwitcher from './RoleSwitcher.svelte';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
-	import type { ThemeChoice } from '$lib/themes';
+	import type { ThemeChoice } from '#lib/themes.ts';
 
 	let {
 		server,

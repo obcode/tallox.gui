@@ -1,5 +1,5 @@
-import { graphql } from '$lib/gql/__generated__';
-import type { SessionQuery } from '$lib/gql/__generated__/graphql';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { SessionQuery } from '#lib/gql/__generated__/graphql.ts';
 import { backendRequest } from './backend';
 import { httpStatusOf } from './graphqlError';
 

@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { secureCookieAttribute } from '$lib/cookies';
+	import { secureCookieAttribute } from '#lib/cookies.ts';
 	import { invalidateAll } from '$app/navigation';
-	import { ASSUME_COOKIE, ASSUME_COOKIE_MAX_AGE, serializeAssumedRoles } from '$lib/assumedRoles';
-	import { mayPreviewRoles, mayPreviewWithoutRoles, ROLE_LABELS, sortRoles } from '$lib/roles';
+	import {
+		ASSUME_COOKIE,
+		ASSUME_COOKIE_MAX_AGE,
+		serializeAssumedRoles
+	} from '#lib/assumedRoles.ts';
+	import { mayPreviewRoles, mayPreviewWithoutRoles, ROLE_LABELS, sortRoles } from '#lib/roles.ts';
 
 	let {
 		grantedRoles,

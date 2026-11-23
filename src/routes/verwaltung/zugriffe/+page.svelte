@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
 	import {
 		DOOR_LABELS,
@@ -12,10 +12,10 @@
 		when,
 		who,
 		withParam
-	} from '$lib/access';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { roleLabel } from '$lib/roles';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	} from '#lib/access.ts';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { roleLabel } from '#lib/roles.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import type { PageData } from './$types';
 
 	// The refusals only. The access log below is loaded page by page, newest first, and sorting

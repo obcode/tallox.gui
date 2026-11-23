@@ -8,7 +8,7 @@
  * stated" — the overview cannot tell the two apart and must not try.
  */
 
-import { parseDesiredHours, desiredHoursLabel } from '$lib/wishes';
+import { parseDesiredHours, desiredHoursLabel } from '#lib/wishes.ts';
 
 /** A range as stated: one end alone is a single figure, so min and max are always both set. */
 export type DesiredRange = { min: number; max: number };

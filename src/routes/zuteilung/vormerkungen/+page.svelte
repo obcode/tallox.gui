@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { stackedTable } from '$lib/stackedTable';
-	import { semesterName } from '$lib/semester';
-	import { personLabel } from '$lib/subjectGroups';
-	import { ADVANCE_STATUS_LABELS, advanceStatusBadge, advanceLevelLabel } from '$lib/advanceWishes';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { semesterName } from '#lib/semester.ts';
+	import { personLabel } from '#lib/subjectGroups.ts';
+	import {
+		ADVANCE_STATUS_LABELS,
+		advanceStatusBadge,
+		advanceLevelLabel
+	} from '#lib/advanceWishes.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

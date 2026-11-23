@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { handbookHref } from '$lib/catalogue';
+	import { handbookHref } from '#lib/catalogue.ts';
 
 	/**
 	 * A link to the module's page in the public module handbook, or nothing.

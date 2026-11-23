@@ -1,5 +1,5 @@
 import writeXlsxFile from 'write-excel-file/node';
-import type { ExportSheet } from '$lib/export';
+import type { ExportSheet } from '#lib/export.ts';
 
 /**
  * The sheets as an `.xlsx` file.

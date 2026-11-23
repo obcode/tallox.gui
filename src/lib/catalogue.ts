@@ -1,7 +1,7 @@
 /**
  * The module catalogue, in the language the faculty speaks it.
  *
- * The same translation `$lib/semester.ts` and `$lib/zpa.ts` do, and for the same reason: the
+ * The same translation `#lib/semester.ts` and `#lib/zpa.ts` do, and for the same reason: the
  * backend is English throughout, and the mapping to the words people read happens once, here.
  *
  * Svelte-free on purpose, so vitest can check the parts that are easy to get wrong — the
@@ -18,7 +18,7 @@ import type {
 	ModuleKind,
 	ProgrammeStatus,
 	ZpaProjectionFinding
-} from '$lib/gql/__generated__/graphql';
+} from '#lib/gql/__generated__/graphql.ts';
 
 export const FREQUENCY_LABELS: Record<Frequency, string> = {
 	EVERY_SEMESTER: 'jedes Semester',

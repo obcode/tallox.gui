@@ -161,7 +161,7 @@ test.describe('areas across widths', () => {
  * track column of the wish table and half the semester tabs sat off the right edge of a phone —
  * inside an `overflow-x-auto` that kept the page still and the content out of sight.
  *
- * Tables now turn into cards when their columns do not fit (`$lib/stackedTable`), and tab strips
+ * Tables now turn into cards when their columns do not fit (`#lib/stackedTable`), and tab strips
  * wrap. Code samples in `<pre>` may scroll: a line of code broken in two is a different line.
  */
 const EVERY_PAGE: readonly { who: Persona; path: string }[] = [

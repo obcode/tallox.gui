@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { formatHours } from '$lib/catalogue';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { formatHours } from '#lib/catalogue.ts';
 	import {
 		ENGLISH_NOT_OFFERED,
 		cohortLabel,
 		englishClosed,
 		formatBadges,
 		partLabel
-	} from '$lib/demand';
-	import { cieRows, teachingBySemester } from '$lib/myAssignments';
-	import { autosave } from '$lib/saveOnLeave';
+	} from '#lib/demand.ts';
+	import { cieRows, teachingBySemester } from '#lib/myAssignments.ts';
+	import { autosave } from '#lib/saveOnLeave.ts';
 	import { enhance } from '$app/forms';
 	import {
 		CONFIRMATION_BADGES,
@@ -20,10 +20,10 @@
 		formatDueDate,
 		mayOfferConfirm,
 		type ConfirmationState
-	} from '$lib/confirmation';
-	import { formatMoment } from '$lib/tokens';
-	import { semesterName } from '$lib/semester';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	} from '#lib/confirmation.ts';
+	import { formatMoment } from '#lib/tokens.ts';
+	import { semesterName } from '#lib/semester.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

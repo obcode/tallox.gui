@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { claimReload } from '$lib/staleBuild';
+	import { claimReload } from '#lib/staleBuild.ts';
 
 	// The error page *inside* the frame: a page failed to load, the application itself did not.
 	// The other case — somebody is not registered in Tallox at all — fails one level up, in the
@@ -11,7 +11,7 @@
 
 	// The page's code is gone after a deploy: loading the address in full fetches the new build.
 	// Once per address and minute, so a chunk that is missing for good does not reload forever.
-	// See $lib/staleBuild.
+	// See #lib/staleBuild.
 	let reloading = $state(false);
 	onMount(() => {
 		if (!page.error?.staleBuild) return;

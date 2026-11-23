@@ -1,8 +1,8 @@
-import type { Phase } from '$lib/gql/__generated__/graphql';
-import type { GuideLink } from '$lib/guide';
-import { belowMinimum, type CompetenceTotalLike } from '$lib/competences';
-import { semesterName } from '$lib/semester';
-import { dueIsAhead, formatDueDate, type ConfirmationState } from '$lib/confirmation';
+import type { Phase } from '#lib/gql/__generated__/graphql.ts';
+import type { GuideLink } from '#lib/guide.ts';
+import { belowMinimum, type CompetenceTotalLike } from '#lib/competences.ts';
+import { semesterName } from '#lib/semester.ts';
+import { dueIsAhead, formatDueDate, type ConfirmationState } from '#lib/confirmation.ts';
 
 /**
  * "Dein Stand": what a lecturer has not stated yet, on the start page.

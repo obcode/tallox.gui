@@ -1,6 +1,6 @@
-import { PART_KIND_LABELS, formatHours } from '$lib/catalogue';
-import { cohortLabel } from '$lib/demand';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
+import { PART_KIND_LABELS, formatHours } from '#lib/catalogue.ts';
+import { cohortLabel } from '#lib/demand.ts';
+import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * Carrying a corrected split over to the instances that already exist — the report, as lines.

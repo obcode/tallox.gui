@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import GuidePlaces from '$lib/components/GuidePlaces.svelte';
-	import { GLOSSARY, howtos, isCurrentPhase, PHASES, PROMISES } from '$lib/intro';
-	import { PHASE_LABELS, semesterName } from '$lib/semester';
+	import GuidePlaces from '#lib/components/GuidePlaces.svelte';
+	import { GLOSSARY, howtos, isCurrentPhase, PHASES, PROMISES } from '#lib/intro.ts';
+	import { PHASE_LABELS, semesterName } from '#lib/semester.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -15,7 +15,7 @@
 
 <!--
 	The introduction for everybody who teaches and plans nothing. The texts live in
-	$lib/intro.ts, the instructions come from $lib/help.ts — here things are only laid out,
+	#lib/intro.ts, the instructions come from #lib/help.ts — here things are only laid out,
 	not worded.
 	-->
 <div class="flex flex-col gap-4">

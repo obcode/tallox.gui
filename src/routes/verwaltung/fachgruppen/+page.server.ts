@@ -1,8 +1,8 @@
 import { error, fail } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import type { SubjectGroupCandidatesQuery } from '$lib/gql/__generated__/graphql';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { SubjectGroupCandidatesQuery } from '#lib/gql/__generated__/graphql.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

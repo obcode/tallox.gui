@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Phase } from '$lib/gql/__generated__/graphql';
+import type { Phase } from '#lib/gql/__generated__/graphql.ts';
 import {
 	demandReleaseLine,
 	PHASE_HINTS,

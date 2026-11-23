@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { PlanningState } from '$lib/planning';
-	import { CHART_LANES, LANE_LABELS, processChart } from '$lib/processChart';
+	import type { PlanningState } from '#lib/planning.ts';
+	import { CHART_LANES, LANE_LABELS, processChart } from '#lib/processChart.ts';
 
 	let { planning }: { planning: PlanningState } = $props();
 

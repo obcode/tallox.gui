@@ -8,7 +8,7 @@
 // schema.tag names the tallox.go release the file was taken from, so the page can say which.
 import schemaSDL from '../../../../schema.graphql?raw';
 import schemaTag from '../../../../schema.tag?raw';
-import { buildSchemaDoc } from '$lib/schemaDoc';
+import { buildSchemaDoc } from '#lib/schemaDoc.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

@@ -2,13 +2,13 @@
 	import { onMount } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import { updated } from '$app/state';
-	import { fieldsOf, pendingChanges } from '$lib/saveOnLeave';
+	import { fieldsOf, pendingChanges } from '#lib/saveOnLeave.ts';
 
 	/**
 	 * Once a newer build is deployed, the next click loads the page in full.
 	 *
 	 * The tab's own router only knows the chunks of the build it was opened with, and after a
-	 * deploy those are gone (see $lib/staleBuild). `updated` learns of the new build from SvelteKit's
+	 * deploy those are gone (see #lib/staleBuild). `updated` learns of the new build from SvelteKit's
 	 * polling, from returning to the tab, or from handleError after a failed import. From then on a
 	 * link or a filter form is followed by the browser itself, which fetches the new build on the way.
 	 *

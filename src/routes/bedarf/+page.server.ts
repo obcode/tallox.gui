@@ -1,6 +1,6 @@
-import { wishedRefusals, withDroppedWishes } from '$lib/demandRefusals';
+import { wishedRefusals, withDroppedWishes } from '#lib/demandRefusals.ts';
 import { error, fail, redirect } from '@sveltejs/kit';
-import { ALL_PART_KINDS, frequenciesForTerm, localCourseGroupOptions } from '$lib/catalogue';
+import { ALL_PART_KINDS, frequenciesForTerm, localCourseGroupOptions } from '#lib/catalogue.ts';
 import {
 	cieChanges,
 	formatChanges,
@@ -8,8 +8,8 @@ import {
 	topicChanges,
 	withoutEmptyParams,
 	type DemandOrder
-} from '$lib/demand';
-import { graphql } from '$lib/gql/__generated__';
+} from '#lib/demand.ts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
 import type {
 	CourseType,
 	CoverageCandidatesQuery,
@@ -17,14 +17,14 @@ import type {
 	DutyStatus,
 	Frequency,
 	InstancePartKind
-} from '$lib/gql/__generated__/graphql';
+} from '#lib/gql/__generated__/graphql.ts';
 
 /** One instance the picker may offer as the holder of somebody else's demand. */
 type CoverageCandidate = CoverageCandidatesQuery['courseInstances'][number];
-import { backendRequest } from '$lib/server/backend';
-import { applyModuleSplit, previewModuleSplit } from '$lib/server/splitApplication';
-import { toRefusal } from '$lib/server/graphqlError';
-import { semesterTerm } from '$lib/semester';
+import { backendRequest } from '#lib/server/backend.ts';
+import { applyModuleSplit, previewModuleSplit } from '#lib/server/splitApplication.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { semesterTerm } from '#lib/semester.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

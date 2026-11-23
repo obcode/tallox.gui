@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
-	import { assignmentOverview } from '$lib/assignmentOverview';
-	import { basketValue, cohortBasketOptions, cohortsInBasket } from '$lib/basket';
-	import { PART_KIND_LABELS, formatHours, programmeLabel } from '$lib/catalogue';
-	import { semesterName } from '$lib/semester';
+	import { assignmentOverview } from '#lib/assignmentOverview.ts';
+	import { basketValue, cohortBasketOptions, cohortsInBasket } from '#lib/basket.ts';
+	import { PART_KIND_LABELS, formatHours, programmeLabel } from '#lib/catalogue.ts';
+	import { semesterName } from '#lib/semester.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

@@ -1,5 +1,5 @@
-import { env } from '$env/dynamic/public';
-import { examples, tokenEndpoint } from '$lib/apiExamples';
+import * as env from '$app/env/public';
+import { examples, tokenEndpoint } from '#lib/apiExamples.ts';
 import type { PageServerLoad } from './$types';
 
 /**

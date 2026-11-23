@@ -7,6 +7,10 @@
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@11.9.0",
+	"$comment:imports": "#lib is how src/lib is imported since SvelteKit 3 removed the $lib alias: a Node subpath import, so Vite, TypeScript and Vitest resolve it without any SvelteKit configuration. Imports name the file with its extension (`#lib/catalogue.ts`), because subpath imports map paths and do not search for files.",
+	"imports": {
+		"#lib/*": "./src/lib/*"
+	},
 	"scripts": {
 		"$comment:prepare": "Erzeugt .svelte-kit/ (u.a. tsconfig.json, das die Wurzel-tsconfig per extends einbindet). Ohne das scheitert in einem frischen Checkout schon das Laden der Playwright-Config, bevor irgendein Test läuft.",
 		"prepare": "svelte-kit sync",
@@ -29,7 +33,7 @@
 		"update-schema:live": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${TALLOX_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
 	},
 	"dependencies": {
-		"@sentry/sveltekit": "^10.78.0",
+		"@sentry/sveltekit": "^11.16.0",
 		"graphql": "^16.15.0",
 		"graphql-request": "^7.4.0",
 		"write-excel-file": "^4.1.1"
@@ -42,9 +46,9 @@
 		"@graphql-codegen/client-preset": "^6.2.3",
 		"@graphql-typed-document-node/core": "^3.2.0",
 		"@playwright/test": "1.65.1",
-		"@sveltejs/adapter-node": "^5.5.8",
-		"@sveltejs/kit": "^2.70.4",
-		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@sveltejs/adapter-node": "^6.0.5",
+		"@sveltejs/kit": "^3.4.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/typography": "^0.5.20",
 		"@tailwindcss/vite": "^4.3.5",
 		"@vitest/coverage-v8": "^4.1.12",
@@ -62,7 +66,7 @@
 		"tailwindcss": "^4.3.5",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.73.0",
-		"vite": "^6.4.6",
+		"vite": "^8.3.8",
 		"vitest": "^4.1.12"
 	}
 }

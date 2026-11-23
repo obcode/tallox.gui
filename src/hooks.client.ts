@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/sveltekit';
-import type { HandleClientError } from '@sveltejs/kit';
+import type { HandleClientError } from '@sveltejs/kit/hooks';
 import { updated } from '$app/state';
-import { env } from '$env/dynamic/public';
-import { reportUnexpectedError } from '$lib/errorReport';
-import { scrubBreadcrumb, scrubEvent } from '$lib/sentryScrub';
-import { isStaleBuildError } from '$lib/staleBuild';
+import * as env from '$app/env/public';
+import { reportUnexpectedError } from '#lib/errorReport.ts';
+import { DATA_COLLECTION, scrubBreadcrumb, scrubEvent } from '#lib/sentryScrub.ts';
+import { isStaleBuildError } from '#lib/staleBuild.ts';
 
 /**
  * Report browser errors to GlitchTip.
@@ -31,11 +31,13 @@ if (env.PUBLIC_SENTRY_DSN) {
 		// Stated rather than inherited: this screen shows teaching load and the wishes of
 		// named colleagues, and what leaves it is not a default worth taking on trust.
 		//
+		// Sentry 11 collects all of it by default; see DATA_COLLECTION.
+		//
 		// NOTE: breadcrumbs still record the paths visited. A person id in a path is in the
 		// issue as well; query strings are cut off below.
-		sendDefaultPii: false,
+		dataCollection: DATA_COLLECTION,
 		// Addresses without their query strings: the person search carries what was typed into
-		// it, the diagnosis a mail address. See $lib/sentryScrub.
+		// it, the diagnosis a mail address. See #lib/sentryScrub.
 		beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb),
 		beforeSend: (event) => scrubEvent(event)
 	});
@@ -44,12 +46,12 @@ if (env.PUBLIC_SENTRY_DSN) {
 /**
  * Unexpected errors in the browser — a client-side load or navigation. Same number scheme as
  * on the server; the line goes to the browser console, the event to the collector when a DSN
- * is set. See $lib/errorReport.
+ * is set. See #lib/errorReport.
  */
-export const handleError: HandleClientError = ({ error, event, status, message }) => {
+export const handleError: HandleClientError = ({ kind, error, event }) => {
 	// A tab older than the last deploy, asking for a chunk that is gone. Not a failure of Tallox,
 	// so no number and no report: ask for the version, which makes the next navigation a full
-	// load (NewVersionReload), and let the error page reload if it is shown. See $lib/staleBuild.
+	// load (NewVersionReload), and let the error page reload if it is shown. See #lib/staleBuild.
 	if (isStaleBuildError(error)) {
 		void updated.check();
 		return {
@@ -58,8 +60,17 @@ export const handleError: HandleClientError = ({ error, event, status, message }
 			staleBuild: true
 		};
 	}
+	// Errors thrown with `error()` and SvelteKit's own 404s pass through here as well since
+	// SvelteKit 3. They keep their status and message and are not reported.
+	if (kind !== 'unknown') return;
 	return reportUnexpectedError(
-		{ error, status, message, path: event.url.pathname, routeId: event.route.id },
+		{
+			error,
+			status: 500,
+			message: 'Internal Error',
+			path: event.url.pathname,
+			routeId: event.route.id
+		},
 		{
 			capture: (err, errorId) => {
 				if (env.PUBLIC_SENTRY_DSN) Sentry.captureException(err, { tags: { errorId } });

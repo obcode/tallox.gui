@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { autosave } from '$lib/saveOnLeave';
-	import { leadNames } from '$lib/subjectGroups';
+	import { autosave } from '#lib/saveOnLeave.ts';
+	import { leadNames } from '#lib/subjectGroups.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -112,7 +112,9 @@
 								<ul class="text-base-content/90 mt-1 flex flex-col gap-0.5">
 									{#each group.modules as module (module.id)}
 										<li>
-											<a class="link" href={resolve(`/module/${module.id}`)}>{module.name}</a>
+											<a class="link" href={resolve('/module/[id]', { id: module.id })}
+												>{module.name}</a
+											>
 											<span class="text-base-content/80">({module.homeProgrammeCode})</span>
 										</li>
 									{/each}

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { namesOf } from '$lib/localTeachers';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
-	import { stackedTable } from '$lib/stackedTable';
+	import { namesOf } from '#lib/localTeachers.ts';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

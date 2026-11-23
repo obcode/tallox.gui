@@ -1,9 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import type { WishPriority } from '$lib/gql/__generated__/graphql';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
-import { parseDesiredRange } from '$lib/desiredHours';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { WishPriority } from '#lib/gql/__generated__/graphql.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { parseDesiredRange } from '#lib/desiredHours.ts';
 import {
 	isWishChoice,
 	othersForWishScreen,
@@ -14,7 +14,7 @@ import {
 	wishChanges,
 	type TrackLimitEntry,
 	type WishEntry
-} from '$lib/wishes';
+} from '#lib/wishes.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

@@ -13,9 +13,9 @@
 	 * The button inherits colour and font from the cell, so the contrast override for
 	 * `.table thead th` in app.css applies to it unchanged.
 	 *
-	 * The cycle and the rules for sort keys are in $lib/sorting.
+	 * The cycle and the rules for sort keys are in #lib/sorting.
 	 */
-	import { ariaSort, type SortState } from '$lib/sorting';
+	import { ariaSort, type SortState } from '#lib/sorting.ts';
 
 	let {
 		label,

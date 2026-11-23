@@ -1,8 +1,8 @@
-import type { Phase, Role } from '$lib/gql/__generated__/graphql';
-import { GUIDE, type GuideStep } from '$lib/guide';
-import type { PlanningState } from '$lib/planning';
-import { ROLE_LABELS } from '$lib/roles';
-import { PHASE_HINTS, PHASE_LABELS, PHASE_ORDER } from '$lib/semester';
+import type { Phase, Role } from '#lib/gql/__generated__/graphql.ts';
+import { GUIDE, type GuideStep } from '#lib/guide.ts';
+import type { PlanningState } from '#lib/planning.ts';
+import { ROLE_LABELS } from '#lib/roles.ts';
+import { PHASE_HINTS, PHASE_LABELS, PHASE_ORDER } from '#lib/semester.ts';
 
 /**
  * The semester as a picture on /ablauf: phases from left to right, roles as lanes, and in each

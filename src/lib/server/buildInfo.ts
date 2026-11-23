@@ -1,5 +1,5 @@
-import type { ServerBuildInfo } from '$lib/buildInfo';
-import { graphql } from '$lib/gql/__generated__';
+import type { ServerBuildInfo } from '#lib/buildInfo.ts';
+import { graphql } from '#lib/gql/__generated__/index.ts';
 import { backendRequest } from './backend';
 
 const BuildInfoQuery = graphql(`

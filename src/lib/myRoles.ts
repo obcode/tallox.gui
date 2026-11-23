@@ -1,4 +1,4 @@
-import type { Role } from '$lib/gql/__generated__/graphql';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
 
 /**
  * What a scoped grant actually reaches, and what an empty list means.

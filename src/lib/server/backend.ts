@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { ClientError, GraphQLClient, type Variables } from 'graphql-request';
-import { assumeHeaderValue } from '$lib/assumedRoles';
+import { assumeHeaderValue } from '#lib/assumedRoles.ts';
 
 /**
  * The identity of the running request.
@@ -17,7 +17,7 @@ export type AuthContext = {
 	remoteUser?: string;
 	remoteDisplayname?: string;
 	/**
-	 * The role narrowing from the cookie, see $lib/assumedRoles.
+	 * The role narrowing from the cookie, see #lib/assumedRoles.
 	 *
 	 * `undefined` means "not narrowed", an empty array means "narrowed to no role at all".
 	 * These are different states and travel to the backend as "no header" and "header with an
@@ -61,7 +61,7 @@ export function backendClient(ctx?: AuthContext): GraphQLClient {
 /**
  * Shorthand for the normal case: a request with the identity of the running request.
  *
- * Deliberately takes only a `TypedDocumentNode` from `$lib/gql/__generated__`, never a string.
+ * Deliberately takes only a `TypedDocumentNode` from `#lib/gql/__generated__`, never a string.
  * The result type therefore comes from the document itself — a `<T>` written by hand next to it
  * is only an assertion, and goes quietly wrong at the next schema change.
  */

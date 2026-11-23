@@ -8,7 +8,7 @@ import { PERSONAS, test } from './fixtures';
  * asks for a chunk that is gone the first time it goes to a page it has not loaded yet — in
  * Safari "Importing a module script failed". Reported on 2026-11-19 from a tab left open
  * overnight: the next click in the administration ended on the error page, and the collector
- * got an issue for it. See $lib/staleBuild.
+ * got an issue for it. See #lib/staleBuild.
  *
  * The deploy is played here with two routes: /_app/version.json announces a newer build, and
  * every page chunk the tab has not loaded yet answers 404.

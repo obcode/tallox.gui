@@ -1,5 +1,5 @@
 {
-	"extends": "./.svelte-kit/tsconfig.json",
+	"extends": "$app/tsconfig",
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": true,
@@ -10,8 +10,11 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler"
-	}
-	// Paths and further options come from .svelte-kit/tsconfig.json (svelte-kit sync).
-	// This project is TypeScript-only; allowJs/checkJs are only there so that
-	// configuration files such as svelte.config.js are checked as well.
+	},
+	// Paths, types and further options come from $app/tsconfig, which `svelte-kit sync` writes
+	// into node_modules. The include list is ours since SvelteKit 3: the sources, the Playwright
+	// specs, and the configuration files at the root.
+	// This project is TypeScript-only; allowJs/checkJs are only there so that configuration
+	// files such as eslint.config.js are checked as well.
+	"include": ["src", "tests", "*"]
 }

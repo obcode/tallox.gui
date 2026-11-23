@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
-	import { stackedTable } from '$lib/stackedTable';
-	import { semesterName } from '$lib/semester';
-	import { programmeTitle } from '$lib/startOverview';
-	import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '$lib/wishes';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
+	import { stackedTable } from '#lib/stackedTable.ts';
+	import { semesterName } from '#lib/semester.ts';
+	import { programmeTitle } from '#lib/startOverview.ts';
+	import { WISH_PRIORITIES, WISH_PRIORITY_LABELS } from '#lib/wishes.ts';
 	import {
 		ADVANCE_STATUS_LABELS,
 		advanceStatusBadge,
 		advanceBySemester,
 		advanceStatusHint,
 		advanceLevelLabel
-	} from '$lib/advanceWishes';
+	} from '#lib/advanceWishes.ts';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

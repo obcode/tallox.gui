@@ -1,14 +1,14 @@
-import type { Phase, Role } from '$lib/gql/__generated__/graphql';
+import type { Phase, Role } from '#lib/gql/__generated__/graphql.ts';
 import {
 	ACCOUNT_ITEMS,
 	NAV_ITEMS,
 	navigationPages,
 	visibleNavItems,
 	type NavItem
-} from '$lib/navigation';
-import { isOnlooker } from '$lib/roles';
-import type { DemandRelease, PlanningState } from '$lib/planning';
-import { PHASE_LABELS, semesterName } from '$lib/semester';
+} from '#lib/navigation.ts';
+import { isOnlooker } from '#lib/roles.ts';
+import type { DemandRelease, PlanningState } from '#lib/planning.ts';
+import { PHASE_LABELS, semesterName } from '#lib/semester.ts';
 
 /**
  * The planning process, step by step, as the start page tells it.

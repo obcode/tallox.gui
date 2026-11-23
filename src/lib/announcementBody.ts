@@ -3,7 +3,7 @@
  *
  * `Announcement.bodyHtml` is produced by the backend's small Markdown (`internal/mail`), which
  * escapes everything and then turns a handful of patterns back into tags. This app shows it with
- * `{@html}` — the one place it does, against the rule `$lib/schemaDoc` states, because an
+ * `{@html}` — the one place it does, against the rule `#lib/schemaDoc` states, because an
  * announcement is written to be read formatted and the mail already shows it so.
  *
  * Not trusting that alone: every tag in the string must be one of exactly those the renderer

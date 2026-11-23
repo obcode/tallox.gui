@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
 	import {
 		DUTY_LABELS,
@@ -7,7 +7,7 @@
 		PART_KIND_LABELS,
 		dutyBadge,
 		moduleName
-	} from '$lib/catalogue';
+	} from '#lib/catalogue.ts';
 	import {
 		borrowedFromLabel,
 		alsoPlannedLabel,
@@ -28,8 +28,8 @@
 		type DemandOrder,
 		type ModuleRow,
 		type ReadInstanceLike
-	} from '$lib/demand';
-	import type { DutyStatus, ModuleKind, ModuleSource } from '$lib/gql/__generated__/graphql';
+	} from '#lib/demand.ts';
+	import type { DutyStatus, ModuleKind, ModuleSource } from '#lib/gql/__generated__/graphql.ts';
 	import NoteIcon from './NoteIcon.svelte';
 
 	/**

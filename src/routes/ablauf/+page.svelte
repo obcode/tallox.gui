@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import GuidePlaces from '$lib/components/GuidePlaces.svelte';
-	import ProcessChart from '$lib/components/ProcessChart.svelte';
-	import { GUIDE, isDue, type GuideStep } from '$lib/guide';
-	import { ROLE_LABELS } from '$lib/roles';
+	import GuidePlaces from '#lib/components/GuidePlaces.svelte';
+	import ProcessChart from '#lib/components/ProcessChart.svelte';
+	import { GUIDE, isDue, type GuideStep } from '#lib/guide.ts';
+	import { ROLE_LABELS } from '#lib/roles.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -62,7 +62,7 @@
 
 	<!--
 		The process as numbered steps, in the order of the process. For each: who does it,
-		where, and what one needs to know while doing it. The data lives in $lib/guide.ts so that
+		where, and what one needs to know while doing it. The data lives in #lib/guide.ts so that
 		the table below and the „Jetzt dran“ card on the start page are built from the same
 		steps and nothing is written twice.
 	-->

@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 
 const DiagnoseDocument = graphql(`
 	query DiagnoseAccess($mail: String!) {

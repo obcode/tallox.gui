@@ -1,6 +1,6 @@
 import type { RouteId } from '$app/types';
-import type { Role } from '$lib/gql/__generated__/graphql';
-import { hasAnyRole, isOnlooker } from '$lib/roles';
+import type { Role } from '#lib/gql/__generated__/graphql.ts';
+import { hasAnyRole, isOnlooker } from '#lib/roles.ts';
 
 /**
  * A route that can be linked to without arguments.

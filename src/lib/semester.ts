@@ -1,10 +1,10 @@
-import type { Phase } from '$lib/gql/__generated__/graphql';
-import type { DemandRelease, WishRounds } from '$lib/planning';
+import type { Phase } from '#lib/gql/__generated__/graphql.ts';
+import type { DemandRelease, WishRounds } from '#lib/planning.ts';
 
 /**
  * Semesters and phases, in the language the faculty speaks them.
  *
- * The same translation `$lib/roles.ts` does, and for the same reason: the backend is English
+ * The same translation `#lib/roles.ts` does, and for the same reason: the backend is English
  * throughout because everything there is, and the mapping to the faculty's own vocabulary
  * lives in exactly two places — the doc comment on `policy.Phase` and here.
  *

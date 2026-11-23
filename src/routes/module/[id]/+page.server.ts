@@ -1,10 +1,10 @@
 import { error, fail, isHttpError } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import type { CourseType, InstancePartKind, ModuleKind } from '$lib/gql/__generated__/graphql';
-import { backendRequest } from '$lib/server/backend';
-import { applyModuleSplit, previewModuleSplit } from '$lib/server/splitApplication';
-import { toRefusal } from '$lib/server/graphqlError';
-import { ALL_PART_KINDS, COURSE_TYPE_LABELS, localModuleInput } from '$lib/catalogue';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import type { CourseType, InstancePartKind, ModuleKind } from '#lib/gql/__generated__/graphql.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { applyModuleSplit, previewModuleSplit } from '#lib/server/splitApplication.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
+import { ALL_PART_KINDS, COURSE_TYPE_LABELS, localModuleInput } from '#lib/catalogue.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 const ModuleDocument = graphql(`

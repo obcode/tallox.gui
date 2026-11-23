@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildSchema, GraphQLEnumType } from 'graphql';
 import { readFileSync } from 'node:fs';
-import type { ScopeArea } from '$lib/gql/__generated__/graphql';
+import type { ScopeArea } from '#lib/gql/__generated__/graphql.ts';
 import {
 	AREA_HINTS,
 	AREA_LABELS,

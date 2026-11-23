@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { graphql } from '$lib/gql/__generated__';
-import { backendRequest } from '$lib/server/backend';
-import { toRefusal } from '$lib/server/graphqlError';
+import { graphql } from '#lib/gql/__generated__/index.ts';
+import { backendRequest } from '#lib/server/backend.ts';
+import { toRefusal } from '#lib/server/graphqlError.ts';
 import {
 	assignmentChanges,
 	mergeCombined,
@@ -10,10 +10,10 @@ import {
 	type AssignmentLike,
 	type CombinedEntry,
 	UNFILED
-} from '$lib/assignment';
-import { parseDegreeParam } from '$lib/catalogue';
-import { parseBasketChoice, parseCohortOrder } from '$lib/basket';
-import { cieChanges, formatChanges, topicChanges, withoutEmptyParams } from '$lib/demand';
+} from '#lib/assignment.ts';
+import { parseDegreeParam } from '#lib/catalogue.ts';
+import { parseBasketChoice, parseCohortOrder } from '#lib/basket.ts';
+import { cieChanges, formatChanges, topicChanges, withoutEmptyParams } from '#lib/demand.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /**

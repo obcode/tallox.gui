@@ -9,12 +9,12 @@
  * **No wishes, and nothing derived from them.** Not a column, not a count. Before publication a
  * count leaks as much as a name, and a file is the one place where nobody can take it back.
  *
- * Svelte-free and I/O-free, so vitest checks the rows; `$lib/server/export.ts` turns them into
+ * Svelte-free and I/O-free, so vitest checks the rows; `#lib/server/export.ts` turns them into
  * bytes.
  */
 
-import { PART_KIND_LABELS } from '$lib/catalogue';
-import { controllingTable, type LoadInput } from '$lib/controlling';
+import { PART_KIND_LABELS } from '#lib/catalogue.ts';
+import { controllingTable, type LoadInput } from '#lib/controlling.ts';
 import {
 	DELIVERY_LABELS,
 	cohortLabel,
@@ -22,15 +22,15 @@ import {
 	coversLabel,
 	type CoverageLike,
 	type DeliveryFormat
-} from '$lib/demand';
-import type { InstancePartKind } from '$lib/gql/__generated__/graphql';
-import { semesterName } from '$lib/semester';
+} from '#lib/demand.ts';
+import type { InstancePartKind } from '#lib/gql/__generated__/graphql.ts';
+import { semesterName } from '#lib/semester.ts';
 import {
 	CONFIRMATION_LABELS,
 	confirmationsByPerson,
 	type ConfirmationLike,
 	type ConfirmationState
-} from '$lib/confirmation';
+} from '#lib/confirmation.ts';
 
 /** A cell as the writer takes it: a number stays a number, so a spreadsheet can sum it. */
 export type ExportCell = string | number | null;

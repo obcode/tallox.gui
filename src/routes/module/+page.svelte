@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { stackedTable } from '$lib/stackedTable';
+	import { stackedTable } from '#lib/stackedTable.ts';
 	import { resolve } from '$app/paths';
 	import {
 		ALL_DEGREES,
@@ -20,12 +20,12 @@
 		mayWriteModuleSplit,
 		moduleName,
 		spoLabel
-	} from '$lib/catalogue';
-	import HandbookLink from '$lib/components/HandbookLink.svelte';
-	import SortHeader from '$lib/components/SortHeader.svelte';
-	import { askBeforeLeave } from '$lib/saveOnLeave';
-	import { hasAnyRole } from '$lib/roles';
-	import { nextSort, sortRows, type SortState } from '$lib/sorting';
+	} from '#lib/catalogue.ts';
+	import HandbookLink from '#lib/components/HandbookLink.svelte';
+	import SortHeader from '#lib/components/SortHeader.svelte';
+	import { askBeforeLeave } from '#lib/saveOnLeave.ts';
+	import { hasAnyRole } from '#lib/roles.ts';
+	import { nextSort, sortRows, type SortState } from '#lib/sorting.ts';
 	import type { ActionData, PageData } from './$types';
 
 	type ModuleSortKey = 'name' | 'home' | 'group' | 'responsible' | 'frequency';
@@ -426,7 +426,7 @@
 								</td>
 							{/if}
 							<td>
-								<a class="link font-medium" href={resolve(`/module/${module.id}`)}>
+								<a class="link font-medium" href={resolve('/module/[id]', { id: module.id })}>
 									{moduleName(module)}
 								</a>
 								<HandbookLink {module} compact />
@@ -510,7 +510,7 @@
 									simply not readable on the light themes — daisyUI pairs the semantic colours with
 									their `*-content` only as a background.
 								-->
-									<a class="link" href={resolve(`/module/${module.id}`)}>
+									<a class="link" href={resolve('/module/[id]', { id: module.id })}>
 										<span class="badge badge-warning badge-sm">fehlt</span>
 										<span class="ml-1">eintragen</span>
 									</a>
