@@ -135,7 +135,7 @@ test.describe('the assignment screen', () => {
 		).toBeVisible();
 
 		// The wish is next to the row it is about, which is the whole reason for this layout.
-		await expect(page.getByText('Eingetragen:')).toBeVisible();
+		await expect(page.getByText('Gewünscht von:')).toBeVisible();
 		await expect(page.getByText(`${PERSONAS.fuenf.name} · unbedingt`)).toBeVisible();
 
 		await openParts(page);
@@ -469,7 +469,7 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Noch ganz offen' })).toBeVisible();
 		await expect(
 			page.getByRole('listitem').filter({ hasText: ASSIGNMENTS.moduleName })
 		).toBeVisible();
@@ -477,6 +477,37 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		await expect(
 			page.locator(`tbody[data-cohort="${ASSIGNMENTS.instance}"]`).getByText('ganz offen')
 		).toBeVisible();
+	});
+
+	// Reported on 2026-11-24: a lead filled two cohorts nobody had asked for, and both stayed on
+	// the list — read next to „53 von 53 Teilen besetzt“, that looked like a filling that had not
+	// been saved. The list is what is still to do; a filled cohort leaves it, with or without a wish.
+	test('a cohort filled without a wish leaves the list', async ({ asPersona }) => {
+		runSql(
+			`DELETE FROM wish WHERE course_instance_id = '${ASSIGNMENTS.instance}';`,
+			'emptying the interest in the assignment fixture'
+		);
+
+		const page = await asPersona(PERSONAS.drei);
+		await gotoRendered(page, URL);
+		await expect(page.getByRole('heading', { name: 'Noch ganz offen' })).toBeVisible();
+
+		// Nobody who asked for it: a teacher straight from „Weitere Lehrende“.
+		const spare = `t:${TEACHERS.spare}`;
+		await cohortChooser(page).focus();
+		await cohortChooser(page).selectOption(spare);
+		await expect(page.getByText(/Änderungen? gespeichert/)).toBeVisible();
+
+		await gotoRendered(page, URL);
+		await expect(cohortChooser(page)).toHaveValue(spare);
+		await expect(page.getByRole('heading', { name: 'Noch ganz offen' })).toHaveCount(0);
+		await expect(
+			page.locator(`tbody[data-cohort="${ASSIGNMENTS.instance}"]`).getByText('ganz offen')
+		).toHaveCount(0);
+		// Still nobody asked for it, and the row does not pretend otherwise.
+		await expect(page.getByText('Gewünscht von:')).toHaveCount(0);
+
+		await reset();
 	});
 
 	// The condition the whole thing rests on. A colleague who may open this screen and choose
@@ -493,7 +524,7 @@ test.describe('the cohorts nobody has registered interest in', () => {
 
 		// She is on the page — this is not "the page refused her".
 		await expect(page.getByRole('heading', { name: 'Zuteilung' })).toBeVisible();
-		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Noch ganz offen' })).toHaveCount(0);
 		await expect(page.getByText(/niemand eingetragen/)).toHaveCount(0);
 		await expect(page.getByText('ganz offen')).toHaveCount(0);
 	});
@@ -506,7 +537,7 @@ test.describe('the cohorts nobody has registered interest in', () => {
 		const page = await asPersona(PERSONAS.drei);
 		await gotoRendered(page, URL);
 
-		await expect(page.getByRole('heading', { name: 'Noch ohne Interesse' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Noch ganz offen' })).toHaveCount(0);
 		await expect(page.getByText('ganz offen')).toHaveCount(0);
 	});
 });

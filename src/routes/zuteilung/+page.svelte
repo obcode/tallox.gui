@@ -21,7 +21,7 @@
 		partsSummary,
 		savedHint,
 		cohortsToSettle,
-		cohortsWithoutInterest,
+		cohortsStillOpen,
 		isContested,
 		isOnlyIfNeeded,
 		isWideOpen,
@@ -298,7 +298,8 @@
 	);
 
 	/**
-	 * The instances of this subject group that nobody has registered interest in yet.
+	 * The instances of this subject group that are still entirely open: no interest, nobody holds
+	 * them.
 	 *
 	 * Only for a subject group this person **leads** — there they read the entries anyway, so
 	 * this is a re-sorting of existing rows and not new information. Anywhere else the list
@@ -316,7 +317,7 @@
 			: mayShowGaps(tab, roles, data.led)
 	);
 
-	const gaps = $derived(showGaps ? cohortsWithoutInterest(shown, data.wishes) : []);
+	const gaps = $derived(showGaps ? cohortsStillOpen(groups, data.wishes) : []);
 
 	/**
 	 * Cohorts with a clash of „unbedingt“, or with nothing but „notfalls“ and nobody holding them.
@@ -979,10 +980,11 @@
 				them anyway.
 			-->
 			<div class="border-base-300 bg-base-100 mt-5 max-w-prose rounded-lg border p-4">
-				<h2 class="font-medium">Noch ohne Interesse</h2>
+				<h2 class="font-medium">Noch ganz offen</h2>
 				<p class="text-base-content/80 mt-1 text-sm">
-					Auf diese Züge hat sich bisher niemand eingetragen — derselbe Stand, der unten in den
-					Auswahllisten steht, nur zusammengefasst. Sichtbar ist er Dir, weil Du die Eintragungen
+					Diese Züge sind noch nicht besetzt, und gewünscht hat sie sich bisher niemand — dieselben,
+					die unten als „ganz offen“ markiert sind, nur zusammengefasst. Was Du besetzt, fällt aus
+					der Liste heraus, auch ohne Wunsch. Sichtbar ist er Dir, weil Du die Eintragungen
 					{programmeView ? 'dieses Studiengangs' : 'dieser Fachgruppe'} ohnehin liest; für alle anderen
 					bleiben sie bis zur Veröffentlichung unsichtbar.
 				</p>
@@ -1317,7 +1319,7 @@
 													<p
 														class="text-base-content/80 mt-1 flex flex-wrap items-center gap-1 text-xs"
 													>
-														<span>Eingetragen:</span>
+														<span>Gewünscht von:</span>
 														{#each wishersByPriority(wishesHere) as wish (wish.id)}
 															<span
 																class="border-base-300 text-base-content rounded border px-1.5 py-0.5 {WISH_PRIORITY_TINTS[

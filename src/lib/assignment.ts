@@ -1051,7 +1051,12 @@ export function unfiledModules(
 }
 
 /**
- * The cohorts of this tab that nobody has registered interest in.
+ * The cohorts of this tab that are still entirely open: nobody has registered interest and
+ * nobody holds them — the same test as the „ganz offen“ mark in the row (`isWideOpen`).
+ *
+ * Until 2026-11-24 this was „no interest“ alone, so a cohort the lead had filled without a wish
+ * stayed on the list. Read next to „53 von 53 Teilen besetzt“ that looked like a filling that
+ * had not been saved. The list is a to-do list, and a filled cohort is not on it.
  *
  * What it is for: a subject group lead asked for it in so many words — she wants to approach
  * part-time lecturers early, and a week either way decides whether one is still available.
@@ -1076,17 +1081,19 @@ export function unfiledModules(
  * The same rows are marked in the table as well, under the same three conditions — see
  * `isWideOpen`. Still no tint and no ordering by interest.
  */
-export function cohortsWithoutInterest<
-	T extends {
-		id: string;
-		module: { name: string };
-		parts: readonly unknown[];
-	}
->(instances: readonly T[], wishes: readonly { instance: { id: string } }[]): T[] {
+export function cohortsStillOpen(
+	groups: readonly CohortGroup[],
+	wishes: readonly { instance: { id: string } }[]
+): InstanceLike[] {
 	const wanted = new Set(wishes.map((w) => w.instance.id));
-	// Instances with no parts are left out, exactly as the table leaves them out: there is
-	// nothing to fill, so "nobody wants it" is not a gap somebody can act on.
-	return instances.filter((i) => i.parts.length > 0 && !wanted.has(i.id));
+	return groups
+		.filter((g) => {
+			const own = ownRows(g.rows);
+			const held = g.rows.filter((row) => row.assignment !== null);
+			// Cohorts wholly taught elsewhere have nothing for us to fill, as in the row.
+			return isWideOpen(wanted.has(g.instance.id) ? [g] : [], held, own.length > 0);
+		})
+		.map((g) => g.instance);
 }
 
 /**
@@ -1097,7 +1104,7 @@ export function cohortsWithoutInterest<
  * cohort the lead has already filled without a wish (somebody asked in the corridor) is no longer
  * open, and a cohort with a wish but no assignment yet has a name to start from.
  *
- * Under the same conditions as `cohortsWithoutInterest` — the caller checks `mayShowGaps` first,
+ * Under the same conditions as `cohortsStillOpen` — the caller checks `mayShowGaps` first,
  * because for anybody else the wishes are their own alone and "nobody" would be false and leaky.
  */
 export function isWideOpen(
@@ -1157,7 +1164,7 @@ export type CohortToSettle = {
 /**
  * The cohorts on display that carry either hint, in the order of the table.
  *
- * The twin of `cohortsWithoutInterest`, and under its three conditions: only behind
+ * The twin of `cohortsStillOpen`, and under its three conditions: only behind
  * `mayShowGaps`, only from the wishes the backend sent, and no number — the box names cohorts and
  * what is to be settled, it neither counts entries nor sorts by them.
  */
