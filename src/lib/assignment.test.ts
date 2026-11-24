@@ -39,7 +39,7 @@ import {
 	unfiledModules,
 	UNFILED,
 	cohortsToSettle,
-	cohortsWithoutInterest,
+	cohortsStillOpen,
 	isContested,
 	isOnlyIfNeeded,
 	isWideOpen,
@@ -1017,29 +1017,41 @@ describe('the modules of the unfiled tab', () => {
 	});
 });
 
-describe('the cohorts nobody has registered interest in', () => {
-	const a = { id: 'i1', module: { name: 'Analysis' }, parts: [{}] };
-	const b = { id: 'i2', module: { name: 'Algebra' }, parts: [{}] };
-	const partless = { id: 'i3', module: { name: 'Platzhalter' }, parts: [] };
+describe('the cohorts still entirely open', () => {
+	const a = instance({ id: 'i1' });
+	const b = instance({ id: 'i2' });
+	const partless = instance({ id: 'i3', parts: [] });
+	const elsewhere = instance({
+		id: 'i4',
+		parts: [{ id: 'p9', kind: 'LECTURE', teachingHours: 2, taughtBy: 'Fakultät 03' }]
+	});
 
 	it('names the ones with no entry and leaves out the ones with', () => {
-		expect(cohortsWithoutInterest([a, b], [{ instance: { id: 'i1' } }])).toEqual([b]);
+		expect(cohortsStillOpen(cohortGroups([a, b], []), [{ instance: { id: 'i1' } }])).toEqual([b]);
+	});
+
+	it('leaves out a cohort filled without a wish', () => {
+		// Reported on 2026-11-24: filled in the corridor, nobody asked for it on the wish page,
+		// and it stayed on the list as if the filling had not been saved.
+		const one = held({ part: { id: 'p2' } });
+		expect(cohortsStillOpen(cohortGroups([a], [one]), [])).toEqual([]);
 	});
 
 	it('leaves out cohorts with nothing to fill', () => {
 		// The table leaves them out too: there is nothing to assign, so "nobody wants it" is not
 		// a gap anybody can act on.
-		expect(cohortsWithoutInterest([partless], [])).toEqual([]);
+		expect(cohortsStillOpen(cohortGroups([partless], []), [])).toEqual([]);
+		expect(cohortsStillOpen(cohortGroups([elsewhere], []), [])).toEqual([]);
 	});
 
 	it('says nothing about how many registered', () => {
 		// The rule the whole confidentiality design rests on. A gap is "this one has none",
 		// never "that one has three" — the function returns rows, and there is no count to read
 		// off it because the wished-for ones are not in the result at all.
-		const gaps = cohortsWithoutInterest(
-			[a, b],
-			[{ instance: { id: 'i1' } }, { instance: { id: 'i1' } }]
-		);
+		const gaps = cohortsStillOpen(cohortGroups([a, b], []), [
+			{ instance: { id: 'i1' } },
+			{ instance: { id: 'i1' } }
+		]);
 		expect(gaps).toEqual([b]);
 	});
 });

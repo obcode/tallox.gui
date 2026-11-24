@@ -321,9 +321,17 @@ export const HELP: readonly HelpEntry[] = [
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
 	{
+		question:
+			'Ich habe einen Zug besetzt, aber unter der Auswahl erscheint nichts. Ist das gespeichert?',
+		answer:
+			'Ja. Gespeichert ist, was in der Auswahl steht, sobald Du es wählst; „Stand der Besetzung“ über der Tabelle zählt es sofort mit. Die Zeile „Gewünscht von:“ unter der Auswahl zeigt nicht die Besetzung, sondern wer sich in der Wunschphase für den Zug eingetragen hat. Hat sich niemand eingetragen, fehlt sie, auch wenn der Zug besetzt ist. Der Kasten „Noch ganz offen“ über der Tabelle nennt nur Züge, die weder gewünscht noch besetzt sind, als „ganz offen“ markiert auch in der Tabelle; was Du besetzt, fällt dort heraus.',
+		who: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'],
+		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
+	},
+	{
 		question: 'Was heißen „mehrfach unbedingt“, „nur notfalls“ und „Zu klären“ bei der Zuteilung?',
 		answer:
-			'Unter jedem Zug stehen alle, die sich eingetragen haben, jede Person mit ihrer Stufe („unbedingt“, „gerne“, „notfalls“), „unbedingt“ zuerst. Als Leitung der Fachgruppe (und im Dekanat) siehst Du zusätzlich zwei Hinweise: „mehrfach unbedingt“, wenn sich mehrere mit „unbedingt“ auf denselben Zug eingetragen haben, und „nur notfalls“, wenn alle Eintragungen „notfalls“ sagen und noch niemand eingeteilt ist — dann lohnt es sich, früh eine lehrbeauftragte Person anzusprechen. Der Kasten „Zu klären“ über der Tabelle fasst diese Züge zusammen. Zahlen stehen dort keine, und für alle anderen bleiben Eintragungen bis zur Veröffentlichung unsichtbar, auch als Hinweis.',
+			'Unter jedem Zug stehen bei „Gewünscht von:“ alle, die sich eingetragen haben, jede Person mit ihrer Stufe („unbedingt“, „gerne“, „notfalls“), „unbedingt“ zuerst. Als Leitung der Fachgruppe (und im Dekanat) siehst Du zusätzlich zwei Hinweise: „mehrfach unbedingt“, wenn sich mehrere mit „unbedingt“ auf denselben Zug eingetragen haben, und „nur notfalls“, wenn alle Eintragungen „notfalls“ sagen und noch niemand eingeteilt ist — dann lohnt es sich, früh eine lehrbeauftragte Person anzusprechen. Der Kasten „Zu klären“ über der Tabelle fasst diese Züge zusammen. Zahlen stehen dort keine, und für alle anderen bleiben Eintragungen bis zur Veröffentlichung unsichtbar, auch als Hinweis.',
 		who: ['SUBJECT_GROUP_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
@@ -337,7 +345,7 @@ export const HELP: readonly HelpEntry[] = [
 	{
 		question: 'Wie weit ist mein Studiengang mit dem Besetzen?',
 		answer:
-			'Auf der Zuteilungsseite unter den Fachgruppen-Reitern bei „oder ganzer Studiengang“ einen Deiner Studiengänge wählen. Dann stehen alle Züge des Studiengangs in einer Tabelle, über alle Fachgruppen hinweg und auch die ohne Fachgruppe, mit Besetzung, Wünschen und dem „Stand der Besetzung“ für genau diesen Studiengang. „Noch ohne Interesse“ und „Zu klären“ stehen dort ebenfalls. Mit „Korb“ und der Sortierung „nach Korb“ prüfst Du Wahlpflicht-Körbe. Besetzen kannst Du dort wie gewohnt. Angeboten werden die Studiengänge, die Du leitest; das Dekanat kann jeden wählen. Die Ansicht fasst nur zusammen, was Du ohnehin lesen darfst; für das übrige Kollegium bleibt der Zwischenstand bis zur Veröffentlichung vertraulich.',
+			'Auf der Zuteilungsseite unter den Fachgruppen-Reitern bei „oder ganzer Studiengang“ einen Deiner Studiengänge wählen. Dann stehen alle Züge des Studiengangs in einer Tabelle, über alle Fachgruppen hinweg und auch die ohne Fachgruppe, mit Besetzung, Wünschen und dem „Stand der Besetzung“ für genau diesen Studiengang. „Noch ganz offen“ und „Zu klären“ stehen dort ebenfalls. Mit „Korb“ und der Sortierung „nach Korb“ prüfst Du Wahlpflicht-Körbe. Besetzen kannst Du dort wie gewohnt. Angeboten werden die Studiengänge, die Du leitest; das Dekanat kann jeden wählen. Die Ansicht fasst nur zusammen, was Du ohnehin lesen darfst; für das übrige Kollegium bleibt der Zwischenstand bis zur Veröffentlichung vertraulich.',
 		who: ['PROGRAMME_LEAD', 'DEANS_OFFICE'],
 		where: [{ href: '/zuteilung', label: 'Zuteilung' }]
 	},
